@@ -1,21 +1,44 @@
 const fs = require('fs');
+const config = require('./config.json');
 const { tokenize } = require('./lexer');
 const { parse } = require('./parser');
 const { evaluate } = require('./evaluator');
 const { printErr } = require('./errors');
 
-let filename = process.argv[2];
+const arg = process.argv[2];
+
+if (arg === '-v' || arg === '--version') {
+    console.log(`${config.name} (${config.acronym}) v${config.version}`);
+    process.exit(0);
+}
+
+if (arg === '-h' || arg === '--help') {
+    console.log(`
+${config.name} (${config.acronym}) v${config.version}
+Author: ${config.author}
+Repository: ${config.repository}
+
+Usage:
+  tulg <filename${config.extension}>      Run a specific script
+  tulg                      Run ${config.defaultFile} by default
+  tulg -v, --version        Show language version
+  tulg -h, --help           Show this help message
+`);
+    process.exit(0);
+}
+
+let filename = arg;
 
 if (!filename) {
-    if (fs.existsSync('main.tulg')) {
-        filename = 'main.tulg';
+    if (fs.existsSync(config.defaultFile)) {
+        filename = config.defaultFile;
     } else {
-        printErr('[CLIError] No input file provided. Usage: tulg <filename.tulg>');
+        printErr(`[CLIError] No input file provided. Usage: tulg <filename${config.extension}>`);
     }
 }
 
-if (!filename.endsWith('.tulg')) {
-    printErr(`[CLIError] Invalid file extension. Expected a '.tulg' file, but received: '${filename}'`);
+if (!filename.endsWith(config.extension)) {
+    printErr(`[CLIError] Invalid file extension. Expected a '${config.extension}' file, but received: '${filename}'`);
 }
 
 if (!fs.existsSync(filename)) {

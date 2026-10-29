@@ -1,0 +1,25 @@
+{
+  "name": "this-useless-language",
+  "version": "1.0.0",
+  "description": "A lightweight interpreted programming language built from scratch in Node.js",
+  "main": "index.js",
+  "bin": {
+    "tulg": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node index.js main.tulg"
+  },
+  "keywords": [
+    "interpreter",
+    "compiler",
+    "programming-language",
+    "tulg"
+  ],
+  "author": "MrYamiTsu",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrYamiTsu/This-Useless-Language.git"
+  }
+}

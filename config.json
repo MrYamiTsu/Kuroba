@@ -1,0 +1,9 @@
+{
+  "name": "This Useless Language",
+  "acronym": "TULG",
+  "version": "1.0.0",
+  "extension": ".tulg",
+  "defaultFile": "main.tulg",
+  "author": "MrYamiTsu",
+  "repository": "https://github.com/MrYamiTsu/This-Useless-Language"
+}
