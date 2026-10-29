@@ -1,0 +1,21 @@
+~~ ============================================
+~~ TEST COMPLET : IF / ELIF / ELSE DANS TULG
+~~ ============================================
+
+ivar score = 30;
+
+if (score == 100) then
+    paste("1. Score parfait (100) !");
+elif (score == 50) then
+    paste("2. Score moyen (50) !");
+elif (score == 30) then
+    paste("3. Deuxieme elif : score 30 !");
+else
+    paste("4. Aucun des scores (Else).");
+end
+
+~~ Test avec variable booleenne seule (sans parentheses) :
+ivar estPret = TRUE;
+if estPret then
+    paste("5. Condition booleenne simple sans parentheses reussie !");
+end

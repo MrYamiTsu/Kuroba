@@ -1,0 +1,208 @@
+const { printErr } = require('./errors');
+
+function parse(tokens) {
+    let cursor = 0;
+
+    function formatLocation(token) {
+        if (!token) return 'at end of file';
+        return `Line ${token.line}, Col ${token.col}`;
+    }
+
+    function peek() {
+        return tokens[cursor];
+    }
+
+    function previous() {
+        return tokens[cursor - 1];
+    }
+
+    function isAtEnd() {
+        return cursor >= tokens.length;
+    }
+
+    function check(type) {
+        if (isAtEnd()) return false;
+        return peek().type === type;
+    }
+
+    function advance() {
+        if (!isAtEnd()) cursor++;
+        return previous();
+    }
+
+    function match(...types) {
+        for (let type of types) {
+            if (check(type)) {
+                advance();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function consume(type, message) {
+        if (check(type)) return advance();
+        let token = peek() || previous();
+        printErr(`[SyntaxError: ${formatLocation(token)}] ${message}`);
+    }
+
+
+    function parsePrimary() {
+        let token = peek();
+
+        if (!token) {
+            printErr("[SyntaxError: at end of file] Unexpected end of input. Expected expression.");
+        }
+
+        if (match('IDENTIFIER')) {
+            return { type: 'Variable', name: previous().value };
+        }
+
+        if (match('NUMBER', 'STRING', 'BOOL')) {
+            return previous().value;
+        }
+
+        if (match('LPAREN')) {
+            let openParen = previous();
+            let expr = parseEquality();
+            if (!match('RPAREN')) {
+                printErr(`[SyntaxError: ${formatLocation(peek() || openParen)}] Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`);
+            }
+            return expr;
+        }
+
+        printErr(`[SyntaxError: ${formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
+    }
+
+    function parseMult() {
+        let left = parsePrimary();
+
+        while (match('MULT', 'DIVIDE')) {
+            let op = previous().value;
+            let right = parsePrimary();
+            left = { type: 'MathExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    function parseAdd() {
+        let left = parseMult();
+
+        while (match('PLUS', 'MINUS')) {
+            let op = previous().value;
+            let right = parseMult();
+            left = { type: 'MathExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    function parseEquality() {
+        let left = parseAdd();
+
+        while (match('EQUALS')) {
+            let op = previous().value;
+            let right = parseAdd();
+            left = { type: 'MathExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    function parseCondition() {
+        if (match('LPAREN')) {
+            let cond = parseEquality();
+            consume('RPAREN', "Unclosed parenthesis in condition.");
+            return cond;
+        } else if (check('IDENTIFIER')) {
+            return { type: 'Variable', name: advance().value };
+        } else {
+            printErr("[SyntaxError] Comparisons in conditions must be wrapped in parentheses '(...)'.");
+        }
+    }
+
+    function parseStatement() {
+        let stmt;
+
+        if (match('IF')) {
+            let cond = parseCondition();
+            
+            consume('THEN', "Expected 'then' after 'if' condition.");
+    
+            let thenBranch = [];
+            while (!check('ELIF') && !check('ELSE') && !check('END') && !isAtEnd()) {
+                thenBranch.push(parseStatement());
+            }
+
+            let elifBranches = [];
+            while (match('ELIF')) {
+                let elifCond = parseCondition();
+                consume('THEN', "Expected 'then' after 'elif' condition.");
+
+                let elifBody = [];
+                while (!check('ELIF') && !check('ELSE') && !check('END') && !isAtEnd()) {
+                    elifBody.push(parseStatement());
+                }
+                elifBranches.push({ condition: elifCond, body: elifBody });
+            }
+
+            let elseBranch = null;
+            if (match('ELSE')) {
+                elseBranch = [];
+                while (!check('END') && !isAtEnd()) {
+                    elseBranch.push(parseStatement());
+                }
+            }
+
+            consume('END', "Unclosed 'if' block. Expected 'end'.");
+            return {
+                type: 'IfStatement',
+                condition: cond,
+                thenBranch,
+                elifBranches,
+                elseBranch
+            };
+        }
+
+        if (match('IVAR')) {
+            let explType = null;
+            if (match('TILDE')) {
+                explType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Number, or Bool).").value;
+            }
+
+            let varName = consume('IDENTIFIER', "Expected variable name in 'ivar' declaration.").value;
+            consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
+            let value = parseEquality();
+
+            stmt = { type: 'VarDeclar', name: varName, explType, value };
+        }
+        else if (match('PASTE')) {
+            stmt = { type: 'PasteStatement', expr: parseEquality() };
+        }
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'ASSIGN') {
+            let varName = advance().value;
+            advance();
+            stmt = { type: 'VarAssign', name: varName, value: parseEquality() };
+        }
+        else {
+            stmt = parseEquality();
+        }
+
+        consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");
+
+        return stmt;
+    }
+
+    let statements = [];
+    while (!isAtEnd()) {
+        statements.push(parseStatement());
+    }
+
+    return {
+        type: 'Program',
+        body: statements
+    };
+}
+
+module.exports = { parse };
