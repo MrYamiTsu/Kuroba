@@ -212,6 +212,32 @@ end
 
 ---
 
+### 9. Multi-Branch Matching (`given / case: / break; / case: ~`)
+
+TULG provides a structured matching mechanism with unique semantics:
+- **`given <target> then ... end`**: Evaluates an expression and matches against `case:` branches. Semicolons are not required after `end`.
+- **`case: <value>`**: Specifies an expected value to match.
+- **`break;`**: Exits the `given` block immediately.
+- **`case: ~ (Default Fallback)`**: The default fallback case using TULG's signature tilde `~` operator.
+- **TULG Redirect Semantics**: If `break;` is omitted in a matching case, execution does not bleed into subsequent cases. Instead, it jumps directly to `case: ~` (the default)!
+
+```text
+ivar role = "admin";
+
+given role then
+    case: "user"
+        paste("Standard user");
+        break;
+    case: "admin"
+        paste("Administrator detected!");
+        break;
+    case: ~
+        paste("Unknown role (fallback)");
+end
+```
+
+---
+
 ## Error Handling & Diagnostics
 
 TULG provides precise, formatted errors in bright red directly to the console without internal stack traces:
@@ -264,12 +290,12 @@ The codebase is organized into modular components:
 - [x] Professional colored error reporting (`printErr`)
 - [x] Boolean literals (`TRUE`, `FALSE`) and strict equality (`==`) with special rules (`0 == FALSE`, `1 == TRUE`)
 - [x] Conditional branch statements (`if / elif / else / end`)
+- [x] Multi-branch conditional matching (`given / case: / break; / case: ~`)
 
 ### Upcoming: Control Flow & Logic
 - [ ] Comparison operators (`!=`, `<`, `>`, `<=`, `>=`)
 - [ ] Logical operators (`&&`, `||`, `!`)
 - [ ] Loop structures (`while` / `for`)
-- [ ] Multi-branch conditional matching (`switch / case / default / end`)
 
 ### Upcoming: Functions & Metaprogramming
 - [ ] User-defined functions (`fn name(args) ... end`)

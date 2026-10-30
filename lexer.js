@@ -9,7 +9,10 @@ const KEYWORDS = {
     'then':  { type: 'THEN',  value: 'then' },
     'elif':  { type: 'ELIF',  value: 'elif' },
     'else':  { type: 'ELSE',  value: 'else' },
-    'end':   { type: 'END',   value: 'end' }
+    'end':   { type: 'END',   value: 'end' },
+    'given': { type: 'GIVEN', value: 'given' },
+    'case':  { type: 'CASE',  value: 'case' },
+    'break': { type: 'BREAK', value: 'break' },
 };
 
 const SYMBOLS = {
@@ -19,7 +22,8 @@ const SYMBOLS = {
     '*': 'MULT',
     '/': 'DIVIDE',
     '(': 'LPAREN',
-    ')': 'RPAREN'
+    ')': 'RPAREN',
+    ':': 'COLON',
 };
 
 function tokenize(input) {

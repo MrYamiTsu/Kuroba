@@ -73,6 +73,51 @@ function evaluate(node, env = {}) {
             break;
         }
 
+        case 'BreakStatement': {
+            return { isBreak: true };
+        }
+
+        case 'GivenStatement': {
+            let targetVal = evaluate(node.target, env);
+            let matchedIndex = -1;
+            let defaultIndex = -1;
+
+            for (let i = 0; i < node.cases.length; i++) {
+                let c = node.cases[i];
+                if (c.isDefault) {
+                    defaultIndex = i;
+                } else {
+                    let val = evaluate(c.value, env);
+                    let isEqual = (val === targetVal) ||
+                                  ((val === 0 && targetVal === false) || (val === false && targetVal === 0)) ||
+                                  ((val === 1 && targetVal === true) || (val === true && targetVal === 1));
+                    if (isEqual && matchedIndex === -1) {
+                        matchedIndex = i;
+                    }
+                }
+            }
+
+            function runCase(index) {
+                if (index === -1) return true;
+                for (let stmt of node.cases[index].body) {
+                    let res = evaluate(stmt, env);
+                    if (res && res.isBreak) return true;
+                }
+                return false;
+            }
+
+            if (matchedIndex !== -1) {
+                let hitBreak = runCase(matchedIndex);
+                if (!hitBreak && defaultIndex !== -1) {
+                    runCase(defaultIndex);
+                }
+            } else if (defaultIndex !== -1) {
+                runCase(defaultIndex);
+            }
+
+            return;
+        }
+
         case 'PasteStatement': {
             let val = evaluate(node.expr, env);
             if (val === true) console.log('TRUE');
@@ -86,7 +131,8 @@ function evaluate(node, env = {}) {
             let isTrue = cond === true || cond === 1;
             if (isTrue) {
                 for (let stmt of node.thenBranch) {
-                    evaluate(stmt, env);
+                    let res = evaluate(stmt, env);
+                    if (res && res.isBreak) return res;
                 }
                 return; 
             }
@@ -97,7 +143,8 @@ function evaluate(node, env = {}) {
                     let isTrue2 = cond2 === true || cond2 === 1
                     if (isTrue2) {
                         for (let stmt of elif.body) {
-                            evaluate(stmt, env);
+                            let res = evaluate(stmt, env);
+                            if (res && res.isBreak) return res;
                         }
                         return;
                     }
@@ -106,7 +153,8 @@ function evaluate(node, env = {}) {
             
             if (node.elseBranch) {
                 for (let stmt of node.elseBranch) {
-                    evaluate(stmt, env);
+                    let res = evaluate(stmt, env);
+                    if (res && res.isBreak) return res;
                 }
             }
             return;

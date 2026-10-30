@@ -165,6 +165,41 @@ function parse(tokens) {
             };
         }
 
+        if (match('GIVEN')) {
+            let exprTarget = parseEquality();
+            let cases = [];
+
+            consume('THEN', "Expected 'then' after 'given' expression.");
+
+            while (!check('END') && !isAtEnd()) {
+                consume('CASE', "Expected 'case' in 'given' block.");
+                consume('COLON', "Expected ':' after 'case'.");
+
+                let isDefault = false;
+                let caseValue = null;
+
+                if (match('TILDE')) {
+                    isDefault = true;
+                } else {
+                    caseValue = parseEquality();
+                }
+
+                let caseBody = [];
+                while (!check('CASE') && !check('END') && !isAtEnd()) {
+                    caseBody.push(parseStatement());
+                }
+
+                cases.push({ isDefault, value: caseValue, body: caseBody });
+            }
+
+            consume('END', "Unclosed 'given' block. Expected 'end'.");
+            return {
+                type: 'GivenStatement',
+                target: exprTarget,
+                cases
+            };
+        }
+
         if (match('IVAR')) {
             let explType = null;
             if (match('TILDE')) {
@@ -184,6 +219,9 @@ function parse(tokens) {
             let varName = advance().value;
             advance();
             stmt = { type: 'VarAssign', name: varName, value: parseEquality() };
+        }
+        else if (match('BREAK')) {
+            stmt = { type: 'BreakStatement' };
         }
         else {
             stmt = parseEquality();
