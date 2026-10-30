@@ -253,17 +253,33 @@ The codebase is organized into modular components:
 
 ## Roadmap
 
+### Core Features Implemented
 - [x] Arithmetic engine with precedence & parentheses (`+`, `-`, `*`, `/`, `(...)`)
 - [x] Multi-line program execution with mandatory semicolons (`;`)
 - [x] Built-in output statement (`paste(...)`)
 - [x] Variable declaration with type inference (`ivar x = 10;`)
-- [x] Explicit smart typing & coercion (`ivar~String`, `ivar~Number`)
+- [x] Explicit smart typing & coercion (`ivar~String`, `ivar~Number`, `ivar~Bool`)
 - [x] Strict variable reassignment (`x = 20;`)
 - [x] Single-line comments (`~~`)
 - [x] Professional colored error reporting (`printErr`)
 - [x] Boolean literals (`TRUE`, `FALSE`) and strict equality (`==`) with special rules (`0 == FALSE`, `1 == TRUE`)
 - [x] Conditional branch statements (`if / elif / else / end`)
+
+### Upcoming: Control Flow & Logic
 - [ ] Comparison operators (`!=`, `<`, `>`, `<=`, `>=`)
 - [ ] Logical operators (`&&`, `||`, `!`)
-- [ ] Loop constructs (`while` / `for`)
-- [ ] Custom functions (`fn` / user-defined routines)
+- [ ] Loop structures (`while` / `for`)
+- [ ] Multi-branch conditional matching (`switch / case / default / end`)
+
+### Upcoming: Functions & Metaprogramming
+- [ ] User-defined functions (`fn name(args) ... end`)
+- [ ] Native recursion helpers (easy & safe recursion patterns alongside loops/conditionals)
+- [ ] Function hooking & interception (Lua-inspired function wrapping, overrides, and callbacks)
+
+### Upcoming: Data Structures
+- [ ] Dynamic Arrays / Tables (`[item1, item2, ...]`) with indexing and manipulation methods
+
+### Upcoming: Object-Oriented Programming (OOP)
+- [ ] Class definitions (`class ... end`) with constructors and methods
+- [ ] Encapsulation & Access Modifiers (`public` / `private` fields and methods)
+- [ ] Interfaces & structural contracts
