@@ -47,11 +47,12 @@ The codebase is organized into modular components with zero third-party dependen
 
 ```text
 ├── index.js      # CLI Entry point (flags, argument validation, execution)
-├── lexer.js      # Lexical analysis (token stream with line/col tracking)
-├── parser.js     # Syntactic analysis (Recursive descent parser building AST)
-├── evaluator.js  # Runtime environment (AST evaluation & memory management)
-├── errors.js     # Centralized colored error reporting utility
 ├── tulg.cmd      # Windows batch launcher
+├── src/          # Interpreter engine
+│   ├── lexer.js      # Lexical analysis (token stream with line/col tracking)
+│   ├── parser.js     # Syntactic analysis (Recursive descent parser building AST)
+│   ├── evaluator.js  # Runtime environment (AST evaluation & memory management)
+│   └── errors.js     # Centralized colored error reporting utility
 ├── docs/
 │   └── syntax.md # Full language specification & syntax manual
 └── main.tulg     # Sample TULG source code

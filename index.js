@@ -1,9 +1,9 @@
 const fs = require('fs');
 const config = require('./config.json');
-const { tokenize } = require('./lexer');
-const { parse } = require('./parser');
-const { evaluate } = require('./evaluator');
-const { printErr } = require('./errors');
+const { tokenize } = require('./src/lexer');
+const { parse } = require('./src/parser');
+const { evaluate } = require('./src/evaluator');
+const { printErr } = require('./src/errors');
 
 const arg = process.argv[2];
 
