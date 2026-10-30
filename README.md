@@ -28,6 +28,7 @@ TULG source files use the `.tulg` extension. Run any script with the bundled lau
 | **Output** | `paste("Hello!");` | Prints value or expression to stdout |
 | **Comments** | `~~ comment` | Single-line comment to end of line |
 | **Variables** | `ivar score = 100;` | Variable declaration with type inference |
+| **Constants** | `iconst PI = 3;` | Immutable constant declaration |
 | **Coercion** | `ivar~String id = 42;` | Explicit casting (`~String`, `~Number`, `~Bool`) |
 | **Reassignment** | `score = 150;` | Strict-typed variable update |
 | **Conditionals** | `if cond then ... else ... end` | Lua-style block ending with `end` |
@@ -67,6 +68,7 @@ The codebase is organized into modular components with zero third-party dependen
 - [x] Multi-line program execution with mandatory semicolons (`;`)
 - [x] Built-in output statement (`paste(...)`)
 - [x] Variable declaration with type inference (`ivar x = 10;`)
+- [x] Constants declaration (`iconst PI = 3;`)
 - [x] Explicit smart typing & coercion (`ivar~String`, `ivar~Number`, `ivar~Bool`)
 - [x] Strict variable reassignment (`x = 20;`)
 - [x] Single-line comments (`~~`)
@@ -83,7 +85,6 @@ The codebase is organized into modular components with zero third-party dependen
 - [ ] Exception & error handling (`try / catch / finally / end`)
 
 ### Upcoming: Types & Variables
-- [ ] Constants declaration (`iconst PI = 3.14;`)
 - [ ] Explicit variable transtyping (`Type~variable`, e.g. `String~score = 100;`)
 - [ ] Additional core types (`NULL`, floating-point numbers / `Float`)
 - [ ] Length introspection property/function (`length`) for strings, arrays, etc.

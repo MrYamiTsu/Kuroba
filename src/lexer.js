@@ -1,5 +1,9 @@
 const { printErr } = require('./errors');
 
+// ============================================================================
+// 1. KEYWORDS & SYMBOL DEFINITIONS
+// ============================================================================
+
 const KEYWORDS = {
     'TRUE':   { type: 'BOOL',  value: true },
     'FALSE':  { type: 'BOOL',  value: false },
@@ -27,6 +31,10 @@ const SYMBOLS = {
     ':': 'COLON',
 };
 
+// ============================================================================
+// 2. TOKENIZER MAIN LOOP
+// ============================================================================
+
 function tokenize(input) {
     let tokens = [];
     let cursor = 0;
@@ -39,6 +47,9 @@ function tokenize(input) {
     while (cursor < input.length) {
         let char = input[cursor];
 
+        // --------------------------------------------------------------------
+        // Whitespace & Line tracking
+        // --------------------------------------------------------------------
         if (char === ' ') {
             cursor++;
             col++;
@@ -55,6 +66,9 @@ function tokenize(input) {
             continue;
         }
 
+        // --------------------------------------------------------------------
+        // Comments & Tildes
+        // --------------------------------------------------------------------
         if (char === '~') {
             if (input[cursor + 1] === '~') {
                 while (cursor < input.length && input[cursor] !== '\n') {
@@ -68,6 +82,9 @@ function tokenize(input) {
             continue;
         }
 
+        // --------------------------------------------------------------------
+        // String Literals
+        // --------------------------------------------------------------------
         if (char === '"') {
             let startLine = line;
             let startCol = col;
@@ -96,6 +113,9 @@ function tokenize(input) {
             continue;
         }
 
+        // --------------------------------------------------------------------
+        // Numeric Literals
+        // --------------------------------------------------------------------
         if (isDigit(char)) {
             let startLine = line;
             let startCol = col;
@@ -111,6 +131,9 @@ function tokenize(input) {
             continue;
         }
 
+        // --------------------------------------------------------------------
+        // Identifiers & Keywords
+        // --------------------------------------------------------------------
         if (isLetter(char)) {
             let startLine = line;
             let startCol = col;
@@ -131,6 +154,9 @@ function tokenize(input) {
             continue;
         }
 
+        // --------------------------------------------------------------------
+        // Operators & Punctuation
+        // --------------------------------------------------------------------
         if (char === '=') {
             if (input[cursor + 1] === '=') {
                 tokens.push({ type: 'EQUALS', value: '==', line, col });

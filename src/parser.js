@@ -3,6 +3,10 @@ const { printErr } = require('./errors');
 function parse(tokens) {
     let cursor = 0;
 
+    // ========================================================================
+    // 1. TOKEN STREAM CURSOR & MATCHING UTILITIES
+    // ========================================================================
+
     function formatLocation(token) {
         if (!token) return 'at end of file';
         return `Line ${token.line}, Col ${token.col}`;
@@ -46,6 +50,9 @@ function parse(tokens) {
         printErr(`[SyntaxError: ${formatLocation(token)}] ${message}`);
     }
 
+    // ========================================================================
+    // 2. EXPRESSION PARSING (PRECEDENCE HIERARCHY)
+    // ========================================================================
 
     function parsePrimary() {
         let token = peek();
@@ -125,7 +132,6 @@ function parse(tokens) {
         while (match('AND')) {
             let op = previous().value;
             let right = parseEquality();
-
             left = { type: 'LogicalExpression', operator: op, left, right };
         }
 
@@ -138,7 +144,6 @@ function parse(tokens) {
         while (match('OR')) {
             let op = previous().value;
             let right = parseLogicAnd();
-
             left = { type: 'LogicalExpression', operator: op, left, right };
         }
 
@@ -159,97 +164,109 @@ function parse(tokens) {
         }
     }
 
+    // ========================================================================
+    // 3. STATEMENT PARSING & CONTROL FLOW
+    // ========================================================================
+
+    function parseIfStatement() {
+        let cond = parseCondition();
+        consume('THEN', "Expected 'then' after 'if' condition.");
+
+        let thenBranch = [];
+        while (!check('ELIF') && !check('ELSE') && !check('END') && !isAtEnd()) {
+            thenBranch.push(parseStatement());
+        }
+
+        let elifBranches = [];
+        while (match('ELIF')) {
+            let elifCond = parseCondition();
+            consume('THEN', "Expected 'then' after 'elif' condition.");
+
+            let elifBody = [];
+            while (!check('ELIF') && !check('ELSE') && !check('END') && !isAtEnd()) {
+                elifBody.push(parseStatement());
+            }
+            elifBranches.push({ condition: elifCond, body: elifBody });
+        }
+
+        let elseBranch = null;
+        if (match('ELSE')) {
+            elseBranch = [];
+            while (!check('END') && !isAtEnd()) {
+                elseBranch.push(parseStatement());
+            }
+        }
+
+        consume('END', "Unclosed 'if' block. Expected 'end'.");
+        return {
+            type: 'IfStatement',
+            condition: cond,
+            thenBranch,
+            elifBranches,
+            elseBranch
+        };
+    }
+
+    function parseGivenStatement() {
+        let exprTarget = parseEquality();
+        let cases = [];
+
+        consume('THEN', "Expected 'then' after 'given' expression.");
+
+        while (!check('END') && !isAtEnd()) {
+            consume('CASE', "Expected 'case' in 'given' block.");
+            consume('COLON', "Expected ':' after 'case'.");
+
+            let isDefault = false;
+            let caseValue = null;
+
+            if (match('TILDE')) {
+                isDefault = true;
+            } else {
+                caseValue = parseEquality();
+            }
+
+            let caseBody = [];
+            while (!check('CASE') && !check('END') && !isAtEnd()) {
+                caseBody.push(parseStatement());
+            }
+
+            cases.push({ isDefault, value: caseValue, body: caseBody });
+        }
+
+        consume('END', "Unclosed 'given' block. Expected 'end'.");
+        return {
+            type: 'GivenStatement',
+            target: exprTarget,
+            cases
+        };
+    }
+
+    function parseVarDeclaration() {
+        let isConst = previous().type === 'ICONST';
+        let explType = null;
+
+        if (match('TILDE')) {
+            explType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Number, or Bool).").value;
+        }
+
+        let varName = consume('IDENTIFIER', "Expected variable name in declaration.").value;
+        consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
+        let value = parseLogicOr();
+
+        return { type: 'VarDeclar', name: varName, explType, value, isConst };
+    }
+
     function parseStatement() {
         let stmt;
 
-        if (match('IF')) {
-            let cond = parseCondition();
-            
-            consume('THEN', "Expected 'then' after 'if' condition.");
-    
-            let thenBranch = [];
-            while (!check('ELIF') && !check('ELSE') && !check('END') && !isAtEnd()) {
-                thenBranch.push(parseStatement());
-            }
+        // Blocs terminés par 'end' (pas de point-virgule)
+        if (match('IF'))    return parseIfStatement();
+        if (match('GIVEN')) return parseGivenStatement();
 
-            let elifBranches = [];
-            while (match('ELIF')) {
-                let elifCond = parseCondition();
-                consume('THEN', "Expected 'then' after 'elif' condition.");
-
-                let elifBody = [];
-                while (!check('ELIF') && !check('ELSE') && !check('END') && !isAtEnd()) {
-                    elifBody.push(parseStatement());
-                }
-                elifBranches.push({ condition: elifCond, body: elifBody });
-            }
-
-            let elseBranch = null;
-            if (match('ELSE')) {
-                elseBranch = [];
-                while (!check('END') && !isAtEnd()) {
-                    elseBranch.push(parseStatement());
-                }
-            }
-
-            consume('END', "Unclosed 'if' block. Expected 'end'.");
-            return {
-                type: 'IfStatement',
-                condition: cond,
-                thenBranch,
-                elifBranches,
-                elseBranch
-            };
-        }
-
-        if (match('GIVEN')) {
-            let exprTarget = parseEquality();
-            let cases = [];
-
-            consume('THEN', "Expected 'then' after 'given' expression.");
-
-            while (!check('END') && !isAtEnd()) {
-                consume('CASE', "Expected 'case' in 'given' block.");
-                consume('COLON', "Expected ':' after 'case'.");
-
-                let isDefault = false;
-                let caseValue = null;
-
-                if (match('TILDE')) {
-                    isDefault = true;
-                } else {
-                    caseValue = parseEquality();
-                }
-
-                let caseBody = [];
-                while (!check('CASE') && !check('END') && !isAtEnd()) {
-                    caseBody.push(parseStatement());
-                }
-
-                cases.push({ isDefault, value: caseValue, body: caseBody });
-            }
-
-            consume('END', "Unclosed 'given' block. Expected 'end'.");
-            return {
-                type: 'GivenStatement',
-                target: exprTarget,
-                cases
-            };
-        }
-
+        // Instructions terminées par ';'
         if (match('IVAR', 'ICONST')) {
-            let isConst = previous().type === 'ICONST';
-            let explType = null;
-
-            if (match('TILDE')) {
-                explType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Number, or Bool).").value;
-            }
-
-            let varName = consume('IDENTIFIER', "Expected variable name in 'ivar' declaration.").value;
-            consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
-            let value = parseLogicOr();
-
-            stmt = { type: 'VarDeclar', name: varName, explType, value, isConst };
+            stmt = parseVarDeclaration();
         }
         else if (match('PASTE')) {
             stmt = { type: 'PasteStatement', expr: parseLogicOr() };
@@ -267,9 +284,12 @@ function parse(tokens) {
         }
 
         consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");
-
         return stmt;
     }
+
+    // ========================================================================
+    // 4. PARSER ENTRYPOINT (PROGRAM)
+    // ========================================================================
 
     let statements = [];
     while (!isAtEnd()) {
