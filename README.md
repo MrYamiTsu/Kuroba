@@ -1,15 +1,17 @@
 # TULG — This Useless Language
 
-**TULG** (*This Useless Language*) is a lightweight, interpreted programming language built from scratch in Node.js. It features a recursive descent parser, optional static typing with automatic type inference, smart type coercion, Lua-style block syntax, unique control-flow semantics, and clean colored diagnostic errors.
+**TULG** (_This Useless Language_) is a lightweight, interpreted programming language built from scratch in Node.js. It features a recursive descent parser, optional static typing with automatic type inference, smart type coercion, Lua-style block syntax, unique control-flow semantics, and clean colored diagnostic errors.
 
 ---
 
 ## Quickstart
 
 ### Prerequisites
+
 - [Node.js](https://nodejs.org/) (v16 or newer)
 
 ### Running TULG Scripts
+
 TULG source files use the `.tulg` extension. Run any script with the bundled launcher:
 
 ```bash
@@ -17,28 +19,28 @@ TULG source files use the `.tulg` extension. Run any script with the bundled lau
 .\tulg script.tulg  # Runs any specified script
 ```
 
-*(Or via Node directly: `node index.js script.tulg`)*
+_(Or via Node directly: `node index.js script.tulg`)_
 
 ---
 
 ## Syntax at a Glance
 
-| Feature | Syntax Example | Description |
-| :--- | :--- | :--- |
-| **Output** | `paste("Hello!");` | Prints value or expression to stdout |
-| **Comments** | `~~ comment` | Single-line comment to end of line |
-| **Variables** | `ivar score = 100;` | Variable declaration with type inference |
-| **Constants** | `iconst PI = 3;` | Immutable constant declaration |
-| **Coercion** | `ivar~String id = 42;` | Explicit casting (`~String`, `~Number`, `~Bool`) |
-| **Reassignment** | `score = 150;` | Strict-typed variable update |
-| **Conditionals** | `if cond then ... else ... end` | Lua-style block ending with `end` |
-| **Matching** | `given x then case: 1 ... end` | Multi-branch matching with `break;` |
-| **Default Fallback** | `case: ~` | Fallback branch (redirects here if `break;` is omitted) |
-| **Logical Ops** | `a && b`, `a \|\| b`, `!c` | Short-circuit boolean logic |
-| **Equality** | `x == y`, `x != y` | Strict equality (`0 == FALSE`, `1 == TRUE`) |
+| Feature              | Syntax Example                  | Description                                             |
+| :------------------- | :------------------------------ | :------------------------------------------------------ |
+| **Output**           | `paste("Hello!");`              | Prints value or expression to stdout                    |
+| **Comments**         | `~~ comment`                    | Single-line comment to end of line                      |
+| **Variables**        | `ivar score = 100;`             | Variable declaration with type inference                |
+| **Constants**        | `iconst PI = 3;`                | Immutable constant declaration                          |
+| **Coercion**         | `ivar~String id = 42;`          | Explicit casting (`~String`, `~Number`, `~Bool`)        |
+| **Reassignment**     | `score = 150;`                  | Strict-typed variable update                            |
+| **Conditionals**     | `if cond then ... else ... end` | Lua-style block ending with `end`                       |
+| **Matching**         | `given x then case: 1 ... end`  | Multi-branch matching with `break;`                     |
+| **Default Fallback** | `case: ~`                       | Fallback branch (redirects here if `break;` is omitted) |
+| **Logical Ops**      | `a && b`, `a \|\| b`, `!c`      | Short-circuit boolean logic                             |
+| **Equality**         | `x == y`, `x != y`              | Strict equality (`0 == FALSE`, `1 == TRUE`)             |
 
-👉 **[📖 Read the Full Language Reference & Syntax Specification](docs/syntax.md)**  
-*(Contains detailed explanations, edge cases, error codes, and extensive code samples)*
+👉 **[Read the Full Language Reference & Syntax Specification](docs/syntax.md)**  
+_(Contains detailed explanations, edge cases, error codes, and extensive code samples)_
 
 ---
 
@@ -64,6 +66,7 @@ The codebase is organized into modular components with zero third-party dependen
 ## Roadmap
 
 ### Core Features Implemented
+
 - [x] Arithmetic engine with precedence & parentheses (`+`, `-`, `*`, `/`, `(...)`)
 - [x] Multi-line program execution with mandatory semicolons (`;`)
 - [x] Built-in output statement (`paste(...)`)
@@ -78,34 +81,53 @@ The codebase is organized into modular components with zero third-party dependen
 - [x] Multi-branch conditional matching (`given / case: / break; / case: ~`)
 - [x] Logical operators (`&&`, `||`, `!`) with short-circuit evaluation
 
-### Upcoming: Control Flow & Error Handling
+### Phase 1: Fundamental Operators & Types
+
 - [ ] Comparison operators (`<`, `>`, `<=`, `>=`)
 - [ ] Modulo operator (`%`)
-- [ ] Loop structures (`while`, `do ... while`, `for`, `continue;`)
-- [ ] Exception & error handling (`try / catch / finally / end`)
-
-### Upcoming: Types & Variables
+- [ ] Floating-point numbers & decimal literals (`Float`)
+- [ ] `NULL` literal and null-safety basics
 - [ ] Explicit variable transtyping (`Type~variable`, e.g. `String~score = 100;`)
-- [ ] Additional core types (`NULL`, floating-point numbers / `Float`)
-- [ ] Length introspection property/function (`length`) for strings, arrays, etc.
 
-### Upcoming: Standard I/O & File System
-- [ ] Console output: `paste` (without newline) vs `pasteLn` (with newline)
-- [ ] Console input: `copy(...)` (with optional prompt, blocking for user input)
+### Phase 2: Iteration & Interactive Console
+
+- [ ] Loop structures (`while`, `do ... while`, `for`, `continue;`)
+- [ ] Distinct console output: `paste` (no newline) vs `pasteLn` (with newline)
+- [ ] User console input: `copy(...)` (with optional prompt, blocking execution)
+- [ ] Process termination & exit codes (`exit(code)`)
+
+### Phase 3: Data Structures & Collections
+
+- [ ] Dynamic Arrays / Tables (`[item1, item2, ...]`) with bracket indexing (`arr[0]`)
+- [ ] Key-Value Dictionaries / Objects (`{ key: value, ... }`) with dot & bracket access
+- [ ] Length introspection property/function (`length`) for strings, arrays, and dictionaries
+- [ ] Collection iteration (`for item in list ... end`, `for key, val in dict ... end`)
+
+### Phase 4: Functions & Metaprogramming
+
+- [ ] Variable scoping (function scope & lexical block environments)
+- [ ] User-defined functions (`fn name(args) ... end`) with `return`
+- [ ] Native recursion helpers (`recur(...)` with tail-call safety)
+- [ ] Function hooking & interception (Lua-inspired function wrapping & callbacks)
+
+### Phase 5: Error Handling, Asynchrony & System Modules
+
+- [ ] Exception & error handling (`try / catch / finally / end`)
+- [ ] Asynchronous timer / delays (`sleep(ms)`)
+- [ ] Multi-file module imports (`import "file.tulg"`)
 - [ ] File I/O: `pasteInFile("path.txt", data)` (write/append)
 - [ ] File I/O: `copyInFile("path.txt")` (read file contents)
 - [ ] System clock & timestamp access (`time.now()`)
+- [ ] Command-line arguments access (`args` list)
 
-### Upcoming: Modules & Metaprogramming
-- [ ] Multi-file module imports (`import "file.tulg"`)
-- [ ] User-defined functions (`fn name(args) ... end`)
-- [ ] Native recursion helpers (`recur(...)` alongside loops/conditionals)
-- [ ] Function hooking & interception (Lua-inspired function wrapping & callbacks)
+### Phase 6: Object-Oriented Programming (OOP)
 
-### Upcoming: Data Structures
-- [ ] Dynamic Arrays / Tables (`[item1, item2, ...]`) with indexing & manipulation
-
-### Upcoming: Object-Oriented Programming (OOP)
 - [ ] Class definitions (`class ... end`) with constructors & methods
 - [ ] Encapsulation & Access Modifiers (`public` / `private`)
 - [ ] Interfaces & structural contracts
+
+### Phase 7: Standard Library & Debugging Tools
+
+- [ ] Built-in standard library modules (`math.*`, `str.*`, `json.*`)
+- [ ] Interactive Debugger / Debug mode (`--debug` flag with step execution and AST inspector)
+- [ ] Interactive REPL shell (launching `tulg` with no arguments starts interactive prompt)

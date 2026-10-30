@@ -10,14 +10,15 @@ This document provides the full, in-depth specification for **TULG** (*This Usel
 2. [Comments (`~~`)](#2-comments)
 3. [Output (`paste`)](#3-output-paste)
 4. [Variables & Type Inference (`ivar`)](#4-variables--type-inference-ivar)
-5. [Forced Typing & Smart Coercion (`ivar~Type`)](#5-forced-typing--smart-coercion-ivartype)
-6. [Variable Reassignment & Strict Typing](#6-variable-reassignment--strict-typing)
-7. [Arithmetic & Operator Precedence](#7-arithmetic--operator-precedence)
-8. [Booleans, Strict Equality & Inequality (`==`, `!=`)](#8-booleans-strict-equality--inequality--)
-9. [Conditional Statements (`if / elif / else / end`)](#9-conditional-statements-if--elif--else--end)
-10. [Multi-Branch Matching (`given / case: / break; / case: ~`)](#10-multi-branch-matching-given--case--break--case-)
-11. [Logical Operators (`&&`, `||`, `!`)](#11-logical-operators---)
-12. [Error Handling & Diagnostics](#12-error-handling--diagnostics)
+5. [Constants (`iconst`)](#5-constants-iconst)
+6. [Forced Typing & Smart Coercion (`ivar~Type`, `iconst~Type`)](#6-forced-typing--smart-coercion-ivartype-iconsttype)
+7. [Variable Reassignment & Strict Typing](#7-variable-reassignment--strict-typing)
+8. [Arithmetic & Operator Precedence](#8-arithmetic--operator-precedence)
+9. [Booleans, Strict Equality & Inequality (`==`, `!=`)](#9-booleans-strict-equality--inequality--)
+10. [Conditional Statements (`if / elif / else / end`)](#10-conditional-statements-if--elif--else--end)
+11. [Multi-Branch Matching (`given / case: / break; / case: ~`)](#11-multi-branch-matching-given--case--break--case-)
+12. [Logical Operators (`&&`, `||`, `!`)](#12-logical-operators---)
+13. [Error Handling & Diagnostics](#13-error-handling--diagnostics)
 
 ---
 
@@ -74,7 +75,21 @@ paste(count + 5);
 
 ---
 
-### 5. Forced Typing & Smart Coercion (`ivar~Type`)
+### 5. Constants (`iconst`)
+
+Constants are declared using the `iconst` keyword (*init constant*). Like variables, their type is inferred or can be explicitly assigned with `~Type`. Once initialized, a constant cannot be reassigned:
+
+```text
+iconst MAX_USERS = 100;
+iconst APP_NAME = "TULG App";
+iconst~Bool IS_PROD = 1;
+
+MAX_USERS = 200; // [TypeError] Cannot reassign constant 'MAX_USERS'.
+```
+
+---
+
+### 6. Forced Typing & Smart Coercion (`ivar~Type`, `iconst~Type`)
 
 TULG supports optional explicit typing using the tilde `~` operator attached to `ivar`.
 
