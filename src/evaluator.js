@@ -9,8 +9,6 @@ function getType(val) {
 
 function evaluate(node, env = {}) {
     if (!node) return node;
-
-    // Valeur primitive directe (nombre, chaîne, booléen)
     if (!node.type) return node;
 
     switch (node.type) {
@@ -44,7 +42,8 @@ function evaluate(node, env = {}) {
 
             env[node.name] = {
                 value: val,
-                type: node.explType || getType(val)
+                type: node.explType || getType(val),
+                isConst: !!node.isConst
             };
             return val;
         }
@@ -52,6 +51,10 @@ function evaluate(node, env = {}) {
         case 'VarAssign': {
             if (!(node.name in env)) {
                 printErr(`[ReferenceError] Cannot reassign undeclared variable '${node.name}'.`);
+            }
+
+            if (env[node.name].isConst) {
+                printErr(`[TypeError] Cannot reassign constant '${node.name}'.`);
             }
 
             let newVal = evaluate(node.value, env);

@@ -1,18 +1,19 @@
 const { printErr } = require('./errors');
 
 const KEYWORDS = {
-    'TRUE':  { type: 'BOOL',  value: true },
-    'FALSE': { type: 'BOOL',  value: false },
-    'paste': { type: 'PASTE', value: 'paste' },
-    'ivar':  { type: 'IVAR',  value: 'ivar' },
-    'if':    { type: 'IF',    value: 'if' },
-    'then':  { type: 'THEN',  value: 'then' },
-    'elif':  { type: 'ELIF',  value: 'elif' },
-    'else':  { type: 'ELSE',  value: 'else' },
-    'end':   { type: 'END',   value: 'end' },
-    'given': { type: 'GIVEN', value: 'given' },
-    'case':  { type: 'CASE',  value: 'case' },
-    'break': { type: 'BREAK', value: 'break' },
+    'TRUE':   { type: 'BOOL',  value: true },
+    'FALSE':  { type: 'BOOL',  value: false },
+    'paste':  { type: 'PASTE', value: 'paste' },
+    'ivar':   { type: 'IVAR',  value: 'ivar' },
+    'iconst': { type: 'ICONST',  value: 'iconst' },
+    'if':     { type: 'IF',    value: 'if' },
+    'then':   { type: 'THEN',  value: 'then' },
+    'elif':   { type: 'ELIF',  value: 'elif' },
+    'else':   { type: 'ELSE',  value: 'else' },
+    'end':    { type: 'END',   value: 'end' },
+    'given':  { type: 'GIVEN', value: 'given' },
+    'case':   { type: 'CASE',  value: 'case' },
+    'break':  { type: 'BREAK', value: 'break' },
 };
 
 const SYMBOLS = {

@@ -237,8 +237,10 @@ function parse(tokens) {
             };
         }
 
-        if (match('IVAR')) {
+        if (match('IVAR', 'ICONST')) {
+            let isConst = previous().type === 'ICONST';
             let explType = null;
+
             if (match('TILDE')) {
                 explType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Number, or Bool).").value;
             }
@@ -247,7 +249,7 @@ function parse(tokens) {
             consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
             let value = parseLogicOr();
 
-            stmt = { type: 'VarDeclar', name: varName, explType, value };
+            stmt = { type: 'VarDeclar', name: varName, explType, value, isConst };
         }
         else if (match('PASTE')) {
             stmt = { type: 'PasteStatement', expr: parseLogicOr() };
