@@ -65,7 +65,7 @@ function parse(tokens) {
             return { type: 'Variable', name: previous().value };
         }
 
-        if (match('NUMBER', 'STRING', 'BOOL')) {
+        if (match('INT', 'STRING', 'BOOL', 'FLOAT', 'NULL')) {
             return previous().value;
         }
 
@@ -244,17 +244,24 @@ function parse(tokens) {
 
     function parseVarDeclaration() {
         let isConst = previous().type === 'ICONST';
+        let isNullable = true;
         let explType = null;
 
         if (match('TILDE')) {
-            explType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Number, or Bool).").value;
+            if (match('LPAREN')) {
+                isNullable = false;
+                explType = consume('IDENTIFIER', "Expected type identifier inside '~(...)'.").value;
+                consume('RPAREN', "Expected closing ')' after non-nullable type.");
+            } else {
+                explType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Int, or Bool).").value;
+            }
         }
 
         let varName = consume('IDENTIFIER', "Expected variable name in declaration.").value;
         consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
         let value = parseLogicOr();
 
-        return { type: 'VarDeclar', name: varName, explType, value, isConst };
+        return { type: 'VarDeclar', name: varName, explType, isNullable, value, isConst };
     }
 
     function parseStatement() {

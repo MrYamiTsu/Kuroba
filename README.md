@@ -30,8 +30,9 @@ _(Or via Node directly: `node index.js script.tulg`)_
 | **Output**           | `paste("Hello!");`              | Prints value or expression to stdout                    |
 | **Comments**         | `~~ comment`                    | Single-line comment to end of line                      |
 | **Variables**        | `ivar score = 100;`             | Variable declaration with type inference                |
-| **Constants**        | `iconst PI = 3;`                | Immutable constant declaration                          |
-| **Coercion**         | `ivar~String id = 42;`          | Explicit casting (`~String`, `~Number`, `~Bool`)        |
+| **Constants**        | `iconst PI = 3.14;`             | Immutable constant declaration                          |
+| **Coercion**         | `ivar~String id = 42;`          | Explicit casting (`~String`, `~Int`, `~Float`, `~Bool`) |
+| **Non-Nullable**     | `ivar~(String) id = "X";`       | Strict non-nullable typing                              |
 | **Reassignment**     | `score = 150;`                  | Strict-typed variable update                            |
 | **Conditionals**     | `if cond then ... else ... end` | Lua-style block ending with `end`                       |
 | **Matching**         | `given x then case: 1 ... end`  | Multi-branch matching with `break;`                     |
@@ -85,10 +86,11 @@ The codebase is organized into modular components with zero third-party dependen
 ### Phase 1: Fundamental Operators & Types
 
 - [x] Native variable swap mechanism (`<->`)
+- [x] Renamed `Number` to `Int` and added floating-point decimals (`Float`)
+- [x] `NULL` literal and null-safety basics
+- [x] Non-nullable type enforcement (`~(Type)`)
 - [ ] Comparison operators (`<`, `>`, `<=`, `>=`)
 - [ ] Modulo operator (`%`)
-- [ ] Floating-point numbers & decimal literals (`Float`)
-- [ ] `NULL` literal and null-safety basics
 - [ ] Explicit variable transtyping (`Type~variable`, e.g. `String~score = 100;`)
 
 ### Phase 2: Iteration & Interactive Console

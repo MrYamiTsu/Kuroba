@@ -90,29 +90,38 @@ MAX_USERS = 200; // [TypeError] Cannot reassign constant 'MAX_USERS'.
 
 ---
 
-### 6. Forced Typing & Smart Coercion (`ivar~Type`, `iconst~Type`)
+### 6. Forced Typing, Smart Coercion & Nullability (`~Type`, `~(Type)`)
 
-TULG supports optional explicit typing using the tilde `~` operator attached to `ivar`.
+TULG supports optional explicit typing using the tilde `~` operator attached to `ivar` or `iconst`. Supported types are `String`, `Int`, `Float`, and `Bool`.
 
-#### A. Number to String (`ivar~String`)
-Automatically converts numbers to strings:
+#### A. Nullable by Default vs Non-Nullable (`~(Type)`)
+By default, variables in TULG are nullable and can receive `NULL`:
+```text
+ivar~String nickname = "Fox";
+nickname = NULL; // Valid: variables are nullable by default
+
+ivar~(String) username = "Admin";
+username = NULL; // [TypeError] Cannot assign NULL to non-nullable variable 'username' of type '(String)'.
+```
+
+#### B. Numbers: Int and Float
+- `Int`: Integer numbers (`42`, `-10`).
+- `Float`: Floating-point decimals (`3.14`, `0.5`).
+
+```text
+ivar~Int entier = "100";    // Coerced to 100
+ivar~Float ratio = "12.34"; // Coerced to 12.34
+```
+
+#### C. Value to String (`~String`)
+Automatically converts numbers and booleans to strings:
 
 ```text
 ivar~String code = 101; // Converted automatically to "101"
 paste(code + " is text"); // Output: 101 is text
 ```
 
-#### B. String to Number (`ivar~Number`)
-Attempts to parse the string into a valid number. If the string contains non-numeric text, a runtime `TypeError` is triggered:
-
-```text
-ivar~Number validNum = "42";  // Converted automatically to 42
-paste(validNum + 8);          // Output: 50
-
-ivar~Number invalidNum = "abc"; // [TypeError] Cannot cast value 'abc' to type 'Number'.
-```
-
-#### C. Number to Bool (`ivar~Bool`)
+#### D. Value to Bool (`~Bool`)
 Automatically coerces numbers (`1` to `TRUE`, `0` to `FALSE`):
 
 ```text
@@ -147,6 +156,7 @@ TULG provides a native bidirectional swap operator `<->` to exchange the values 
 - Both variables must already be declared.
 - Neither variable can be an immutable constant (`iconst`).
 - Both variables must share the same type (strict type safety).
+- If one variable is non-nullable (`~(Type)`), the other variable cannot transfer a `NULL` value into it.
 
 ```text
 ivar a = 10;
@@ -156,14 +166,10 @@ a <-> b;
 paste(a); // Output: 99
 paste(b); // Output: 10
 
-ivar text1 = "Hello";
-ivar text2 = "World";
-text1 <-> text2; // Valid (String <-> String)
+ivar~String nullableText = NULL;
+ivar~(String) strictText = "Hello";
 
-iconst FIXED = 100;
-a <-> FIXED; // [TypeError] Cannot swap constant 'FIXED'.
-
-a <-> text1; // [TypeError] Cannot swap variable 'a' of type 'Number' with variable 'text1' of type 'String'.
+nullableText <-> strictText; // [TypeError] Cannot swap NULL into non-nullable variable 'strictText'.
 ```
 
 ---

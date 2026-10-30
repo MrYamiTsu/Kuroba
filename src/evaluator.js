@@ -1,9 +1,16 @@
 const { printErr } = require('./errors');
 
 function getType(val) {
-    if (typeof val === 'number') return 'Number';
+    if (typeof val === 'number') {
+        if (Number.isInteger(val)) {
+            return 'Int';
+        } else {
+            return 'Float'
+        }
+    }
     if (typeof val === 'string') return 'String';
     if (typeof val === 'boolean') return 'Bool';
+    if (val === null) return 'Null';
     return 'Unknown';
 }
 
@@ -46,27 +53,34 @@ function evalVarDeclar(node, env) {
     let val = evaluate(node.value, env);
 
     if (node.explType) {
-        if (node.explType === 'String') {
-            val = String(val);
-        } else if (node.explType === 'Number') {
-            let numb = Number(val);
-            if (isNaN(numb)) {
-                printErr(`[TypeError] Cannot cast value '${val}' to type 'Number'.`);
+        if (!node.isNullable && val === null) {
+            printErr(`[TypeError] Cannot assign NULL to non-nullable variable '${node.name}' of type '(${node.explType})'.`);
+        }
+
+        if (val !== null) {
+            if (node.explType === 'String') {
+                val = String(val);
+            } else if (node.explType === 'Int' || node.explType === 'Float') {
+                let numb = Number(val);
+                if (isNaN(numb)) {
+                    printErr(`[TypeError] Cannot cast value '${val}' to type '${node.explType}'.`);
+                }
+                val = numb;
+            } else if (node.explType === 'Bool' || node.explType === 'Boolean') {
+                if (val === 0 || val === 'FALSE' || val === false) val = false;
+                else if (val === 1 || val === 'TRUE' || val === true) val = true;
+                else val = Boolean(val);
+            } else {
+                printErr(`[TypeError] Unknown explicit type '${node.explType}'. Supported types are 'String', 'Int', 'Bool' and 'Float'.`);
             }
-            val = numb;
-        } else if (node.explType === 'Bool' || node.explType === 'Boolean') {
-            if (val === 0 || val === 'FALSE' || val === false) val = false;
-            else if (val === 1 || val === 'TRUE' || val === true) val = true;
-            else val = Boolean(val);
-        } else {
-            printErr(`[TypeError] Unknown explicit type '${node.explType}'. Supported types are 'String', 'Number' and 'Bool'.`);
         }
     }
 
     env[node.name] = {
         value: val,
         type: node.explType || getType(val),
-        isConst: !!node.isConst
+        isConst: !!node.isConst,
+        isNullable: node.isNullable !== false
     };
     return val;
 }
@@ -82,6 +96,15 @@ function evalVarAssign(node, env) {
 
     let newVal = evaluate(node.value, env);
     let newType = getType(newVal);
+
+    if (!env[node.name].isNullable && newVal === null) {
+        printErr(`[TypeError] Cannot assign NULL to non-nullable variable '${node.name}' of type '(${env[node.name].type})'.`);
+    }
+
+    if (env[node.name].isNullable && newVal === null) {
+        env[node.name].value = null;
+        return null;
+    }
 
     if (env[node.name].type !== newType) {
         printErr(`[TypeError] Cannot assign type '${newType}' to variable '${node.name}' of type '${env[node.name].type}'.`);
@@ -189,6 +212,13 @@ function evalSwap(node, env) {
         printErr(`[TypeError] Cannot swap constant '${node.right}'.`);
     }
 
+    if (!env[node.left].isNullable && env[node.right].value === null) {
+        printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.left}'.`);
+    }
+    if (!env[node.right].isNullable && env[node.left].value === null) {
+        printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.right}'.`);
+    }
+
     if (env[node.left].type !== env[node.right].type) {
         printErr(`[TypeError] Cannot swap variable '${node.left}' of type '${env[node.left].type}' with variable '${node.right}' of type '${env[node.right].type}'.`);
     }
@@ -206,6 +236,7 @@ function evalPaste(node, env) {
     let val = evaluate(node.expr, env);
     if (val === true) console.log('TRUE');
     else if (val === false) console.log('FALSE');
+    else if (val === null) console.log('NULL');
     else console.log(val);
     return val;
 }
