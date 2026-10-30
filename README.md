@@ -38,6 +38,7 @@ _(Or via Node directly: `node index.js script.tulg`)_
 | **Default Fallback** | `case: ~`                       | Fallback branch (redirects here if `break;` is omitted) |
 | **Logical Ops**      | `a && b`, `a \|\| b`, `!c`      | Short-circuit boolean logic                             |
 | **Equality**         | `x == y`, `x != y`              | Strict equality (`0 == FALSE`, `1 == TRUE`)             |
+| **Swap**             | `a <-> b;`                      | Native variable swap with strict type safety            |
 
 👉 **[Read the Full Language Reference & Syntax Specification](docs/syntax.md)**  
 _(Contains detailed explanations, edge cases, error codes, and extensive code samples)_
@@ -83,6 +84,7 @@ The codebase is organized into modular components with zero third-party dependen
 
 ### Phase 1: Fundamental Operators & Types
 
+- [x] Native variable swap mechanism (`<->`)
 - [ ] Comparison operators (`<`, `>`, `<=`, `>=`)
 - [ ] Modulo operator (`%`)
 - [ ] Floating-point numbers & decimal literals (`Float`)
@@ -99,6 +101,7 @@ The codebase is organized into modular components with zero third-party dependen
 ### Phase 3: Data Structures & Collections
 
 - [ ] Dynamic Arrays / Tables (`[item1, item2, ...]`) with bracket indexing (`arr[0]`)
+- [ ] Stacks (LIFO: push/pop) and Queues (FIFO: enqueue/dequeue) collections
 - [ ] Key-Value Dictionaries / Objects (`{ key: value, ... }`) with dot & bracket access
 - [ ] Length introspection property/function (`length`) for strings, arrays, and dictionaries
 - [ ] Collection iteration (`for item in list ... end`, `for key, val in dict ... end`)
@@ -131,3 +134,4 @@ The codebase is organized into modular components with zero third-party dependen
 - [ ] Built-in standard library modules (`math.*`, `str.*`, `json.*`)
 - [ ] Interactive Debugger / Debug mode (`--debug` flag with step execution and AST inspector)
 - [ ] Interactive REPL shell (launching `tulg` with no arguments starts interactive prompt)
+- [ ] Multi-line block comments

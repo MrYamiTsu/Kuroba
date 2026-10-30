@@ -203,6 +203,15 @@ function tokenize(input) {
             continue;
         }
 
+        if (char === '<') {
+            if (input[cursor + 1] === '-' && input[cursor + 2] === '>') {
+                tokens.push({ type: 'SWAP', value: '<->', line, col})
+                cursor += 3;
+                col += 3;
+                continue;
+            }
+        }
+
         if (SYMBOLS[char]) {
             tokens.push({ type: SYMBOLS[char], value: char, line, col });
             cursor++;

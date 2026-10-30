@@ -13,12 +13,13 @@ This document provides the full, in-depth specification for **TULG** (*This Usel
 5. [Constants (`iconst`)](#5-constants-iconst)
 6. [Forced Typing & Smart Coercion (`ivar~Type`, `iconst~Type`)](#6-forced-typing--smart-coercion-ivartype-iconsttype)
 7. [Variable Reassignment & Strict Typing](#7-variable-reassignment--strict-typing)
-8. [Arithmetic & Operator Precedence](#8-arithmetic--operator-precedence)
-9. [Booleans, Strict Equality & Inequality (`==`, `!=`)](#9-booleans-strict-equality--inequality--)
-10. [Conditional Statements (`if / elif / else / end`)](#10-conditional-statements-if--elif--else--end)
-11. [Multi-Branch Matching (`given / case: / break; / case: ~`)](#11-multi-branch-matching-given--case--break--case-)
-12. [Logical Operators (`&&`, `||`, `!`)](#12-logical-operators---)
-13. [Error Handling & Diagnostics](#13-error-handling--diagnostics)
+8. [Variable Swap (`<->`)](#8-variable-swap--)
+9. [Arithmetic & Operator Precedence](#9-arithmetic--operator-precedence)
+10. [Booleans, Strict Equality & Inequality (`==`, `!=`)](#10-booleans-strict-equality--inequality--)
+11. [Conditional Statements (`if / elif / else / end`)](#11-conditional-statements-if--elif--else--end)
+12. [Multi-Branch Matching (`given / case: / break; / case: ~`)](#12-multi-branch-matching-given--case--break--case-)
+13. [Logical Operators (`&&`, `||`, `!`)](#13-logical-operators---)
+14. [Error Handling & Diagnostics](#14-error-handling--diagnostics)
 
 ---
 
@@ -138,7 +139,36 @@ score = "40"; // [TypeError] Cannot assign type 'String' to variable 'score' of 
 
 ---
 
-### 7. Arithmetic & Operator Precedence
+### 8. Variable Swap (`<->`)
+
+TULG provides a native bidirectional swap operator `<->` to exchange the values of two variables cleanly without temporary variables.
+
+#### Swap Rules:
+- Both variables must already be declared.
+- Neither variable can be an immutable constant (`iconst`).
+- Both variables must share the same type (strict type safety).
+
+```text
+ivar a = 10;
+ivar b = 99;
+
+a <-> b;
+paste(a); // Output: 99
+paste(b); // Output: 10
+
+ivar text1 = "Hello";
+ivar text2 = "World";
+text1 <-> text2; // Valid (String <-> String)
+
+iconst FIXED = 100;
+a <-> FIXED; // [TypeError] Cannot swap constant 'FIXED'.
+
+a <-> text1; // [TypeError] Cannot swap variable 'a' of type 'Number' with variable 'text1' of type 'String'.
+```
+
+---
+
+### 9. Arithmetic & Operator Precedence
 
 TULG includes full standard mathematical precedence (`*` and `/` take priority over `+` and `-`) and arbitrary parenthesis nesting:
 

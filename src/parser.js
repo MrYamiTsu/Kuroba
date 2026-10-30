@@ -260,11 +260,9 @@ function parse(tokens) {
     function parseStatement() {
         let stmt;
 
-        // Blocs terminés par 'end' (pas de point-virgule)
         if (match('IF'))    return parseIfStatement();
         if (match('GIVEN')) return parseGivenStatement();
 
-        // Instructions terminées par ';'
         if (match('IVAR', 'ICONST')) {
             stmt = parseVarDeclaration();
         }
@@ -275,6 +273,12 @@ function parse(tokens) {
             let varName = advance().value;
             advance();
             stmt = { type: 'VarAssign', name: varName, value: parseLogicOr() };
+        }
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'SWAP') {
+            let leftVar = advance().value;
+            advance();
+            let rightVar = consume('IDENTIFIER', "Expected variable name after '<->' swap operator.").value;
+            stmt = { type: 'SwapStatement', left: leftVar, right: rightVar };
         }
         else if (match('BREAK')) {
             stmt = { type: 'BreakStatement' };

@@ -22,16 +22,17 @@ function evaluate(node, env = {}) {
                 evaluate(stmt, env);
             }
             return;
-        case 'VarDeclar':   return evalVarDeclar(node, env);
-        case 'VarAssign':   return evalVarAssign(node, env);
-        case 'Variable':    return evalVariable(node, env);
-        case 'IfStatement':    return evalIf(node, env);
+        case 'VarDeclar': return evalVarDeclar(node, env);
+        case 'VarAssign': return evalVarAssign(node, env);
+        case 'Variable': return evalVariable(node, env);
+        case 'IfStatement': return evalIf(node, env);
         case 'GivenStatement': return evalGiven(node, env);
         case 'BreakStatement': return { isBreak: true };
         case 'PasteStatement': return evalPaste(node, env);
-        case 'MathExpression':    return evalMath(node, env);
-        case 'UnaryExpression':   return evalUnary(node, env);
+        case 'MathExpression': return evalMath(node, env);
+        case 'UnaryExpression': return evalUnary(node, env);
         case 'LogicalExpression': return evalLogical(node, env);
+        case 'SwapStatement': return evalSwap(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }
@@ -171,6 +172,30 @@ function evalGiven(node, env) {
         runCase(defaultIndex);
     }
     return;
+}
+
+function evalSwap(node, env) {
+    if (!(node.left in env)) {
+        printErr(`[ReferenceError] Cannot swap undeclared variable '${node.left}'.`);
+    }
+    if (!(node.right in env)) {
+        printErr(`[ReferenceError] Cannot swap undeclared variable '${node.right}'.`);
+    }
+
+    if (env[node.left].isConst) {
+        printErr(`[TypeError] Cannot swap constant '${node.left}'.`);
+    }
+    if (env[node.right].isConst) {
+        printErr(`[TypeError] Cannot swap constant '${node.right}'.`);
+    }
+
+    if (env[node.left].type !== env[node.right].type) {
+        printErr(`[TypeError] Cannot swap variable '${node.left}' of type '${env[node.left].type}' with variable '${node.right}' of type '${env[node.right].type}'.`);
+    }
+
+    let temp = env[node.left].value;
+    env[node.left].value = env[node.right].value;
+    env[node.right].value = temp;
 }
 
 // ============================================================================
