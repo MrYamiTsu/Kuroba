@@ -41,8 +41,8 @@ _(Or via Node directly: `node index.js script.tulg`)_
 | **Equality**         | `x == y`, `x != y`              | Strict equality (`0 == FALSE`, `1 == TRUE`)             |
 | **Swap**             | `a <-> b;`                      | Native variable swap with strict type safety            |
 
-👉 **[Read the Full Language Reference & Syntax Specification](docs/syntax.md)**  
-_(Contains detailed explanations, edge cases, error codes, and extensive code samples)_
+👉 **[Browse the Full TULG Documentation](docs/README.md)**  
+*(Guides for variables & types, operators, control flow, and error reference)*
 
 ---
 
@@ -110,7 +110,7 @@ The codebase is organized into modular components with zero third-party dependen
 
 ### Phase 4: Functions & Metaprogramming
 
-- [ ] Variable scoping (function scope & lexical block environments)
+- [ ] Variable scoping & lifecycle (lexical environments, `kill variable;`)
 - [ ] User-defined functions (`fn name(args) ... end`) with `return`
 - [ ] Native recursion helpers (`recur(...)` with tail-call safety)
 - [ ] Function hooking & interception (Lua-inspired function wrapping & callbacks)
