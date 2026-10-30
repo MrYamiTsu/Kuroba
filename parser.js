@@ -64,7 +64,7 @@ function parse(tokens) {
 
         if (match('LPAREN')) {
             let openParen = previous();
-            let expr = parseEquality();
+            let expr = parseLogicOr();
             if (!match('RPAREN')) {
                 printErr(`[SyntaxError: ${formatLocation(peek() || openParen)}] Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`);
             }
@@ -74,12 +74,21 @@ function parse(tokens) {
         printErr(`[SyntaxError: ${formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
     }
 
+    function parseUnary() {
+        if (match('NOT')) {
+            let op = previous().value;
+            let right = parseUnary();
+            return { type: 'UnaryExpression', operator: op, right };
+        }
+        return parsePrimary();
+    }
+
     function parseMult() {
-        let left = parsePrimary();
+        let left = parseUnary();
 
         while (match('MULT', 'DIVIDE')) {
             let op = previous().value;
-            let right = parsePrimary();
+            let right = parseUnary();
             left = { type: 'MathExpression', operator: op, left, right };
         }
 
@@ -101,7 +110,7 @@ function parse(tokens) {
     function parseEquality() {
         let left = parseAdd();
 
-        while (match('EQUALS')) {
+        while (match('EQUALS', 'NOTEQUALS')) {
             let op = previous().value;
             let right = parseAdd();
             left = { type: 'MathExpression', operator: op, left, right };
@@ -110,13 +119,41 @@ function parse(tokens) {
         return left;
     }
 
+    function parseLogicAnd() {
+        let left = parseEquality();
+
+        while (match('AND')) {
+            let op = previous().value;
+            let right = parseEquality();
+
+            left = { type: 'LogicalExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    function parseLogicOr() {
+        let left = parseLogicAnd();
+
+        while (match('OR')) {
+            let op = previous().value;
+            let right = parseLogicAnd();
+
+            left = { type: 'LogicalExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
     function parseCondition() {
         if (match('LPAREN')) {
-            let cond = parseEquality();
+            let cond = parseLogicOr();
             consume('RPAREN', "Unclosed parenthesis in condition.");
             return cond;
         } else if (check('IDENTIFIER')) {
             return { type: 'Variable', name: advance().value };
+        } else if (check('NOT')) {
+            return parseUnary();
         } else {
             printErr("[SyntaxError] Comparisons in conditions must be wrapped in parentheses '(...)'.");
         }
@@ -208,23 +245,23 @@ function parse(tokens) {
 
             let varName = consume('IDENTIFIER', "Expected variable name in 'ivar' declaration.").value;
             consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
-            let value = parseEquality();
+            let value = parseLogicOr();
 
             stmt = { type: 'VarDeclar', name: varName, explType, value };
         }
         else if (match('PASTE')) {
-            stmt = { type: 'PasteStatement', expr: parseEquality() };
+            stmt = { type: 'PasteStatement', expr: parseLogicOr() };
         }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'ASSIGN') {
             let varName = advance().value;
             advance();
-            stmt = { type: 'VarAssign', name: varName, value: parseEquality() };
+            stmt = { type: 'VarAssign', name: varName, value: parseLogicOr() };
         }
         else if (match('BREAK')) {
             stmt = { type: 'BreakStatement' };
         }
         else {
-            stmt = parseEquality();
+            stmt = parseLogicOr();
         }
 
         consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");

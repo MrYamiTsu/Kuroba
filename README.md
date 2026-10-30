@@ -161,11 +161,11 @@ paste("Hello, " + firstName + " " + lastName + "!");
 
 ---
 
-### 7. Booleans & Strict Equality (`==`)
+### 7. Booleans, Strict Equality & Inequality (`==`, `!=`)
 TULG supports booleans with strict syntax and custom coercion semantics:
 
 - **Literals**: Boolean literals must always be uppercase: `TRUE` and `FALSE`.
-- **Strict Equality (`==`)**: Evaluates expressions and checks equality. Standard mathematical operations (`+`, `-`, `*`, `/`) are evaluated before `==`.
+- **Strict Equality (`==`) & Inequality (`!=`)**: Evaluates expressions and checks equality. Standard mathematical operations (`+`, `-`, `*`, `/`) are evaluated before `==` and `!=`.
 - **Special Truthy Coercion**: In TULG, `0 == FALSE` and `1 == TRUE` (and vice-versa) evaluate to `TRUE`.
 
 ```text
@@ -173,9 +173,12 @@ paste(TRUE);          // Output: TRUE
 paste(FALSE);         // Output: FALSE
 paste(1 + 1 == 2);    // Output: TRUE
 paste(10 == 20);      // Output: FALSE
+paste(10 != 20);      // Output: TRUE
 
 // Special rules:
 paste(0 == FALSE);    // Output: TRUE
+paste(0 != FALSE);    // Output: FALSE
+paste(1 != TRUE);     // Output: FALSE
 paste(1 == TRUE);     // Output: TRUE
 paste(0 == TRUE);     // Output: FALSE
 
@@ -238,6 +241,39 @@ end
 
 ---
 
+
+### 10. Logical Operators (`&&`, `||`, `!`)
+
+TULG supports standard short-circuit logical operators that integrate with its custom boolean coercion rules:
+
+- **`!` (Logical NOT)**: Unary operator that inverts truthiness (`!TRUE` -> `FALSE`, `!0` -> `TRUE`, `!1` -> `FALSE`). Can be used directly in conditions without parentheses: `if !isBusy then`.
+- **`&&` (Logical AND)**: Returns `TRUE` only if both operands are truthy. Short-circuits immediately if the left side is falsy.
+- **`||` (Logical OR)**: Returns `TRUE` if either operand is truthy. Short-circuits immediately if the left side is truthy.
+
+```text
+ivar isReady = TRUE;
+ivar isBusy = FALSE;
+
+paste(!isReady);      // Output: FALSE
+paste(!isBusy);       // Output: TRUE
+paste(TRUE && TRUE);  // Output: TRUE
+paste(TRUE && FALSE); // Output: FALSE
+paste(TRUE || FALSE); // Output: TRUE
+
+ivar score = 100;
+ivar vip = TRUE;
+
+if (score == 100 && vip) then
+    paste("VIP score granted!");
+end
+
+if !isBusy then
+    paste("Free to take tasks!");
+end
+```
+
+---
+
 ## Error Handling & Diagnostics
 
 TULG provides precise, formatted errors in bright red directly to the console without internal stack traces:
@@ -288,13 +324,13 @@ The codebase is organized into modular components:
 - [x] Strict variable reassignment (`x = 20;`)
 - [x] Single-line comments (`~~`)
 - [x] Professional colored error reporting (`printErr`)
-- [x] Boolean literals (`TRUE`, `FALSE`) and strict equality (`==`) with special rules (`0 == FALSE`, `1 == TRUE`)
+- [x] Boolean literals (`TRUE`, `FALSE`), strict equality (`==`) and inequality (`!=`) with special rules (`0 == FALSE`, `1 == TRUE`)
 - [x] Conditional branch statements (`if / elif / else / end`)
 - [x] Multi-branch conditional matching (`given / case: / break; / case: ~`)
+- [x] Logical operators (`&&`, `||`, `!`) with short-circuit evaluation
 
 ### Upcoming: Control Flow & Logic
-- [ ] Comparison operators (`!=`, `<`, `>`, `<=`, `>=`)
-- [ ] Logical operators (`&&`, `||`, `!`)
+- [ ] Comparison operators (`<`, `>`, `<=`, `>=`)
 - [ ] Loop structures (`while` / `for`)
 
 ### Upcoming: Functions & Metaprogramming

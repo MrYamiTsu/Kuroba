@@ -143,6 +143,39 @@ function tokenize(input) {
             continue;
         }
 
+        if (char === '&') {
+            if (input[cursor + 1] === '&') {
+                tokens.push({ type: 'AND', value: '&&', line, col });
+                cursor += 2;
+                col += 2;
+                continue;
+            }
+            printErr(`[SyntaxError: Line ${line}, Col ${col}] Unexpected single '&'. Did you mean '&&'?`);
+        }
+
+        if (char === '|') {
+            if (input[cursor + 1] === '|') {
+                tokens.push({ type: 'OR', value: '||', line, col });
+                cursor += 2;
+                col += 2;
+                continue;
+            }
+            printErr(`[SyntaxError: Line ${line}, Col ${col}] Unexpected single '|'. Did you mean '||'?`);
+        }
+
+        if (char === '!') {
+            if (input[cursor + 1] === '=') {
+                tokens.push({ type: 'NOTEQUALS', value: '!=', line, col });
+                cursor += 2;
+                col += 2;
+            } else {
+                tokens.push({ type: 'NOT', value: '!', line, col });
+                cursor++;
+                col++;
+            }
+            continue;
+        }
+
         if (SYMBOLS[char]) {
             tokens.push({ type: SYMBOLS[char], value: char, line, col });
             cursor++;

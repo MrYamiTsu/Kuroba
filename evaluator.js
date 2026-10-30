@@ -180,9 +180,45 @@ function evaluate(node, env = {}) {
                         printErr("[MathError] Division by zero is undefined.");
                     }
                     return left / right;
+                case '!=':
+                    if ((left === 0 && right === false) || (left === false && right === 0)) return false;
+                    if ((left === 1 && right === true) || (left === true && right === 1)) return false;
+                    return left !== right;
                 default:
                     printErr(`[RuntimeError] Unsupported operator '${node.operator}'.`);
             }
+            break;
+        }
+
+        case 'UnaryExpression': {
+            let right = evaluate(node.right, env);
+
+            if (node.operator === '!') {
+                let isTrue = (right === true || right === 1);
+                return !isTrue;
+            }
+
+            printErr(`[RuntimeError] Unsupported unary operator '${node.operator}'.`);
+            break;
+        }
+
+        case 'LogicalExpression': {
+            let left = evaluate(node.left, env);
+            let isTrue = (left === true || left === 1);
+
+            if (node.operator === '&&') {
+                if (!isTrue) return false;
+                let right = evaluate(node.right, env);
+                return (right === true || right === 1);
+            }
+
+            if (node.operator === '||') {
+                if (isTrue) return true;
+                let right = evaluate(node.right, env);
+                return (right === true || right === 1);
+            }
+
+            printErr(`[RuntimeError] Unsupported logical operator '${node.operator}'.`);
             break;
         }
 
