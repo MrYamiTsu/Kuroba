@@ -44,7 +44,7 @@ _(Or via Node directly: `node index.js script.tulg`)_
 | **Retype**           | `score~String = "A";`           | Explicit variable retyping / transtyping                |
 | **Swap**             | `a <-> b;`                      | Native variable swap with strict type safety            |
 
-👉 **[Browse the Full TULG Documentation](docs/README.md)**  
+-> **[Browse the Full TULG Documentation](docs/README.md)**  
 _(Guides for variables & types, operators, control flow, and error reference)_
 
 ---
@@ -86,7 +86,7 @@ The codebase is organized into modular components with zero third-party dependen
 - [x] Multi-branch conditional matching (`given / case: / break; / case: ~`)
 - [x] Logical operators (`&&`, `||`, `!`) with short-circuit evaluation
 
-### Phase 1: Fundamental Operators & Types
+### Phase 1: Fundamental Operators & Types (Completed - v1.0.1)
 
 - [x] Native variable swap mechanism (`<->`)
 - [x] Renamed `Number` to `Int` and added floating-point decimals (`Float`)
