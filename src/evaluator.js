@@ -14,7 +14,7 @@ function getType(val) {
     return 'Unknown';
 }
 
-function isTulgEqual(a, b) {
+function isKurobaEqual(a, b) {
     if ((a === 0 && b === false) || (a === false && b === 0)) return true;
     if ((a === 1 && b === true) || (a === true && b === 1)) return true;
     return a === b;
@@ -213,7 +213,7 @@ function evalGiven(node, env) {
             defaultIndex = i;
         } else {
             let val = evaluate(c.value, env);
-            if (isTulgEqual(val, targetVal) && matchedIndex === -1) {
+            if (isKurobaEqual(val, targetVal) && matchedIndex === -1) {
                 matchedIndex = i;
             }
         }
@@ -305,9 +305,9 @@ function evalMath(node, env) {
 
     switch (node.operator) {
         case '==':
-            return isTulgEqual(left, right);
+            return isKurobaEqual(left, right);
         case '!=':
-            return !isTulgEqual(left, right);
+            return !isKurobaEqual(left, right);
         case '+':
             return left + right;
         case '-':

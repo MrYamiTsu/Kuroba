@@ -1,6 +1,6 @@
 # Error Reference
 
-TULG prints colored diagnostic errors directly to the console with line and column information.
+Kuroba prints colored diagnostic errors directly to the console with line and column information.
 
 ## SyntaxError
 

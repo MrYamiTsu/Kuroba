@@ -9,7 +9,7 @@ Evaluates boolean expressions:
 - Comparisons and compound expressions must be wrapped in `(...)`.
 - Single variables or `!` checks do not require parentheses.
 
-```tulg
+```krb
 ivar score = 75;
 
 if (score == 100) then
@@ -37,9 +37,9 @@ Branch selector matching a target value against `case:` values:
 - `case: <value>` matches when equal to the target.
 - `break;` exits the `given` block.
 - `case: ~` is the default fallback.
-- **TULG Redirect Rule**: If `break;` is omitted in a matching case, execution does not bleed into the next case — it jumps straight to `case: ~`.
+- **Kuroba Redirect Rule**: If `break;` is omitted in a matching case, execution does not bleed into the next case — it jumps straight to `case: ~`.
 
-```tulg
+```krb
 ivar role = "admin";
 
 given role then
@@ -61,7 +61,7 @@ Terminates the program immediately or serves as an inline guard clause without r
 - `exit();` — Exits immediately with code `0`.
 - `exit(condition);` — Exits with code `0` if the expression evaluates to truthy (`TRUE` or `1`). If falsy (`FALSE` or `0`), it acts as a no-op and execution continues.
 
-```tulg
+```krb
 ivar hp = 100;
 
 ~~ Guard clause: does not exit because hp <= 0 is FALSE

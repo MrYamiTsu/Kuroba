@@ -1,6 +1,6 @@
-# TULG Documentation
+# Kuroba Documentation
 
-Welcome to the documentation for **TULG** (*This Useless Language*).
+Welcome to the documentation for **Kuroba** (*KRB*).
 
 ## Guides by Topic
 
@@ -20,7 +20,7 @@ Welcome to the documentation for **TULG** (*This Useless Language*).
 
 ## Language Cheatsheet
 
-```tulg
+```krb
 ~~ Variables and constants
 ivar count = 10;
 iconst PI = 3.14;
