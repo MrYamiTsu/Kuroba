@@ -275,11 +275,24 @@ function evalSwap(node, env) {
 // ============================================================================
 
 function evalPaste(node, env) {
+    if (node.isEmpty) {
+        if (node.newLine) console.log();
+        return null;
+    }
+
     let val = evaluate(node.expr, env);
-    if (val === true) console.log('TRUE');
-    else if (val === false) console.log('FALSE');
-    else if (val === null) console.log('NULL');
-    else console.log(val);
+    let txt = val;
+
+    if (val === true) txt = 'TRUE';
+    else if (val === false) txt = 'FALSE';
+    else if (val === null) txt = 'NULL';
+
+    if (node.newLine) {
+        console.log(txt);
+    } else {
+        process.stdout.write(String(txt));
+    }
+
     return val;
 }
 

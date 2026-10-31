@@ -171,7 +171,7 @@ node index.js path/to/script.krb
 
 | Feature            | Syntax Example                  | Description                                             |
 | :----------------- | :------------------------------ | :------------------------------------------------------ |
-| **Output**         | `paste("Hello!");`              | Prints value or expression to stdout                    |
+| **Output**         | `paste("Hi");` / `pasteLn("Hi");` | Prints to stdout without newline (`paste`) or with newline (`pasteLn`) |
 | **Comments**       | `~~ comment`                    | Single-line comment to end of line                      |
 | **Variables**      | `ivar score = 100;`             | Variable declaration with type inference                |
 | **Constants**      | `iconst PI = 3.14;`             | Immutable constant declaration                          |
@@ -259,9 +259,9 @@ Kuroba/
 ### Phase 2: Iteration & Interactive Console `(In Progress)`
 
 - [x] Process termination & inline conditional guard (`exit()`, `exit(cond)`)
+- [x] Output formatting: `paste` (no newline) vs `pasteLn` (with newline)
 - [ ] Loop structures (`while`, `do ... while`, `for`, `break;`, `continue;`)
 - [ ] Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
-- [ ] Output formatting: `paste` (no newline) vs `pasteLn` (with newline)
 - [ ] Interactive console input: `copy(...)` (blocking execution with prompt)
 
 ### Phase 3: Data Structures & Collections
@@ -289,21 +289,28 @@ Kuroba/
 - [ ] Interfaces & structural contracts (`interface ... end`)
 - [ ] Namespaces (`namespace Name ... end`) for cross-file architecture
 
-### Phase 6: Error Handling, Asynchrony & Modules
+### Phase 6: Exception Handling & Modular Architecture
 
 - [ ] Exception throwing and handling (`throw`, `try / catch / finally / end`)
-- [ ] Asynchronous timers (`sleep(ms)`)
+- [ ] Package architecture with strict metadata headers (`package Name { ... }`)
+- [ ] Lightweight library headers (`library Name;`)
+- [ ] Unified import system (`import Package;`)
+- [ ] Package aliasing (`import Package alias Short;` and prefix drop `import Package alias ~;`)
+- [ ] Selective library imports with signature tilde syntax (`import Package ~(LibA, LibB);`)
+- [ ] Combined selective imports with prefix drop (`import Package ~(LibA) alias ~;`)
 - [ ] Multi-file module imports & exports (`import "file.krb"`, `export`)
-- [ ] File I/O (`pasteInFile("path.txt", data)`, `copyInFile("path.txt")`)
-- [ ] System clock & timestamp (`time.now()`)
-- [ ] Command-line arguments inspection (`args`)
 
-### Phase 7: Standard Library & Developer Tooling
+### Phase 7: Standard Library (`Std`) & Developer Tooling
 
-- [ ] Built-in standard library (`math.*`, `str.*`, `json.*`)
-- [ ] Interactive REPL shell
-- [ ] CLI Debugger (`--debug` step execution)
-- [ ] Multi-line block comments
+- [ ] Built-in `Std` Package:
+  - `Std.Math` (trigonometry, rounding, powers, constants)
+  - `Std.Time` (clock, timestamps, async delays `sleep(ms)`)
+  - `Std.IO` (file reading & writing: `pasteInFile`, `copyInFile`)
+  - `Std.Json` (JSON parsing & stringifying)
+  - `Std.Sys` (command-line arguments `args`, environment variables `env`)
+- [ ] Multi-line block comments (`~~~ ... ~~~`)
+- [ ] Interactive REPL shell (launching `kb` with no arguments starts interactive shell)
+- [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
 
 ---
 

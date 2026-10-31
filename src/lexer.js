@@ -5,21 +5,22 @@ const { printErr } = require('./errors');
 // ============================================================================
 
 const KEYWORDS = {
-    'TRUE':   { type: 'BOOL',   value: true },
-    'FALSE':  { type: 'BOOL',   value: false },
-    'NULL':   { type: 'NULL',   value: null },
-    'paste':  { type: 'PASTE',  value: 'paste' },
-    'ivar':   { type: 'IVAR',   value: 'ivar' },
-    'iconst': { type: 'ICONST', value: 'iconst' },
-    'if':     { type: 'IF',     value: 'if' },
-    'then':   { type: 'THEN',   value: 'then' },
-    'elif':   { type: 'ELIF',   value: 'elif' },
-    'else':   { type: 'ELSE',   value: 'else' },
-    'end':    { type: 'END',    value: 'end' },
-    'given':  { type: 'GIVEN',  value: 'given' },
-    'case':   { type: 'CASE',   value: 'case' },
-    'break':  { type: 'BREAK',  value: 'break' },
-    'exit':   { type: 'EXIT',  value: 'exit' },
+    'TRUE':    { type: 'BOOL',   value: true },
+    'FALSE':   { type: 'BOOL',   value: false },
+    'NULL':    { type: 'NULL',   value: null },
+    'paste':   { type: 'PASTE',  value: 'paste' },
+    'pasteLn': { type: 'PASTELN',  value: 'pasteLn' },
+    'ivar':    { type: 'IVAR',   value: 'ivar' },
+    'iconst':  { type: 'ICONST', value: 'iconst' },
+    'if':      { type: 'IF',     value: 'if' },
+    'then':    { type: 'THEN',   value: 'then' },
+    'elif':    { type: 'ELIF',   value: 'elif' },
+    'else':    { type: 'ELSE',   value: 'else' },
+    'end':     { type: 'END',    value: 'end' },
+    'given':   { type: 'GIVEN',  value: 'given' },
+    'case':    { type: 'CASE',   value: 'case' },
+    'break':   { type: 'BREAK',  value: 'break' },
+    'exit':    { type: 'EXIT',  value: 'exit' },
 };
 
 const SYMBOLS = {
