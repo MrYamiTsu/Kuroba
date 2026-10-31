@@ -1,6 +1,6 @@
 # TULG — This Useless Language
 
-**TULG** (_This Useless Language_) is a lightweight, interpreted programming language built from scratch in Node.js. It features a recursive descent parser, optional static typing with automatic type inference, smart type coercion, Lua-style block syntax, unique control-flow semantics, and clean colored diagnostic errors.
+**TULG** (_This Useless Language_) is a lightweight, zero-dependency interpreted programming language built from scratch in Node.js. Blending ideas and paradigms from multiple languages, it features a recursive descent parser, optional static typing with automatic type inference, smart type coercion, null-safety, a native swap operator (`<->`), unique control-flow semantics, and clean colored diagnostic errors.
 
 ---
 
@@ -98,7 +98,8 @@ The codebase is organized into modular components with zero third-party dependen
 
 ### Phase 2: Iteration & Interactive Console
 
-- [ ] Loop structures (`while`, `do ... while`, `for`, `continue;`)
+- [ ] Loop structures (`while`, `do ... while`, `for`, `break;`, `continue;`)
+- [ ] Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
 - [ ] Distinct console output: `paste` (no newline) vs `pasteLn` (with newline)
 - [ ] User console input: `copy(...)` (with optional prompt, blocking execution)
 - [ ] Process termination & exit codes (`exit(code)`)
@@ -118,21 +119,25 @@ The codebase is organized into modular components with zero third-party dependen
 - [ ] Native recursion helpers (`recur(...)` with tail-call safety)
 - [ ] Function hooking & interception (Lua-inspired function wrapping & callbacks)
 
-### Phase 5: Error Handling, Asynchrony & System Modules
+### Phase 5: Object-Oriented Programming (OOP) & Namespaces
 
-- [ ] Exception & error handling (`try / catch / finally / end`)
+- [ ] Class definitions (`class ... end`) with constructors & methods
+- [ ] Single inheritance (`class Sub extends Super ... end`) and `super(...)` calls
+- [ ] Instance reference (`this` / `self`)
+- [ ] Encapsulation & Access Modifiers (`public` / `private`)
+- [ ] Static members (`static fn ...`, `static ivar ...`)
+- [ ] Interfaces & structural contracts (`interface ... end`)
+- [ ] Namespaces (`namespace Name ... end`) to organize classes, prevent collisions, and structure large architectures
+
+### Phase 6: Error Handling, Asynchrony & System Modules
+
+- [ ] Exception throwing and handling (`throw`, `try / catch / finally / end`)
 - [ ] Asynchronous timer / delays (`sleep(ms)`)
-- [ ] Multi-file module imports (`import "file.tulg"`)
+- [ ] Multi-file module imports & exports (`import "file.tulg"`, `export`)
 - [ ] File I/O: `pasteInFile("path.txt", data)` (write/append)
 - [ ] File I/O: `copyInFile("path.txt")` (read file contents)
 - [ ] System clock & timestamp access (`time.now()`)
 - [ ] Command-line arguments access (`args` list)
-
-### Phase 6: Object-Oriented Programming (OOP)
-
-- [ ] Class definitions (`class ... end`) with constructors & methods
-- [ ] Encapsulation & Access Modifiers (`public` / `private`)
-- [ ] Interfaces & structural contracts
 
 ### Phase 7: Standard Library & Debugging Tools
 
