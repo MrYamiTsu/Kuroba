@@ -1,12 +1,13 @@
 <div align="center">
 
 # Kuroba — KRB
+
 <sub>A minimalist, zero-dependency interpreted language</sub>
 
 <br/>
 <br/>
 
-*Blending ideas from multiple modern languages into a clean AST interpreter with hybrid typing, native swap, and expressive control flow.*
+_Blending ideas from multiple modern languages into a clean AST interpreter with hybrid typing, native swap, and expressive control flow._
 
 <br/>
 
@@ -133,8 +134,8 @@ end
 Clone the repository:
 
 ```bash
-git clone https://github.com/MrYamiTsu/This-Useless-Language.git
-cd This-Useless-Language
+git clone https://github.com/MrYamiTsu/Kuroba.git
+cd Kuroba
 ```
 
 ### Running Kuroba Scripts
