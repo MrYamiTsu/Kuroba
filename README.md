@@ -41,10 +41,11 @@ _(Or via Node directly: `node index.js script.tulg`)_
 | **Equality**         | `x == y`, `x != y`              | Strict equality (`0 == FALSE`, `1 == TRUE`)             |
 | **Comparisons**      | `<`, `>`, `<=`, `>=`            | Order comparisons with arithmetic precedence            |
 | **Modulo**           | `10 % 3`                        | Remainder operator                                      |
+| **Retype**           | `score~String = "A";`           | Explicit variable retyping / transtyping                |
 | **Swap**             | `a <-> b;`                      | Native variable swap with strict type safety            |
 
 👉 **[Browse the Full TULG Documentation](docs/README.md)**  
-*(Guides for variables & types, operators, control flow, and error reference)*
+_(Guides for variables & types, operators, control flow, and error reference)_
 
 ---
 
@@ -93,7 +94,7 @@ The codebase is organized into modular components with zero third-party dependen
 - [x] Non-nullable type enforcement (`~(Type)`)
 - [x] Comparison operators (`<`, `>`, `<=`, `>=`)
 - [x] Modulo operator (`%`)
-- [ ] Explicit variable transtyping (`Type~variable`, e.g. `String~score = 100;`)
+- [x] Explicit variable transtyping (`var~Type = val;`)
 
 ### Phase 2: Iteration & Interactive Console
 

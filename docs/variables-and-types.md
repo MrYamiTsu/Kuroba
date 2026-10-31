@@ -61,3 +61,21 @@ score = 20;                  ~~ Allowed (Int -> Int)
 score = "high";              ~~ TypeError: Cannot assign type 'String' to variable 'score' of type 'Int'.
 ```
 
+## Dynamic Retyping / Transtyping (`var~Type = ...`)
+
+To explicitly change the type or nullability of an existing variable, append `~Type` or `~(Type)` to the variable name during assignment:
+
+```tulg
+ivar score = 100;            ~~ Inferred as Int
+score~String = "Top Score";  ~~ Retyped to String
+score~Float = 99.5;          ~~ Retyped to Float
+
+~~ Dynamically enforcing non-nullability:
+ivar~String role = "guest";  ~~ Nullable String
+role~(String) = "admin";     ~~ Retyped to non-nullable (String)
+role = NULL;                 ~~ TypeError: Cannot assign NULL to non-nullable variable 'role' of type '(String)'.
+```
+
+Constants (`iconst`) cannot be retyped and will produce a `TypeError`.
+
+

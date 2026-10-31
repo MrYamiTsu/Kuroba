@@ -293,6 +293,25 @@ function parse(tokens) {
             advance();
             stmt = { type: 'VarAssign', name: varName, value: parseLogicOr() };
         }
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'TILDE') {
+            let varName = advance().value;
+            advance();
+
+            let isNullable = true;
+            let targetType = null;
+
+            if (match('LPAREN')) {
+                isNullable = false;
+                targetType = consume('IDENTIFIER', "Expected type identifier inside '~(...)'.").value;
+                consume('RPAREN', "Expected closing ')' after non-nullable type.");
+            } else {
+                targetType = consume('IDENTIFIER', "Expected type identifier after '~'.").value;
+            }
+
+            consume('ASSIGN', `Missing '=' assignment operator after '${varName}~${targetType}'.`);
+            let value = parseLogicOr();
+            stmt = { type: 'VarRetype', name: varName, targetType, isNullable, value };
+        }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'SWAP') {
             let leftVar = advance().value;
             advance();

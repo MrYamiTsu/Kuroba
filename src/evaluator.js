@@ -39,6 +39,7 @@ function evaluate(node, env = {}) {
         case 'MathExpression': return evalMath(node, env);
         case 'UnaryExpression': return evalUnary(node, env);
         case 'LogicalExpression': return evalLogical(node, env);
+        case 'VarRetype': return evalVarRetype(node, env);
         case 'SwapStatement': return evalSwap(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
@@ -119,6 +120,46 @@ function evalVariable(node, env) {
         return env[node.name].value;
     }
     printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+}
+
+function evalVarRetype(node, env) {
+    if (!(node.name in env)) {
+        printErr(`[ReferenceError] Cannot retype undeclared variable '${node.name}'.`);
+    }
+
+    if (env[node.name].isConst) {
+        printErr(`[TypeError] Cannot retype constant '${node.name}'.`);
+    }
+
+    let val = evaluate(node.value, env);
+
+    if (!node.isNullable && val === null) {
+        printErr(`[TypeError] Cannot assign NULL to non-nullable variable '${node.name}' of type '(${node.targetType})'.`);
+    }
+    
+    if (val !== null) {
+        if (node.targetType === 'String') {
+            val = String(val);
+        } else if (node.targetType === 'Int' || node.targetType === 'Float') {
+            let numb = Number(val);
+            if (isNaN(numb)) {
+                printErr(`[TypeError] Cannot cast value '${val}' to type '${node.targetType}'.`);
+            }
+            val = numb;
+        } else if (node.targetType === 'Bool' || node.targetType === 'Boolean') {
+            if (val === 0 || val === 'FALSE' || val === false) val = false;
+            else if (val === 1 || val === 'TRUE' || val === true) val = true;
+            else val = Boolean(val);
+        } else {
+            printErr(`[TypeError] Unknown explicit type '${node.targetType}'. Supported types are 'String', 'Int', 'Bool' and 'Float'.`);
+        }
+    }
+
+    env[node.name].value = val;
+    env[node.name].type = node.targetType;
+    env[node.name].isNullable = node.isNullable;
+
+    return val;
 }
 
 // ============================================================================

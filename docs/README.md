@@ -5,7 +5,7 @@ Welcome to the documentation for **TULG** (*This Useless Language*).
 ## Guides by Topic
 
 1. [Variables & Types](variables-and-types.md)
-   Declaration (`ivar`), constants (`iconst`), type coercion, nullability `~(Type)`, and strict reassignment.
+   Declaration (`ivar`), constants (`iconst`), type coercion, nullability `~(Type)`, strict reassignment, and dynamic retyping (`var~Type = val;`).
 
 2. [Operators & Expressions](operators.md)
    Arithmetic precedence, equality (`==`, `!=`), short-circuit logic (`&&`, `||`, `!`), and native swap (`<->`).
