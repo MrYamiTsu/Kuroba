@@ -288,6 +288,17 @@ function parse(tokens) {
         else if (match('PASTE')) {
             stmt = { type: 'PasteStatement', expr: parseLogicOr() };
         }
+        else if (match('EXIT')) {
+            consume('LPAREN', "Expected '(' after 'exit'.");
+            
+            let condition = null;
+            if (!check('RPAREN')) {
+                condition = parseLogicOr();
+            }
+
+            consume('RPAREN', "Expected ')' after 'exit' condition.");
+            stmt = { type: 'ExitStatement', condition };
+        }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'ASSIGN') {
             let varName = advance().value;
             advance();

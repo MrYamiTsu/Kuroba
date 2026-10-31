@@ -19,6 +19,7 @@ const KEYWORDS = {
     'given':  { type: 'GIVEN',  value: 'given' },
     'case':   { type: 'CASE',   value: 'case' },
     'break':  { type: 'BREAK',  value: 'break' },
+    'exit':   { type: 'EXIT',  value: 'exit' },
 };
 
 const SYMBOLS = {

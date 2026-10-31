@@ -43,6 +43,7 @@ _(Or via Node directly: `node index.js script.tulg`)_
 | **Modulo**           | `10 % 3`                        | Remainder operator                                      |
 | **Retype**           | `score~String = "A";`           | Explicit variable retyping / transtyping                |
 | **Swap**             | `a <-> b;`                      | Native variable swap with strict type safety            |
+| **Exit**             | `exit();` / `exit(cond);`       | Immediate exit or conditional inline guard clause       |
 
 -> **[Browse the Full TULG Documentation](docs/README.md)**  
 _(Guides for variables & types, operators, control flow, and error reference)_
@@ -102,7 +103,7 @@ The codebase is organized into modular components with zero third-party dependen
 - [ ] Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
 - [ ] Distinct console output: `paste` (no newline) vs `pasteLn` (with newline)
 - [ ] User console input: `copy(...)` (with optional prompt, blocking execution)
-- [ ] Process termination & exit codes (`exit(code)`)
+- [x] Process termination: `exit()` and conditional guard `exit(cond)`
 
 ### Phase 3: Data Structures & Collections
 

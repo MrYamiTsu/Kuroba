@@ -11,7 +11,7 @@ Welcome to the documentation for **TULG** (*This Useless Language*).
    Arithmetic precedence, equality (`==`, `!=`), short-circuit logic (`&&`, `||`, `!`), and native swap (`<->`).
 
 3. [Control Flow](control-flow.md)
-   Conditional blocks (`if / elif / else / end`) and multi-branch matching (`given / case: / break; / case: ~`).
+   Conditional blocks (`if / elif / else / end`), multi-branch matching (`given / case:`), and process termination (`exit(...)`).
 
 4. [Error Reference](errors.md)
    Overview of runtime and syntax diagnostics (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`).

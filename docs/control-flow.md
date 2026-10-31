@@ -54,3 +54,25 @@ given role then
 end
 ```
 
+## Process Termination (`exit(...)`)
+
+Terminates the program immediately or serves as an inline guard clause without requiring an `if` block:
+
+- `exit();` — Exits immediately with code `0`.
+- `exit(condition);` — Exits with code `0` if the expression evaluates to truthy (`TRUE` or `1`). If falsy (`FALSE` or `0`), it acts as a no-op and execution continues.
+
+```tulg
+ivar hp = 100;
+
+~~ Guard clause: does not exit because hp <= 0 is FALSE
+exit(hp <= 0);
+
+paste("Player is alive!");
+
+~~ Immediate exit
+exit();
+
+paste("This line is never reached.");
+```
+
+
