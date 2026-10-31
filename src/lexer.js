@@ -30,6 +30,7 @@ const SYMBOLS = {
     '(': 'LPAREN',
     ')': 'RPAREN',
     ':': 'COLON',
+    '%': 'MODULO'
 };
 
 // ============================================================================
@@ -43,7 +44,8 @@ function tokenize(input) {
     let col = 1;
 
     const isDigit = (c) => c >= '0' && c <= '9';
-    const isLetter = (c) => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    const isLetter = (c) => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_';
+    const isIdentChar = (c) => isLetter(c) || isDigit(c);
 
     while (cursor < input.length) {
         let char = input[cursor];
@@ -154,7 +156,7 @@ function tokenize(input) {
             let startCol = col;
             let word = '';
 
-            while (cursor < input.length && isLetter(input[cursor])) {
+            while (cursor < input.length && isIdentChar(input[cursor])) {
                 word += input[cursor];
                 cursor++;
                 col++;
@@ -225,6 +227,29 @@ function tokenize(input) {
                 col += 3;
                 continue;
             }
+            if (input[cursor + 1] === '=') {
+                tokens.push({ type: 'LESSEQUAL', value: '<=', line, col });
+                cursor += 2;
+                col += 2;
+                continue;
+            }
+            tokens.push({ type: 'LESS', value: '<', line, col });
+            cursor++;
+            col++;
+            continue;
+        }
+
+        if (char === '>') {
+            if (input[cursor + 1] === '=') {
+                tokens.push({ type: 'GREATEREQUAL', value: '>=', line, col });
+                cursor += 2;
+                col += 2;
+                continue;
+            }
+            tokens.push({ type: 'GREATER', value: '>', line, col });
+            cursor++;
+            col++;
+            continue;
         }
 
         if (SYMBOLS[char]) {

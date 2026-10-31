@@ -93,7 +93,7 @@ function parse(tokens) {
     function parseMult() {
         let left = parseUnary();
 
-        while (match('MULT', 'DIVIDE')) {
+        while (match('MULT', 'DIVIDE', 'MODULO')) {
             let op = previous().value;
             let right = parseUnary();
             left = { type: 'MathExpression', operator: op, left, right };
@@ -114,12 +114,24 @@ function parse(tokens) {
         return left;
     }
 
-    function parseEquality() {
+    function parseComparaison() {
         let left = parseAdd();
+
+        while (match('LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL')) {
+            let op = previous().value;
+            let right = parseAdd();
+            left = { type: 'MathExpression', operator: op, left, right};
+        }
+
+        return left;
+    }
+
+    function parseEquality() {
+        let left = parseComparaison();
 
         while (match('EQUALS', 'NOTEQUALS')) {
             let op = previous().value;
-            let right = parseAdd();
+            let right = parseComparaison();
             left = { type: 'MathExpression', operator: op, left, right };
         }
 

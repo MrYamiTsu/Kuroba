@@ -1,12 +1,13 @@
 # Operators & Expressions
 
-## Arithmetic (`+`, `-`, `*`, `/`)
+## Arithmetic (`+`, `-`, `*`, `/`, `%`)
 
 Follows standard mathematical precedence. Parentheses can be nested freely:
 
 ```tulg
 ivar result = 10 + 2 * 3;     ~~ 16
 ivar forced = (10 + 2) * 3;   ~~ 36
+ivar remainder = 14 % 5;      ~~ 4
 ```
 
 Strings concatenate with `+`:
@@ -15,9 +16,30 @@ Strings concatenate with `+`:
 ivar greeting = "Hello, " + "World!";
 ```
 
-Division by zero raises a `MathError`:
+Division or modulo by zero raises a `MathError`:
 ```tulg
-ivar err = 10 / 0;            ~~ MathError: Division by zero is undefined.
+ivar err1 = 10 / 0;           ~~ MathError: Division by zero is undefined.
+ivar err2 = 10 % 0;           ~~ MathError: Division or modulo by zero is undefined.
+```
+
+## Comparisons (`<`, `>`, `<=`, `>=`)
+
+Order comparisons evaluate to `TRUE` or `FALSE`:
+
+```tulg
+paste(10 < 20);               ~~ TRUE
+paste(10 > 20);               ~~ FALSE
+paste(15 <= 15);              ~~ TRUE
+paste(20 >= 25);              ~~ FALSE
+```
+
+Can be used in conditions with standard precedence (arithmetic runs before comparison):
+
+```tulg
+ivar score = 45;
+if (score + 5 >= 50) then
+    paste("Passed");
+end
 ```
 
 ## Equality (`==`, `!=`)
@@ -69,7 +91,7 @@ paste(y);            ~~ 10
 - Both variables must be declared.
 - Constants (`iconst`) cannot be swapped.
 - Both variables must share the same type.
-- Cannot transfer `NULL` into a non-nullable variable:
+- If one variable is non-nullable (`~(Type)`), the other variable cannot transfer a `NULL` value into it:
 
 ```tulg
 ivar~Int nullNum = NULL;
@@ -77,4 +99,3 @@ ivar~(Int) strictNum = 5;
 
 nullNum <-> strictNum; ~~ TypeError: Cannot swap NULL into non-nullable variable 'strictNum'.
 ```
-

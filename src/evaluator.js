@@ -265,6 +265,15 @@ function evalMath(node, env) {
                 printErr("[MathError] Division by zero is undefined.");
             }
             return left / right;
+        case '%':
+            if (right === 0) {
+                printErr("[MathError] Division or modulo by zero is undefined.");
+            }
+            return left % right;
+        case '<':  return left < right;
+        case '>':  return left > right;
+        case '<=': return left <= right;
+        case '>=': return left >= right;
         default:
             printErr(`[RuntimeError] Unsupported operator '${node.operator}'.`);
     }
