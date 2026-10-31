@@ -285,8 +285,19 @@ function parse(tokens) {
         if (match('IVAR', 'ICONST')) {
             stmt = parseVarDeclaration();
         }
-        else if (match('PASTE')) {
-            stmt = { type: 'PasteStatement', expr: parseLogicOr() };
+        else if (match('PASTE', 'PASTELN')) {
+            let isLn = previous().type === 'PASTELN';
+            let kw = previous().value;
+            consume('LPAREN', `Expected '(' after '${kw}'.`);
+            let expr = undefined;
+            let isEmpty = false;
+            if (isLn && check('RPAREN')) {
+                isEmpty = true;
+            } else {
+                expr = parseLogicOr();
+            }
+            consume('RPAREN', `Expected ')' after '${kw}' argument.`);
+            stmt = { type: 'PasteStatement', expr, newLine: isLn, isEmpty };
         }
         else if (match('EXIT')) {
             consume('LPAREN', "Expected '(' after 'exit'.");
