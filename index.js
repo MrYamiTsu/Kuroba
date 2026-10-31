@@ -19,10 +19,13 @@ Author: ${config.author}
 Repository: ${config.repository}
 
 Usage:
-  tulg <filename${config.extension}>      Run a specific script
-  tulg                      Run ${config.defaultFile} by default
-  tulg -v, --version        Show language version
-  tulg -h, --help           Show this help message
+  kuroba <filename${config.extension}>     Run a specific script
+  kuroba                     Run ${config.defaultFile} by default
+  kuroba -v, --version       Show language version
+  kuroba -h, --help          Show this help message
+
+Aliases:
+  kb <filename>              Short command alias
 `);
     process.exit(0);
 }
@@ -32,12 +35,15 @@ let filename = arg;
 if (!filename) {
     if (fs.existsSync(config.defaultFile)) {
         filename = config.defaultFile;
+    } else if (fs.existsSync('main.tulg')) {
+        filename = 'main.tulg';
     } else {
-        printErr(`[CLIError] No input file provided. Usage: tulg <filename${config.extension}>`);
+        printErr(`[CLIError] No input file provided. Usage: kuroba <filename${config.extension}>`);
     }
 }
 
-if (!filename.endsWith(config.extension)) {
+const isValidExtension = filename.endsWith(config.extension) || filename.endsWith('.tulg');
+if (!isValidExtension) {
     printErr(`[CLIError] Invalid file extension. Expected a '${config.extension}' file, but received: '${filename}'`);
 }
 
@@ -48,10 +54,9 @@ if (!fs.existsSync(filename)) {
 const code = fs.readFileSync(filename, 'utf-8');
 
 function run(input) {
-    let tokens = tokenize(input);
-    let node = parse(tokens);
-    let result = evaluate(node);
-    return result;
+    const tokens = tokenize(input);
+    const ast = parse(tokens);
+    evaluate(ast);
 }
 
 run(code);

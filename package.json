@@ -1,20 +1,23 @@
 {
-  "name": "this-useless-language",
+  "name": "kuroba",
   "version": "1.0.1",
-  "description": "A lightweight interpreted programming language built from scratch in Node.js",
+  "description": "Kuroba (KRB) - A lightweight, zero-dependency interpreted programming language built from scratch in Node.js",
   "main": "index.js",
   "bin": {
+    "kuroba": "./index.js",
+    "kb": "./index.js",
     "tulg": "./index.js"
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node index.js main.tulg"
+    "test": "node index.js main.krb"
   },
   "keywords": [
+    "kuroba",
+    "krb",
     "interpreter",
     "compiler",
-    "programming-language",
-    "tulg"
+    "programming-language"
   ],
   "author": "MrYamiTsu",
   "license": "MIT",

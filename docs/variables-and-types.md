@@ -4,8 +4,8 @@
 
 Variables are declared with `ivar`. Their type is inferred from the initial value:
 
-```tulg
-ivar name = "TULG";   ~~ String
+```krb
+ivar name = "Kuroba"; ~~ String
 ivar age = 25;        ~~ Int
 ivar ratio = 3.14;    ~~ Float
 ivar ready = TRUE;    ~~ Bool
@@ -13,7 +13,7 @@ ivar ready = TRUE;    ~~ Bool
 
 Constants use `iconst` and cannot be reassigned:
 
-```tulg
+```krb
 iconst PORT = 8080;
 PORT = 3000;          ~~ TypeError: Cannot reassign constant 'PORT'.
 ```
@@ -22,7 +22,7 @@ PORT = 3000;          ~~ TypeError: Cannot reassign constant 'PORT'.
 
 Append `~Type` to cast a value on assignment:
 
-```tulg
+```krb
 ivar~Int num = "42";         ~~ Coerced to 42
 ivar~Float decimal = "3.14"; ~~ Coerced to 3.14
 ivar~String text = 100;      ~~ Coerced to "100"
@@ -30,7 +30,7 @@ ivar~Bool flag = 1;          ~~ Coerced to TRUE (0 becomes FALSE)
 ```
 
 If conversion fails, a `TypeError` is thrown:
-```tulg
+```krb
 ivar~Int invalid = "abc";    ~~ TypeError: Cannot cast value 'abc' to type 'Int'.
 ```
 
@@ -38,14 +38,14 @@ ivar~Int invalid = "abc";    ~~ TypeError: Cannot cast value 'abc' to type 'Int'
 
 By default, every variable can hold `NULL`:
 
-```tulg
+```krb
 ivar~String role = "editor";
 role = NULL;                 ~~ Allowed
 ```
 
 To forbid `NULL`, wrap the type in parentheses `~(Type)`:
 
-```tulg
+```krb
 ivar~(String) user = "admin";
 user = NULL;                 ~~ TypeError: Cannot assign NULL to non-nullable variable 'user' of type '(String)'.
 ```
@@ -54,7 +54,7 @@ user = NULL;                 ~~ TypeError: Cannot assign NULL to non-nullable va
 
 Variables can be updated without `ivar`. The new value must match the variable's type:
 
-```tulg
+```krb
 ivar score = 10;
 score = 20;                  ~~ Allowed (Int -> Int)
 
@@ -65,7 +65,7 @@ score = "high";              ~~ TypeError: Cannot assign type 'String' to variab
 
 To explicitly change the type or nullability of an existing variable, append `~Type` or `~(Type)` to the variable name during assignment:
 
-```tulg
+```krb
 ivar score = 100;            ~~ Inferred as Int
 score~String = "Top Score";  ~~ Retyped to String
 score~Float = 99.5;          ~~ Retyped to Float

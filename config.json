@@ -1,9 +1,9 @@
 {
-  "name": "This Useless Language",
-  "acronym": "TULG",
+  "name": "Kuroba",
+  "acronym": "KRB",
   "version": "1.0.1",
-  "extension": ".tulg",
-  "defaultFile": "main.tulg",
+  "extension": ".krb",
+  "defaultFile": "main.krb",
   "author": "MrYamiTsu",
   "repository": "https://github.com/MrYamiTsu/This-Useless-Language"
 }
