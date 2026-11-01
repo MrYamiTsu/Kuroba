@@ -75,4 +75,30 @@ exit();
 paste("This line is never reached.");
 ```
 
+## Loops (`for ... then ... end`)
+
+Iterative loop structure with mandatory parentheses enclosing the 3 clauses (`init; condition; update`):
+
+- `break;` — Exits the loop immediately.
+- `skip;` — Skips the remainder of the current iteration, runs the update clause, and advances to the next iteration.
+
+```krb
+~~ Standard for loop with increment operator
+for (ivar i = 0; i < 5; i++) then
+    pasteLn(i);
+end
+
+~~ Loop with break and skip
+for (ivar k = 0; k < 10; k++) then
+    if (k == 8) then
+        break; ~~ Terminate loop
+    end
+    if (k % 2 == 0) then
+        skip;  ~~ Skip even numbers
+    end
+    pasteLn(k);
+end
+```
+
+
 

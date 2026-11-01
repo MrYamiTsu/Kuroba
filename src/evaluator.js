@@ -33,8 +33,10 @@ function evaluate(node, env = {}) {
         case 'VarAssign': return evalVarAssign(node, env);
         case 'Variable': return evalVariable(node, env);
         case 'IfStatement': return evalIf(node, env);
+        case 'ForStatement': return evalFor(node, env); 
         case 'GivenStatement': return evalGiven(node, env);
         case 'BreakStatement': return { isBreak: true };
+        case 'SkipStatement': return { isSkip: true }; 
         case 'PasteStatement': return evalPaste(node, env);
         case 'ExitStatement': return evalExit(node, env);
         case 'MathExpression': return evalMath(node, env);
@@ -174,7 +176,7 @@ function evalIf(node, env) {
     if (isTrue) {
         for (let stmt of node.thenBranch) {
             let res = evaluate(stmt, env);
-            if (res && res.isBreak) return res;
+            if (res && (res.isBreak || res.isSkip)) return res;
         }
         return;
     }
@@ -186,7 +188,7 @@ function evalIf(node, env) {
             if (isTrue2) {
                 for (let stmt of elif.body) {
                     let res = evaluate(stmt, env);
-                    if (res && res.isBreak) return res;
+                    if (res && (res.isBreak || res.isSkip)) return res;
                 }
                 return;
             }
@@ -196,10 +198,46 @@ function evalIf(node, env) {
     if (node.elseBranch) {
         for (let stmt of node.elseBranch) {
             let res = evaluate(stmt, env);
-            if (res && res.isBreak) return res;
+            if (res && (res.isBreak || res.isSkip)) return res;
         }
     }
     return;
+}
+
+function evalFor(node, env) {
+    if (node.init) {
+        evaluate(node.init, env);
+    }
+
+    while(true) {
+        if (node.condition) {
+            let cond = evaluate(node.condition, env);
+            let isTrue = (cond === true || cond === 1);
+            if (!isTrue) break;
+        }
+
+        let needToBreak = false;
+        for (let stmt of node.body) {
+            let res = evaluate(stmt, env);
+            if (res) {
+                if (res.isBreak) {
+                    needToBreak = true;
+                    break;
+                }
+                if (res.isSkip) {
+                    break;
+                }
+            }
+        }
+        if (needToBreak) {
+            break;
+        }
+
+        if (node.update) {
+            evaluate(node.update, env);
+        }
+    }
+    return null;
 }
 
 function evalGiven(node, env) {

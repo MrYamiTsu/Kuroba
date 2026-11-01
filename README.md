@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/kuroba-logo.png" alt="Kuroba Logo" width="120" />
+
 # Kuroba — KRB
 
 <sub>A minimalist, zero-dependency interpreted language</sub>
@@ -178,6 +180,9 @@ node index.js path/to/script.krb
 | **Coercion**       | `ivar~String id = 42;`          | Explicit casting (`~String`, `~Int`, `~Float`, `~Bool`) |
 | **Non-Nullable**   | `ivar~(String) id = "X";`       | Strict non-nullable typing                              |
 | **Reassignment**   | `score = 150;`                  | Strict-typed variable update                            |
+| **Compound Assign**| `score += 10;`, `val *= 2;`     | In-place arithmetic update (`+=`, `-=`, `*=`, `/=`, `%=`) |
+| **Step Operators** | `i++`, `i--`                    | In-place increment and decrement                        |
+| **For Loop**       | `for (ivar i = 0; i < 5; i++) then` | Iterative loop with `break;` and `skip;` support        |
 | **Retyping**       | `score~String = "A";`           | Dynamic type transtyping (`~Type` / `~(Type)`)          |
 | **Native Swap**    | `a <-> b;`                      | In-place atomic swap with type equality checks          |
 | **Modulo & Order** | `10 % 3`, `a <= b`              | Arithmetic modulo and standard comparisons              |
@@ -260,8 +265,11 @@ Kuroba/
 
 - [x] Process termination & inline conditional guard (`exit()`, `exit(cond)`)
 - [x] Output formatting: `paste` (no newline) vs `pasteLn` (with newline)
-- [ ] Loop structures (`while`, `do ... while`, `for`, `break;`, `continue;`)
-- [ ] Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
+- [x] Compound assignment & step operators (`+=`, `-=`, `*=`, `/=`, `%=`, `++`, `--`)
+- [ ] Loop structures:
+  - [x] Classical `for` loops (`for (...) then ... end`) with `break;` and `skip;`
+  - [ ] `while <cond> then ... end`
+  - [ ] `do ... while <cond> end`
 - [ ] Interactive console input: `copy(...)` (blocking execution with prompt)
 
 ### Phase 3: Data Structures & Collections

@@ -219,6 +219,89 @@ function parse(tokens) {
         };
     }
 
+    function parseForStatement() {
+        consume('LPAREN', "Expected '(' before for-loop header.");
+
+        let init = null;
+        if (!check('SEMICOLON')) {
+            if (match('IVAR', 'ICONST')) {
+                init = parseVarDeclaration();
+            } else {
+                init = parseAssignmentOrExpr();
+            }
+        }
+        consume('SEMICOLON', "Expected ';' after for-loop initialization.");
+
+        let condition = null;
+        if (!check('SEMICOLON')) {
+            condition = parseLogicOr();
+        }
+        consume('SEMICOLON', "Expected ';' after for-loop condition.");
+
+        let update = null;
+        if (!check('RPAREN')) {
+            update = parseAssignmentOrExpr();
+        }
+        consume('RPAREN', "Expected ')' after for-loop header.");
+        consume('THEN', "Expected 'then' after for-loop header.");
+
+        let body = [];
+        while (!check('END') && !isAtEnd()) {
+            body.push(parseStatement());
+        }
+        consume('END', "Unclosed 'for' loop. Expected 'end'.");
+
+        return {
+            type: 'ForStatement',
+            init,
+            condition,
+            update,
+            body
+        };
+    }
+
+    function parseAssignmentOrExpr() {
+        if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'INCREMENT') {
+            let varName = advance().value;
+            advance();
+            return {
+                type: 'VarAssign',
+                name: varName,
+                value: { type: 'MathExpression', operator: '+', left: { type: 'Variable', name: varName }, right: 1 }
+            };
+        }
+        if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DECREMENT') {
+            let varName = advance().value;
+            advance();
+            return {
+                type: 'VarAssign',
+                name: varName,
+                value: { type: 'MathExpression', operator: '-', left: { type: 'Variable', name: varName }, right: 1 }
+            };
+        }
+        if (check('IDENTIFIER') && tokens[cursor + 1] && ['ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
+            let varName = advance().value;
+            let assignToken = advance();
+            let expr = parseLogicOr();
+            if (assignToken.type === 'ASSIGN') {
+                return { type: 'VarAssign', name: varName, value: expr };
+            }
+            let opMap = {
+                'PLUSASSIGN': '+',
+                'MINUSASSIGN': '-',
+                'MULTASSIGN': '*',
+                'DIVIDEASSIGN': '/',
+                'MODULOASSIGN': '%'
+            };
+            return {
+                type: 'VarAssign',
+                name: varName,
+                value: { type: 'MathExpression', operator: opMap[assignToken.type], left: { type: 'Variable', name: varName }, right: expr }
+            };
+        }
+        return parseLogicOr();
+    }
+
     function parseGivenStatement() {
         let exprTarget = parseEquality();
         let cases = [];
@@ -280,6 +363,7 @@ function parse(tokens) {
         let stmt;
 
         if (match('IF'))    return parseIfStatement();
+        if (match('FOR'))   return parseForStatement();
         if (match('GIVEN')) return parseGivenStatement();
 
         if (match('IVAR', 'ICONST')) {
@@ -378,6 +462,9 @@ function parse(tokens) {
         }
         else if (match('BREAK')) {
             stmt = { type: 'BreakStatement' };
+        }
+        else if (match('SKIP')) {
+            stmt = { type: 'SkipStatement' };
         }
         else {
             stmt = parseLogicOr();
