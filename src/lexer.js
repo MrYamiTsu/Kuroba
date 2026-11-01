@@ -17,9 +17,11 @@ const KEYWORDS = {
     'elif':    { type: 'ELIF',   value: 'elif' },
     'else':    { type: 'ELSE',   value: 'else' },
     'end':     { type: 'END',    value: 'end' },
+    'for':     { type: 'FOR',    value: 'for' },
     'given':   { type: 'GIVEN',  value: 'given' },
     'case':    { type: 'CASE',   value: 'case' },
     'break':   { type: 'BREAK',  value: 'break' },
+    'skip':    { type: 'SKIP',   value: 'skip' },
     'exit':    { type: 'EXIT',  value: 'exit' },
 };
 

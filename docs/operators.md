@@ -99,3 +99,27 @@ ivar~(Int) strictNum = 5;
 
 nullNum <-> strictNum; ~~ TypeError: Cannot swap NULL into non-nullable variable 'strictNum'.
 ```
+
+## Increment & Decrement (`++`, `--`)
+
+In-place unary step operators:
+
+```krb
+ivar count = 0;
+count++;    ~~ 1
+count--;    ~~ 0
+```
+
+## Compound Assignments (`+=`, `-=`, `*=`, `/=`, `%=`)
+
+In-place arithmetic reassignment shortcuts:
+
+```krb
+ivar score = 10;
+score += 5;    ~~ 15
+score -= 3;    ~~ 12
+score *= 2;    ~~ 24
+score /= 4;    ~~ 6
+score %= 4;    ~~ 2
+```
+
