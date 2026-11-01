@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="docs/kuroba-logo.png" alt="Kuroba Logo" width="120" />
-
 # Kuroba — KRB
 
 <sub>A minimalist, zero-dependency interpreted language</sub>
@@ -171,27 +169,28 @@ node index.js path/to/script.krb
 
 ## Syntax at a Glance
 
-| Feature            | Syntax Example                  | Description                                             |
-| :----------------- | :------------------------------ | :------------------------------------------------------ |
-| **Output**         | `paste("Hi");` / `pasteLn("Hi");` | Prints to stdout without newline (`paste`) or with newline (`pasteLn`) |
-| **Comments**       | `~~ comment`                    | Single-line comment to end of line                      |
-| **Variables**      | `ivar score = 100;`             | Variable declaration with type inference                |
-| **Constants**      | `iconst PI = 3.14;`             | Immutable constant declaration                          |
-| **Coercion**       | `ivar~String id = 42;`          | Explicit casting (`~String`, `~Int`, `~Float`, `~Bool`) |
-| **Non-Nullable**   | `ivar~(String) id = "X";`       | Strict non-nullable typing                              |
-| **Reassignment**   | `score = 150;`                  | Strict-typed variable update                            |
-| **Compound Assign**| `score += 10;`, `val *= 2;`     | In-place arithmetic update (`+=`, `-=`, `*=`, `/=`, `%=`) |
-| **Step Operators** | `i++`, `i--`                    | In-place increment and decrement                        |
-| **For Loop**       | `for (ivar i = 0; i < 5; i++) then` | Iterative loop with `break;` and `skip;` support        |
-| **Retyping**       | `score~String = "A";`           | Dynamic type transtyping (`~Type` / `~(Type)`)          |
-| **Native Swap**    | `a <-> b;`                      | In-place atomic swap with type equality checks          |
-| **Modulo & Order** | `10 % 3`, `a <= b`              | Arithmetic modulo and standard comparisons              |
-| **Guard Exit**     | `exit();` / `exit(cond);`       | Immediate exit or inline conditional guard clause       |
-| **Conditionals**   | `if cond then ... else ... end` | Block statement ending with `end`                       |
-| **Pattern Match**  | `given x then case: 1 ... end`  | Multi-branch matching with `break;`                     |
-| **Fallback**       | `case: ~`                       | Fallback branch (redirects here if `break;` is omitted) |
-| **Equality**       | `x == y`, `x != y`              | Strict equality (`0 == FALSE`, `1 == TRUE`)             |
-| **Logic**          | `a && b`, `a \|\| b`, `!c`      | Short-circuit boolean operations                        |
+| Feature             | Syntax Example                      | Description                                                            |
+| :------------------ | :---------------------------------- | :--------------------------------------------------------------------- |
+| **Output**          | `paste("Hi");` / `pasteLn("Hi");`   | Prints to stdout without newline (`paste`) or with newline (`pasteLn`) |
+| **Comments**        | `~~ comment`                        | Single-line comment to end of line                                     |
+| **Variables**       | `ivar score = 100;`                 | Variable declaration with type inference                               |
+| **Constants**       | `iconst PI = 3.14;`                 | Immutable constant declaration                                         |
+| **Coercion**        | `ivar~String id = 42;`              | Explicit casting (`~String`, `~Int`, `~Float`, `~Bool`)                |
+| **Non-Nullable**    | `ivar~(String) id = "X";`           | Strict non-nullable typing                                             |
+| **Reassignment**    | `score = 150;`                      | Strict-typed variable update                                           |
+| **Compound Assign** | `score += 10;`, `val *= 2;`         | In-place arithmetic update (`+=`, `-=`, `*=`, `/=`, `%=`)              |
+| **Step Operators**  | `i++`, `i--`                        | In-place increment and decrement                                       |
+| **For Loop**        | `for (ivar i = 0; i < 5; i++) then` | Iterative loop with `break;` and `skip;` support                       |
+| **While Loop**      | `while (n < 10) then ... end`       | Conditional loop with `break;` and `skip;` support                     |
+| **Retyping**        | `score~String = "A";`               | Dynamic type transtyping (`~Type` / `~(Type)`)                         |
+| **Native Swap**     | `a <-> b;`                          | In-place atomic swap with type equality checks                         |
+| **Modulo & Order**  | `10 % 3`, `a <= b`                  | Arithmetic modulo and standard comparisons                             |
+| **Guard Exit**      | `exit();` / `exit(cond);`           | Immediate exit or inline conditional guard clause                      |
+| **Conditionals**    | `if cond then ... else ... end`     | Block statement ending with `end`                                      |
+| **Pattern Match**   | `given x then case: 1 ... end`      | Multi-branch matching with `break;`                                    |
+| **Fallback**        | `case: ~`                           | Fallback branch (redirects here if `break;` is omitted)                |
+| **Equality**        | `x == y`, `x != y`                  | Strict equality (`0 == FALSE`, `1 == TRUE`)                            |
+| **Logic**           | `a && b`, `a \|\| b`, `!c`          | Short-circuit boolean operations                                       |
 
 Detailed specifications and topic guides: **[Browse Full Documentation](docs/README.md)**
 
@@ -268,7 +267,7 @@ Kuroba/
 - [x] Compound assignment & step operators (`+=`, `-=`, `*=`, `/=`, `%=`, `++`, `--`)
 - [ ] Loop structures:
   - [x] Classical `for` loops (`for (...) then ... end`) with `break;` and `skip;`
-  - [ ] `while <cond> then ... end`
+  - [x] `while <cond> then ... end`
   - [ ] `do ... while <cond> end`
 - [ ] Interactive console input: `copy(...)` (blocking execution with prompt)
 

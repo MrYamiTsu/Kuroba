@@ -359,11 +359,29 @@ function parse(tokens) {
         return { type: 'VarDeclar', name: varName, explType, isNullable, value, isConst };
     }
 
+    function parseWhileStatement() {
+        let condition = parseCondition();
+        consume('THEN', "Expected 'then' after 'while' condition.");
+
+        let body = [];
+        while (!check('END') && !isAtEnd()) {
+            body.push(parseStatement());
+        }
+        consume('END', "Unclosed 'while' loop. Expected 'end'.");
+        
+        return {
+            type: 'WhileStatement',
+            condition,
+            body
+        };
+    }
+
     function parseStatement() {
         let stmt;
 
         if (match('IF'))    return parseIfStatement();
         if (match('FOR'))   return parseForStatement();
+        if (match('WHILE')) return parseWhileStatement();
         if (match('GIVEN')) return parseGivenStatement();
 
         if (match('IVAR', 'ICONST')) {

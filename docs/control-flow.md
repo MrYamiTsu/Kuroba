@@ -75,7 +75,7 @@ exit();
 paste("This line is never reached.");
 ```
 
-## Loops (`for ... then ... end`)
+## For Loops (`for ... then ... end`)
 
 Iterative loop structure with mandatory parentheses enclosing the 3 clauses (`init; condition; update`):
 
@@ -100,5 +100,25 @@ for (ivar k = 0; k < 10; k++) then
 end
 ```
 
+## While Loops (`while <cond> then ... end`)
 
+Conditional pre-test loop supporting `break;` and `skip;`:
 
+- Single variables or `!` checks do not require parentheses: `while running then`, `while !done then`.
+- Comparisons and compound expressions must be wrapped in `(...)`: `while (count < 10) then`.
+- `break;` exits the loop immediately.
+- `skip;` skips the remainder of the current iteration and jumps directly to condition re-evaluation.
+
+```krb
+ivar count = 0;
+while (count < 3) then
+    pasteLn(count);
+    count++;
+end
+
+ivar running = TRUE;
+while running then
+    pasteLn("Running once");
+    running = FALSE;
+end
+```

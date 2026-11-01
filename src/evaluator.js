@@ -34,6 +34,7 @@ function evaluate(node, env = {}) {
         case 'Variable': return evalVariable(node, env);
         case 'IfStatement': return evalIf(node, env);
         case 'ForStatement': return evalFor(node, env); 
+        case 'WhileStatement': return evalWhile(node, env);
         case 'GivenStatement': return evalGiven(node, env);
         case 'BreakStatement': return { isBreak: true };
         case 'SkipStatement': return { isSkip: true }; 
@@ -235,6 +236,31 @@ function evalFor(node, env) {
 
         if (node.update) {
             evaluate(node.update, env);
+        }
+    }
+    return null;
+}
+
+function evalWhile(node, env) {
+    while (true) {
+        let cond = evaluate(node.condition, env);
+        let isTrue = (cond === true || cond === 1);
+        if (!isTrue) break;
+        let needToBreak = false;
+        for (let stmt of node.body) {
+            let res = evaluate(stmt, env);
+            if (res) {
+                if (res.isBreak) {
+                    needToBreak = true;
+                    break;
+                }
+                if (res.isSkip) {
+                    break;
+                }
+            }
+        }
+        if (needToBreak) {
+            break;
         }
     }
     return null;
