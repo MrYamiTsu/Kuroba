@@ -310,10 +310,46 @@ function parse(tokens) {
             consume('RPAREN', "Expected ')' after 'exit' condition.");
             stmt = { type: 'ExitStatement', condition };
         }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'ASSIGN') {
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'INCREMENT') {
             let varName = advance().value;
             advance();
-            stmt = { type: 'VarAssign', name: varName, value: parseLogicOr() };
+            stmt = {
+                type: 'VarAssign',
+                name: varName,
+                value: { type: 'MathExpression', operator: '+', left: { type: 'Variable', name: varName }, right: 1 }
+            };
+        }
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DECREMENT') {
+            let varName = advance().value;
+            advance();
+            stmt = {
+                type: 'VarAssign',
+                name: varName,
+                value: { type: 'MathExpression', operator: '-', left: { type: 'Variable', name: varName }, right: 1 }
+            };
+        }
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && ['ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
+            let varName = advance().value;
+            let assignToken = advance();
+            let expr = parseLogicOr();
+
+            if (assignToken.type === 'ASSIGN') {
+                stmt = { type: 'VarAssign', name: varName, value: expr };
+            } else {
+                let opMap = {
+                    'PLUSASSIGN': '+',
+                    'MINUSASSIGN': '-',
+                    'MULTASSIGN': '*',
+                    'DIVIDEASSIGN': '/',
+                    'MODULOASSIGN': '%'
+                };
+                stmt = {
+                    type: 'VarAssign',
+                    name: varName,
+                    value: { type: 'MathExpression', operator: opMap[assignToken.type], left: { type: 'Variable', name: varName }, right: expr
+                    }
+                };
+            }
         }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'TILDE') {
             let varName = advance().value;

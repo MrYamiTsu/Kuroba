@@ -254,6 +254,34 @@ function tokenize(input) {
             continue;
         }
 
+        if (char === '+' && input[cursor + 1] === '+') {
+            tokens.push({ type: 'INCREMENT', value: '++', line, col });
+            cursor += 2;
+            col += 2;
+            continue;
+        }
+
+        if (char === '-' && input[cursor + 1] === '-') {
+            tokens.push({ type: 'DECREMENT', value: '--', line, col });
+            cursor += 2;
+            col += 2;
+            continue;
+        }
+
+        if ((char === '+' || char === '-' || char === '*' || char === '/' || char === '%') && input[cursor + 1] === '=') {
+            let opList = {
+                '+': 'PLUSASSIGN',
+                '-': 'MINUSASSIGN',
+                '*': 'MULTASSIGN',
+                '/': 'DIVIDEASSIGN',
+                '%': 'MODULOASSIGN'
+            };
+            tokens.push({ type: opList[char], value: char + '=', line, col });
+            cursor += 2;
+            col += 2;
+            continue;
+        }
+
         if (SYMBOLS[char]) {
             tokens.push({ type: SYMBOLS[char], value: char, line, col });
             cursor++;
