@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/kuroba.png" alt="Kuroba Logo" width="120" />
+
 # Kuroba — KRB
 
 <sub>A minimalist, zero-dependency interpreted language</sub>
@@ -269,10 +271,12 @@ Kuroba/
   - [x] Classical `for` loops (`for (...) then ... end`) with `break;` and `skip;`
   - [x] `while <cond> then ... end`
   - [ ] `do ... while <cond> end`
-- [ ] Interactive console input: `copy(...)` (blocking execution with prompt)
+- [ ] Interactive console input: `copy(...)` (blocking prompt) and `copyKey()` (single keypress)
+- [ ] Console screen management: `clear()`
 
 ### Phase 3: Data Structures & Collections
 
+- [ ] Multi-line block comments (`~~{{ ... }}~~`)
 - [ ] Dynamic Arrays / Tables (`[1, 2, 3]`) with indexing (`arr[0]`)
 - [ ] Stacks (LIFO) and Queues (FIFO) collections
 - [ ] Dictionaries / Key-Value objects (`{ key: value }`)
@@ -307,7 +311,7 @@ Kuroba/
 - [ ] Combined selective imports with prefix drop (`import Package ~(LibA) alias ~;`)
 - [ ] Multi-file module imports & exports (`import "file.krb"`, `export`)
 
-### Phase 7: Standard Library (`Std`) & Developer Tooling
+### Phase 7: Built-in Packages (`Std`, `Web`, `App`) & Developer Tooling
 
 - [ ] Built-in `Std` Package:
   - `Std.Math` (trigonometry, rounding, powers, constants)
@@ -315,7 +319,15 @@ Kuroba/
   - `Std.IO` (file reading & writing: `pasteInFile`, `copyInFile`)
   - `Std.Json` (JSON parsing & stringifying)
   - `Std.Sys` (command-line arguments `args`, environment variables `env`)
-- [ ] Multi-line block comments (`~~~ ... ~~~`)
+- [ ] Built-in `Web` Package:
+  - Native HTTP web server (`Web.serve`, `Web.listen`)
+  - Lightweight API routing & request/response handling (`Web.get`, `Web.post`)
+  - Network requests client (`Web.fetch`)
+- [ ] Built-in `App` Package (Native GUI & 2D Game Engine):
+  - Native window creation with framerate and resolution control (`App.window`, `App.fps`)
+  - 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style WPF / Raylib)
+  - Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
+  - Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
 - [ ] Interactive REPL shell (launching `kb` with no arguments starts interactive shell)
 - [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
 
