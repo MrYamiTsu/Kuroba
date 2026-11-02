@@ -40,6 +40,7 @@ function evaluate(node, env = {}) {
         case 'BreakStatement': return { isBreak: true };
         case 'SkipStatement': return { isSkip: true }; 
         case 'PasteStatement': return evalPaste(node, env);
+        case 'ClearStatement': return evalClear(node, env);
         case 'ExitStatement': return evalExit(node, env);
         case 'MathExpression': return evalMath(node, env);
         case 'UnaryExpression': return evalUnary(node, env);
@@ -388,6 +389,19 @@ function evalPaste(node, env) {
     }
 
     return val;
+}
+
+function evalClear(node, env) {
+    if (node.condition === null) {
+        console.clear();
+        return;
+    }
+
+    let cond = evaluate(node.condition, env);
+    let isTrue = (cond === true || cond === 1);
+    if (isTrue) {
+        console.clear();
+    }
 }
 
 function evalExit(node, env) {

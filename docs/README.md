@@ -11,7 +11,7 @@ Welcome to the documentation for **Kuroba** (*KRB*).
    Arithmetic precedence, equality (`==`, `!=`), short-circuit logic (`&&`, `||`, `!`), and native swap (`<->`).
 
 3. [Control Flow](control-flow.md)
-   Conditional blocks (`if / elif / else / end`), multi-branch matching (`given / case:`), and process termination (`exit(...)`).
+   Conditional blocks (`if / elif / else / end`), multi-branch matching (`given / case:`), loops (`for`, `while`, `do ... while`), flow control (`break;`, `skip;`), screen clearing (`clear(...)`), and process termination (`exit(...)`).
 
 4. [Error Reference](errors.md)
    Overview of runtime and syntax diagnostics (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`).
@@ -46,5 +46,13 @@ given strictUser then
     case: ~
         paste("Unknown role");
 end
+
+~~ Loops and flow control
+for (ivar i = 0; i < 3; i++) then
+    pasteLn(i);
+end
+
+~~ Console screen clear
+clear();
 ```
 

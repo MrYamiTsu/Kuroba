@@ -189,6 +189,7 @@ node index.js path/to/script.krb
 | **Native Swap**     | `a <-> b;`                          | In-place atomic swap with type equality checks                         |
 | **Modulo & Order**  | `10 % 3`, `a <= b`                  | Arithmetic modulo and standard comparisons                             |
 | **Guard Exit**      | `exit();` / `exit(cond);`           | Immediate exit or inline conditional guard clause                      |
+| **Screen Clear**    | `clear();` / `clear(cond);`         | Immediate or conditional console screen clear                          |
 | **Conditionals**    | `if cond then ... else ... end`     | Block statement ending with `end`                                      |
 | **Pattern Match**   | `given x then case: 1 ... end`      | Multi-branch matching with `break;`                                    |
 | **Fallback**        | `case: ~`                           | Fallback branch (redirects here if `break;` is omitted)                |
@@ -273,7 +274,7 @@ Kuroba/
   - [x] `while <cond> then ... end`
   - [x] `do ... while <cond>;`
 - [ ] Interactive console input: `copy(...)` (blocking prompt) and `copyKey()` (single keypress)
-- [ ] Console screen management: `clear()`
+- [x] Console screen management: `clear()`, `clear(cond)`
 
 ### Phase 3: Data Structures & Collections
 

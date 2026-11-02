@@ -75,6 +75,21 @@ exit();
 paste("This line is never reached.");
 ```
 
+## Screen Clearing (`clear(...)`)
+
+Clears the terminal console screen immediately or conditionally:
+
+- `clear();` — Clears the terminal screen immediately.
+- `clear(condition);` — Clears the screen if the expression evaluates to truthy (`TRUE` or `1`). If falsy (`FALSE` or `0`), it acts as a no-op and execution continues.
+
+```krb
+~~ Conditional clear guard
+clear(round > 1);
+
+~~ Immediate clear
+clear();
+```
+
 ## For Loops (`for ... then ... end`)
 
 Iterative loop structure with mandatory parentheses enclosing the 3 clauses (`init; condition; update`):

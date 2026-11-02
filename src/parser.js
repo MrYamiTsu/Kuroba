@@ -418,6 +418,17 @@ function parse(tokens) {
             consume('RPAREN', `Expected ')' after '${kw}' argument.`);
             stmt = { type: 'PasteStatement', expr, newLine: isLn, isEmpty };
         }
+        else if (match('CLEAR')) {
+            consume('LPAREN', "Expected '(' after 'clear'.");
+            
+            let condition = null;
+            if (!check('RPAREN')) {
+                condition = parseLogicOr();
+            }
+
+            consume('RPAREN', "Expected ')' after 'clear' condition.");
+            stmt = { type: 'ClearStatement', condition };
+        }
         else if (match('EXIT')) {
             consume('LPAREN', "Expected '(' after 'exit'.");
             

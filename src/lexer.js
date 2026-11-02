@@ -24,6 +24,7 @@ const KEYWORDS = {
     'case':    { type: 'CASE',    value: 'case' },
     'break':   { type: 'BREAK',   value: 'break' },
     'skip':    { type: 'SKIP',    value: 'skip' },
+    'clear':   { type: 'CLEAR',   value: 'clear' },
     'exit':    { type: 'EXIT',    value: 'exit' },
 };
 
