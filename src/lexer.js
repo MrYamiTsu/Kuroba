@@ -20,6 +20,7 @@ const KEYWORDS = {
     'for':     { type: 'FOR',     value: 'for' },
     'while':   { type: 'WHILE',   value: 'while' },
     'given':   { type: 'GIVEN',   value: 'given' },
+    'do':      { type: 'DO',      value: 'do' },
     'case':    { type: 'CASE',    value: 'case' },
     'break':   { type: 'BREAK',   value: 'break' },
     'skip':    { type: 'SKIP',    value: 'skip' },

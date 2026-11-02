@@ -184,6 +184,7 @@ node index.js path/to/script.krb
 | **Step Operators**  | `i++`, `i--`                        | In-place increment and decrement                                       |
 | **For Loop**        | `for (ivar i = 0; i < 5; i++) then` | Iterative loop with `break;` and `skip;` support                       |
 | **While Loop**      | `while (n < 10) then ... end`       | Conditional loop with `break;` and `skip;` support                     |
+| **Do-While Loop**   | `do ... while (n < 10);`            | Post-test loop guaranteed to execute at least once                     |
 | **Retyping**        | `score~String = "A";`               | Dynamic type transtyping (`~Type` / `~(Type)`)                         |
 | **Native Swap**     | `a <-> b;`                          | In-place atomic swap with type equality checks                         |
 | **Modulo & Order**  | `10 % 3`, `a <= b`                  | Arithmetic modulo and standard comparisons                             |
@@ -267,10 +268,10 @@ Kuroba/
 - [x] Process termination & inline conditional guard (`exit()`, `exit(cond)`)
 - [x] Output formatting: `paste` (no newline) vs `pasteLn` (with newline)
 - [x] Compound assignment & step operators (`+=`, `-=`, `*=`, `/=`, `%=`, `++`, `--`)
-- [ ] Loop structures:
+- [x] Loop structures:
   - [x] Classical `for` loops (`for (...) then ... end`) with `break;` and `skip;`
   - [x] `while <cond> then ... end`
-  - [ ] `do ... while <cond> end`
+  - [x] `do ... while <cond>;`
 - [ ] Interactive console input: `copy(...)` (blocking prompt) and `copyKey()` (single keypress)
 - [ ] Console screen management: `clear()`
 

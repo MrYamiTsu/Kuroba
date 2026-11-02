@@ -122,3 +122,23 @@ while running then
     running = FALSE;
 end
 ```
+
+## Do-While Loops (`do ... while <cond>;`)
+
+Post-test loop guaranteed to execute its body at least once:
+
+- Does not require an `end` keyword; terminates naturally with `while <cond>;`.
+- Supports `break;` (exits immediately) and `skip;` (jumps to post-condition evaluation).
+
+```krb
+ivar count = 0;
+do
+    pasteLn(count);
+    count++;
+while (count < 3);
+
+~~ Guaranteed to run once even if condition is false
+do
+    pasteLn("Executed once!");
+while (FALSE);
+```

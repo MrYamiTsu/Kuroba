@@ -376,6 +376,22 @@ function parse(tokens) {
         };
     }
 
+    function parseDoWhileStatement() {
+        let body = [];
+        while (!check('WHILE') && !isAtEnd()) {
+            body.push(parseStatement());
+        }
+        consume('WHILE', "Expected 'while' after 'do' loop body.");
+        let condition = parseCondition();
+        consume('SEMICOLON', "Expected ';' after 'do ... while' condition.")
+        
+        return {
+            type: 'DoWhileStatement',
+            condition,
+            body
+        };
+    }
+
     function parseStatement() {
         let stmt;
 
@@ -383,6 +399,7 @@ function parse(tokens) {
         if (match('FOR'))   return parseForStatement();
         if (match('WHILE')) return parseWhileStatement();
         if (match('GIVEN')) return parseGivenStatement();
+        if (match('DO'))    return parseDoWhileStatement();
 
         if (match('IVAR', 'ICONST')) {
             stmt = parseVarDeclaration();
