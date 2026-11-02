@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { printErr } = require('./errors');
 
 function getType(val) {
@@ -40,6 +41,7 @@ function evaluate(node, env = {}) {
         case 'BreakStatement': return { isBreak: true };
         case 'SkipStatement': return { isSkip: true }; 
         case 'PasteStatement': return evalPaste(node, env);
+        case 'CopyExpression': return evalCopy(node, env);
         case 'ClearStatement': return evalClear(node, env);
         case 'ExitStatement': return evalExit(node, env);
         case 'MathExpression': return evalMath(node, env);
@@ -389,6 +391,64 @@ function evalPaste(node, env) {
     }
 
     return val;
+}
+
+function evalCopy(node, env) {
+    if (node.prompt !== null) {
+        let val = evaluate(node.prompt, env);
+        let txt = val;
+
+        if (val === true) txt = 'TRUE';
+        else if (val === false) txt = 'FALSE';
+        else if (val === null) txt = 'NULL';
+
+        process.stdout.write(String(txt));
+    }
+    
+    if (node.oneKey) {
+        let buf = Buffer.alloc(1);
+
+        if (process.stdin.setRawMode) {
+            process.stdin.setRawMode(true);
+        }
+
+        try {
+            fs.readSync(0, buf, 0, 1, null);
+        } finally {
+            if (process.stdin.setRawMode) {
+                process.stdin.setRawMode(false);
+            }
+        }
+
+        if (buf[0] === 3) {
+            process.exit(130);
+        }
+
+        return buf.toString('utf8');
+    }
+
+    let chunks = [];
+    let buf = Buffer.alloc(1);
+
+    while (true) {
+        let bytesRead = 0;
+
+        try {
+            bytesRead = fs.readSync(0, buf, 0, 1, null);
+        } catch (e) {
+            break;
+        }
+
+        if (bytesRead === 0 || buf[0] === 10) {
+            break;
+        }
+
+        if (buf[0] !== 13) {
+            chunks.push(buf[0]);
+        }
+    }
+
+    return Buffer.from(chunks).toString('utf8');
 }
 
 function evalClear(node, env) {

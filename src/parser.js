@@ -61,6 +61,20 @@ function parse(tokens) {
             printErr("[SyntaxError: at end of file] Unexpected end of input. Expected expression.");
         }
 
+        if (match('COPY', 'COPYKEY')) {
+            let isOneKey = (previous().type === 'COPYKEY');
+
+            consume('LPAREN', "Expected '(' after 'copy'.");
+
+            let prompt = null;
+            if (!check('RPAREN')) {
+                prompt = parseLogicOr();
+            }
+            consume('RPAREN', "Expected ')' after 'copy' prompt.");
+
+            return { type: 'CopyExpression', prompt, oneKey: isOneKey };
+        }
+        
         if (match('IDENTIFIER')) {
             return { type: 'Variable', name: previous().value };
         }
@@ -417,6 +431,9 @@ function parse(tokens) {
             }
             consume('RPAREN', `Expected ')' after '${kw}' argument.`);
             stmt = { type: 'PasteStatement', expr, newLine: isLn, isEmpty };
+        }
+        else if (check('COPY') || check('COPYKEY')) {
+            stmt = parsePrimary();
         }
         else if (match('CLEAR')) {
             consume('LPAREN', "Expected '(' after 'clear'.");

@@ -174,6 +174,7 @@ node index.js path/to/script.krb
 | Feature             | Syntax Example                      | Description                                                            |
 | :------------------ | :---------------------------------- | :--------------------------------------------------------------------- |
 | **Output**          | `paste("Hi");` / `pasteLn("Hi");`   | Prints to stdout without newline (`paste`) or with newline (`pasteLn`) |
+| **Input**           | `copy("Nom: ");` / `copyKey();`     | Blocking line input (`copy`) or single key capture (`copyKey`)         |
 | **Comments**        | `~~ comment`                        | Single-line comment to end of line                                     |
 | **Variables**       | `ivar score = 100;`                 | Variable declaration with type inference                               |
 | **Constants**       | `iconst PI = 3.14;`                 | Immutable constant declaration                                         |
@@ -273,7 +274,7 @@ Kuroba/
   - [x] Classical `for` loops (`for (...) then ... end`) with `break;` and `skip;`
   - [x] `while <cond> then ... end`
   - [x] `do ... while <cond>;`
-- [ ] Interactive console input: `copy(...)` (blocking prompt) and `copyKey()` (single keypress)
+- [x] Interactive console input: `copy(...)` (blocking prompt) and `copyKey()` (single keypress)
 - [x] Console screen management: `clear()`, `clear(cond)`
 
 ### Phase 3: Data Structures & Collections

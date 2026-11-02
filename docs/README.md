@@ -16,6 +16,9 @@ Welcome to the documentation for **Kuroba** (*KRB*).
 4. [Error Reference](errors.md)
    Overview of runtime and syntax diagnostics (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`).
 
+5. [Console & I/O](io.md)
+   Standard output (`paste`, `pasteLn`), interactive input (`copy`, `copyKey`), and screen clearing (`clear`).
+
 ---
 
 ## Language Cheatsheet
@@ -52,7 +55,9 @@ for (ivar i = 0; i < 3; i++) then
     pasteLn(i);
 end
 
-~~ Console screen clear
+~~ Interactive console input & clear
 clear();
+ivar pseudo = copy("Nom : ");
+pasteLn("Bienvenue " + pseudo);
 ```
 

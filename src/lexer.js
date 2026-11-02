@@ -10,6 +10,8 @@ const KEYWORDS = {
     'NULL':    { type: 'NULL',    value: null },
     'paste':   { type: 'PASTE',   value: 'paste' },
     'pasteLn': { type: 'PASTELN', value: 'pasteLn' },
+    'copy':    { type: 'COPY',    value: 'copy' },
+    'copyKey': { type: 'COPYKEY', value: 'copyKey' },
     'ivar':    { type: 'IVAR',    value: 'ivar' },
     'iconst':  { type: 'ICONST',  value: 'iconst' },
     'if':      { type: 'IF',      value: 'if' },
