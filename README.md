@@ -266,17 +266,17 @@ Kuroba/
 
 ### Phase 3: Data Structures & Collections
 
+- [x] Strict block scoping (variables declared in `if`, `while`, `do-while`, and `for` blocks expire at `end`)
 - [ ] Multi-line block comments (`~~{{ ... }}~~`)
 - [ ] Dynamic Arrays / Tables (`[1, 2, 3]`) with indexing (`arr[0]`)
 - [ ] Stacks (LIFO) and Queues (FIFO) collections
 - [ ] Dictionaries / Key-Value objects (`{ key: value }`)
-- [ ] Length property / introspection (`length`)
 - [ ] Collection iteration (`for item in list ... end`)
 
 ### Phase 4: Functions & Metaprogramming
 
-- [ ] Lexical scoping & variable lifecycle (`kill variable;`)
-- [ ] First-class functions (`fn name(args) ... end`) with `return`
+- [ ] Variable lifecycle & manual destruction (`kill variable;`)
+- [ ] First-class functions (`fn name(args) ... end`) with lexical function scopes & `return`
 - [ ] Tail-call safe recursion helpers (`recur(...)`)
 - [ ] Function interception & callbacks
 
@@ -307,6 +307,7 @@ Kuroba/
   - `Std.Math` (trigonometry, rounding, powers, constants)
   - `Std.Time` (clock, timestamps, async delays `sleep(ms)`)
   - `Std.IO` (file reading & writing: `pasteInFile`, `copyInFile`)
+  - `Std.String` (string length, substring, split, join, trim, casing)
   - `Std.Json` (JSON parsing & stringifying)
   - `Std.Sys` (command-line arguments `args`, environment variables `env`)
 - [ ] Built-in `Web` Package:

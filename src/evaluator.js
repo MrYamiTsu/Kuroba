@@ -21,7 +21,23 @@ function isKurobaEqual(a, b) {
     return a === b;
 }
 
-function evaluate(node, env = {}) {
+function createScope(parent = null) {
+    return {
+        values: {},
+        parent: parent
+    };
+}
+
+function findScope(name, env) {
+    let curr = env;
+    while (curr) {
+        if (name in curr.values) return curr;
+        curr = curr.parent;
+    }
+    return null;
+}
+
+function evaluate(node, env = createScope()) {
     if (!node || !node.type) return node;
 
     switch (node.type) {
@@ -85,7 +101,7 @@ function evalVarDeclar(node, env) {
         }
     }
 
-    env[node.name] = {
+    env.values[node.name] = {
         value: val,
         type: node.explType || getType(val),
         isConst: !!node.isConst,
@@ -95,47 +111,51 @@ function evalVarDeclar(node, env) {
 }
 
 function evalVarAssign(node, env) {
-    if (!(node.name in env)) {
+    let scope = findScope(node.name, env);
+
+    if (!scope) {
         printErr(`[ReferenceError] Cannot reassign undeclared variable '${node.name}'.`);
     }
 
-    if (env[node.name].isConst) {
+    if (scope.values[node.name].isConst) {
         printErr(`[TypeError] Cannot reassign constant '${node.name}'.`);
     }
 
     let newVal = evaluate(node.value, env);
     let newType = getType(newVal);
 
-    if (!env[node.name].isNullable && newVal === null) {
-        printErr(`[TypeError] Cannot assign NULL to non-nullable variable '${node.name}' of type '(${env[node.name].type})'.`);
+    if (!scope.values[node.name].isNullable && newVal === null) {
+        printErr(`[TypeError] Cannot assign NULL to non-nullable variable '${node.name}' of type '(${scope.values[node.name].type})'.`);
     }
 
-    if (env[node.name].isNullable && newVal === null) {
-        env[node.name].value = null;
+    if (scope.values[node.name].isNullable && newVal === null) {
+        scope.values[node.name].value = null;
         return null;
     }
 
-    if (env[node.name].type !== newType) {
-        printErr(`[TypeError] Cannot assign type '${newType}' to variable '${node.name}' of type '${env[node.name].type}'.`);
+    if (scope.values[node.name].type !== newType) {
+        printErr(`[TypeError] Cannot assign type '${newType}' to variable '${node.name}' of type '${scope.values[node.name].type}'.`);
     }
 
-    env[node.name].value = newVal;
+    scope.values[node.name].value = newVal;
     return newVal;
 }
 
 function evalVariable(node, env) {
-    if (node.name in env) {
-        return env[node.name].value;
+    let scope = findScope(node.name, env);
+    if (scope) {
+        return scope.values[node.name].value;
     }
     printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
 }
 
 function evalVarRetype(node, env) {
-    if (!(node.name in env)) {
+    let scope = findScope(node.name, env);
+    if (!scope) {
         printErr(`[ReferenceError] Cannot retype undeclared variable '${node.name}'.`);
     }
 
-    if (env[node.name].isConst) {
+    if (scope.values[node.name].isConst) {
         printErr(`[TypeError] Cannot retype constant '${node.name}'.`);
     }
 
@@ -163,9 +183,9 @@ function evalVarRetype(node, env) {
         }
     }
 
-    env[node.name].value = val;
-    env[node.name].type = node.targetType;
-    env[node.name].isNullable = node.isNullable;
+    scope.values[node.name].value = val;
+    scope.values[node.name].type = node.targetType;
+    scope.values[node.name].isNullable = node.isNullable;
 
     return val;
 }
@@ -179,8 +199,9 @@ function evalIf(node, env) {
     let isTrue = cond === true || cond === 1;
 
     if (isTrue) {
+        let blockEnv = createScope(env);
         for (let stmt of node.thenBranch) {
-            let res = evaluate(stmt, env);
+            let res = evaluate(stmt, blockEnv);
             if (res && (res.isBreak || res.isSkip)) return res;
         }
         return;
@@ -191,8 +212,9 @@ function evalIf(node, env) {
             let cond2 = evaluate(elif.condition, env);
             let isTrue2 = cond2 === true || cond2 === 1;
             if (isTrue2) {
+                let blockEnv = createScope(env);
                 for (let stmt of elif.body) {
-                    let res = evaluate(stmt, env);
+                    let res = evaluate(stmt, blockEnv);
                     if (res && (res.isBreak || res.isSkip)) return res;
                 }
                 return;
@@ -201,8 +223,9 @@ function evalIf(node, env) {
     }
 
     if (node.elseBranch) {
+        let blockEnv = createScope(env);
         for (let stmt of node.elseBranch) {
-            let res = evaluate(stmt, env);
+            let res = evaluate(stmt, blockEnv);
             if (res && (res.isBreak || res.isSkip)) return res;
         }
     }
@@ -210,20 +233,22 @@ function evalIf(node, env) {
 }
 
 function evalFor(node, env) {
+    let forEnv = createScope(env);
     if (node.init) {
-        evaluate(node.init, env);
+        evaluate(node.init, forEnv);
     }
 
     while(true) {
         if (node.condition) {
-            let cond = evaluate(node.condition, env);
+            let cond = evaluate(node.condition, forEnv);
             let isTrue = (cond === true || cond === 1);
             if (!isTrue) break;
         }
 
+        let bodyEnv = createScope(forEnv);
         let needToBreak = false;
         for (let stmt of node.body) {
-            let res = evaluate(stmt, env);
+            let res = evaluate(stmt, bodyEnv);
             if (res) {
                 if (res.isBreak) {
                     needToBreak = true;
@@ -234,14 +259,14 @@ function evalFor(node, env) {
                 }
             }
         }
-        if (needToBreak) {
-            break;
-        }
+
+        if (needToBreak) break;
 
         if (node.update) {
-            evaluate(node.update, env);
+            evaluate(node.update, forEnv);
         }
     }
+
     return null;
 }
 
@@ -252,8 +277,9 @@ function evalWhile(node, env) {
         if (!isTrue) break;
         
         let needToBreak = false;
+        let blockEnv = createScope(env);
         for (let stmt of node.body) {
-            let res = evaluate(stmt, env);
+            let res = evaluate(stmt, blockEnv);
             if (res) {
                 if (res.isBreak) {
                     needToBreak = true;
@@ -275,8 +301,9 @@ function evalWhile(node, env) {
 function evalDoWhile(node, env) {
     while (true) {
         let needToBreak = false;
+        let blockEnv = createScope(env);
         for (let stmt of node.body) {
-            let res = evaluate(stmt, env);
+            let res = evaluate(stmt, blockEnv);
             if (res) {
                 if (res.isBreak) {
                     needToBreak = true;
@@ -318,10 +345,13 @@ function evalGiven(node, env) {
 
     function runCase(index) {
         if (index === -1) return true;
+
+        let caseEnv = createScope(env);
         for (let stmt of node.cases[index].body) {
-            let res = evaluate(stmt, env);
+            let res = evaluate(stmt, caseEnv);
             if (res && res.isBreak) return true;
         }
+        
         return false;
     }
 
@@ -337,34 +367,40 @@ function evalGiven(node, env) {
 }
 
 function evalSwap(node, env) {
-    if (!(node.left in env)) {
+    let scopeLeft = findScope(node.left, env);
+    let scopeRight = findScope(node.right, env);
+
+    if (!scopeLeft) {
         printErr(`[ReferenceError] Cannot swap undeclared variable '${node.left}'.`);
     }
-    if (!(node.right in env)) {
+    if (!scopeRight) {
         printErr(`[ReferenceError] Cannot swap undeclared variable '${node.right}'.`);
     }
 
-    if (env[node.left].isConst) {
+    let varA = scopeLeft.values[node.left];
+    let varB = scopeRight.values[node.right];
+
+    if (varA.isConst) {
         printErr(`[TypeError] Cannot swap constant '${node.left}'.`);
     }
-    if (env[node.right].isConst) {
+    if (varB.isConst) {
         printErr(`[TypeError] Cannot swap constant '${node.right}'.`);
     }
 
-    if (!env[node.left].isNullable && env[node.right].value === null) {
+    if (!varA.isNullable && varB.value === null) {
         printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.left}'.`);
     }
-    if (!env[node.right].isNullable && env[node.left].value === null) {
+    if (!varB.isNullable && varA.value === null) {
         printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.right}'.`);
     }
 
-    if (env[node.left].type !== env[node.right].type) {
-        printErr(`[TypeError] Cannot swap variable '${node.left}' of type '${env[node.left].type}' with variable '${node.right}' of type '${env[node.right].type}'.`);
+    if (varA.type !== varB.type) {
+        printErr(`[TypeError] Cannot swap variable '${node.left}' of type '${varA.type}' with variable '${node.right}' of type '${varB.type}'.`);
     }
 
-    let temp = env[node.left].value;
-    env[node.left].value = env[node.right].value;
-    env[node.right].value = temp;
+    let temp = varA.value;
+    varA.value = varB.value;
+    varB.value = temp;
 }
 
 // ============================================================================
