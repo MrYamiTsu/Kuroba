@@ -61,3 +61,29 @@ ivar pseudo = copy("Nom : ");
 pasteLn("Bienvenue " + pseudo);
 ```
 
+---
+
+## Full Syntax Reference
+
+| Category | Syntax | Description |
+| :--- | :--- | :--- |
+| **Output** | `paste(x);`, `pasteLn(x);` | Prints without newline (`paste`) or with newline (`pasteLn`) |
+| **Input** | `copy("...");`, `copyKey();` | Line input expression (`copy`) or single key capture (`copyKey`) |
+| **Screen** | `clear();`, `clear(cond);` | Terminal clear immediately or guarded by condition |
+| **Comments** | `~~ comment` | Single-line comment to end of line |
+| **Variables** | `ivar x = 10;` | Inferred typed variable |
+| **Constants** | `iconst PI = 3.14;` | Read-only constant |
+| **Coercion** | `ivar~Int age = "25";` | Type coercion (`~String`, `~Int`, `~Float`, `~Bool`) |
+| **Non-Nullable** | `ivar~(String) u = "...";` | Strict non-nullable contract |
+| **Retyping** | `x~String = "A";` | In-place dynamic transtyping |
+| **Compound Assign** | `x += 5;`, `x *= 2;` | Arithmetic in-place update (`+=`, `-=`, `*=`, `/=`, `%=`) |
+| **Step Operators** | `i++`, `i--` | Step increment / decrement |
+| **Native Swap** | `a <-> b;` | Atomic in-place variable swap |
+| **Conditionals** | `if c then ... else ... end` | Conditional block statement |
+| **Loops** | `for (...) then ... end` | 3-clause for loop with `break;` and `skip;` |
+| **While Loop** | `while c then ... end` | Pre-test conditional loop |
+| **Do-While Loop** | `do ... while c;` | Post-test loop guaranteed to execute at least once |
+| **Matching** | `given x then case: ... end` | Pattern matching with `break;` and `case: ~` fallback |
+| **Guard Exit** | `exit();`, `exit(cond);` | Immediate or conditional process exit |
+| **Equality & Logic** | `==`, `!=`, `&&`, `\|\|`, `!` | Strict equality with boolean/NULL coercion |
+

@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.1-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.2-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg?style=for-the-badge)](LICENSE)
@@ -23,7 +23,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 [**Quickstart**](#quickstart) •
 [**Showcase**](#showcase) •
 [**Features**](#key-highlights) •
-[**Syntax Cheatsheet**](#syntax-at-a-glance) •
+[**Notable Differences**](#notable-differences) •
 [**Architecture**](#architecture) •
 [**Roadmap**](#roadmap) •
 [**Full Documentation**](docs/README.md)
@@ -169,35 +169,22 @@ node index.js path/to/script.krb
 
 ---
 
-## Syntax at a Glance
+## Notable Differences
 
-| Feature             | Syntax Example                      | Description                                                            |
-| :------------------ | :---------------------------------- | :--------------------------------------------------------------------- |
-| **Output**          | `paste("Hi");` / `pasteLn("Hi");`   | Prints to stdout without newline (`paste`) or with newline (`pasteLn`) |
-| **Input**           | `copy("Nom: ");` / `copyKey();`     | Blocking line input (`copy`) or single key capture (`copyKey`)         |
-| **Comments**        | `~~ comment`                        | Single-line comment to end of line                                     |
-| **Variables**       | `ivar score = 100;`                 | Variable declaration with type inference                               |
-| **Constants**       | `iconst PI = 3.14;`                 | Immutable constant declaration                                         |
-| **Coercion**        | `ivar~String id = 42;`              | Explicit casting (`~String`, `~Int`, `~Float`, `~Bool`)                |
-| **Non-Nullable**    | `ivar~(String) id = "X";`           | Strict non-nullable typing                                             |
-| **Reassignment**    | `score = 150;`                      | Strict-typed variable update                                           |
-| **Compound Assign** | `score += 10;`, `val *= 2;`         | In-place arithmetic update (`+=`, `-=`, `*=`, `/=`, `%=`)              |
-| **Step Operators**  | `i++`, `i--`                        | In-place increment and decrement                                       |
-| **For Loop**        | `for (ivar i = 0; i < 5; i++) then` | Iterative loop with `break;` and `skip;` support                       |
-| **While Loop**      | `while (n < 10) then ... end`       | Conditional loop with `break;` and `skip;` support                     |
-| **Do-While Loop**   | `do ... while (n < 10);`            | Post-test loop guaranteed to execute at least once                     |
-| **Retyping**        | `score~String = "A";`               | Dynamic type transtyping (`~Type` / `~(Type)`)                         |
-| **Native Swap**     | `a <-> b;`                          | In-place atomic swap with type equality checks                         |
-| **Modulo & Order**  | `10 % 3`, `a <= b`                  | Arithmetic modulo and standard comparisons                             |
-| **Guard Exit**      | `exit();` / `exit(cond);`           | Immediate exit or inline conditional guard clause                      |
-| **Screen Clear**    | `clear();` / `clear(cond);`         | Immediate or conditional console screen clear                          |
-| **Conditionals**    | `if cond then ... else ... end`     | Block statement ending with `end`                                      |
-| **Pattern Match**   | `given x then case: 1 ... end`      | Multi-branch matching with `break;`                                    |
-| **Fallback**        | `case: ~`                           | Fallback branch (redirects here if `break;` is omitted)                |
-| **Equality**        | `x == y`, `x != y`                  | Strict equality (`0 == FALSE`, `1 == TRUE`)                            |
-| **Logic**           | `a && b`, `a \|\| b`, `!c`          | Short-circuit boolean operations                                       |
+Kuroba combines concepts from multiple language paradigms while introducing its own signature syntax and ergonomics:
 
-Detailed specifications and topic guides: **[Browse Full Documentation](docs/README.md)**
+| Concept | Kuroba Syntax | How it Differs from JS / Python / C |
+| :--- | :--- | :--- |
+| **Comments** | `~~ comment` | Double-tilde zen feather comments instead of `//` or `#`. |
+| **Native Swap** | `a <-> b;` | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring. |
+| **Coercion & Nullability** | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";` | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration. |
+| **Dynamic Retyping** | `score~String = "A";` | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable. |
+| **Skip Statement** | `skip;` | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping. |
+| **Inline Guards** | `exit(cond);`<br/>`clear(cond);` | Evaluates a guard condition directly in the statement call without wrapping in an `if` block. |
+| **Pattern Match Fallback** | `case: ~` | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`. |
+| **Interactive Key Capture** | `copyKey()` | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter. |
+
+> Looking for the complete language cheatsheet and guide? **[Browse Full Documentation & Syntax Reference](docs/README.md)**
 
 ---
 
@@ -265,7 +252,7 @@ Kuroba/
 - [x] Modulo operator (`%`)
 - [x] Dynamic variable transtyping (`var~Type = val;` and `var~(Type) = val;`)
 
-### Phase 2: Iteration & Interactive Console `(In Progress)`
+### Phase 2: Iteration & Interactive Console `(Completed - v1.0.2)`
 
 - [x] Process termination & inline conditional guard (`exit()`, `exit(cond)`)
 - [x] Output formatting: `paste` (no newline) vs `pasteLn` (with newline)
