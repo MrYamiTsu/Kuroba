@@ -179,6 +179,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Native Swap** | `a <-> b;` | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring. |
 | **Coercion & Nullability** | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";` | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration. |
 | **Dynamic Retyping** | `score~String = "A";` | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable. |
+| **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;` | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items. |
 | **Skip Statement** | `skip;` | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping. |
 | **Inline Guards** | `exit(cond);`<br/>`clear(cond);` | Evaluates a guard condition directly in the statement call without wrapping in an `if` block. |
 | **Pattern Match Fallback** | `case: ~` | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`. |
@@ -268,7 +269,7 @@ Kuroba/
 
 - [x] Strict block scoping (variables declared in `if`, `while`, `do-while`, and `for` blocks expire at `end`)
 - [x] Multi-line block comments (`~~{{ ... }}`)
-- [ ] Dynamic Arrays / Tables (`[1, 2, 3]`) with indexing (`arr[0]`)
+- [x] Dynamic Arrays / Tables (`[1, 2, 3]`) with indexing (`arr[0]`), generic typing (`List<Type>`), and compound operators
 - [ ] Stacks (LIFO) and Queues (FIFO) collections
 - [ ] Dictionaries / Key-Value objects (`{ key: value }`)
 - [ ] Collection iteration (`for item in list ... end`)

@@ -2,6 +2,7 @@ const fs = require('fs');
 const { printErr } = require('./errors');
 
 function getType(val) {
+    if (Array.isArray(val)) return 'List';
     if (typeof val === 'number') {
         if (Number.isInteger(val)) {
             return 'Int';
@@ -15,10 +16,44 @@ function getType(val) {
     return 'Unknown';
 }
 
+function castToType(val, targetType) {
+    if (val === null) return null;
+
+    if (targetType === 'String') {
+        return String(val);
+    } else if (targetType === 'Int' || targetType === 'Float') {
+        let numb = Number(val);
+        if (isNaN(numb)) {
+            printErr(`[TypeError] Cannot cast value '${val}' to type '${targetType}'.`);
+        }
+
+        return (targetType === 'Int') ? Math.trunc(numb) : numb;
+    } else if (targetType === 'Bool' || targetType === 'Boolean') {
+        if (val === 0 || val === 'FALSE' || val === false) return false;
+        if (val === 1 || val === 'TRUE' || val === true) return true;
+
+        return Boolean(val);
+    }
+
+    return val;
+}
+
 function isKurobaEqual(a, b) {
     if ((a === 0 && b === false) || (a === false && b === 0)) return true;
     if ((a === 1 && b === true) || (a === true && b === 1)) return true;
     return a === b;
+}
+
+function formatKurobaValue(val, isInsideList = false) {
+    if (val === true) return 'TRUE';
+    if (val === false) return 'FALSE';
+    if (val === null) return 'NULL';
+    if (typeof val === 'string' && isInsideList) return `"${val}"`;
+    if (Array.isArray(val)) {
+        return '[' + val.map(el => formatKurobaValue(el, true)).join(', ') + ']';
+    }
+
+    return String(val);
 }
 
 function createScope(parent = null) {
@@ -65,6 +100,9 @@ function evaluate(node, env = createScope()) {
         case 'LogicalExpression': return evalLogical(node, env);
         case 'VarRetype': return evalVarRetype(node, env);
         case 'SwapStatement': return evalSwap(node, env);
+        case 'ListLiteral': return evalListLiteral(node, env);
+        case 'IndexAccess': return evalIndexAccess(node, env);
+        case 'IndexAssign': return evalIndexAssign(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }
@@ -87,16 +125,35 @@ function evalVarDeclar(node, env) {
                 val = String(val);
             } else if (node.explType === 'Int' || node.explType === 'Float') {
                 let numb = Number(val);
+
                 if (isNaN(numb)) {
                     printErr(`[TypeError] Cannot cast value '${val}' to type '${node.explType}'.`);
                 }
+
                 val = numb;
             } else if (node.explType === 'Bool' || node.explType === 'Boolean') {
                 if (val === 0 || val === 'FALSE' || val === false) val = false;
                 else if (val === 1 || val === 'TRUE' || val === true) val = true;
                 else val = Boolean(val);
+            } else if (node.explType === 'List') {
+                if (!Array.isArray(val)) {
+                    printErr(`[TypeError] Cannot assign non-list value of type '${getType(val)}' to variable '${node.name}' of type '${node.explType}'.`);
+                }
+
+                if (node.typeInfo && node.typeInfo.elemType) {
+                    for (let i = 0; i < val.length; i++) {
+                        let elem = val[i];
+                        if (elem === null) {
+                            if (!node.typeInfo.isElemNullable) {
+                                printErr(`[TypeError] Element at index ${i} in list '${node.name}' cannot be NULL.`);
+                            }
+                        } else {
+                            val[i] = castToType(elem, node.typeInfo.elemType);
+                        }
+                    }
+                }
             } else {
-                printErr(`[TypeError] Unknown explicit type '${node.explType}'. Supported types are 'String', 'Int', 'Bool' and 'Float'.`);
+                printErr(`[TypeError] Unknown explicit type '${node.explType}'. Supported types are 'String', 'Int', 'Bool', 'Float' and 'List'.`);
             }
         }
     }
@@ -105,7 +162,8 @@ function evalVarDeclar(node, env) {
         value: val,
         type: node.explType || getType(val),
         isConst: !!node.isConst,
-        isNullable: node.isNullable !== false
+        isNullable: node.isNullable !== false,
+        typeInfo: node.typeInfo || null
     };
     return val;
 }
@@ -137,6 +195,22 @@ function evalVarAssign(node, env) {
         printErr(`[TypeError] Cannot assign type '${newType}' to variable '${node.name}' of type '${scope.values[node.name].type}'.`);
     }
 
+    if (scope.values[node.name].typeInfo && scope.values[node.name].typeInfo.baseType === 'List') {
+        let tInfo = scope.values[node.name].typeInfo;
+        if (tInfo.elemType) {
+            for (let i = 0; i < newVal.length; i++) {
+                let elem = newVal[i];
+                if (elem === null) {
+                    if (!tInfo.isElemNullable) {
+                        printErr(`[TypeError] Element at index ${i} in list '${node.name}' cannot be NULL.`);
+                    }
+                } else {
+                    newVal[i] = castToType(elem, tInfo.elemType);
+                }
+            }
+        }
+    }
+
     scope.values[node.name].value = newVal;
     return newVal;
 }
@@ -164,28 +238,33 @@ function evalVarRetype(node, env) {
     if (!node.isNullable && val === null) {
         printErr(`[TypeError] Cannot assign NULL to non-nullable variable '${node.name}' of type '(${node.targetType})'.`);
     }
-    
+
     if (val !== null) {
-        if (node.targetType === 'String') {
-            val = String(val);
-        } else if (node.targetType === 'Int' || node.targetType === 'Float') {
-            let numb = Number(val);
-            if (isNaN(numb)) {
-                printErr(`[TypeError] Cannot cast value '${val}' to type '${node.targetType}'.`);
+        if (node.targetType === 'List') {
+            if (!Array.isArray(val)) {
+                printErr(`[TypeError] Cannot cast non-list value of type '${getType(val)}' to type 'List'.`);
             }
-            val = numb;
-        } else if (node.targetType === 'Bool' || node.targetType === 'Boolean') {
-            if (val === 0 || val === 'FALSE' || val === false) val = false;
-            else if (val === 1 || val === 'TRUE' || val === true) val = true;
-            else val = Boolean(val);
+            if (node.typeInfo && node.typeInfo.elemType) {
+                for (let i = 0; i < val.length; i++) {
+                    let elem = val[i];
+                    if (elem === null) {
+                        if (!node.typeInfo.isElemNullable) {
+                            printErr(`[TypeError] Element at index ${i} in list '${node.name}' cannot be NULL.`);
+                        }
+                    } else {
+                        val[i] = castToType(elem, node.typeInfo.elemType);
+                    }
+                }
+            }
         } else {
-            printErr(`[TypeError] Unknown explicit type '${node.targetType}'. Supported types are 'String', 'Int', 'Bool' and 'Float'.`);
+            val = castToType(val, node.targetType);
         }
     }
 
     scope.values[node.name].value = val;
     scope.values[node.name].type = node.targetType;
     scope.values[node.name].isNullable = node.isNullable;
+    scope.values[node.name].typeInfo = node.typeInfo || null;
 
     return val;
 }
@@ -414,11 +493,7 @@ function evalPaste(node, env) {
     }
 
     let val = evaluate(node.expr, env);
-    let txt = val;
-
-    if (val === true) txt = 'TRUE';
-    else if (val === false) txt = 'FALSE';
-    else if (val === null) txt = 'NULL';
+    let txt = formatKurobaValue(val);
 
     if (node.newLine) {
         console.log(txt);
@@ -432,11 +507,7 @@ function evalPaste(node, env) {
 function evalCopy(node, env) {
     if (node.prompt !== null) {
         let val = evaluate(node.prompt, env);
-        let txt = val;
-
-        if (val === true) txt = 'TRUE';
-        else if (val === false) txt = 'FALSE';
-        else if (val === null) txt = 'NULL';
+        let txt = formatKurobaValue(val);
 
         process.stdout.write(String(txt));
     }
@@ -578,6 +649,91 @@ function evalLogical(node, env) {
     }
 
     printErr(`[RuntimeError] Unsupported logical operator '${node.operator}'.`);
+}
+
+// ============================================================================
+// 5. COLLECTIONS & LISTS
+// ============================================================================
+
+function evalListLiteral(node, env) {
+    return node.elements.map(elemNode => evaluate(elemNode, env));
+}
+
+function evalIndexAccess(node, env) {
+    let target = evaluate(node.target, env);
+    if (!Array.isArray(target)) {
+        printErr(`[TypeError] Cannot index non-list value of type '${getType(target)}'.`);
+    }
+
+    let idx = evaluate(node.index, env);
+    if (!Number.isInteger(idx)) {
+        printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
+    }
+
+    if (idx < 0 || idx >= target.length) {
+        printErr(`[IndexError] Index ${idx} out of bounds for list of length ${target.length}.`);
+    }
+
+    return target[idx];
+}
+
+function evalIndexAssign(node, env) {
+    let scope = findScope(node.name, env);
+    if (!scope) {
+        printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+    }
+
+    let targetVar = scope.values[node.name];
+    if (targetVar.isConst) {
+        printErr(`[TypeError] Cannot modify elements of constant list '${node.name}'.`);
+    }
+
+    let list = targetVar.value;
+    if (!Array.isArray(list)) {
+        printErr(`[TypeError] Variable '${node.name}' is not a List.`);
+    }
+
+    let idx = evaluate(node.index, env);
+    if (!Number.isInteger(idx)) {
+        printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
+    }
+
+    if (idx < 0 || idx >= list.length) {
+        printErr(`[IndexError] Index ${idx} out of bounds for list '${node.name}' of length ${list.length}.`);
+    }
+
+    let newVal = evaluate(node.value, env);
+
+    if (node.operator) {
+        switch (node.operator) {
+            case '+': newVal = list[idx] + newVal; break;
+            case '-': newVal = list[idx] - newVal; break;
+            case '*': newVal = list[idx] * newVal; break;
+            case '/':
+                if (newVal === 0) printErr("[MathError] Division by zero is undefined.");
+                newVal = list[idx] / newVal;
+                break;
+            case '%':
+                if (newVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+                newVal = list[idx] % newVal;
+                break;
+        }
+    }
+
+    let tInfo = targetVar.typeInfo;
+    if (tInfo && tInfo.elemType) {
+        if (newVal === null) {
+            if (!tInfo.isElemNullable) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable element of list '${node.name}'.`);
+            }
+        } else {
+            newVal = castToType(newVal, tInfo.elemType);
+        }
+    }
+
+    list[idx] = newVal;
+
+    return newVal;
 }
 
 module.exports = { evaluate };

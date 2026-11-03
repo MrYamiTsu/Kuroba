@@ -78,4 +78,109 @@ role = NULL;                 ~~ TypeError: Cannot assign NULL to non-nullable va
 
 Constants (`iconst`) cannot be retyped and will produce a `TypeError`.
 
+---
+
+## Lists & Collections (`[...]`, `List<Type>`)
+
+Kuroba features dynamic arrays with support for generic typing, nullability contracts, 0-based index access, and compound mutations.
+
+### Declaration and Literals
+
+```krb
+~~ Inferred dynamic list
+ivar fruits = ["pomme", "banane", "cerise"];
+
+~~ Empty list
+ivar empty = [];
+
+~~ Nested multidimensional lists (matrices)
+ivar grid = [[1, 2], [3, 4]];
+pasteLn(grid[1][0]); ~~ Outputs 3
+```
+
+### Element Access & Mutation
+
+Elements are accessed via bracket notation (`list[index]`). Indices must be integers and within the bounds `[0, length - 1]`.
+
+```krb
+ivar scores = [10, 20, 30];
+
+pasteLn(scores[0]);   ~~ 10
+scores[1] = 99;       ~~ Assignment
+scores[0] += 5;       ~~ Compound addition (15)
+scores[2]++;          ~~ Step increment (31)
+
+pasteLn(scores);      ~~ [15, 99, 31]
+```
+
+Accessing an invalid index immediately halts execution with an `IndexError`:
+
+```krb
+pasteLn(scores[5]);   ~~ [IndexError] Index 5 out of bounds for list of length 3.
+```
+
+### Generic Typing & Nullability Matrix
+
+Kuroba provides compile-and-runtime type safety on list elements using generic syntax `~List<Type>`:
+
+| Syntax | List Nullable? | Elements Nullable? | Description |
+| :--- | :---: | :---: | :--- |
+| `ivar~List<Type>` | **Yes** | **Yes** | Nullable list; elements can be `Type` or `NULL`. |
+| `ivar~List<(Type)>` | **Yes** | **No** | Nullable list; elements must strictly be non-null `Type`. |
+| `ivar~(List<Type>)` | **No** | **No** | Non-nullable list and non-nullable elements. |
+
+```krb
+~~ Nullable list with nullable Strings
+ivar~List<String> notes = ["ok", NULL, "bien"];
+
+~~ Nullable list where elements CANNOT be NULL
+ivar~List<(Int)> ids = [1, 2, 3];
+ids[0] = NULL;  ~~ [TypeError] Cannot assign NULL to non-nullable element of list 'ids'.
+
+~~ Strict non-nullable list and elements
+ivar~(List<Int>) coords = [10, 20];
+coords = NULL;  ~~ [TypeError] Cannot assign NULL to non-nullable variable 'coords'.
+```
+
+### Constant Lists
+
+When defined with `iconst`, neither the variable nor the individual elements can be modified:
+
+```krb
+iconst ORIGIN = [0, 0];
+ORIGIN[0] = 5;  ~~ [TypeError] Cannot modify elements of constant list 'ORIGIN'.
+```
+
+### Element Coercion
+
+Like scalar variables declared with `~Type`, generic list elements are automatically coerced to the target element type whenever possible:
+
+```krb
+~~ Numbers are automatically cast to Strings:
+ivar~List<String> labels = [10, 20, "ok"]; ~~ Result: ["10", "20", "ok"]
+
+~~ Numeric strings are automatically cast to Ints / Floats:
+ivar~List<Int> numbers = ["42", 100];      ~~ Result: [42, 100]
+
+~~ Mutating with auto-coercion:
+numbers[0] = "99";                         ~~ Coerced to 99
+```
+
+If conversion is impossible (e.g. `ivar~List<Int> bad = ["abc"];`), a `TypeError` is thrown.
+
+### Dynamic List Retyping (`list~List<NewType> = ...`)
+
+You can dynamically retype existing lists to a different element type in-place:
+
+```krb
+ivar~List<String> rawData = ["10", "20", "30"];
+
+~~ Dynamically retype the entire list to Ints:
+rawData~List<Int> = rawData;               ~~ Result: [10, 20, 30]
+rawData[0] += 5;                           ~~ 15
+pasteLn(rawData);                          ~~ [15, 20, 30]
+```
+
+
+
 

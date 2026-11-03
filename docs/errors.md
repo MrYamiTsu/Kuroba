@@ -47,3 +47,13 @@ Occurs on undefined mathematical operations:
 [MathError] Division by zero is undefined.
 ```
 
+## IndexError
+
+Occurs when an index is outside the bounds of a collection or is not an integer:
+
+```text
+[IndexError] Index 5 out of bounds for list of length 2.
+[IndexError] List index must be an integer, got 'abc'.
+```
+
+

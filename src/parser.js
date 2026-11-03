@@ -61,7 +61,24 @@ function parse(tokens) {
             printErr("[SyntaxError: at end of file] Unexpected end of input. Expected expression.");
         }
 
-        if (match('COPY', 'COPYKEY')) {
+        let expr = null;
+
+        if (match('LBRACKET')) {
+            let elements = [];
+
+            if (!check('RBRACKET')) {
+                while (true) {
+                    elements.push(parseLogicOr());
+                    if (!match('COMMA')) break;
+                    if (check('RBRACKET')) break;
+                }
+            }
+
+            consume('RBRACKET', "Expected closing ']' after list elements.");
+
+            expr = { type: 'ListLiteral', elements };
+        }
+        else if (match('COPY', 'COPYKEY')) {
             let isOneKey = (previous().type === 'COPYKEY');
 
             consume('LPAREN', "Expected '(' after 'copy'.");
@@ -70,29 +87,35 @@ function parse(tokens) {
             if (!check('RPAREN')) {
                 prompt = parseLogicOr();
             }
+
             consume('RPAREN', "Expected ')' after 'copy' prompt.");
-
-            return { type: 'CopyExpression', prompt, oneKey: isOneKey };
+            expr = { type: 'CopyExpression', prompt, oneKey: isOneKey };
         }
-        
-        if (match('IDENTIFIER')) {
-            return { type: 'Variable', name: previous().value };
+        else if (match('IDENTIFIER')) {
+            expr = { type: 'Variable', name: previous().value };
         }
-
-        if (match('INT', 'STRING', 'BOOL', 'FLOAT', 'NULL')) {
+        else if (match('INT', 'STRING', 'BOOL', 'FLOAT', 'NULL')) {
             return previous().value;
         }
-
-        if (match('LPAREN')) {
+        else if (match('LPAREN')) {
             let openParen = previous();
-            let expr = parseLogicOr();
+            expr = parseLogicOr();
+
             if (!match('RPAREN')) {
                 printErr(`[SyntaxError: ${formatLocation(peek() || openParen)}] Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`);
             }
-            return expr;
+        }
+        else {
+            printErr(`[SyntaxError: ${formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
         }
 
-        printErr(`[SyntaxError: ${formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
+        while (match('LBRACKET')) {
+            let index = parseLogicOr();
+            consume('RBRACKET', "Expected closing ']' after index.");
+            expr = { type: 'IndexAccess', target: expr, index };
+        }
+
+        return expr;
     }
 
     function parseUnary() {
@@ -351,26 +374,67 @@ function parse(tokens) {
         };
     }
 
+    function parseType() {
+        let isNullable = true;
+        let baseType = null;
+        let elemType = null;
+        let isElemNullable = true;
+
+        if (match('LPAREN')) {
+            isNullable = false;
+            baseType = consume('IDENTIFIER', "Expected type identifier inside '(...)'. (e.g. String, Int, List)").value;
+            
+            if (baseType === 'List' && match('LESS')) {
+                isElemNullable = false;
+
+                if (match('LPAREN')) {
+                    elemType = consume('IDENTIFIER', "Expected element type inside 'List<(...)>'.").value;
+                    consume('RPAREN', "Expected closing ')' after element type.");
+                } else {
+                    elemType = consume('IDENTIFIER', "Expected element type inside 'List<...>'.").value;
+                }
+
+                consume('GREATER', "Expected closing '>' after List type.");
+            }
+
+            consume('RPAREN', "Expected closing ')' after non-nullable type.");
+        } else {
+            baseType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Int, List).").value;
+
+            if (baseType === 'List' && match('LESS')) {
+                if (match('LPAREN')) {
+                    isElemNullable = false;
+                    elemType = consume('IDENTIFIER', "Expected element type inside 'List<(...)>'.").value;
+                    consume('RPAREN', "Expected closing ')' after element type.");
+                } else {
+                    isElemNullable = true;
+                    elemType = consume('IDENTIFIER', "Expected element type inside 'List<...>'.").value;
+                }
+
+                consume('GREATER', "Expected closing '>' after List type.");
+            }
+        }
+
+        return { baseType, isNullable, elemType, isElemNullable };
+    }
+
     function parseVarDeclaration() {
         let isConst = previous().type === 'ICONST';
         let isNullable = true;
         let explType = null;
 
+        let typeInfo = null;
         if (match('TILDE')) {
-            if (match('LPAREN')) {
-                isNullable = false;
-                explType = consume('IDENTIFIER', "Expected type identifier inside '~(...)'.").value;
-                consume('RPAREN', "Expected closing ')' after non-nullable type.");
-            } else {
-                explType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Int, or Bool).").value;
-            }
+            typeInfo = parseType();
+            explType = typeInfo.baseType;
+            isNullable = typeInfo.isNullable;
         }
 
         let varName = consume('IDENTIFIER', "Expected variable name in declaration.").value;
         consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
         let value = parseLogicOr();
 
-        return { type: 'VarDeclar', name: varName, explType, isNullable, value, isConst };
+        return { type: 'VarDeclar', name: varName, explType, isNullable, value, isConst, typeInfo };
     }
 
     function parseWhileStatement() {
@@ -457,6 +521,38 @@ function parse(tokens) {
             consume('RPAREN', "Expected ')' after 'exit' condition.");
             stmt = { type: 'ExitStatement', condition };
         }
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'LBRACKET') {
+            let varName = advance().value;
+            advance();
+            let index = parseLogicOr();
+            consume('RBRACKET', "Expected ']' after list index.");
+
+            if (match('INCREMENT')) {
+                stmt = { type: 'IndexAssign', name: varName, index, value: 1, operator: '+' };
+            } else if (match('DECREMENT')) {
+                stmt = { type: 'IndexAssign', name: varName, index, value: 1, operator: '-' };
+            } else if (match('ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN')) {
+                let assignToken = previous();
+                let expr = parseLogicOr();
+                let opMap = {
+                    'PLUSASSIGN': '+',
+                    'MINUSASSIGN': '-',
+                    'MULTASSIGN': '*',
+                    'DIVIDEASSIGN': '/',
+                    'MODULOASSIGN': '%'
+                };
+                
+                stmt = {
+                    type: 'IndexAssign',
+                    name: varName,
+                    index,
+                    value: expr,
+                    operator: opMap[assignToken.type] || null
+                };
+            } else {
+                printErr(`[SyntaxError: ${formatLocation(peek())}] Expected assignment operator after list index '${varName}[...]'.`);
+            }
+        }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'INCREMENT') {
             let varName = advance().value;
             advance();
@@ -502,20 +598,13 @@ function parse(tokens) {
             let varName = advance().value;
             advance();
 
-            let isNullable = true;
-            let targetType = null;
-
-            if (match('LPAREN')) {
-                isNullable = false;
-                targetType = consume('IDENTIFIER', "Expected type identifier inside '~(...)'.").value;
-                consume('RPAREN', "Expected closing ')' after non-nullable type.");
-            } else {
-                targetType = consume('IDENTIFIER', "Expected type identifier after '~'.").value;
-            }
+            let typeInfo = parseType();
+            let targetType = typeInfo.baseType;
+            let isNullable = typeInfo.isNullable;
 
             consume('ASSIGN', `Missing '=' assignment operator after '${varName}~${targetType}'.`);
             let value = parseLogicOr();
-            stmt = { type: 'VarRetype', name: varName, targetType, isNullable, value };
+            stmt = { type: 'VarRetype', name: varName, targetType, isNullable, value, typeInfo };
         }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'SWAP') {
             let leftVar = advance().value;

@@ -55,6 +55,12 @@ for (ivar i = 0; i < 3; i++) then
     pasteLn(i);
 end
 
+~~ Dynamic lists & indexing
+ivar inventory = ["Potion", "Katana", "Elixir"];
+inventory[0] = "Mega Potion";
+inventory[1] += " +1";
+pasteLn(inventory);
+
 ~~ Interactive console input & clear
 clear();
 ivar pseudo = copy("Nom : ");
@@ -75,7 +81,10 @@ pasteLn("Bienvenue " + pseudo);
 | **Constants** | `iconst PI = 3.14;` | Read-only constant |
 | **Coercion** | `ivar~Int age = "25";` | Type coercion (`~String`, `~Int`, `~Float`, `~Bool`) |
 | **Non-Nullable** | `ivar~(String) u = "...";` | Strict non-nullable contract |
-| **Retyping** | `x~String = "A";` | In-place dynamic transtyping |
+| **Lists / Arrays** | `[1, 2, 3]`, `list[0]` | Dynamic arrays with 0-based indexing and nesting |
+| **Generic Lists** | `ivar~List<Int> l = [1];`<br/>`ivar~List<(String)> strict = [];` | Typed lists with optional element non-nullability contracts |
+| **Index Mutation** | `list[0] = v;`, `list[0] += 5;` | In-place element reassignment and compound operators |
+| **Retyping** | `x~String = "A";`<br/>`list~List<Int> = list;` | In-place dynamic transtyping for variables and lists |
 | **Compound Assign** | `x += 5;`, `x *= 2;` | Arithmetic in-place update (`+=`, `-=`, `*=`, `/=`, `%=`) |
 | **Step Operators** | `i++`, `i--` | Step increment / decrement |
 | **Native Swap** | `a <-> b;` | Atomic in-place variable swap |
