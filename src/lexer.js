@@ -83,10 +83,42 @@ function tokenize(input) {
         // --------------------------------------------------------------------
         if (char === '~') {
             if (input[cursor + 1] === '~') {
-                while (cursor < input.length && input[cursor] !== '\n') {
-                    cursor++;
+                if (input[cursor + 2] === '{' && input[cursor + 3] === '{') {
+                    let startLine = line;
+                    let startCol = col;
+                    cursor += 4;
+                    col += 4;
+                    let closed = false;
+
+                    while (cursor < input.length) {
+                        if (input[cursor] === '}' && input[cursor + 1] === '}') {
+                            cursor += 2;
+                            col += 2;
+                            closed = true;
+                            break;
+                        }
+
+                        if (input[cursor] === '\n') {
+                            line++;
+                            col = 1;
+                        } else {
+                            col++;
+                        }
+
+                        cursor++;
+                    }
+
+                    if (!closed) {
+                        printErr(`[SyntaxError: Line ${startLine}, Col ${startCol}] Unclosed multi-line comment. Expected '}}'.`);
+                    }
+
+                    continue;
+                } else {
+                    while (cursor < input.length && input[cursor] !== '\n') {
+                        cursor++;
+                    }
+                    continue;
                 }
-                continue;
             }
             tokens.push({ type: 'TILDE', value: '~', line, col });
             cursor++;

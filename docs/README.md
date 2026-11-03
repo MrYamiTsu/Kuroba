@@ -70,7 +70,7 @@ pasteLn("Bienvenue " + pseudo);
 | **Output** | `paste(x);`, `pasteLn(x);` | Prints without newline (`paste`) or with newline (`pasteLn`) |
 | **Input** | `copy("...");`, `copyKey();` | Line input expression (`copy`) or single key capture (`copyKey`) |
 | **Screen** | `clear();`, `clear(cond);` | Terminal clear immediately or guarded by condition |
-| **Comments** | `~~ comment` | Single-line comment to end of line |
+| **Comments** | `~~ comment`, `~~{{ ... }}` | Single-line and multi-line block comments |
 | **Variables** | `ivar x = 10;` | Inferred typed variable |
 | **Constants** | `iconst PI = 3.14;` | Read-only constant |
 | **Coercion** | `ivar~Int age = "25";` | Type coercion (`~String`, `~Int`, `~Float`, `~Bool`) |

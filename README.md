@@ -175,7 +175,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 
 | Concept | Kuroba Syntax | How it Differs from JS / Python / C |
 | :--- | :--- | :--- |
-| **Comments** | `~~ comment` | Double-tilde zen feather comments instead of `//` or `#`. |
+| **Comments** | `~~ comment`<br/>`~~{{ block }}` | Double-tilde zen feather comments (`~~`) and multi-line block comments (`~~{{ ... }}`) instead of `//` or `/* */`. |
 | **Native Swap** | `a <-> b;` | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring. |
 | **Coercion & Nullability** | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";` | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration. |
 | **Dynamic Retyping** | `score~String = "A";` | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable. |
@@ -267,7 +267,7 @@ Kuroba/
 ### Phase 3: Data Structures & Collections
 
 - [x] Strict block scoping (variables declared in `if`, `while`, `do-while`, and `for` blocks expire at `end`)
-- [ ] Multi-line block comments (`~~{{ ... }}~~`)
+- [x] Multi-line block comments (`~~{{ ... }}`)
 - [ ] Dynamic Arrays / Tables (`[1, 2, 3]`) with indexing (`arr[0]`)
 - [ ] Stacks (LIFO) and Queues (FIFO) collections
 - [ ] Dictionaries / Key-Value objects (`{ key: value }`)
