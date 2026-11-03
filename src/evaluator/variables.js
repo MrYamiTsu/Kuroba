@@ -11,6 +11,11 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
         return null;
     }
 
+    if (targetType === 'Table') {
+        if (val && val.kind === 'Table') return val;
+        printErr(`[TypeError] Cannot assign non-Table value of type '${getType(val)}' to variable '${varName}' of type 'Table'.`);
+    }
+
     if (targetType === 'List' || targetType === 'Stack' || targetType === 'Queue') {
         let rawItems = null;
 

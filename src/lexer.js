@@ -1,49 +1,51 @@
-const { printErr } = require('./errors');
+const { printErr } = require("./errors");
 
 // ============================================================================
 // 1. KEYWORDS & SYMBOL DEFINITIONS
 // ============================================================================
 
 const KEYWORDS = {
-    'TRUE':    { type: 'BOOL',    value: true },
-    'FALSE':   { type: 'BOOL',    value: false },
-    'NULL':    { type: 'NULL',    value: null },
-    'paste':   { type: 'PASTE',   value: 'paste' },
-    'pasteLn': { type: 'PASTELN', value: 'pasteLn' },
-    'copy':    { type: 'COPY',    value: 'copy' },
-    'copyKey': { type: 'COPYKEY', value: 'copyKey' },
-    'ivar':    { type: 'IVAR',    value: 'ivar' },
-    'iconst':  { type: 'ICONST',  value: 'iconst' },
-    'if':      { type: 'IF',      value: 'if' },
-    'then':    { type: 'THEN',    value: 'then' },
-    'elif':    { type: 'ELIF',    value: 'elif' },
-    'else':    { type: 'ELSE',    value: 'else' },
-    'end':     { type: 'END',     value: 'end' },
-    'for':     { type: 'FOR',     value: 'for' },
-    'while':   { type: 'WHILE',   value: 'while' },
-    'given':   { type: 'GIVEN',   value: 'given' },
-    'do':      { type: 'DO',      value: 'do' },
-    'case':    { type: 'CASE',    value: 'case' },
-    'break':   { type: 'BREAK',   value: 'break' },
-    'skip':    { type: 'SKIP',    value: 'skip' },
-    'clear':   { type: 'CLEAR',   value: 'clear' },
-    'exit':    { type: 'EXIT',    value: 'exit' },
+  TRUE: { type: "BOOL", value: true },
+  FALSE: { type: "BOOL", value: false },
+  NULL: { type: "NULL", value: null },
+  paste: { type: "PASTE", value: "paste" },
+  pasteLn: { type: "PASTELN", value: "pasteLn" },
+  copy: { type: "COPY", value: "copy" },
+  copyKey: { type: "COPYKEY", value: "copyKey" },
+  ivar: { type: "IVAR", value: "ivar" },
+  iconst: { type: "ICONST", value: "iconst" },
+  if: { type: "IF", value: "if" },
+  then: { type: "THEN", value: "then" },
+  elif: { type: "ELIF", value: "elif" },
+  else: { type: "ELSE", value: "else" },
+  end: { type: "END", value: "end" },
+  for: { type: "FOR", value: "for" },
+  while: { type: "WHILE", value: "while" },
+  given: { type: "GIVEN", value: "given" },
+  do: { type: "DO", value: "do" },
+  case: { type: "CASE", value: "case" },
+  break: { type: "BREAK", value: "break" },
+  skip: { type: "SKIP", value: "skip" },
+  clear: { type: "CLEAR", value: "clear" },
+  exit: { type: "EXIT", value: "exit" },
 };
 
 const SYMBOLS = {
-    ';': 'SEMICOLON',
-    '+': 'PLUS',
-    '-': 'MINUS',
-    '*': 'MULT',
-    '/': 'DIVIDE',
-    '(': 'LPAREN',
-    ')': 'RPAREN',
-    ':': 'COLON',
-    '%': 'MODULO',
-    '[': 'LBRACKET',
-    ']': 'RBRACKET',
-    ',': 'COMMA',
-    '.': 'DOT'
+  ";": "SEMICOLON",
+  "+": "PLUS",
+  "-": "MINUS",
+  "*": "MULT",
+  "/": "DIVIDE",
+  "(": "LPAREN",
+  ")": "RPAREN",
+  ":": "COLON",
+  "%": "MODULO",
+  "[": "LBRACKET",
+  "]": "RBRACKET",
+  ",": "COMMA",
+  ".": "DOT",
+  "{": "LBRACE",
+  "}": "RBRACE"
 };
 
 // ============================================================================
@@ -51,291 +53,329 @@ const SYMBOLS = {
 // ============================================================================
 
 function tokenize(input) {
-    let tokens = [];
-    let cursor = 0;
-    let line = 1;
-    let col = 1;
+  let tokens = [];
+  let cursor = 0;
+  let line = 1;
+  let col = 1;
 
-    const isDigit = (c) => c >= '0' && c <= '9';
-    const isLetter = (c) => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_';
-    const isIdentChar = (c) => isLetter(c) || isDigit(c);
+  const isDigit = (c) => c >= "0" && c <= "9";
+  const isLetter = (c) =>
+    (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
+  const isIdentChar = (c) => isLetter(c) || isDigit(c);
 
-    while (cursor < input.length) {
-        let char = input[cursor];
+  while (cursor < input.length) {
+    let char = input[cursor];
 
-        // --------------------------------------------------------------------
-        // Whitespace & Line tracking
-        // --------------------------------------------------------------------
-        if (char === ' ') {
-            cursor++;
-            col++;
-            continue;
-        }
-        if (char === '\n') {
-            cursor++;
-            line++;
-            col = 1;
-            continue;
-        }
-        if (char === '\r') {
-            cursor++;
-            continue;
-        }
-
-        // --------------------------------------------------------------------
-        // Comments & Tildes
-        // --------------------------------------------------------------------
-        if (char === '~') {
-            if (input[cursor + 1] === '~') {
-                if (input[cursor + 2] === '{' && input[cursor + 3] === '{') {
-                    let startLine = line;
-                    let startCol = col;
-                    cursor += 4;
-                    col += 4;
-                    let closed = false;
-
-                    while (cursor < input.length) {
-                        if (input[cursor] === '}' && input[cursor + 1] === '}') {
-                            cursor += 2;
-                            col += 2;
-                            closed = true;
-                            break;
-                        }
-
-                        if (input[cursor] === '\n') {
-                            line++;
-                            col = 1;
-                        } else {
-                            col++;
-                        }
-
-                        cursor++;
-                    }
-
-                    if (!closed) {
-                        printErr(`[SyntaxError: Line ${startLine}, Col ${startCol}] Unclosed multi-line comment. Expected '}}'.`);
-                    }
-
-                    continue;
-                } else {
-                    while (cursor < input.length && input[cursor] !== '\n') {
-                        cursor++;
-                    }
-                    continue;
-                }
-            }
-            tokens.push({ type: 'TILDE', value: '~', line, col });
-            cursor++;
-            col++;
-            continue;
-        }
-
-        // --------------------------------------------------------------------
-        // String Literals
-        // --------------------------------------------------------------------
-        if (char === '"') {
-            let startLine = line;
-            let startCol = col;
-            cursor++;
-            col++;
-            let str = '';
-
-            while (cursor < input.length && input[cursor] !== '"') {
-                if (input[cursor] === '\n') {
-                    line++;
-                    col = 1;
-                } else {
-                    col++;
-                }
-                str += input[cursor];
-                cursor++;
-            }
-
-            if (cursor >= input.length || input[cursor] !== '"') {
-                printErr(`[SyntaxError: Line ${startLine}, Col ${startCol}] Unterminated string literal. Expected closing quote '"'.`);
-            }
-
-            cursor++;
-            col++;
-            tokens.push({ type: 'STRING', value: str, line: startLine, col: startCol });
-            continue;
-        }
-
-        // --------------------------------------------------------------------
-        // Numeric Literals
-        // --------------------------------------------------------------------
-        if (isDigit(char)) {
-            let startLine = line;
-            let startCol = col;
-            let numStr = '';
-
-            while (cursor < input.length && isDigit(input[cursor])) {
-                numStr += input[cursor];
-                cursor++;
-                col++;
-            }
-
-            if (input[cursor] === '.' && isDigit(input[cursor + 1])) {
-                numStr += input[cursor];
-                cursor++;
-                col++;
-
-                while (cursor < input.length && isDigit(input[cursor])) {
-                    numStr += input[cursor];
-                    cursor++;
-                    col++;
-                }
-            }
-
-            let numVal = Number(numStr);
-            let numType = Number.isInteger(numVal) ? 'INT' : 'FLOAT';
-            tokens.push({ type: numType, value: numVal, line: startLine, col: startCol });
-            continue;
-        }
-
-        // --------------------------------------------------------------------
-        // Identifiers & Keywords
-        // --------------------------------------------------------------------
-        if (isLetter(char)) {
-            let startLine = line;
-            let startCol = col;
-            let word = '';
-
-            while (cursor < input.length && isIdentChar(input[cursor])) {
-                word += input[cursor];
-                cursor++;
-                col++;
-            }
-
-            let kw = KEYWORDS[word];
-            if (kw) {
-                tokens.push({ type: kw.type, value: kw.value, line: startLine, col: startCol });
-            } else {
-                tokens.push({ type: 'IDENTIFIER', value: word, line: startLine, col: startCol });
-            }
-            continue;
-        }
-
-        // --------------------------------------------------------------------
-        // Operators & Punctuation
-        // --------------------------------------------------------------------
-        if (char === '=') {
-            if (input[cursor + 1] === '=') {
-                tokens.push({ type: 'EQUALS', value: '==', line, col });
-                cursor += 2;
-                col += 2;
-            } else {
-                tokens.push({ type: 'ASSIGN', value: '=', line, col });
-                cursor++;
-                col++;
-            }
-            continue;
-        }
-
-        if (char === '&') {
-            if (input[cursor + 1] === '&') {
-                tokens.push({ type: 'AND', value: '&&', line, col });
-                cursor += 2;
-                col += 2;
-                continue;
-            }
-            printErr(`[SyntaxError: Line ${line}, Col ${col}] Unexpected single '&'. Did you mean '&&'?`);
-        }
-
-        if (char === '|') {
-            if (input[cursor + 1] === '|') {
-                tokens.push({ type: 'OR', value: '||', line, col });
-                cursor += 2;
-                col += 2;
-                continue;
-            }
-            printErr(`[SyntaxError: Line ${line}, Col ${col}] Unexpected single '|'. Did you mean '||'?`);
-        }
-
-        if (char === '!') {
-            if (input[cursor + 1] === '=') {
-                tokens.push({ type: 'NOTEQUALS', value: '!=', line, col });
-                cursor += 2;
-                col += 2;
-            } else {
-                tokens.push({ type: 'NOT', value: '!', line, col });
-                cursor++;
-                col++;
-            }
-            continue;
-        }
-
-        if (char === '<') {
-            if (input[cursor + 1] === '-' && input[cursor + 2] === '>') {
-                tokens.push({ type: 'SWAP', value: '<->', line, col})
-                cursor += 3;
-                col += 3;
-                continue;
-            }
-            if (input[cursor + 1] === '=') {
-                tokens.push({ type: 'LESSEQUAL', value: '<=', line, col });
-                cursor += 2;
-                col += 2;
-                continue;
-            }
-            tokens.push({ type: 'LESS', value: '<', line, col });
-            cursor++;
-            col++;
-            continue;
-        }
-
-        if (char === '>') {
-            if (input[cursor + 1] === '=') {
-                tokens.push({ type: 'GREATEREQUAL', value: '>=', line, col });
-                cursor += 2;
-                col += 2;
-                continue;
-            }
-            tokens.push({ type: 'GREATER', value: '>', line, col });
-            cursor++;
-            col++;
-            continue;
-        }
-
-        if (char === '+' && input[cursor + 1] === '+') {
-            tokens.push({ type: 'INCREMENT', value: '++', line, col });
-            cursor += 2;
-            col += 2;
-            continue;
-        }
-
-        if (char === '-' && input[cursor + 1] === '-') {
-            tokens.push({ type: 'DECREMENT', value: '--', line, col });
-            cursor += 2;
-            col += 2;
-            continue;
-        }
-
-        if ((char === '+' || char === '-' || char === '*' || char === '/' || char === '%') && input[cursor + 1] === '=') {
-            let opList = {
-                '+': 'PLUSASSIGN',
-                '-': 'MINUSASSIGN',
-                '*': 'MULTASSIGN',
-                '/': 'DIVIDEASSIGN',
-                '%': 'MODULOASSIGN'
-            };
-            tokens.push({ type: opList[char], value: char + '=', line, col });
-            cursor += 2;
-            col += 2;
-            continue;
-        }
-
-        if (SYMBOLS[char]) {
-            tokens.push({ type: SYMBOLS[char], value: char, line, col });
-            cursor++;
-            col++;
-            continue;
-        }
-
-        printErr(`[SyntaxError: Line ${line}, Col ${col}] Unexpected character '${char}'.`);
+    // --------------------------------------------------------------------
+    // Whitespace & Line tracking
+    // --------------------------------------------------------------------
+    if (char === " ") {
+      cursor++;
+      col++;
+      continue;
+    }
+    if (char === "\n") {
+      cursor++;
+      line++;
+      col = 1;
+      continue;
+    }
+    if (char === "\r") {
+      cursor++;
+      continue;
     }
 
-    return tokens;
+    // --------------------------------------------------------------------
+    // Comments & Tildes
+    // --------------------------------------------------------------------
+    if (char === "~") {
+      if (input[cursor + 1] === "~") {
+        if (input[cursor + 2] === "{" && input[cursor + 3] === "{") {
+          let startLine = line;
+          let startCol = col;
+          cursor += 4;
+          col += 4;
+          let closed = false;
+
+          while (cursor < input.length) {
+            if (input[cursor] === "}" && input[cursor + 1] === "}") {
+              cursor += 2;
+              col += 2;
+              closed = true;
+              break;
+            }
+
+            if (input[cursor] === "\n") {
+              line++;
+              col = 1;
+            } else {
+              col++;
+            }
+
+            cursor++;
+          }
+
+          if (!closed) {
+            printErr(
+              `[SyntaxError: Line ${startLine}, Col ${startCol}] Unclosed multi-line comment. Expected '}}'.`,
+            );
+          }
+
+          continue;
+        } else {
+          while (cursor < input.length && input[cursor] !== "\n") {
+            cursor++;
+          }
+          continue;
+        }
+      }
+      tokens.push({ type: "TILDE", value: "~", line, col });
+      cursor++;
+      col++;
+      continue;
+    }
+
+    // --------------------------------------------------------------------
+    // String Literals
+    // --------------------------------------------------------------------
+    if (char === '"') {
+      let startLine = line;
+      let startCol = col;
+      cursor++;
+      col++;
+      let str = "";
+
+      while (cursor < input.length && input[cursor] !== '"') {
+        if (input[cursor] === "\n") {
+          line++;
+          col = 1;
+        } else {
+          col++;
+        }
+        str += input[cursor];
+        cursor++;
+      }
+
+      if (cursor >= input.length || input[cursor] !== '"') {
+        printErr(
+          `[SyntaxError: Line ${startLine}, Col ${startCol}] Unterminated string literal. Expected closing quote '"'.`,
+        );
+      }
+
+      cursor++;
+      col++;
+      tokens.push({
+        type: "STRING",
+        value: str,
+        line: startLine,
+        col: startCol,
+      });
+      continue;
+    }
+
+    // --------------------------------------------------------------------
+    // Numeric Literals
+    // --------------------------------------------------------------------
+    if (isDigit(char)) {
+      let startLine = line;
+      let startCol = col;
+      let numStr = "";
+
+      while (cursor < input.length && isDigit(input[cursor])) {
+        numStr += input[cursor];
+        cursor++;
+        col++;
+      }
+
+      if (input[cursor] === "." && isDigit(input[cursor + 1])) {
+        numStr += input[cursor];
+        cursor++;
+        col++;
+
+        while (cursor < input.length && isDigit(input[cursor])) {
+          numStr += input[cursor];
+          cursor++;
+          col++;
+        }
+      }
+
+      let numVal = Number(numStr);
+      let numType = Number.isInteger(numVal) ? "INT" : "FLOAT";
+      tokens.push({
+        type: numType,
+        value: numVal,
+        line: startLine,
+        col: startCol,
+      });
+      continue;
+    }
+
+    // --------------------------------------------------------------------
+    // Identifiers & Keywords
+    // --------------------------------------------------------------------
+    if (isLetter(char)) {
+      let startLine = line;
+      let startCol = col;
+      let word = "";
+
+      while (cursor < input.length && isIdentChar(input[cursor])) {
+        word += input[cursor];
+        cursor++;
+        col++;
+      }
+
+      let kw = KEYWORDS[word];
+      if (kw) {
+        tokens.push({
+          type: kw.type,
+          value: kw.value,
+          line: startLine,
+          col: startCol,
+        });
+      } else {
+        tokens.push({
+          type: "IDENTIFIER",
+          value: word,
+          line: startLine,
+          col: startCol,
+        });
+      }
+      continue;
+    }
+
+    // --------------------------------------------------------------------
+    // Operators & Punctuation
+    // --------------------------------------------------------------------
+    if (char === "=") {
+      if (input[cursor + 1] === "=") {
+        tokens.push({ type: "EQUALS", value: "==", line, col });
+        cursor += 2;
+        col += 2;
+      } else {
+        tokens.push({ type: "ASSIGN", value: "=", line, col });
+        cursor++;
+        col++;
+      }
+      continue;
+    }
+
+    if (char === "&") {
+      if (input[cursor + 1] === "&") {
+        tokens.push({ type: "AND", value: "&&", line, col });
+        cursor += 2;
+        col += 2;
+        continue;
+      }
+      printErr(
+        `[SyntaxError: Line ${line}, Col ${col}] Unexpected single '&'. Did you mean '&&'?`,
+      );
+    }
+
+    if (char === "|") {
+      if (input[cursor + 1] === "|") {
+        tokens.push({ type: "OR", value: "||", line, col });
+        cursor += 2;
+        col += 2;
+        continue;
+      }
+      printErr(
+        `[SyntaxError: Line ${line}, Col ${col}] Unexpected single '|'. Did you mean '||'?`,
+      );
+    }
+
+    if (char === "!") {
+      if (input[cursor + 1] === "=") {
+        tokens.push({ type: "NOTEQUALS", value: "!=", line, col });
+        cursor += 2;
+        col += 2;
+      } else {
+        tokens.push({ type: "NOT", value: "!", line, col });
+        cursor++;
+        col++;
+      }
+      continue;
+    }
+
+    if (char === "<") {
+      if (input[cursor + 1] === "-" && input[cursor + 2] === ">") {
+        tokens.push({ type: "SWAP", value: "<->", line, col });
+        cursor += 3;
+        col += 3;
+        continue;
+      }
+      if (input[cursor + 1] === "=") {
+        tokens.push({ type: "LESSEQUAL", value: "<=", line, col });
+        cursor += 2;
+        col += 2;
+        continue;
+      }
+      tokens.push({ type: "LESS", value: "<", line, col });
+      cursor++;
+      col++;
+      continue;
+    }
+
+    if (char === ">") {
+      if (input[cursor + 1] === "=") {
+        tokens.push({ type: "GREATEREQUAL", value: ">=", line, col });
+        cursor += 2;
+        col += 2;
+        continue;
+      }
+      tokens.push({ type: "GREATER", value: ">", line, col });
+      cursor++;
+      col++;
+      continue;
+    }
+
+    if (char === "+" && input[cursor + 1] === "+") {
+      tokens.push({ type: "INCREMENT", value: "++", line, col });
+      cursor += 2;
+      col += 2;
+      continue;
+    }
+
+    if (char === "-" && input[cursor + 1] === "-") {
+      tokens.push({ type: "DECREMENT", value: "--", line, col });
+      cursor += 2;
+      col += 2;
+      continue;
+    }
+
+    if (
+      (char === "+" ||
+        char === "-" ||
+        char === "*" ||
+        char === "/" ||
+        char === "%") &&
+      input[cursor + 1] === "="
+    ) {
+      let opList = {
+        "+": "PLUSASSIGN",
+        "-": "MINUSASSIGN",
+        "*": "MULTASSIGN",
+        "/": "DIVIDEASSIGN",
+        "%": "MODULOASSIGN",
+      };
+      tokens.push({ type: opList[char], value: char + "=", line, col });
+      cursor += 2;
+      col += 2;
+      continue;
+    }
+
+    if (SYMBOLS[char]) {
+      tokens.push({ type: SYMBOLS[char], value: char, line, col });
+      cursor++;
+      col++;
+      continue;
+    }
+
+    printErr(
+      `[SyntaxError: Line ${line}, Col ${col}] Unexpected character '${char}'.`,
+    );
+  }
+
+  return tokens;
 }
 
 module.exports = { tokenize };

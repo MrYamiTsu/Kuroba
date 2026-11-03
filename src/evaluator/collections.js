@@ -9,6 +9,15 @@ function evalListLiteral(node, env) {
 
 function evalIndexAccess(node, env) {
     let target = evaluate(node.target, env);
+
+    if (target && target.kind === 'Table') {
+        let key = String(evaluate(node.index, env));
+        if (key in target.fields) {
+            return target.fields[key].value;
+        }
+        return null;
+    }
+
     if (!Array.isArray(target)) printErr(`[TypeError] Cannot index non-list value of type '${getType(target)}'.`);
     let idx = evaluate(node.index, env);
     if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
@@ -19,8 +28,72 @@ function evalIndexAccess(node, env) {
 function evalIndexAssign(node, env) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+
     let targetVar = scope.values[node.name];
-    if (targetVar.isConst) printErr(`[TypeError] Cannot modify elements of constant list '${node.name}'.`);
+    if (targetVar.isConst) {
+        let typeName = targetVar.type || 'collection';
+        printErr(`[TypeError] Cannot modify elements of constant ${typeName} '${node.name}'.`);
+    }
+
+    if (targetVar.value && targetVar.value.kind === 'Table') {
+        let table = targetVar.value;
+        let key = String(evaluate(node.index, env));
+        let newVal = evaluate(node.value, env);
+
+        if (node.operator) {
+            let currVal = (key in table.fields) ? table.fields[key].value : 0;
+            switch (node.operator) {
+                case '+': newVal = currVal + newVal; break;
+                case '-': newVal = currVal - newVal; break;
+                case '*': newVal = currVal * newVal; break;
+                case '/':
+                    if (newVal === 0) printErr("[MathError] Division by zero is undefined.");
+                    newVal = currVal / newVal;
+                    break;
+                case '%':
+                    if (newVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+                    newVal = currVal % newVal;
+                    break;
+            }
+        }
+
+        if (node.typeInfo) {
+            let targetType = node.typeInfo.baseType;
+            let isNullable = node.typeInfo.isNullable;
+            if (!isNullable && newVal === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`);
+            }
+            if (newVal !== null) {
+                newVal = castToType(newVal, targetType);
+            }
+            table.fields[key] = { value: newVal, type: targetType, isNullable: isNullable };
+            return newVal;
+        }
+
+        if (key in table.fields) {
+            let field = table.fields[key];
+            if (!field.isNullable && newVal === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`);
+            }
+            if (newVal !== null) {
+                let actualType = getType(newVal);
+                if (field.type !== actualType) {
+                    printErr(`[TypeError] Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`);
+                }
+            }
+            field.value = newVal;
+            return newVal;
+        }
+
+        table.fields[key] = {
+            value: newVal,
+            type: getType(newVal),
+            isNullable: true
+        };
+
+        return newVal;
+    }
+
     let list = targetVar.value;
     if (!Array.isArray(list)) printErr(`[TypeError] Variable '${node.name}' is not a List.`);
 
@@ -163,5 +236,35 @@ function evalMethodCall(node, env) {
     }
 }
 
-module.exports = { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall };
+function evalTableLiteral(node, env) {
+    let fields = {};
+
+    for (let entry of node.entries) {
+        let rawVal = evaluate(entry.value, env);
+        let val = rawVal;
+        let type = getType(rawVal);
+        let isNullable = true;
+
+        if (entry.typeInfo) {
+            type = entry.typeInfo.baseType;
+            isNullable = entry.typeInfo.isNullable;
+            if (!isNullable && rawVal === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${entry.key}' of type '(${type})'.`);
+            }
+            if (rawVal !== null) {
+                val = castToType(rawVal, type);
+            }
+        }
+
+        fields[entry.key] = {
+            value: val,
+            type: type,
+            isNullable: isNullable
+        };
+    }
+
+    return { kind: 'Table', fields };
+}
+
+module.exports = { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall, evalTableLiteral };
 

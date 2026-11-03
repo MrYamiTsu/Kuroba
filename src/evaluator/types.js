@@ -44,6 +44,12 @@ function formatKurobaValue(val, isInsideList = false) {
     if (val === false) return 'FALSE';
     if (val === null) return 'NULL';
     if (typeof val === 'string' && isInsideList) return `"${val}"`;
+    if (val && val.kind === 'Table') {
+        let keys = Object.keys(val.fields);
+        if (keys.length === 0) return '{}';
+        let entries = keys.map(k => `${k}: ${formatKurobaValue(val.fields[k].value, true)}`);
+        return '{ ' + entries.join(', ') + ' }';
+    }
     if (val && val.kind) {
         return '[' + val.items.map(el => formatKurobaValue(el, true)).join(', ') + ']';
     }

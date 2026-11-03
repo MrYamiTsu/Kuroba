@@ -78,6 +78,37 @@ function parse(tokens) {
 
             expr = { type: 'ListLiteral', elements };
         }
+        else if (match('LBRACE')) {
+            let entries = [];
+
+            if (!check('RBRACE')) {
+                while (true) {
+                    let key = null;
+
+                    if (match('IDENTIFIER', 'STRING')) {
+                        key = previous().value;
+                    } else {
+                        printErr(`[SyntaxError: ${formatLocation(peek())}] Expected key (identifier or string) in Table literal.`);
+                    }
+
+                    let typeInfo = null;
+
+                    if (match('TILDE')) {
+                        typeInfo = parseType();
+                    }
+
+                    consume('COLON', `Expected ':' after key '${key}' in Table literal.`);
+
+                    let value = parseLogicOr();
+                    entries.push({ key, value, typeInfo });
+
+                    if (!match('COMMA')) break;
+                    if (check('RBRACE')) break;
+                }
+            }
+            consume('RBRACE', "Expected closing '}' after Table entries.");
+            expr = { type: 'TableLiteral', entries };
+        }
         else if (match('COPY', 'COPYKEY')) {
             let isOneKey = (previous().type === 'COPYKEY');
 
@@ -503,14 +534,18 @@ function parse(tokens) {
         else if (match('PASTE', 'PASTELN')) {
             let isLn = previous().type === 'PASTELN';
             let kw = previous().value;
+
             consume('LPAREN', `Expected '(' after '${kw}'.`);
+
             let expr = undefined;
             let isEmpty = false;
+
             if (isLn && check('RPAREN')) {
                 isEmpty = true;
             } else {
                 expr = parseLogicOr();
             }
+
             consume('RPAREN', `Expected ')' after '${kw}' argument.`);
             stmt = { type: 'PasteStatement', expr, newLine: isLn, isEmpty };
         }
@@ -545,6 +580,11 @@ function parse(tokens) {
             let index = parseLogicOr();
             consume('RBRACKET', "Expected ']' after list index.");
 
+            let typeInfo = null;
+            if (match('TILDE')) {
+                typeInfo = parseType();
+            }
+            
             if (match('INCREMENT')) {
                 stmt = { type: 'IndexAssign', name: varName, index, value: 1, operator: '+' };
             } else if (match('DECREMENT')) {
@@ -565,7 +605,8 @@ function parse(tokens) {
                     name: varName,
                     index,
                     value: expr,
-                    operator: opMap[assignToken.type] || null
+                    operator: opMap[assignToken.type] || null,
+                    typeInfo
                 };
             } else {
                 printErr(`[SyntaxError: ${formatLocation(peek())}] Expected assignment operator after list index '${varName}[...]'.`);

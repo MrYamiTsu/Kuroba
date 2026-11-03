@@ -271,7 +271,7 @@ Kuroba/
 - [x] Multi-line block comments (`~~{{ ... }}`)
 - [x] Dynamic Arrays / Tables (`[1, 2, 3]`) with indexing (`arr[0]`), generic typing (`List<Type>`), and compound operators
 - [x] Stacks (LIFO) and Queues (FIFO) collections (`Stack<Type>`, `Queue<Type>`) with `.push()`, `.pop()`, `.peek()`, and `.count()`
-- [ ] Dictionaries / Key-Value objects (`{ key: value }`)
+- [x] Dictionaries / Key-Value Tables (`Table`, `{ key: value }`) with field-level typing (`key~Type`), dynamic addition, and field retyping (`table["key"]~Type = ...`)
 - [ ] Collection iteration (`for item in list ... end`)
 
 ### Phase 4: Functions & Metaprogramming

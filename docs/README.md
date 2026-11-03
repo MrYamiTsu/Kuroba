@@ -84,6 +84,7 @@ pasteLn("Bienvenue " + pseudo);
 | **Lists / Arrays** | `[1, 2, 3]`, `list[0]` | Dynamic arrays with 0-based indexing and nesting |
 | **Generic Lists** | `ivar~List<Int> l = [1];`<br/>`ivar~List<(String)> strict = [];` | Typed lists with optional element non-nullability contracts |
 | **Stacks & Queues** | `ivar~Stack<Int> s = [];`<br/>`ivar~Queue<String> q = [];` | LIFO Stack and FIFO Queue collections |
+| **Tables** | `ivar~Table t = { a: 1 };`<br/>`t["a"] = 2;` | Key-value associative tables with field-level typing and retyping |
 | **Collection Methods** | `.push()`, `.pop()`, `.peek()`, `.count()` | Object method operations on Lists, Stacks, and Queues |
 | **Index Mutation** | `list[0] = v;`, `list[0] += 5;` | In-place element reassignment and compound operators |
 | **Retyping** | `x~String = "A";`<br/>`list~List<Int> = list;` | In-place dynamic transtyping for variables and lists |

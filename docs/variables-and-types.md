@@ -223,6 +223,82 @@ pasteLn(list.pop(0));  ~~ 10 (removes and returns element at index 0)
 pasteLn(list.count()); ~~ 2
 ```
 
+---
+
+## Tables (`Table`, `{ key: value }`)
+
+Kuroba features associative key-value Tables inspired by Lua and modern object notation, supporting automatic type inference per field, field-level strict contracts, dynamic field addition, and in-place field transtyping.
+
+### Declaration and Literals
+
+Keys can be written with or without quotes:
+
+```krb
+~~ Inferred Table declaration
+ivar~Table hero = {
+    name: "Kuroba",
+    hp: 100,
+    alive: TRUE
+};
+
+~~ Empty Table
+ivar empty = {};
+```
+
+### Access and Mutation
+
+Fields are accessed and modified using bracket notation (`table["key"]`):
+
+```krb
+pasteLn(hero["name"]); ~~ "Kuroba"
+
+~~ Updating existing fields with compound operators
+hero["hp"] -= 25;       ~~ hp is now 75
+hero["hp"]++;           ~~ hp is now 76
+
+~~ Dynamically adding a new field
+hero["mana"] = 50;
+```
+
+Reading a key that does not exist safely returns `NULL`.
+
+### Field-Level Typing and Coercion (`key~Type`)
+
+You can enforce strict types or non-nullability on individual fields at declaration time:
+
+```krb
+ivar~Table player = {
+    score~Float: "99.5",    ~~ Auto-coerced to Float (99.5)
+    rank~(String): "S"      ~~ Non-nullable strict String!
+};
+
+player["rank"] = NULL;      ~~ [TypeError] Cannot assign NULL to non-nullable field 'rank' of type '(String)'.
+player["score"] = "text";   ~~ [TypeError] Cannot assign type 'String' to field 'score' of type 'Float'.
+```
+
+### Dynamic Field Retyping (`table["key"]~Type = ...`)
+
+Existing fields can be dynamically transtyped to a new type using the signature tilde syntax:
+
+```krb
+player["score"]~String = "Top Score"; ~~ Retypes the field 'score' to String!
+pasteLn(player["score"]);             ~~ "Top Score"
+```
+
+### Immutability with `iconst`
+
+Tables declared with `iconst` are completely immutable. Fields cannot be modified, added, or retyped:
+
+```krb
+iconst CONFIG = {
+    version: 1,
+    mode: "dark"
+};
+
+CONFIG["version"] = 2; ~~ [TypeError] Cannot modify elements of constant Table 'CONFIG'.
+```
+
+
 
 
 
