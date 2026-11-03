@@ -1,0 +1,45 @@
+const { printErr } = require('../errors');
+const { createScope } = require('./scope');
+
+function evaluate(node, env = createScope()) {
+    if (!node || !node.type) return node;
+
+    switch (node.type) {
+        case 'Program':
+            for (let stmt of node.body) evaluate(stmt, env);
+            return;
+        case 'VarDeclar':        return evalVarDeclar(node, env);
+        case 'VarAssign':        return evalVarAssign(node, env);
+        case 'Variable':         return evalVariable(node, env);
+        case 'VarRetype':        return evalVarRetype(node, env);
+        case 'SwapStatement':    return evalSwap(node, env);
+        case 'IfStatement':      return evalIf(node, env);
+        case 'ForStatement':     return evalFor(node, env);
+        case 'WhileStatement':   return evalWhile(node, env);
+        case 'DoWhileStatement': return evalDoWhile(node, env);
+        case 'GivenStatement':   return evalGiven(node, env);
+        case 'BreakStatement':   return { isBreak: true };
+        case 'SkipStatement':    return { isSkip: true };
+        case 'PasteStatement':   return evalPaste(node, env);
+        case 'CopyExpression':   return evalCopy(node, env);
+        case 'ClearStatement':   return evalClear(node, env);
+        case 'ExitStatement':    return evalExit(node, env);
+        case 'MathExpression':   return evalMath(node, env);
+        case 'UnaryExpression':  return evalUnary(node, env);
+        case 'LogicalExpression':return evalLogical(node, env);
+        case 'ListLiteral':      return evalListLiteral(node, env);
+        case 'IndexAccess':      return evalIndexAccess(node, env);
+        case 'IndexAssign':      return evalIndexAssign(node, env);
+        default:
+            printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
+    }
+}
+
+module.exports = { evaluate };
+
+const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap } = require('./variables');
+const { evalListLiteral, evalIndexAccess, evalIndexAssign } = require('./collections');
+const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven } = require('./control');
+const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
+const { evalMath, evalUnary, evalLogical } = require('./operations');
+
