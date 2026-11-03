@@ -1,6 +1,7 @@
 const { printErr } = require('../errors');
 
 function getType(val) {
+    if (val && val.kind) return val.kind;
     if (Array.isArray(val)) return 'List';
     if (typeof val === 'number') return Number.isInteger(val) ? 'Int' : 'Float';
     if (typeof val === 'string') return 'String';
@@ -43,6 +44,9 @@ function formatKurobaValue(val, isInsideList = false) {
     if (val === false) return 'FALSE';
     if (val === null) return 'NULL';
     if (typeof val === 'string' && isInsideList) return `"${val}"`;
+    if (val && val.kind) {
+        return '[' + val.items.map(el => formatKurobaValue(el, true)).join(', ') + ']';
+    }
     if (Array.isArray(val)) {
         return '[' + val.map(el => formatKurobaValue(el, true)).join(', ') + ']';
     }

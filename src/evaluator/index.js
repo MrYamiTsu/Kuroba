@@ -30,6 +30,7 @@ function evaluate(node, env = createScope()) {
         case 'ListLiteral':      return evalListLiteral(node, env);
         case 'IndexAccess':      return evalIndexAccess(node, env);
         case 'IndexAssign':      return evalIndexAssign(node, env);
+        case 'MethodCall':       return evalMethodCall(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }
@@ -38,7 +39,7 @@ function evaluate(node, env = createScope()) {
 module.exports = { evaluate };
 
 const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap } = require('./variables');
-const { evalListLiteral, evalIndexAccess, evalIndexAssign } = require('./collections');
+const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall } = require('./collections');
 const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven } = require('./control');
 const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical } = require('./operations');

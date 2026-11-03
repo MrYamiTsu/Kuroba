@@ -270,7 +270,7 @@ Kuroba/
 - [x] Strict block scoping (variables declared in `if`, `while`, `do-while`, and `for` blocks expire at `end`)
 - [x] Multi-line block comments (`~~{{ ... }}`)
 - [x] Dynamic Arrays / Tables (`[1, 2, 3]`) with indexing (`arr[0]`), generic typing (`List<Type>`), and compound operators
-- [ ] Stacks (LIFO) and Queues (FIFO) collections
+- [x] Stacks (LIFO) and Queues (FIFO) collections (`Stack<Type>`, `Queue<Type>`) with `.push()`, `.pop()`, `.peek()`, and `.count()`
 - [ ] Dictionaries / Key-Value objects (`{ key: value }`)
 - [ ] Collection iteration (`for item in list ... end`)
 

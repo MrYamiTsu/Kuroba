@@ -83,6 +83,8 @@ pasteLn("Bienvenue " + pseudo);
 | **Non-Nullable** | `ivar~(String) u = "...";` | Strict non-nullable contract |
 | **Lists / Arrays** | `[1, 2, 3]`, `list[0]` | Dynamic arrays with 0-based indexing and nesting |
 | **Generic Lists** | `ivar~List<Int> l = [1];`<br/>`ivar~List<(String)> strict = [];` | Typed lists with optional element non-nullability contracts |
+| **Stacks & Queues** | `ivar~Stack<Int> s = [];`<br/>`ivar~Queue<String> q = [];` | LIFO Stack and FIFO Queue collections |
+| **Collection Methods** | `.push()`, `.pop()`, `.peek()`, `.count()` | Object method operations on Lists, Stacks, and Queues |
 | **Index Mutation** | `list[0] = v;`, `list[0] += 5;` | In-place element reassignment and compound operators |
 | **Retyping** | `x~String = "A";`<br/>`list~List<Int> = list;` | In-place dynamic transtyping for variables and lists |
 | **Compound Assign** | `x += 5;`, `x *= 2;` | Arithmetic in-place update (`+=`, `-=`, `*=`, `/=`, `%=`) |

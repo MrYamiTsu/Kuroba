@@ -11,23 +11,34 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
         return null;
     }
 
-    if (targetType === 'List') {
-        if (!Array.isArray(val)) {
-            printErr(`[TypeError] Cannot assign non-list value of type '${getType(val)}' to variable '${varName}' of type 'List'.`);
+    if (targetType === 'List' || targetType === 'Stack' || targetType === 'Queue') {
+        let rawItems = null;
+
+        if (Array.isArray(val)) {
+            rawItems = [...val];
+        } else if (val && (val.kind === targetType || val.kind === 'Stack' || val.kind === 'Queue')) {
+            rawItems = [...val.items];
+        } else {
+            printErr(`[TypeError] Cannot assign non-collection value of type '${getType(val)}' to variable '${varName}' of type '${targetType}'.`);
         }
+
         if (typeInfo && typeInfo.elemType) {
-            for (let i = 0; i < val.length; i++) {
-                let elem = val[i];
+            for (let i = 0; i < rawItems.length; i++) {
+                let elem = rawItems[i];
                 if (elem === null) {
                     if (!typeInfo.isElemNullable) {
-                        printErr(`[TypeError] Element at index ${i} in list '${varName}' cannot be NULL.`);
+                        printErr(`[TypeError] Element at index ${i} in ${targetType} '${varName}' cannot be NULL.`);
                     }
                 } else {
-                    val[i] = castToType(elem, typeInfo.elemType);
+                    rawItems[i] = castToType(elem, typeInfo.elemType);
                 }
             }
         }
-        return val;
+
+        if (targetType === 'Stack') return { kind: 'Stack', items: rawItems };
+        if (targetType === 'Queue') return { kind: 'Queue', items: rawItems };
+        
+        return rawItems;
     }
 
     if (targetType) {
@@ -98,10 +109,13 @@ function evalSwap(node, env) {
 
     let varA = scopeLeft.values[node.left];
     let varB = scopeRight.values[node.right];
+
     if (varA.isConst) printErr(`[TypeError] Cannot swap constant '${node.left}'.`);
     if (varB.isConst) printErr(`[TypeError] Cannot swap constant '${node.right}'.`);
+
     if (!varA.isNullable && varB.value === null) printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.left}'.`);
     if (!varB.isNullable && varA.value === null) printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.right}'.`);
+    
     if (varA.type !== varB.type) printErr(`[TypeError] Cannot swap variable '${node.left}' of type '${varA.type}' with variable '${node.right}' of type '${varB.type}'.`);
 
     let temp = varA.value;

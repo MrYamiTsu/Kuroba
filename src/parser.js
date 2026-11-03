@@ -109,10 +109,28 @@ function parse(tokens) {
             printErr(`[SyntaxError: ${formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
         }
 
-        while (match('LBRACKET')) {
-            let index = parseLogicOr();
-            consume('RBRACKET', "Expected closing ']' after index.");
-            expr = { type: 'IndexAccess', target: expr, index };
+        while (true) {
+            if (match('LBRACKET')) {
+                let index = parseLogicOr();
+                consume('RBRACKET', "Expected closing ']' after index.");
+                expr = { type: 'IndexAccess', target: expr, index };
+            } else if (match('DOT')) {
+                let methodName = consume('IDENTIFIER', "Expected method name after '.' (e.g. push, pop, peek, count).").value;
+                consume('LPAREN', `Expected '(' after method '${methodName}'.`);
+                let args = [];
+
+                if (!check('RPAREN')) {
+                    while (true) {
+                        args.push(parseLogicOr());
+                        if (!match('COMMA')) break;
+                    }
+                }
+
+                consume('RPAREN', `Expected ')' after method arguments.`);
+                expr = { type: 'MethodCall', target: expr, method: methodName, args };
+            } else {
+                break;
+            }
         }
 
         return expr;
@@ -384,7 +402,7 @@ function parse(tokens) {
             isNullable = false;
             baseType = consume('IDENTIFIER', "Expected type identifier inside '(...)'. (e.g. String, Int, List)").value;
             
-            if (baseType === 'List' && match('LESS')) {
+            if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && match('LESS')) {
                 isElemNullable = false;
 
                 if (match('LPAREN')) {
@@ -401,7 +419,7 @@ function parse(tokens) {
         } else {
             baseType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Int, List).").value;
 
-            if (baseType === 'List' && match('LESS')) {
+            if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && match('LESS')) {
                 if (match('LPAREN')) {
                     isElemNullable = false;
                     elemType = consume('IDENTIFIER', "Expected element type inside 'List<(...)>'.").value;

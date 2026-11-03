@@ -181,6 +181,49 @@ rawData[0] += 5;                           ~~ 15
 pasteLn(rawData);                          ~~ [15, 20, 30]
 ```
 
+---
+
+## Stacks & Queues (`Stack<Type>`, `Queue<Type>`)
+
+Kuroba provides first-class support for Stacks (LIFO) and Queues (FIFO) with the same generic typing, nullability contracts, and element coercion as Lists.
+
+### Stacks (LIFO: Last In, First Out)
+
+Elements are pushed to and popped from the top of the stack:
+
+```krb
+ivar~Stack<Int> pile = [10, 20];
+pile.push(30);        ~~ Pushes 30 to top: [10, 20, 30]
+pasteLn(pile.peek()); ~~ 30 (inspects top without removing)
+pasteLn(pile.pop());  ~~ 30 (removes and returns top)
+pasteLn(pile.count());~~ 2
+```
+
+### Queues (FIFO: First In, First Out)
+
+Elements are pushed to the back and popped from the front:
+
+```krb
+ivar~Queue<String> clients = ["Alice", "Bob"];
+clients.push("Charlie");   ~~ Adds to back
+pasteLn(clients.peek());   ~~ "Alice" (inspects front without removing)
+pasteLn(clients.pop());    ~~ "Alice" (removes and returns front)
+pasteLn(clients.count());  ~~ 2
+```
+
+### List Methods (`.push`, `.pop`, `.peek`, `.count`)
+
+The same methods are available on standard lists with positional parameters:
+
+```krb
+ivar~List<Int> list = [10, 30];
+list.push(20, 1);    ~~ Inserts 20 at index 1 -> [10, 20, 30]
+pasteLn(list.peek(1)); ~~ 20 (inspects element at index 1)
+pasteLn(list.pop(0));  ~~ 10 (removes and returns element at index 0)
+pasteLn(list.count()); ~~ 2
+```
+
+
 
 
 
