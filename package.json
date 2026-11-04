@@ -5,8 +5,8 @@
   "main": "index.js",
   "bin": {
     "kuroba": "./index.js",
-    "kb": "./index.js",
-    "tulg": "./index.js"
+    "tulg": "./index.js",
+    "krb": "./index.js"
   },
   "scripts": {
     "start": "node index.js",

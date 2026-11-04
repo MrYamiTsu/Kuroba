@@ -148,10 +148,10 @@ Kuroba source files use the `.krb` extension:
 # Launch the Interactive REPL Shell (no arguments)
 .\krb
 # or
-.\kb
+.\kuroba
 
 # Run a specific script
-.\kb path/to/script.krb
+.\krb path/to/script.krb
 # or
 .\kuroba path/to/script.krb
 
@@ -164,11 +164,11 @@ node index.js path/to/script.krb   # Runs script
 
 | Command / Flag                     | Description                                                  |
 | :--------------------------------- | :----------------------------------------------------------- |
-| `.\kb` / `.\krb` / `node index.js` | Launches the interactive REPL shell (Read-Eval-Print Loop)   |
-| `.\kb <file.krb>`                  | Executes the provided `.krb` source file                     |
-| `.\kb -i`, `--repl`                | Explicitly forces interactive REPL mode                      |
-| `.\kb -v`, `--version`             | Displays current engine version and build info               |
-| `.\kb -h`, `--help`                | Prints the CLI help manual                                   |
+| `.\krb` / `.\kuroba` / `node index.js` | Launches the interactive REPL shell (Read-Eval-Print Loop)   |
+| `.\krb <file.krb>`                     | Executes the provided `.krb` source file                   |
+| `.\krb -i`, `--repl`                   | Explicitly forces interactive REPL mode                    |
+| `.\krb -v`, `--version`                | Displays current engine version and build info             |
+| `.\krb -h`, `--help`                   | Prints the CLI help manual                                 |
 
 ### Interactive REPL Shell
 
@@ -229,7 +229,7 @@ Kuroba is designed as a classic, modular 3-stage interpreted engine:
 Kuroba/
 ├── index.js          # CLI entrypoint & argument parsing
 ├── kuroba.cmd        # Windows primary launcher
-├── kb.cmd            # Windows short alias launcher
+├── krb.cmd           # Windows short alias launcher
 ├── config.json       # Engine configuration & version metadata
 ├── package.json      # Project manifest
 ├── main.krb          # Default playground entry file
@@ -312,7 +312,7 @@ Kuroba/
 - [x] Variable lifecycle & manual destruction (`kill variable;`)
 - [x] First-class functions (`function name(args) ... end` and `function ~(args) ... end`) with lexical closures & `return`
 - [x] Function interception (`hook target(args) then ... end` with `this(...)`) & callbacks
-- [ ] Interactive REPL shell (launching `kb` with no arguments starts an interactive session)
+- [x] Interactive REPL shell (launching `krb` with no arguments starts an interactive session)
 - [ ] CLI arguments support (`Std.Sys.args` or script arguments array)
 
 ### Phase 5: The Vital Standard Library & Multi-File Imports `(v1.0.5)`
@@ -357,8 +357,8 @@ Kuroba/
   - [ ] HTTP client fetcher (`Web.fetch` for REST API queries)
   - [ ] Native HTTP web server (`Web.serve`, `Web.listen`)
 - [ ] Developer Tooling & CLI Ergonomics:
-  - [ ] Official code formatter (`kb fmt`)
-  - [ ] Built-in test runner (`kb test`)
+  - [ ] Official code formatter (`krb fmt`)
+  - [ ] Built-in test runner (`krb test`)
   - [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
 
 ### Phase 8: 2D Game Engine (Package App) & Web Learning Hub `(v1.0.8)`

@@ -19,7 +19,7 @@ Welcome to the official technical specification and language reference for **Kur
    Named functions, parameter typing, anonymous lambdas (`function ~`), closures, lexical scopes, recursion, table methods, and native function interception (`hook` with implicit `this(...)`).
 
 5. **[Console, Interactive I/O & REPL](io.md)**  
-   Synchronous console output (`paste`, `pasteLn`), line input (`copy`), instant single-keypress capture (`copyKey`), screen management (`clear`), and the Interactive REPL Shell (`kb` / `krb`).
+   Synchronous console output (`paste`, `pasteLn`), line input (`copy`), instant single-keypress capture (`copyKey`), screen management (`clear`), and the Interactive REPL Shell (`krb`).
 
 6. **[Error Reference](errors.md)**  
    Overview and diagnostics for all 5 runtime and syntax error classes (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`, `IndexError`).

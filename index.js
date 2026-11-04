@@ -25,7 +25,7 @@ Usage:
   kuroba -h, --help          Show this help message
 
 Aliases:
-  kb <filename>              Short command alias
+  krb <filename>             Short command alias
 `);
     process.exit(0);
 }

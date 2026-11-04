@@ -88,15 +88,15 @@ clear();            ~~ Immediate clear
 
 ---
 
-## 4. Interactive REPL Shell (`kb` / `krb`)
+## 4. Interactive REPL Shell (`krb`)
 
 Kuroba includes a zero-dependency interactive shell for testing snippets and learning syntax:
 
 ```bash
 # Launch interactive REPL
-.\kb
-# or
 .\krb
+# or
+.\kuroba
 ```
 
 ### Features & Capabilities
