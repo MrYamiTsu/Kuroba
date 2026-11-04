@@ -84,7 +84,6 @@ function startRepl() {
             rl.setPrompt(`${GREEN}>>> ${RESET}`);
             rl.prompt();
         } else {
-            console.log(`\n${GRAY}Sayonara!${RESET}`);
             process.exit(0);
         }
     });
