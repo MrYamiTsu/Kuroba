@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.2-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.3-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg?style=for-the-badge)](LICENSE)
@@ -266,7 +266,7 @@ Kuroba/
 - [x] Interactive console input: `copy(...)` (blocking prompt) and `copyKey()` (single keypress)
 - [x] Console screen management: `clear()`, `clear(cond)`
 
-### Phase 3: Data Structures & Collections
+### Phase 3: Data Structures & Collections `(Completed - v1.0.3)`
 
 - [x] Strict block scoping (variables declared in `if`, `while`, `do-while`, and `for` blocks expire at `end`)
 - [x] Multi-line block comments (`~~{{ ... }}`)
