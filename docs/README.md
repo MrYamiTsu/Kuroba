@@ -127,3 +127,4 @@ kill tempBuffer;                     ~~ Frees variable from memory and scope
 | **Returns** | `return expr;`, `return;` | Immediate function return (defaults to `NULL`) |
 | **Function Hooks** | `hook target(args) then ... end` | Function interception with original invocation via `this(...)` |
 | **Variable Destruction** | `kill x;` | Explicitly frees variable from memory and active scope |
+| **CLI Arguments** | `args`, `Std.Sys.args` | Immutable List of CLI arguments with `.count()` and indexing |

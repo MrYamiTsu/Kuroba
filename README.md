@@ -150,10 +150,10 @@ Kuroba source files use the `.krb` extension:
 # or
 .\kuroba
 
-# Run a specific script
-.\krb path/to/script.krb
+# Run a specific script with arguments
+.\krb path/to/script.krb --speed 50 --verbose
 # or
-.\kuroba path/to/script.krb
+.\kuroba path/to/script.krb --speed 50 --verbose
 
 # Cross-platform via Node.js
 node index.js                      # Starts REPL
@@ -165,7 +165,7 @@ node index.js path/to/script.krb   # Runs script
 | Command / Flag                     | Description                                                  |
 | :--------------------------------- | :----------------------------------------------------------- |
 | `.\krb` / `.\kuroba` / `node index.js` | Launches the interactive REPL shell (Read-Eval-Print Loop)   |
-| `.\krb <file.krb>`                     | Executes the provided `.krb` source file                   |
+| `.\krb <file.krb> [args...]`          | Executes the script with command-line arguments              |
 | `.\krb -i`, `--repl`                   | Explicitly forces interactive REPL mode                    |
 | `.\krb -v`, `--version`                | Displays current engine version and build info             |
 | `.\krb -h`, `--help`                   | Prints the CLI help manual                                 |
@@ -204,6 +204,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                              | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                           |
 | **Native Interception (Hooks)** | `hook f(x) then ... end`                                                   | Transparent native monkey-patching with original function delegation via `this(...)`.                                       |
 | **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.              |
+| **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                   | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.             |
 
 > Looking for the complete language cheatsheet and guide? **[Browse Full Documentation & Syntax Reference](docs/README.md)**
 
@@ -313,7 +314,7 @@ Kuroba/
 - [x] First-class functions (`function name(args) ... end` and `function ~(args) ... end`) with lexical closures & `return`
 - [x] Function interception (`hook target(args) then ... end` with `this(...)`) & callbacks
 - [x] Interactive REPL shell (launching `krb` with no arguments starts an interactive session)
-- [ ] CLI arguments support (`Std.Sys.args` or script arguments array)
+- [x] CLI arguments support (`args` list & `Std.Sys.args`)
 
 ### Phase 5: The Vital Standard Library & Multi-File Imports `(v1.0.5)`
 

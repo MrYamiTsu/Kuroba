@@ -3,6 +3,7 @@ const config = require('./config.json');
 const { tokenize } = require('./src/lexer');
 const { parse } = require('./src/parser');
 const { evaluate } = require('./src/evaluator');
+const { setCliArgs } = require('./src/evaluator/scope');
 const { printErr } = require('./src/errors');
 
 const arg = process.argv[2];
@@ -19,12 +20,12 @@ Author: ${config.author}
 Repository: ${config.repository}
 
 Usage:
-  kuroba [options] [file${config.extension}]
-  krb [options] [file${config.extension}]
+  kuroba [options] [file${config.extension}] [args...]
+  krb [options] [file${config.extension}] [args...]
 
 Options:
   (no args)                  Start the interactive REPL shell
-  <file${config.extension}>                 Execute the specified script
+  <file${config.extension}> [args...]       Execute the specified script with arguments
   -i, --repl                 Start the interactive REPL shell
   -v, --version              Show language version
   -h, --help                 Show this help message
@@ -37,6 +38,7 @@ Aliases:
 
 let filename = arg;
 if (!filename || arg === '-i' || arg === '--repl') {
+    setCliArgs([]);
     const { startRepl } = require('./src/repl');
     startRepl();
     return;
@@ -50,6 +52,9 @@ if (!isValidExtension) {
 if (!fs.existsSync(filename)) {
     printErr(`[CLIError] File not found: '${filename}'`);
 }
+
+const scriptArgs = process.argv.slice(3);
+setCliArgs(scriptArgs);
 
 const code = fs.readFileSync(filename, 'utf-8');
 

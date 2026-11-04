@@ -152,19 +152,22 @@ function parse(tokens) {
                 consume('RBRACKET', "Expected closing ']' after index.");
                 expr = { type: 'IndexAccess', target: expr, index };
             } else if (match('DOT')) {
-                let methodName = consume('IDENTIFIER', "Expected method name after '.' (e.g. push, pop, peek, count).").value;
-                consume('LPAREN', `Expected '(' after method '${methodName}'.`);
-                let args = [];
+                let memberName = consume('IDENTIFIER', "Expected property or method name after '.' (e.g. push, pop, peek, count, args).").value;
+                if (match('LPAREN')) {
+                    let args = [];
 
-                if (!check('RPAREN')) {
-                    while (true) {
-                        args.push(parseLogicOr());
-                        if (!match('COMMA')) break;
+                    if (!check('RPAREN')) {
+                        while (true) {
+                            args.push(parseLogicOr());
+                            if (!match('COMMA')) break;
+                        }
                     }
-                }
 
-                consume('RPAREN', `Expected ')' after method arguments.`);
-                expr = { type: 'MethodCall', target: expr, method: methodName, args };
+                    consume('RPAREN', `Expected ')' after method arguments.`);
+                    expr = { type: 'MethodCall', target: expr, method: memberName, args };
+                } else {
+                    expr = { type: 'IndexAccess', target: expr, index: memberName, isDotAccess: true };
+                }
             } else if (match('LPAREN')) {
                 let args = [];
 

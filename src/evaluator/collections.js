@@ -11,7 +11,7 @@ function evalIndexAccess(node, env) {
     let target = evaluate(node.target, env);
 
     if (target && target.kind === 'Table') {
-        let key = String(evaluate(node.index, env));
+        let key = node.isDotAccess ? node.index : String(evaluate(node.index, env));
         if (key in target.fields) {
             return target.fields[key].value;
         }

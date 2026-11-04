@@ -117,3 +117,33 @@ Kuroba includes a zero-dependency interactive shell for testing snippets and lea
   - `help()` — Displays shell usage tips.
   - `clear()` — Clears the terminal screen.
   - `exit()` (or `Ctrl+C` on empty buffer) — Exits the shell cleanly.
+
+
+---
+
+## 5. Command-Line Arguments (`args`, `Std.Sys.args`)
+
+When executing scripts with command-line arguments (e.g., `krb script.krb --speed 50 --debug`), Kuroba automatically parses and injects all trailing parameters into the global scope as an immutable `List<String>`:
+
+- **`args`** — Direct access to the argument list.
+- **`Std.Sys.args`** — Standard library namespace path.
+
+Both identifiers reference the same collection.
+
+### Examples
+
+```krb
+pasteLn("Arguments provided: " + args.count());
+
+~~ Iterate through all arguments
+for (i, arg in args) then
+    pasteLn("Arg #" + i + ": " + arg);
+end
+
+~~ Check for specific flags
+if (args.count() > 0) then
+    if (args[0] == "--help" || args[0] == "-h") then
+        pasteLn("Displaying script manual...");
+    end
+end
+```
