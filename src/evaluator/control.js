@@ -65,16 +65,17 @@ function evalDoWhile(node, env) {
 }
 
 function evalGiven(node, env) {
-    let val = evaluate(node.expr, env);
+    let val = evaluate(node.target || node.expr, env);
     let matchedIndex = -1;
     let defaultIndex = -1;
 
     for (let i = 0; i < node.cases.length; i++) {
         let c = node.cases[i];
+        
         if (c.isDefault) {
             defaultIndex = i;
         } else if (matchedIndex === -1) {
-            let caseVal = evaluate(c.condition, env);
+            let caseVal = evaluate(c.value !== undefined ? c.value : c.condition, env);
             if (caseVal === val) matchedIndex = i;
         }
     }
