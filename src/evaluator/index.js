@@ -31,6 +31,7 @@ function evaluate(node, env = createScope()) {
         case 'ListLiteral':         return evalListLiteral(node, env);
         case 'IndexAccess':         return evalIndexAccess(node, env);
         case 'IndexAssign':         return evalIndexAssign(node, env);
+        case 'PropertyAssign':      return evalPropertyAssign(node, env);
         case 'MethodCall':          return evalMethodCall(node, env);
         case 'TableLiteral':        return evalTableLiteral(node, env);
         case 'KillStatement':       return evalKill(node, env);
@@ -46,7 +47,7 @@ function evaluate(node, env = createScope()) {
 module.exports = { evaluate };
 
 const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap, evalKill } = require('./variables');
-const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall, evalTableLiteral } = require('./collections');
+const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalPropertyAssign, evalMethodCall, evalTableLiteral } = require('./collections');
 const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn } = require('./control');
 const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical } = require('./operations');

@@ -1,5 +1,13 @@
 const { printErr } = require('./errors');
 
+const OP_MAP = {
+    'PLUSASSIGN': '+',
+    'MINUSASSIGN': '-',
+    'MULTASSIGN': '*',
+    'DIVIDEASSIGN': '/',
+    'MODULOASSIGN': '%'
+};
+
 function parse(tokens) {
     let cursor = 0;
 
@@ -687,6 +695,17 @@ function parse(tokens) {
         };
     }
 
+    function parseAssignSuffix(targetDesc) {
+        if (match('INCREMENT')) return { value: 1, operator: '+' };
+        if (match('DECREMENT')) return { value: 1, operator: '-' };
+        if (match('ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN')) {
+            let op = OP_MAP[previous().type] || null;
+            let expr = parseLogicOr();
+            return { value: expr, operator: op };
+        }
+        printErr(`[SyntaxError: ${formatLocation(peek())}] Expected assignment operator after ${targetDesc}.`);
+    }
+
     function parseStatement() {
         let stmt;
 
@@ -766,78 +785,29 @@ function parse(tokens) {
             let index = parseLogicOr();
             consume('RBRACKET', "Expected ']' after list index.");
 
-            let typeInfo = null;
-            if (match('TILDE')) {
-                typeInfo = parseType();
-            }
-            
-            if (match('INCREMENT')) {
-                stmt = { type: 'IndexAssign', name: varName, index, value: 1, operator: '+' };
-            } else if (match('DECREMENT')) {
-                stmt = { type: 'IndexAssign', name: varName, index, value: 1, operator: '-' };
-            } else if (match('ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN')) {
-                let assignToken = previous();
-                let expr = parseLogicOr();
-                let opMap = {
-                    'PLUSASSIGN': '+',
-                    'MINUSASSIGN': '-',
-                    'MULTASSIGN': '*',
-                    'DIVIDEASSIGN': '/',
-                    'MODULOASSIGN': '%'
-                };
-                
-                stmt = {
-                    type: 'IndexAssign',
-                    name: varName,
-                    index,
-                    value: expr,
-                    operator: opMap[assignToken.type] || null,
-                    typeInfo
-                };
-            } else {
-                printErr(`[SyntaxError: ${formatLocation(peek())}] Expected assignment operator after list index '${varName}[...]'.`);
-            }
+            let typeInfo = match('TILDE') ? parseType() : null;
+            let rhs = parseAssignSuffix(`list index '${varName}[...]'`);
+            stmt = { type: 'IndexAssign', name: varName, index, value: rhs.value, operator: rhs.operator, typeInfo };
         }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'INCREMENT') {
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DOT' && tokens[cursor + 2] && tokens[cursor + 2].type === 'IDENTIFIER' && (!tokens[cursor + 3] || tokens[cursor + 3].type !== 'LPAREN')) {
             let varName = advance().value;
             advance();
-            stmt = {
-                type: 'VarAssign',
-                name: varName,
-                value: { type: 'MathExpression', operator: '+', left: { type: 'Variable', name: varName }, right: 1 }
-            };
-        }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DECREMENT') {
-            let varName = advance().value;
-            advance();
-            stmt = {
-                type: 'VarAssign',
-                name: varName,
-                value: { type: 'MathExpression', operator: '-', left: { type: 'Variable', name: varName }, right: 1 }
-            };
-        }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && ['ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
-            let varName = advance().value;
-            let assignToken = advance();
-            let expr = parseLogicOr();
+            let propName = advance().value;
 
-            if (assignToken.type === 'ASSIGN') {
-                stmt = { type: 'VarAssign', name: varName, value: expr };
-            } else {
-                let opMap = {
-                    'PLUSASSIGN': '+',
-                    'MINUSASSIGN': '-',
-                    'MULTASSIGN': '*',
-                    'DIVIDEASSIGN': '/',
-                    'MODULOASSIGN': '%'
-                };
-                stmt = {
-                    type: 'VarAssign',
-                    name: varName,
-                    value: { type: 'MathExpression', operator: opMap[assignToken.type], left: { type: 'Variable', name: varName }, right: expr
-                    }
-                };
-            }
+            let typeInfo = match('TILDE') ? parseType() : null;
+            let rhs = parseAssignSuffix(`property '${varName}.${propName}'`);
+            stmt = { type: 'PropertyAssign', name: varName, property: propName, value: rhs.value, operator: rhs.operator, typeInfo };
+        }
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
+            let varName = advance().value;
+            let rhs = parseAssignSuffix(`variable '${varName}'`);
+            stmt = {
+                type: 'VarAssign',
+                name: varName,
+                value: rhs.operator
+                    ? { type: 'MathExpression', operator: rhs.operator, left: { type: 'Variable', name: varName }, right: rhs.value }
+                    : rhs.value
+            };
         }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'TILDE') {
             let varName = advance().value;

@@ -165,7 +165,7 @@ pasteLn(clients.count());  ~~ 2
 
 ## 8. Tables (`Table`, `{ key: value }`)
 
-Associative key-value tables supporting field-level typing, dynamic field creation, and methods:
+Associative key-value tables accessed and modified **exclusively via dot notation** (`table.property`). Bracket indexing (`table["prop"]`) is strictly forbidden and reserved for `List` collections:
 
 ```krb
 ivar~Table hero = {
@@ -174,9 +174,9 @@ ivar~Table hero = {
     alive: TRUE
 };
 
-pasteLn(hero["name"]); ~~ "Kuroba"
-hero["hp"] -= 20;      ~~ In-place compound update
-hero["mana"] = 50;     ~~ Dynamically adds field 'mana'
+pasteLn(hero.name);    ~~ "Kuroba"
+hero.hp -= 20;         ~~ In-place compound update
+hero.mana = 50;        ~~ Dynamically adds field 'mana' via dot notation
 ```
 
 Reading a non-existent field safely returns `NULL`.
@@ -188,7 +188,7 @@ ivar~Table config = {
     host~(String): "local" ~~ Non-nullable strict String
 };
 
-config["host"] = NULL;     ~~ [TypeError] Cannot assign NULL to non-nullable field 'host'.
+config.host = NULL;        ~~ [TypeError] Cannot assign NULL to non-nullable field 'host'.
 ```
 
 ---

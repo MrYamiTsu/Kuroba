@@ -71,7 +71,7 @@ ivar hero = {
     end
 };
 
-hero["duel"]("Dragon"); ~~ En garde, Dragon!
+hero.duel("Dragon"); ~~ En garde, Dragon!
 ```
 
 ---

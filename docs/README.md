@@ -58,7 +58,7 @@ ivar~List<String> inventory = ["Sword", "Shield"];
 inventory.push("Potion");
 
 ivar~Table hero = { name: "Shinobi", hp: 100 };
-hero["hp"] -= 15;
+hero.hp -= 15;
 
 ~~ 5. Collection Iteration (for in)
 for (i, item in inventory) then
@@ -108,7 +108,7 @@ kill tempBuffer;                     ~~ Frees variable from memory and scope
 | **Lists** | `[1, 2, 3]`, `list[0]` | Dynamic arrays with 0-based indexing and nesting |
 | **Generic Lists** | `ivar~List<Int> l = [];` | Strongly typed lists with optional element nullability |
 | **Stacks & Queues** | `ivar~Stack<Int> s = [];`<br/>`ivar~Queue<String> q = [];` | LIFO Stack and FIFO Queue collections |
-| **Tables** | `ivar~Table t = { a: 1 };`<br/>`t["a"] = 2;` | Key-value associative tables with field-level typing |
+| **Tables** | `ivar~Table t = { a: 1 };`<br/>`t.a = 2;` | Key-value associative tables with field-level typing |
 | **Collection Methods** | `.push()`, `.pop()`, `.peek()`, `.count()` | Methods for Lists, Stacks, and Queues |
 | **Index Mutation** | `list[0] = v;`, `list[0] += 5;` | In-place element reassignment and compound operators |
 | **Dynamic Retyping** | `x~String = "A";` | Dynamic in-place transtyping for variables and fields |

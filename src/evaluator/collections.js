@@ -11,11 +11,18 @@ function evalIndexAccess(node, env) {
     let target = evaluate(node.target, env);
 
     if (target && target.kind === 'Table') {
-        let key = node.isDotAccess ? node.index : String(evaluate(node.index, env));
+        if (!node.isDotAccess) {
+            printErr("[TypeError] Tables do not support bracket indexing. Use dot notation 'table.property' instead.");
+        }
+        let key = node.index;
         if (key in target.fields) {
             return target.fields[key].value;
         }
         return null;
+    }
+
+    if (node.isDotAccess) {
+        printErr(`[TypeError] Cannot access '${getType(target)}' with dot notation. Use bracket indexing 'list[index]' instead.`);
     }
 
     if (!Array.isArray(target)) printErr(`[TypeError] Cannot index non-list value of type '${getType(target)}'.`);
@@ -36,62 +43,7 @@ function evalIndexAssign(node, env) {
     }
 
     if (targetVar.value && targetVar.value.kind === 'Table') {
-        let table = targetVar.value;
-        let key = String(evaluate(node.index, env));
-        let newVal = evaluate(node.value, env);
-
-        if (node.operator) {
-            let currVal = (key in table.fields) ? table.fields[key].value : 0;
-            switch (node.operator) {
-                case '+': newVal = currVal + newVal; break;
-                case '-': newVal = currVal - newVal; break;
-                case '*': newVal = currVal * newVal; break;
-                case '/':
-                    if (newVal === 0) printErr("[MathError] Division by zero is undefined.");
-                    newVal = currVal / newVal;
-                    break;
-                case '%':
-                    if (newVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
-                    newVal = currVal % newVal;
-                    break;
-            }
-        }
-
-        if (node.typeInfo) {
-            let targetType = node.typeInfo.baseType;
-            let isNullable = node.typeInfo.isNullable;
-            if (!isNullable && newVal === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`);
-            }
-            if (newVal !== null) {
-                newVal = castToType(newVal, targetType);
-            }
-            table.fields[key] = { value: newVal, type: targetType, isNullable: isNullable };
-            return newVal;
-        }
-
-        if (key in table.fields) {
-            let field = table.fields[key];
-            if (!field.isNullable && newVal === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`);
-            }
-            if (newVal !== null) {
-                let actualType = getType(newVal);
-                if (field.type !== actualType) {
-                    printErr(`[TypeError] Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`);
-                }
-            }
-            field.value = newVal;
-            return newVal;
-        }
-
-        table.fields[key] = {
-            value: newVal,
-            type: getType(newVal),
-            isNullable: true
-        };
-
-        return newVal;
+        printErr(`[TypeError] Tables do not support bracket assignment. Use dot notation '${node.name}.${evaluate(node.index, env)} = ...' instead.`);
     }
 
     let list = targetVar.value;
@@ -266,5 +218,77 @@ function evalTableLiteral(node, env) {
     return { kind: 'Table', fields };
 }
 
-module.exports = { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall, evalTableLiteral };
+
+function evalPropertyAssign(node, env) {
+    let scope = findScope(node.name, env);
+    if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+
+    let targetVar = scope.values[node.name];
+    if (targetVar.isConst) {
+        printErr(`[TypeError] Cannot modify properties of constant Table '${node.name}'.`);
+    }
+
+    if (!targetVar.value || targetVar.value.kind !== 'Table') {
+        printErr(`[TypeError] Cannot set property '${node.property}' on non-Table value of type '${getType(targetVar.value)}'.`);
+    }
+
+    let table = targetVar.value;
+    let key = node.property;
+    let newVal = evaluate(node.value, env);
+
+    if (node.operator) {
+        let currVal = (key in table.fields) ? table.fields[key].value : 0;
+        switch (node.operator) {
+            case '+': newVal = currVal + newVal; break;
+            case '-': newVal = currVal - newVal; break;
+            case '*': newVal = currVal * newVal; break;
+            case '/':
+                if (newVal === 0) printErr("[MathError] Division by zero is undefined.");
+                newVal = currVal / newVal;
+                break;
+            case '%':
+                if (newVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+                newVal = currVal % newVal;
+                break;
+        }
+    }
+
+    if (node.typeInfo) {
+        let targetType = node.typeInfo.baseType;
+        let isNullable = node.typeInfo.isNullable;
+        if (!isNullable && newVal === null) {
+            printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`);
+        }
+        if (newVal !== null) {
+            newVal = castToType(newVal, targetType);
+        }
+        table.fields[key] = { value: newVal, type: targetType, isNullable: isNullable };
+        return newVal;
+    }
+
+    if (key in table.fields) {
+        let field = table.fields[key];
+        if (!field.isNullable && newVal === null) {
+            printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`);
+        }
+        if (newVal !== null) {
+            let actualType = getType(newVal);
+            if (field.type !== actualType) {
+                printErr(`[TypeError] Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`);
+            }
+        }
+        field.value = newVal;
+        return newVal;
+    }
+
+    table.fields[key] = {
+        value: newVal,
+        type: getType(newVal),
+        isNullable: true
+    };
+
+    return newVal;
+}
+
+module.exports = { evalListLiteral, evalIndexAccess, evalIndexAssign, evalPropertyAssign, evalMethodCall, evalTableLiteral };
 
