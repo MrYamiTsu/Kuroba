@@ -173,18 +173,18 @@ node index.js path/to/script.krb
 
 Kuroba combines concepts from multiple language paradigms while introducing its own signature syntax and ergonomics:
 
-| Concept | Kuroba Syntax | How it Differs from JS / Python / C |
-| :--- | :--- | :--- |
-| **Comments** | `~~ comment`<br/>`~~{{ block }}` | Double-tilde zen feather comments (`~~`) and multi-line block comments (`~~{{ ... }}`) instead of `//` or `/* */`. |
-| **Native Swap** | `a <-> b;` | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring. |
-| **Coercion & Nullability** | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";` | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration. |
-| **Dynamic Retyping** | `score~String = "A";` | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable. |
-| **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;` | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items. |
-| **Collection Iteration** | `for (item in list)`<br/>`for (i, item in list)`<br/>`for (k, v in table)` | Zen, unified iteration without variable declaration boilerplate. Seamlessly supports `List`, `Stack`, `Queue`, and `Table`. |
-| **Skip Statement** | `skip;` | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping. |
-| **Inline Guards** | `exit(cond);`<br/>`clear(cond);` | Evaluates a guard condition directly in the statement call without wrapping in an `if` block. |
-| **Pattern Match Fallback** | `case: ~` | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`. |
-| **Interactive Key Capture** | `copyKey()` | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter. |
+| Concept                         | Kuroba Syntax                                                              | How it Differs from JS / Python / C                                                                                         |
+| :------------------------------ | :------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| **Comments**                    | `~~ comment`<br/>`~~{{ block }}`                                           | Double-tilde zen feather comments (`~~`) and multi-line block comments (`~~{{ ... }}`) instead of `//` or `/* */`.          |
+| **Native Swap**                 | `a <-> b;`                                                                 | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring.   |
+| **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                          | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration.               |
+| **Dynamic Retyping**            | `score~String = "A";`                                                      | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable.                                    |
+| **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                         | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                    |
+| **Collection Iteration**        | `for (item in list)`<br/>`for (i, item in list)`<br/>`for (k, v in table)` | Zen, unified iteration without variable declaration boilerplate. Seamlessly supports `List`, `Stack`, `Queue`, and `Table`. |
+| **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                         |
+| **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                               |
+| **Pattern Match Fallback**      | `case: ~`                                                                  | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`.                                     |
+| **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.              |
 
 > Looking for the complete language cheatsheet and guide? **[Browse Full Documentation & Syntax Reference](docs/README.md)**
 
@@ -303,26 +303,45 @@ Kuroba/
 - [ ] Combined selective imports with prefix drop (`import Package ~(LibA) alias ~;`)
 - [ ] Multi-file module imports & exports (`import "file.krb"`, `export`)
 
-### Phase 7: Built-in Packages (`Std`, `Web`, `App`) & Developer Tooling
+### Phase 7: Built-in Packages Ecosystem (`Std`, `StdE`, `Web`, `App`) & Tooling
 
-- [ ] Built-in `Std` Package:
-  - `Std.Math` (trigonometry, rounding, powers, constants)
-  - `Std.Time` (clock, timestamps, async delays `sleep(ms)`)
-  - `Std.IO` (file reading & writing: `pasteInFile`, `copyInFile`)
-  - `Std.String` (string length, substring, split, join, trim, casing)
-  - `Std.Json` (JSON parsing & stringifying)
-  - `Std.Sys` (command-line arguments `args`, environment variables `env`)
-- [ ] Built-in `Web` Package:
-  - Native HTTP web server (`Web.serve`, `Web.listen`)
-  - Lightweight API routing & request/response handling (`Web.get`, `Web.post`)
-  - Network requests client (`Web.fetch`)
+- [ ] Built-in `Std` Package (The 5 Core Essentials):
+  - [ ] `Std.Math` (trigonometry, rounding, powers, square roots, constants `PI`, `E`)
+  - [ ] `Std.String` (length, substring, split, join, trim, casing, search & replace)
+  - [ ] `Std.IO` (file system operations: read, write, append, check file existence)
+  - [ ] `Std.Time` (clock, high-res timestamps, date formatting, async delay `sleep(ms)`)
+  - [ ] `Std.Sys` (CLI arguments `args`, environment variables `env`, platform info, exit codes)
+- [ ] Built-in `StdE` Package (Standard Extended):
+  - [ ] `StdE.Json` (JSON parsing, serialization, and schema validation)
+  - [ ] `StdE.Path` (path manipulation: join, resolve, dirname, basename, extname)
+  - [ ] `StdE.Regex` (pattern matching, regex validation, extraction & global replace)
+  - [ ] `StdE.Crypto` (hashing `sha256`, `md5`, secure random tokens, UUID generation)
+  - [ ] `StdE.Process` (spawning child processes, command execution, stream pipes)
+- [ ] Built-in `Web` Package (Networking & HTTP):
+  - [ ] Native HTTP web server (`Web.serve`, `Web.listen`)
+  - [ ] API routing & request/response lifecycle (`Web.get`, `Web.post`, `Web.put`, `Web.delete`)
+  - [ ] HTTP client fetcher (`Web.fetch` for REST API queries and web scraping)
+  - [ ] Real-time communication (`Web.socket` client/server connections)
 - [ ] Built-in `App` Package (Native GUI & 2D Game Engine):
-  - Native window creation with framerate and resolution control (`App.window`, `App.fps`)
-  - 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style WPF / Raylib)
-  - Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
-  - Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
-- [ ] Interactive REPL shell (launching `kb` with no arguments starts interactive shell)
-- [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
+  - [ ] Native window creation with framerate and resolution control (`App.window`, `App.fps`)
+  - [ ] 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style Raylib / SDL)
+  - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
+  - [ ] Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
+- [ ] Developer Tooling & CLI Ergonomics:
+  - [ ] Interactive REPL shell (launching `kb` with no arguments starts an interactive session)
+  - [ ] Interactive CLI Debugger (`--debug` flag with step execution, breakpoints, and AST inspector)
+
+### Phase 8: Web Platform, Interactive Tour & Learning Hub
+
+- [ ] Official Kuroba Web Platform & In-Browser Playground:
+  - [ ] Zero-install web interpreter running directly in the browser (pure JS / WebAssembly engine)
+  - [ ] Live interactive terminal with syntax highlighting, auto-complete, and output console
+- [ ] Interactive Learning Manual (_"Le Manuel du Corbeau"_ / _"Tour of Kuroba"_):
+  - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
+  - [ ] In-browser code challenges with instant automated grading test suites
+- [ ] Live Documentation Explorer:
+  - [ ] Searchable online documentation with executable "Run Code" snippets
+  - [ ] Code snippet sharing via URL permalinks with base64 encoded states
 
 ---
 
