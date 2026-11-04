@@ -19,13 +19,18 @@ Author: ${config.author}
 Repository: ${config.repository}
 
 Usage:
-  kuroba <filename${config.extension}>     Run a specific script
-  kuroba                     Run ${config.defaultFile} by default
-  kuroba -v, --version       Show language version
-  kuroba -h, --help          Show this help message
+  kuroba [options] [file${config.extension}]
+  krb [options] [file${config.extension}]
+
+Options:
+  (no args)                  Start the interactive REPL shell
+  <file${config.extension}>                 Execute the specified script
+  -i, --repl                 Start the interactive REPL shell
+  -v, --version              Show language version
+  -h, --help                 Show this help message
 
 Aliases:
-  krb <filename>             Short command alias
+  krb                        Short launcher alias for kuroba
 `);
     process.exit(0);
 }
