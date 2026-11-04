@@ -18,6 +18,7 @@ function evaluate(node, env = createScope()) {
         case 'WhileStatement':    return evalWhile(node, env);
         case 'DoWhileStatement':  return evalDoWhile(node, env);
         case 'GivenStatement':    return evalGiven(node, env);
+        case 'ForInStatement':    return evalForIn(node, env);
         case 'BreakStatement':    return { isBreak: true };
         case 'SkipStatement':     return { isSkip: true };
         case 'PasteStatement':    return evalPaste(node, env);
@@ -41,7 +42,7 @@ module.exports = { evaluate };
 
 const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap } = require('./variables');
 const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall, evalTableLiteral } = require('./collections');
-const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven } = require('./control');
+const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn } = require('./control');
 const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical } = require('./operations');
 

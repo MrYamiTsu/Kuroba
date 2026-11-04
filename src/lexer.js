@@ -23,6 +23,7 @@ const KEYWORDS = {
   while: { type: "WHILE", value: "while" },
   given: { type: "GIVEN", value: "given" },
   do: { type: "DO", value: "do" },
+  in: { type: "IN", value: "in" },
   case: { type: "CASE", value: "case" },
   break: { type: "BREAK", value: "break" },
   skip: { type: "SKIP", value: "skip" },

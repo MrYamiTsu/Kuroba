@@ -115,6 +115,49 @@ for (ivar k = 0; k < 10; k++) then
 end
 ```
 
+### Collection Iteration (`for (item in collection) then ... end`)
+
+Kuroba provides native collection iteration over `List`, `Stack`, `Queue`, and `Table`:
+
+- **Single variable (`for (item in collection)`)**: receives each element directly (or field value on `Table`).
+- **Two variables (`for (i, item in collection)`)**: receives the index (`0, 1, 2...`) and the item on `List`, `Stack`, and `Queue`, or the field key (`String`) and its value on `Table`.
+- Full support for `break;` and `skip;`.
+
+```krb
+ivar~List<String> fruits = ["pomme", "banane", "cerise"];
+
+~~ 1. Value iteration
+for (fruit in fruits) then
+    pasteLn(fruit);
+end
+
+~~ 2. Index + Value iteration
+for (i, fruit in fruits) then
+    paste(i);
+    paste(": ");
+    pasteLn(fruit);
+end
+
+~~ 3. Table iteration (Key + Value)
+ivar~Table heros = {
+    nom: "Kuroba",
+    pv: 100,
+    classe: "Shinobi"
+};
+
+for (cle, val in heros) then
+    paste(cle);
+    paste(" => ");
+    pasteLn(val);
+end
+
+~~ 4. Stack and Queue iteration
+ivar~Stack<Int> pile = [10, 20, 30];
+for (n in pile) then
+    pasteLn(n);
+end
+```
+
 ## While Loops (`while <cond> then ... end`)
 
 Conditional pre-test loop supporting `break;` and `skip;`:

@@ -1,4 +1,5 @@
-const { isTruthy } = require('./types');
+const { isTruthy, getType } = require('./types');
+const { printErr } = require('../errors');
 const { createScope } = require('./scope');
 const { evaluate } = require('./index');
 
@@ -78,5 +79,54 @@ function evalGiven(node, env) {
     }
 }
 
-module.exports = { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven };
+function evalForIn(node, env) {
+    let collection = evaluate(node.iterable, env);
+    if (collection === null || collection === undefined) {
+        printErr(`[TypeError: Line ${node.line}] Cannot iterate over '${collection}'.`);
+    }
+
+    let pairs = [];
+    if (Array.isArray(collection)) {
+        for (let i = 0; i < collection.length; i++) {
+            pairs.push([i, collection[i]]);
+        }
+    } else if (collection && (collection.kind === 'Stack' || collection.kind === 'Queue')) {
+        let items = collection.items;
+        for (let i = 0; i < items.length; i++) {
+            pairs.push([i, items[i]]);
+        }
+    } else if (collection && collection.kind === 'Table') {
+        for (let key of Object.keys(collection.fields)) {
+            pairs.push([key, collection.fields[key].value]);
+        }
+    } else {
+        let typeName = getType(collection);
+        printErr(`[TypeError: Line ${node.line}] Cannot iterate over value of type '${typeName}'. Expected List, Stack, Queue, or Table.`);
+    }
+
+    let forEnv = createScope(env);
+    for (let [idxOrKey, val] of pairs) {
+        if (node.indexVar) {
+            forEnv.values[node.indexVar] = {
+                value: idxOrKey,
+                isConst: false,
+                isNullable: true,
+                type: typeof idxOrKey === 'number' ? 'Int' : 'String'
+            };
+        }
+
+        forEnv.values[node.itemVar] = {
+            value: val,
+            isConst: false,
+            isNullable: true,
+            type: getType(val)
+        };
+
+        let res = executeBlock(node.body, forEnv);
+
+        if (res && res.isBreak) break;
+    }
+}
+
+module.exports = { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn };
 

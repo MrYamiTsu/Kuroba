@@ -306,7 +306,49 @@ function parse(tokens) {
     }
 
     function parseForStatement() {
+        let startToken = previous();
         consume('LPAREN', "Expected '(' before for-loop header.");
+
+        let isForIn = false;
+        for (let i = cursor; i < tokens.length; i++) {
+            if (tokens[i].type === 'SEMICOLON' || tokens[i].type === 'RPAREN') break;
+            if (tokens[i].type === 'IN') {
+                isForIn = true;
+                break;
+            }
+        }
+
+        if (isForIn) {
+            let firstVar = consume('IDENTIFIER', "Expected variable name in for-in loop.").value;
+            let indexVar = null;
+            let itemVar = firstVar;
+
+            if (match('COMMA')) {
+                indexVar = firstVar;
+                itemVar = consume('IDENTIFIER', "Expected item variable name after ',' in for-in loop.").value;
+            }
+
+            consume('IN', "Expected 'in' keyword in for-in loop.");
+            let iterable = parseLogicOr();
+            consume('RPAREN', "Expected ')' after for-in loop header.");
+            consume('THEN', "Expected 'then' after for-in loop header.");
+
+            let body = [];
+            while (!check('END') && !isAtEnd()) {
+                body.push(parseStatement());
+            }
+            consume('END', "Unclosed 'for' loop. Expected 'end'.");
+
+            return {
+                type: 'ForInStatement',
+                indexVar,
+                itemVar,
+                iterable,
+                body,
+                line: startToken.line,
+                col: startToken.col
+            };
+        }
 
         let init = null;
         if (!check('SEMICOLON')) {
