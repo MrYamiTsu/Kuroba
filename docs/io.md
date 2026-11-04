@@ -84,3 +84,36 @@ Clears the terminal console screen:
 clear(score > 100); ~~ Conditional clear
 clear();            ~~ Immediate clear
 ```
+
+
+---
+
+## 4. Interactive REPL Shell (`kb` / `krb`)
+
+Kuroba includes a zero-dependency interactive shell for testing snippets and learning syntax:
+
+```bash
+# Launch interactive REPL
+.\kb
+# or
+.\krb
+```
+
+### Features & Capabilities
+
+- **Instant Expression Evaluation**: Values like `42`, `"Kuroba"`, `TRUE`, `[1, 2, 3]`, and math expressions `10 + 20` evaluate and print their result immediately in cyan.
+- **Stateful Scope**: Declared variables (`ivar`, `iconst`) and functions remain accessible throughout the REPL session:
+  ```krb
+  >>> ivar x = 10;
+  >>> x * 5
+  50
+  >>> function double(ivar n) then return n * 2; end
+  >>> double(x)
+  20
+  ```
+- **Smart Multi-line Buffering**: Writing open blocks (`if ... then`, `while ... do`, `function ... do`, `{{ ... }}`) switches the prompt to `... ` until closed by `end` or `}}`.
+- **Cancellation**: Pressing `Enter` on an empty line in multi-line mode or pressing `Ctrl+C` cancels pending input without exiting.
+- **Built-in Session Commands**:
+  - `help()` — Displays shell usage tips.
+  - `clear()` — Clears the terminal screen.
+  - `exit()` (or `Ctrl+C` on empty buffer) — Exits the shell cleanly.

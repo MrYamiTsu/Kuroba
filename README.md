@@ -145,27 +145,43 @@ cd Kuroba
 Kuroba source files use the `.krb` extension:
 
 ```bash
-# Windows launcher (runs main.krb by default)
-.\kuroba
-
-# Quick alias
+# Launch the Interactive REPL Shell (no arguments)
+.\krb
+# or
 .\kb
 
 # Run a specific script
+.\kb path/to/script.krb
+# or
 .\kuroba path/to/script.krb
 
 # Cross-platform via Node.js
-node index.js path/to/script.krb
+node index.js                      # Starts REPL
+node index.js path/to/script.krb   # Runs script
 ```
 
 ### CLI Options
 
-| Command / Flag             | Description                                    |
-| :------------------------- | :--------------------------------------------- |
-| `.\kuroba` (or `.\kb`)     | Executes the default entry file (`main.krb`)   |
-| `.\kuroba <file.krb>`      | Executes the provided `.krb` source file       |
-| `.\kuroba -v`, `--version` | Displays current engine version and build info |
-| `.\kuroba -h`, `--help`    | Prints the CLI help manual                     |
+| Command / Flag                     | Description                                                  |
+| :--------------------------------- | :----------------------------------------------------------- |
+| `.\kb` / `.\krb` / `node index.js` | Launches the interactive REPL shell (Read-Eval-Print Loop)   |
+| `.\kb <file.krb>`                  | Executes the provided `.krb` source file                     |
+| `.\kb -i`, `--repl`                | Explicitly forces interactive REPL mode                      |
+| `.\kb -v`, `--version`             | Displays current engine version and build info               |
+| `.\kb -h`, `--help`                | Prints the CLI help manual                                   |
+
+### Interactive REPL Shell
+
+Kuroba features a built-in, zero-dependency interactive REPL shell for instant experimentation:
+
+- **Immediate Expression Evaluation**: Type any expression (`42`, `"Hello"`, `x + 10`, `TRUE`, `[1, 2, 3]`) to print its result immediately in cyan.
+- **Persistent Environment**: Variables (`ivar`, `iconst`), tables, and functions persist across your REPL session.
+- **Smart Multi-line Input**: Blocks with unclosed `then ... end`, `do ... end`, `{{ ... }}`, `[ ... ]`, or `( ... )` automatically enter multi-line continuation mode (`... `).
+- **Graceful Error Recovery**: Runtime, syntax, and type errors are displayed in red without terminating your shell session.
+- **Built-in Commands**:
+  - `help()` — Displays quick REPL cheatsheet and tips.
+  - `clear()` — Clears the terminal screen.
+  - `exit()` (or `Ctrl+C`) — Exits the interactive shell. Pressing `Ctrl+C` while typing multi-line input cancels the pending buffer.
 
 ---
 

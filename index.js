@@ -31,15 +31,10 @@ Aliases:
 }
 
 let filename = arg;
-
-if (!filename) {
-    if (fs.existsSync(config.defaultFile)) {
-        filename = config.defaultFile;
-    } else if (fs.existsSync('main.tulg')) {
-        filename = 'main.tulg';
-    } else {
-        printErr(`[CLIError] No input file provided. Usage: kuroba <filename${config.extension}>`);
-    }
+if (!filename || arg === '-i' || arg === '--repl') {
+    const { startRepl } = require('./src/repl');
+    startRepl();
+    return;
 }
 
 const isValidExtension = filename.endsWith(config.extension) || filename.endsWith('.tulg');
