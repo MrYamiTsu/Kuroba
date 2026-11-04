@@ -278,9 +278,9 @@ Kuroba/
 ### Phase 4: Functions & Metaprogramming
 
 - [x] Variable lifecycle & manual destruction (`kill variable;`)
-- [ ] First-class functions (`fn name(args) ... end`) with lexical function scopes & `return`
+- [x] First-class functions (`function name(args) ... end` and `function ~(args) ... end`) with lexical function scopes & `return`
 - [ ] Tail-call safe recursion helpers (`recur(...)`)
-- [ ] Function interception & callbacks
+- [x] Function interception (`hook target(args) then ... end` with `this(...)`) & callbacks
 
 ### Phase 5: Object-Oriented Programming (OOP) & Namespaces
 

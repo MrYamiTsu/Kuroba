@@ -7,7 +7,7 @@ function executeBlock(statements, parentEnv) {
     let blockEnv = createScope(parentEnv);
     for (let stmt of statements) {
         let res = evaluate(stmt, blockEnv);
-        if (res && (res.isBreak || res.isSkip)) return res;
+        if (res && (res.isBreak || res.isSkip || res.isReturn)) return res;
     }
     return null;
 }
@@ -35,22 +35,32 @@ function evalFor(node, env) {
     while (true) {
         if (node.condition && !isTruthy(evaluate(node.condition, forEnv))) break;
         let res = executeBlock(node.body, forEnv);
+        
         if (res && res.isBreak) break;
+
         if (node.update) evaluate(node.update, forEnv);
+
+        if (res && res.isReturn) return res;
     }
 }
 
 function evalWhile(node, env) {
     while (isTruthy(evaluate(node.condition, env))) {
         let res = executeBlock(node.body, env);
+
         if (res && res.isBreak) break;
+
+        if (res && res.isReturn) return res;
     }
 }
 
 function evalDoWhile(node, env) {
     do {
         let res = executeBlock(node.body, env);
+
         if (res && res.isBreak) break;
+
+        if (res && res.isReturn) return res;
     } while (isTruthy(evaluate(node.condition, env)));
 }
 
@@ -125,6 +135,8 @@ function evalForIn(node, env) {
         let res = executeBlock(node.body, forEnv);
 
         if (res && res.isBreak) break;
+
+        if (res && res.isReturn) return res;
     }
 }
 

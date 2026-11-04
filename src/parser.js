@@ -122,6 +122,12 @@ function parse(tokens) {
             consume('RPAREN', "Expected ')' after 'copy' prompt.");
             expr = { type: 'CopyExpression', prompt, oneKey: isOneKey };
         }
+        else if (match('FUNCTION')) {
+            expr = parseFunctionDeclaration(true);
+        }
+        else if (match('THIS')) {
+            expr = { type: 'Variable', name: 'this' };
+        }
         else if (match('IDENTIFIER')) {
             expr = { type: 'Variable', name: previous().value };
         }
@@ -159,6 +165,19 @@ function parse(tokens) {
 
                 consume('RPAREN', `Expected ')' after method arguments.`);
                 expr = { type: 'MethodCall', target: expr, method: methodName, args };
+            } else if (match('LPAREN')) {
+                let args = [];
+
+                if (!check('RPAREN')) {
+                    while (true) {
+                        args.push(parseLogicOr());
+                        if (!match('COMMA')) break;
+                    }
+                }
+
+                consume('RPAREN', "Expected ')' after function arguments.");
+
+                expr = { type: 'CallExpression', caller: expr, args };
             } else {
                 break;
             }
@@ -561,17 +580,133 @@ function parse(tokens) {
         };
     }
 
+    function parseHookStatement() {
+        let startToken = previous();
+        
+        let varName = consume('IDENTIFIER', "Expected function name or table after 'hook'.").value;
+        let target = { type: 'Variable', name: varName };
+
+        while (match('LBRACKET')) {
+            let index = parseLogicOr();
+            consume('RBRACKET', "Expected ']' after index in hook target.");
+            target = { type: 'IndexAccess', target, index };
+        }
+
+        consume('LPAREN', "Expected '(' after hook target.");
+        let params = [];
+
+        if (!check('RPAREN')) {
+            while (true) {
+                consume('IVAR', "Expected 'ivar' before parameter name.");
+
+                let typeInfo = null;
+                if (match('TILDE')) {
+                    typeInfo = parseType();
+                }
+
+                let paramName = consume('IDENTIFIER', "Expected parameter name.").value;
+                params.push({ name: paramName, typeInfo });
+
+                if (!match('COMMA')) break;
+            }
+        }
+
+        consume('RPAREN', "Expected ')' after hook parameters.");
+        consume('THEN', "Expected 'then' after hook header.");
+
+        let body = [];
+        while (!check('END') && !isAtEnd()) {
+            body.push(parseStatement());
+        }
+
+        consume('END', "Unclosed hook. Expected 'end'.");
+
+        return {
+            type: 'HookStatement',
+            target,
+            params,
+            body,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
+    function parseFunctionDeclaration(isExpresion = false) {
+        let startToken = previous();
+        let name = null;
+        let isAnonymous = false;
+
+        if (match('TILDE')) {
+            isAnonymous = true;
+        } else if (check('IDENTIFIER')) {
+            name = advance().value;
+        } else {
+            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Expected function name or '~' for anonymous function after 'function'.`);
+        }
+
+        consume('LPAREN', "Expected '(' after function name or '~'.");
+        let params = [];
+
+        if (!check('RPAREN')) {
+            while (true) {
+                consume('IVAR', "Expected 'ivar' before parameter name.");
+
+                let typeInfo = null;
+                if (match('TILDE')) {
+                    typeInfo = parseType();
+                }
+
+                let paramName = consume('IDENTIFIER', "Expected parameter name.").value;
+                params.push({ name: paramName, typeInfo });
+
+                if (!match('COMMA')) break;
+            }
+        }
+
+        consume('RPAREN', "Expected ')' after function parameters.");
+        consume('THEN', "Expected 'then' after function header.");
+
+        let body = [];
+        while (!check('END') && !isAtEnd()) {
+            body.push(parseStatement());
+        }
+
+        consume('END', "Unclosed function. Expected 'end'.");
+
+        return {
+            type: 'FunctionDeclaration',
+            name,
+            isAnonymous,
+            params,
+            body,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
     function parseStatement() {
         let stmt;
 
-        if (match('IF'))    return parseIfStatement();
-        if (match('FOR'))   return parseForStatement();
-        if (match('WHILE')) return parseWhileStatement();
-        if (match('GIVEN')) return parseGivenStatement();
-        if (match('DO'))    return parseDoWhileStatement();
+        if (match('IF'))       return parseIfStatement();
+        if (match('FOR'))      return parseForStatement();
+        if (match('WHILE'))    return parseWhileStatement();
+        if (match('GIVEN'))    return parseGivenStatement();
+        if (match('DO'))       return parseDoWhileStatement();
+        if (match('FUNCTION')) return parseFunctionDeclaration(false);
+        if (match('HOOK'))     return parseHookStatement();
 
         if (match('IVAR', 'ICONST')) {
             stmt = parseVarDeclaration();
+        }
+        else if (match('RETURN')) {
+            let startToken = previous();
+
+            let value = null;
+            if (!check('SEMICOLON')) {
+                value = parseLogicOr();
+            }
+
+            stmt = { type: 'ReturnStatement', value, line: startToken.line, col: startToken.col };
         }
         else if (match('PASTE', 'PASTELN')) {
             let isLn = previous().type === 'PASTELN';

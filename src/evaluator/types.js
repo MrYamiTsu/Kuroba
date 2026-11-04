@@ -50,6 +50,9 @@ function formatKurobaValue(val, isInsideList = false) {
         let entries = keys.map(k => `${k}: ${formatKurobaValue(val.fields[k].value, true)}`);
         return '{ ' + entries.join(', ') + ' }';
     }
+    if (val && val.kind === 'Function') {
+        return val.name ? `<function ${val.name}>` : '<function ~>';
+    }
     if (val && val.kind) {
         return '[' + val.items.map(el => formatKurobaValue(el, true)).join(', ') + ']';
     }

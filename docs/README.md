@@ -19,6 +19,9 @@ Welcome to the documentation for **Kuroba** (*KRB*).
 5. [Console & I/O](io.md)
    Standard output (`paste`, `pasteLn`), interactive input (`copy`, `copyKey`), and screen clearing (`clear`).
 
+6. [Functions & Metaprogramming](functions.md)
+   Named and anonymous functions (`function ~`), closures, lexical scoping, recursion, and native function interception (`hook` with `this(...)`).
+
 ---
 
 ## Language Cheatsheet
@@ -65,6 +68,18 @@ pasteLn(inventory);
 clear();
 ivar pseudo = copy("Nom : ");
 pasteLn("Bienvenue " + pseudo);
+
+~~ Functions, closures & recursion
+function add(ivar a, ivar b) then
+    return a + b;
+end
+ivar double = function ~(ivar n) then return n * 2; end;
+
+~~ Function interception with hook
+hook add(ivar a, ivar b) then
+    return this(a, b) * 10;
+end
+pasteLn(add(2, 3)); ~~ 50
 ```
 
 ---
@@ -98,4 +113,10 @@ pasteLn("Bienvenue " + pseudo);
 | **Matching** | `given x then case: ... end` | Pattern matching with `break;` and `case: ~` fallback |
 | **Guard Exit** | `exit();`, `exit(cond);` | Immediate or conditional process exit |
 | **Equality & Logic** | `==`, `!=`, `&&`, `\|\|`, `!` | Strict equality with boolean/NULL coercion |
+| **Variable Destruction** | `kill x;` | Explicitly frees variable from memory and scope |
+| **Collection Loop** | `for (item in col) then ... end`<br/>`for (i, item in col) then ... end` | Native collection iteration over List, Stack, Queue, Table |
+| **Functions** | `function name(ivar a) then ... end` | First-class named functions with lexical scope |
+| **Anonymous Functions** | `function ~(ivar a) then ... end` | Signature raven-feather tilde (`~`) anonymous functions |
+| **Return** | `return expr;`, `return;` | Function return (defaults to `NULL` if omitted) |
+| **Function Hooks** | `hook fn(args) then ... end` | Method & function interception calling `this(args)` |
 

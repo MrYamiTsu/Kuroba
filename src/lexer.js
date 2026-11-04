@@ -29,7 +29,11 @@ const KEYWORDS = {
   skip: { type: "SKIP", value: "skip" },
   clear: { type: "CLEAR", value: "clear" },
   exit: { type: "EXIT", value: "exit" },
-  kill: { type: "KILL", value: "kill" }
+  kill: { type: "KILL", value: "kill" },
+  function: { type: "FUNCTION", value: "function" },
+  return: { type: "RETURN", value: "return" },
+  hook: { type: "HOOK", value: "hook" },
+  this: { type: "THIS", value: "this" }
 };
 
 const SYMBOLS = {
