@@ -184,6 +184,9 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                         |
 | **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                               |
 | **Pattern Match Fallback**      | `case: ~`                                                                  | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`.                                     |
+| **Explicit Destruction**        | `kill variable;`                                                           | Explicit variable destruction from active scope with strict declaration checks and constant protection.       |
+| **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                              | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.             |
+| **Native Interception (Hooks)** | `hook f(x) then ... end`                                                   | Transparent native monkey-patching with original function delegation via `this(...)` (Balatro / SMODS style). |
 | **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.              |
 
 > Looking for the complete language cheatsheet and guide? **[Browse Full Documentation & Syntax Reference](docs/README.md)**
@@ -217,13 +220,26 @@ Kuroba/
 ├── src/              # Interpreter Core
 │   ├── lexer.js          # Lexical analysis & token stream generation
 │   ├── parser.js         # Recursive descent parser producing the AST
-│   ├── evaluator.js      # AST runtime evaluator & memory environment
+│   ├── evaluator/        # Modular runtime evaluators
+│   │   ├── index.js          # Evaluator entry point & scope dispatcher
+│   │   ├── control.js        # Branches, loops, return propagation
+│   │   ├── functions.js      # Closures, lambdas, and hook interception
+│   │   ├── collections.js    # List, Stack, Queue, Table methods
+│   │   ├── variables.js      # Declarations, types, kill statement
+│   │   └── types.js          # Value formatting & type coercion
 │   └── errors.js         # Colored diagnostic reporting engine
+├── examples/         # Showcase Games & Demos
+│   ├── deckbuilder.krb   # Roguelike Deckbuilder (Slay the Spire / Balatro style, Relic Hooks)
+│   ├── casino.krb        # Full terminal casino (VIP Hook, Slots, Blackjack, Roulette)
+│   ├── rpg.krb           # Tactical Boss Rush RPG (Relic Hooks, Classes, Queue logs)
+│   └── dungeon.krb       # 2D ASCII Rogue-lite Crawler (Vampiric Blade Hook, Undo Stack)
 └── docs/             # Technical Specification & Manuals
     ├── README.md         # Documentation index & cheatsheet
     ├── variables-and-types.md
     ├── operators.md
     ├── control-flow.md
+    ├── functions.md      # First-class functions, closures & hooks
+    ├── io.md             # Interactive console I/O & clear
     └── errors.md
 ```
 
@@ -336,7 +352,7 @@ Kuroba/
 - [ ] Official Kuroba Web Platform & In-Browser Playground:
   - [ ] Zero-install web interpreter running directly in the browser (pure JS / WebAssembly engine)
   - [ ] Live interactive terminal with syntax highlighting, auto-complete, and output console
-- [ ] Interactive Learning Manual (_"Le Manuel du Corbeau"_ / _"Tour of Kuroba"_):
+- [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
   - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
   - [ ] In-browser code challenges with instant automated grading test suites
 - [ ] Live Documentation Explorer:

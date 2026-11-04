@@ -1,69 +1,96 @@
 # Variables & Types
 
-## Declarations (`ivar`, `iconst`)
+Kuroba provides a robust, expressive type system featuring automatic type inference, explicit type coercion, strict non-nullability contracts, dynamic in-place retyping, Lua-inspired associative tables, typed collections, first-class functions, and explicit lifecycle management.
 
-Variables are declared with `ivar`. Their type is inferred from the initial value:
+---
+
+## 1. Type System Overview
+
+| Type | Kind | Example Literal | Description |
+| :--- | :--- | :--- | :--- |
+| **`Int`** | Primitive | `42`, `-10`, `0` | 64-bit integer numbers |
+| **`Float`** | Primitive | `3.14`, `-0.05` | Floating-point numbers |
+| **`String`** | Primitive | `"Kuroba"`, `""` | UTF-8 text strings |
+| **`Bool`** | Primitive | `TRUE`, `FALSE` | Boolean truth values (note: `1 == TRUE`, `0 == FALSE`) |
+| **`NULL`** | Primitive | `NULL` | Represents the intentional absence of a value |
+| **`List`** | Compound | `[1, 2, 3]` | Dynamic, 0-indexed ordered array |
+| **`Stack`** | Compound | `[10, 20]` | LIFO (Last In, First Out) stack |
+| **`Queue`** | Compound | `["A", "B"]` | FIFO (First In, First Out) queue |
+| **`Table`** | Compound | `{ name: "Kuroba", hp: 100 }` | Key-value associative dictionary with typed fields |
+| **`Function`** | First-Class | `function f(...) then ... end` | Named or anonymous callable closure |
+
+---
+
+## 2. Declarations (`ivar`, `iconst`)
+
+Variables are declared using `ivar`. Their type is automatically inferred from the assigned expression:
 
 ```krb
-ivar name = "Kuroba"; ~~ String
-ivar age = 25;        ~~ Int
-ivar ratio = 3.14;    ~~ Float
-ivar ready = TRUE;    ~~ Bool
+ivar name = "Kuroba"; ~~ Inferred as String
+ivar age = 25;        ~~ Inferred as Int
+ivar ratio = 3.14;    ~~ Inferred as Float
+ivar ready = TRUE;    ~~ Inferred as Bool
 ```
 
-Constants use `iconst` and cannot be reassigned:
+Constants are declared using `iconst`. They are strictly immutable:
 
 ```krb
 iconst PORT = 8080;
-PORT = 3000;          ~~ TypeError: Cannot reassign constant 'PORT'.
+PORT = 3000;          ~~ [TypeError] Cannot reassign constant 'PORT'.
 ```
 
-## Explicit Types & Coercion (`~Type`)
+---
 
-Append `~Type` to cast a value on assignment:
+## 3. Explicit Types & Coercion (`~Type`)
+
+To enforce a specific type or convert an input value at declaration, append `~Type` to `ivar`:
 
 ```krb
-ivar~Int num = "42";         ~~ Coerced to 42
-ivar~Float decimal = "3.14"; ~~ Coerced to 3.14
-ivar~String text = 100;      ~~ Coerced to "100"
-ivar~Bool flag = 1;          ~~ Coerced to TRUE (0 becomes FALSE)
+ivar~Int num = "42";         ~~ Automatically coerced from String to Int 42
+ivar~Float decimal = "3.14"; ~~ Automatically coerced to Float 3.14
+ivar~String text = 100;      ~~ Automatically coerced to String "100"
+ivar~Bool flag = 1;          ~~ Automatically coerced to Bool TRUE (0 becomes FALSE)
 ```
 
-If conversion fails, a `TypeError` is thrown:
+If an explicit conversion is invalid, a `TypeError` is thrown:
+
 ```krb
-ivar~Int invalid = "abc";    ~~ TypeError: Cannot cast value 'abc' to type 'Int'.
+ivar~Int invalid = "abc";    ~~ [TypeError] Cannot cast value 'abc' to type 'Int'.
 ```
 
-## Nullability
+---
 
-By default, every variable can hold `NULL`:
+## 4. Nullability Contracts (`~(Type)`)
+
+By default, variables in Kuroba are **nullable** and can hold `NULL`:
 
 ```krb
 ivar~String role = "editor";
 role = NULL;                 ~~ Allowed
 ```
 
-To forbid `NULL`, wrap the type in parentheses `~(Type)`:
+To forbid `NULL` and guarantee that a variable always holds a concrete value, wrap the type in parentheses `~(Type)`:
 
 ```krb
 ivar~(String) user = "admin";
-user = NULL;                 ~~ TypeError: Cannot assign NULL to non-nullable variable 'user' of type '(String)'.
+user = NULL;                 ~~ [TypeError] Cannot assign NULL to non-nullable variable 'user' of type '(String)'.
 ```
 
-## Reassignment
+---
 
-Variables can be updated without `ivar`. The new value must match the variable's type:
+## 5. Reassignment & Dynamic Retyping
+
+### Standard Reassignment
+Reassigning a variable without modifying its type requires no keyword:
 
 ```krb
 ivar score = 10;
 score = 20;                  ~~ Allowed (Int -> Int)
-
-score = "high";              ~~ TypeError: Cannot assign type 'String' to variable 'score' of type 'Int'.
+score = "high";              ~~ [TypeError] Cannot assign type 'String' to variable 'score' of type 'Int'.
 ```
 
-## Dynamic Retyping / Transtyping (`var~Type = ...`)
-
-To explicitly change the type or nullability of an existing variable, append `~Type` or `~(Type)` to the variable name during assignment:
+### Dynamic In-Place Retyping (`var~Type = ...`)
+To explicitly change the type or nullability of an existing variable in-place, append `~Type` or `~(Type)` during assignment:
 
 ```krb
 ivar score = 100;            ~~ Inferred as Int
@@ -73,56 +100,25 @@ score~Float = 99.5;          ~~ Retyped to Float
 ~~ Dynamically enforcing non-nullability:
 ivar~String role = "guest";  ~~ Nullable String
 role~(String) = "admin";     ~~ Retyped to non-nullable (String)
-role = NULL;                 ~~ TypeError: Cannot assign NULL to non-nullable variable 'role' of type '(String)'.
+role = NULL;                 ~~ [TypeError] Cannot assign NULL to non-nullable variable 'role'.
 ```
-
-Constants (`iconst`) cannot be retyped and will produce a `TypeError`.
 
 ---
 
-## Lists & Collections (`[...]`, `List<Type>`)
+## 6. Lists & Collections (`List<Type>`)
 
 Kuroba features dynamic arrays with support for generic typing, nullability contracts, 0-based index access, and compound mutations.
 
-### Declaration and Literals
-
 ```krb
-~~ Inferred dynamic list
-ivar fruits = ["pomme", "banane", "cerise"];
+ivar fruits = ["apple", "banana", "cherry"];
+pasteLn(fruits[0]);   ~~ "apple"
 
-~~ Empty list
-ivar empty = [];
-
-~~ Nested multidimensional lists (matrices)
-ivar grid = [[1, 2], [3, 4]];
-pasteLn(grid[1][0]); ~~ Outputs 3
+fruits[1] = "mango";
+fruits[0] += " pie";
+pasteLn(fruits);      ~~ ["apple pie", "mango", "cherry"]
 ```
 
-### Element Access & Mutation
-
-Elements are accessed via bracket notation (`list[index]`). Indices must be integers and within the bounds `[0, length - 1]`.
-
-```krb
-ivar scores = [10, 20, 30];
-
-pasteLn(scores[0]);   ~~ 10
-scores[1] = 99;       ~~ Assignment
-scores[0] += 5;       ~~ Compound addition (15)
-scores[2]++;          ~~ Step increment (31)
-
-pasteLn(scores);      ~~ [15, 99, 31]
-```
-
-Accessing an invalid index immediately halts execution with an `IndexError`:
-
-```krb
-pasteLn(scores[5]);   ~~ [IndexError] Index 5 out of bounds for list of length 3.
-```
-
-### Generic Typing & Nullability Matrix
-
-Kuroba provides compile-and-runtime type safety on list elements using generic syntax `~List<Type>`:
-
+### Generic Typing Matrix
 | Syntax | List Nullable? | Elements Nullable? | Description |
 | :--- | :---: | :---: | :--- |
 | `ivar~List<Type>` | **Yes** | **Yes** | Nullable list; elements can be `Type` or `NULL`. |
@@ -130,79 +126,33 @@ Kuroba provides compile-and-runtime type safety on list elements using generic s
 | `ivar~(List<Type>)` | **No** | **No** | Non-nullable list and non-nullable elements. |
 
 ```krb
-~~ Nullable list with nullable Strings
-ivar~List<String> notes = ["ok", NULL, "bien"];
-
-~~ Nullable list where elements CANNOT be NULL
 ivar~List<(Int)> ids = [1, 2, 3];
 ids[0] = NULL;  ~~ [TypeError] Cannot assign NULL to non-nullable element of list 'ids'.
-
-~~ Strict non-nullable list and elements
-ivar~(List<Int>) coords = [10, 20];
-coords = NULL;  ~~ [TypeError] Cannot assign NULL to non-nullable variable 'coords'.
 ```
 
-### Constant Lists
-
-When defined with `iconst`, neither the variable nor the individual elements can be modified:
-
+### List Methods (`.push`, `.pop`, `.peek`, `.count`)
 ```krb
-iconst ORIGIN = [0, 0];
-ORIGIN[0] = 5;  ~~ [TypeError] Cannot modify elements of constant list 'ORIGIN'.
-```
-
-### Element Coercion
-
-Like scalar variables declared with `~Type`, generic list elements are automatically coerced to the target element type whenever possible:
-
-```krb
-~~ Numbers are automatically cast to Strings:
-ivar~List<String> labels = [10, 20, "ok"]; ~~ Result: ["10", "20", "ok"]
-
-~~ Numeric strings are automatically cast to Ints / Floats:
-ivar~List<Int> numbers = ["42", 100];      ~~ Result: [42, 100]
-
-~~ Mutating with auto-coercion:
-numbers[0] = "99";                         ~~ Coerced to 99
-```
-
-If conversion is impossible (e.g. `ivar~List<Int> bad = ["abc"];`), a `TypeError` is thrown.
-
-### Dynamic List Retyping (`list~List<NewType> = ...`)
-
-You can dynamically retype existing lists to a different element type in-place:
-
-```krb
-ivar~List<String> rawData = ["10", "20", "30"];
-
-~~ Dynamically retype the entire list to Ints:
-rawData~List<Int> = rawData;               ~~ Result: [10, 20, 30]
-rawData[0] += 5;                           ~~ 15
-pasteLn(rawData);                          ~~ [15, 20, 30]
+ivar~List<Int> numbers = [10, 30];
+numbers.push(20, 1);     ~~ Inserts 20 at index 1 -> [10, 20, 30]
+pasteLn(numbers.peek(1));~~ 20 (inspects element at index 1)
+pasteLn(numbers.pop(0)); ~~ 10 (removes and returns element at index 0)
+pasteLn(numbers.count());~~ 2
 ```
 
 ---
 
-## Stacks & Queues (`Stack<Type>`, `Queue<Type>`)
-
-Kuroba provides first-class support for Stacks (LIFO) and Queues (FIFO) with the same generic typing, nullability contracts, and element coercion as Lists.
+## 7. Stacks & Queues (`Stack<Type>`, `Queue<Type>`)
 
 ### Stacks (LIFO: Last In, First Out)
-
-Elements are pushed to and popped from the top of the stack:
-
 ```krb
-ivar~Stack<Int> pile = [10, 20];
-pile.push(30);        ~~ Pushes 30 to top: [10, 20, 30]
-pasteLn(pile.peek()); ~~ 30 (inspects top without removing)
-pasteLn(pile.pop());  ~~ 30 (removes and returns top)
-pasteLn(pile.count());~~ 2
+ivar~Stack<Int> stack = [10, 20];
+stack.push(30);        ~~ Pushes 30 to top: [10, 20, 30]
+pasteLn(stack.peek()); ~~ 30 (inspects top without removing)
+pasteLn(stack.pop());  ~~ 30 (removes and returns top)
+pasteLn(stack.count());~~ 2
 ```
 
 ### Queues (FIFO: First In, First Out)
-
-Elements are pushed to the back and popped from the front:
-
 ```krb
 ivar~Queue<String> clients = ["Alice", "Bob"];
 clients.push("Charlie");   ~~ Adds to back
@@ -211,96 +161,67 @@ pasteLn(clients.pop());    ~~ "Alice" (removes and returns front)
 pasteLn(clients.count());  ~~ 2
 ```
 
-### List Methods (`.push`, `.pop`, `.peek`, `.count`)
-
-The same methods are available on standard lists with positional parameters:
-
-```krb
-ivar~List<Int> list = [10, 30];
-list.push(20, 1);    ~~ Inserts 20 at index 1 -> [10, 20, 30]
-pasteLn(list.peek(1)); ~~ 20 (inspects element at index 1)
-pasteLn(list.pop(0));  ~~ 10 (removes and returns element at index 0)
-pasteLn(list.count()); ~~ 2
-```
-
 ---
 
-## Tables (`Table`, `{ key: value }`)
+## 8. Tables (`Table`, `{ key: value }`)
 
-Kuroba features associative key-value Tables inspired by Lua and modern object notation, supporting automatic type inference per field, field-level strict contracts, dynamic field addition, and in-place field transtyping.
-
-### Declaration and Literals
-
-Keys can be written with or without quotes:
+Associative key-value tables supporting field-level typing, dynamic field creation, and methods:
 
 ```krb
-~~ Inferred Table declaration
 ivar~Table hero = {
     name: "Kuroba",
     hp: 100,
     alive: TRUE
 };
 
-~~ Empty Table
-ivar empty = {};
-```
-
-### Access and Mutation
-
-Fields are accessed and modified using bracket notation (`table["key"]`):
-
-```krb
 pasteLn(hero["name"]); ~~ "Kuroba"
-
-~~ Updating existing fields with compound operators
-hero["hp"] -= 25;       ~~ hp is now 75
-hero["hp"]++;           ~~ hp is now 76
-
-~~ Dynamically adding a new field
-hero["mana"] = 50;
+hero["hp"] -= 20;      ~~ In-place compound update
+hero["mana"] = 50;     ~~ Dynamically adds field 'mana'
 ```
 
-Reading a key that does not exist safely returns `NULL`.
+Reading a non-existent field safely returns `NULL`.
 
-### Field-Level Typing and Coercion (`key~Type`)
-
-You can enforce strict types or non-nullability on individual fields at declaration time:
-
+### Field-Level Typing
 ```krb
-ivar~Table player = {
-    score~Float: "99.5",    ~~ Auto-coerced to Float (99.5)
-    rank~(String): "S"      ~~ Non-nullable strict String!
+ivar~Table config = {
+    port~Int: "8080",      ~~ Auto-coerced to Int 8080
+    host~(String): "local" ~~ Non-nullable strict String
 };
 
-player["rank"] = NULL;      ~~ [TypeError] Cannot assign NULL to non-nullable field 'rank' of type '(String)'.
-player["score"] = "text";   ~~ [TypeError] Cannot assign type 'String' to field 'score' of type 'Float'.
-```
-
-### Dynamic Field Retyping (`table["key"]~Type = ...`)
-
-Existing fields can be dynamically transtyped to a new type using the signature tilde syntax:
-
-```krb
-player["score"]~String = "Top Score"; ~~ Retypes the field 'score' to String!
-pasteLn(player["score"]);             ~~ "Top Score"
-```
-
-### Immutability with `iconst`
-
-Tables declared with `iconst` are completely immutable. Fields cannot be modified, added, or retyped:
-
-```krb
-iconst CONFIG = {
-    version: 1,
-    mode: "dark"
-};
-
-CONFIG["version"] = 2; ~~ [TypeError] Cannot modify elements of constant Table 'CONFIG'.
+config["host"] = NULL;     ~~ [TypeError] Cannot assign NULL to non-nullable field 'host'.
 ```
 
 ---
 
-## Variable Lifecycle & Manual Destruction (`kill`)
+## 9. Functions as First-Class Values (`Function`)
+
+Functions can be passed into variables, stored inside table fields as methods, and passed into other routines:
+
+```krb
+function multiply(ivar a, ivar b) then
+    return a * b;
+end
+
+ivar fn = multiply;
+pasteLn(fn(6, 7)); ~~ 42
+pasteLn(fn);        ~~ <function multiply>
+```
+
+Anonymous lambdas use the signature tilde syntax `function ~(...)`:
+
+```krb
+ivar square = function ~(ivar x) then
+    return x * x;
+end;
+
+pasteLn(square(5)); ~~ 25
+```
+
+> For full details on closures, recursion, and monkey-patching, see [Functions & Interception (Hooks)](functions.md).
+
+---
+
+## 10. Variable Lifecycle & Manual Destruction (`kill`)
 
 Kuroba provides the `kill` statement to explicitly destroy variables from memory and eliminate them from their active scope:
 
@@ -318,7 +239,7 @@ pasteLn(buffer);         ~~ [ReferenceError] Variable 'buffer' is not defined.
    ```krb
    kill unexisting;      ~~ [ReferenceError] Cannot kill undefined variable 'unexisting'.
    ```
-2. **Constant Protection**: Variables declared with `iconst` are immutable and cannot be destroyed:
+2. **Constant Protection**: Constants declared with `iconst` cannot be destroyed:
    ```krb
    iconst PI = 3.14159;
    kill PI;              ~~ [TypeError] Cannot kill constant variable 'PI'.

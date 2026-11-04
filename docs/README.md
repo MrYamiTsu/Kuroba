@@ -1,85 +1,94 @@
 # Kuroba Documentation
 
-Welcome to the documentation for **Kuroba** (*KRB*).
+Welcome to the official technical specification and language reference for **Kuroba** (*KRB*), a modern, zen, interpreted programming language engineered in pure Node.js with zero external dependencies.
+
+---
 
 ## Guides by Topic
 
-1. [Variables & Types](variables-and-types.md)
-   Declaration (`ivar`), constants (`iconst`), type coercion, nullability `~(Type)`, strict reassignment, and dynamic retyping (`var~Type = val;`).
+1. **[Variables & Types](variables-and-types.md)**  
+   Declarations (`ivar`, `iconst`), type system overview, type coercion (`~Type`), strict non-nullability contracts (`~(Type)`), dynamic retyping, lists, stacks, queues, tables, first-class functions, and manual destruction (`kill`).
 
-2. [Operators & Expressions](operators.md)
-   Arithmetic precedence, equality (`==`, `!=`), short-circuit logic (`&&`, `||`, `!`), and native swap (`<->`).
+2. **[Operators & Expressions](operators.md)**  
+   Operator precedence table, arithmetic, string concatenation, equality coercion, short-circuit logic, step operators, compound assignments, member access, collection indexing, function calls, and atomic swap (`<->`).
 
-3. [Control Flow](control-flow.md)
-   Conditional blocks (`if / elif / else / end`), multi-branch matching (`given / case:`), loops (`for`, `while`, `do ... while`), collection iteration (`for ... in`), flow control (`break;`, `skip;`), screen clearing (`clear(...)`), and process termination (`exit(...)`).
+3. **[Control Flow](control-flow.md)**  
+   Conditionals (`if / elif / else / end`), pattern matching (`given / case:` with Kuroba redirect rule), 3-clause for loops, native collection iteration (`for ... in`), while and do-while loops, flow controls (`break;`, `skip;`), function returns (`return`), inline guards (`exit`), and screen clearing (`clear`).
 
-4. [Error Reference](errors.md)
-   Overview of runtime and syntax diagnostics (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`).
+4. **[Functions & Interception (Hooks)](functions.md)**  
+   Named functions, parameter typing, anonymous lambdas (`function ~`), closures, lexical scopes, recursion, table methods, and native function interception (`hook` with implicit `this(...)`).
 
-5. [Console & I/O](io.md)
-   Standard output (`paste`, `pasteLn`), interactive input (`copy`, `copyKey`), and screen clearing (`clear`).
+5. **[Console & Interactive I/O](io.md)**  
+   Synchronous console output (`paste`, `pasteLn`), line input (`copy`), instant single-keypress capture (`copyKey`), screen management (`clear`), and value formatting rules.
 
-6. [Functions & Metaprogramming](functions.md)
-   Named and anonymous functions (`function ~`), closures, lexical scoping, recursion, and native function interception (`hook` with `this(...)`).
+6. **[Error Reference](errors.md)**  
+   Overview and diagnostics for all 5 runtime and syntax error classes (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`, `IndexError`).
 
 ---
 
 ## Language Cheatsheet
 
 ```krb
-~~ Variables and constants
-ivar count = 10;
-iconst PI = 3.14;
-ivar~Int coerced = "50";
-ivar~(String) strictUser = "admin";
+~~ 1. Variables, Constants & Types
+ivar count = 10;                     ~~ Inferred as Int
+iconst MAX_USERS = 100;              ~~ Immutable constant
+ivar~Int coerced = "50";             ~~ Coerced to Int 50
+ivar~(String) strictUser = "admin";  ~~ Non-nullable strict String
 
-~~ Operations
-count = count + 5;
+~~ 2. Native Atomic Swap
 ivar a = 1;
 ivar b = 2;
-a <-> b;
+a <-> b;                             ~~ a is now 2, b is now 1
 
-~~ Conditions
-if (count == 15 && a == 2) then
-    paste("Condition met");
+~~ 3. Conditionals & Pattern Matching
+if (count >= 10 && a == 2) then
+    pasteLn("Condition satisfied!");
 end
 
-~~ Given / Case matching
 given strictUser then
     case: "admin"
-        paste("Access granted");
+        pasteLn("Admin console unlocked");
         break;
     case: ~
-        paste("Unknown role");
+        pasteLn("Standard access");
 end
 
-~~ Loops and flow control
-for (ivar i = 0; i < 3; i++) then
-    pasteLn(i);
+~~ 4. Collections: Lists, Stacks, Queues & Tables
+ivar~List<String> inventory = ["Sword", "Shield"];
+inventory.push("Potion");
+
+ivar~Table hero = { name: "Shinobi", hp: 100 };
+hero["hp"] -= 15;
+
+~~ 5. Collection Iteration (for in)
+for (i, item in inventory) then
+    pasteLn(i + ": " + item);
 end
 
-~~ Dynamic lists & indexing
-ivar inventory = ["Potion", "Katana", "Elixir"];
-inventory[0] = "Mega Potion";
-inventory[1] += " +1";
-pasteLn(inventory);
-
-~~ Interactive console input & clear
-clear();
-ivar pseudo = copy("Nom : ");
-pasteLn("Bienvenue " + pseudo);
-
-~~ Functions, closures & recursion
-function add(ivar a, ivar b) then
-    return a + b;
+for (key, val in hero) then
+    pasteLn(key + " => " + val);
 end
-ivar double = function ~(ivar n) then return n * 2; end;
 
-~~ Function interception with hook
-hook add(ivar a, ivar b) then
-    return this(a, b) * 10;
+~~ 6. Functions, Closures & Recursion
+function multiply(ivar a, ivar b) then
+    return a * b;
 end
-pasteLn(add(2, 3)); ~~ 50
+
+ivar square = function ~(ivar n) then
+    return n * n;
+end;
+
+~~ 7. Native Function Interception (Hooks)
+hook multiply(ivar a, ivar b) then
+    pasteLn("Calculation intercepted!");
+    return this(a, b) * 2;           ~~ Calls original function via this(...)
+end
+
+pasteLn(multiply(3, 4));             ~~ Prints log, returns 24
+
+~~ 8. Variable Lifecycle
+ivar tempBuffer = [1, 2, 3];
+kill tempBuffer;                     ~~ Frees variable from memory and scope
 ```
 
 ---
@@ -89,34 +98,32 @@ pasteLn(add(2, 3)); ~~ 50
 | Category | Syntax | Description |
 | :--- | :--- | :--- |
 | **Output** | `paste(x);`, `pasteLn(x);` | Prints without newline (`paste`) or with newline (`pasteLn`) |
-| **Input** | `copy("...");`, `copyKey();` | Line input expression (`copy`) or single key capture (`copyKey`) |
-| **Screen** | `clear();`, `clear(cond);` | Terminal clear immediately or guarded by condition |
+| **Input** | `copy("...");`, `copyKey();` | Line input expression (`copy`) or raw single key capture (`copyKey`) |
+| **Screen** | `clear();`, `clear(cond);` | Clears console immediately or guarded by condition |
 | **Comments** | `~~ comment`, `~~{{ ... }}` | Single-line and multi-line block comments |
-| **Variables** | `ivar x = 10;` | Inferred typed variable |
-| **Constants** | `iconst PI = 3.14;` | Read-only constant |
-| **Coercion** | `ivar~Int age = "25";` | Type coercion (`~String`, `~Int`, `~Float`, `~Bool`) |
-| **Non-Nullable** | `ivar~(String) u = "...";` | Strict non-nullable contract |
-| **Lists / Arrays** | `[1, 2, 3]`, `list[0]` | Dynamic arrays with 0-based indexing and nesting |
-| **Generic Lists** | `ivar~List<Int> l = [1];`<br/>`ivar~List<(String)> strict = [];` | Typed lists with optional element non-nullability contracts |
+| **Variables** | `ivar x = 10;` | Variable declaration with inferred type |
+| **Constants** | `iconst PORT = 8080;` | Read-only constant (cannot be reassigned or killed) |
+| **Coercion** | `ivar~Int age = "25";` | Type coercion prefix (`~String`, `~Int`, `~Float`, `~Bool`) |
+| **Non-Nullable** | `ivar~(String) u = "...";` | Strict non-nullable contract (rejects `NULL`) |
+| **Lists** | `[1, 2, 3]`, `list[0]` | Dynamic arrays with 0-based indexing and nesting |
+| **Generic Lists** | `ivar~List<Int> l = [];` | Strongly typed lists with optional element nullability |
 | **Stacks & Queues** | `ivar~Stack<Int> s = [];`<br/>`ivar~Queue<String> q = [];` | LIFO Stack and FIFO Queue collections |
-| **Tables** | `ivar~Table t = { a: 1 };`<br/>`t["a"] = 2;` | Key-value associative tables with field-level typing and retyping |
-| **Collection Methods** | `.push()`, `.pop()`, `.peek()`, `.count()` | Object method operations on Lists, Stacks, and Queues |
+| **Tables** | `ivar~Table t = { a: 1 };`<br/>`t["a"] = 2;` | Key-value associative tables with field-level typing |
+| **Collection Methods** | `.push()`, `.pop()`, `.peek()`, `.count()` | Methods for Lists, Stacks, and Queues |
 | **Index Mutation** | `list[0] = v;`, `list[0] += 5;` | In-place element reassignment and compound operators |
-| **Retyping** | `x~String = "A";`<br/>`list~List<Int> = list;` | In-place dynamic transtyping for variables and lists |
-| **Compound Assign** | `x += 5;`, `x *= 2;` | Arithmetic in-place update (`+=`, `-=`, `*=`, `/=`, `%=`) |
-| **Step Operators** | `i++`, `i--` | Step increment / decrement |
-| **Native Swap** | `a <-> b;` | Atomic in-place variable swap |
-| **Conditionals** | `if c then ... else ... end` | Conditional block statement |
-| **Loops** | `for (...) then ... end` | 3-clause for loop with `break;` and `skip;` |
+| **Dynamic Retyping** | `x~String = "A";` | Dynamic in-place transtyping for variables and fields |
+| **Compound Assign** | `x += 5;`, `x *= 2;` | Arithmetic updates (`+=`, `-=`, `*=`, `/=`, `%=`) |
+| **Step Operators** | `i++`, `i--` | Postfix step increment and decrement |
+| **Native Swap** | `a <-> b;` | Atomic in-place variable swap with type & null safety |
+| **Conditionals** | `if c then ... elif ... else ... end` | Conditional block branching |
+| **Pattern Match** | `given x then case: ... break; case: ~ end` | Value pattern matching with fallback (`case: ~`) |
+| **For Loops** | `for (init; cond; step) then ... end` | 3-clause iterative loop supporting `break;` and `skip;` |
+| **Collection Loops** | `for (item in col) then ... end`<br/>`for (i, item in col) then ... end` | Native iteration over List, Stack, Queue, and Table |
 | **While Loop** | `while c then ... end` | Pre-test conditional loop |
 | **Do-While Loop** | `do ... while c;` | Post-test loop guaranteed to execute at least once |
-| **Matching** | `given x then case: ... end` | Pattern matching with `break;` and `case: ~` fallback |
 | **Guard Exit** | `exit();`, `exit(cond);` | Immediate or conditional process exit |
-| **Equality & Logic** | `==`, `!=`, `&&`, `\|\|`, `!` | Strict equality with boolean/NULL coercion |
-| **Variable Destruction** | `kill x;` | Explicitly frees variable from memory and scope |
-| **Collection Loop** | `for (item in col) then ... end`<br/>`for (i, item in col) then ... end` | Native collection iteration over List, Stack, Queue, Table |
-| **Functions** | `function name(ivar a) then ... end` | First-class named functions with lexical scope |
-| **Anonymous Functions** | `function ~(ivar a) then ... end` | Signature raven-feather tilde (`~`) anonymous functions |
-| **Return** | `return expr;`, `return;` | Function return (defaults to `NULL` if omitted) |
-| **Function Hooks** | `hook fn(args) then ... end` | Method & function interception calling `this(args)` |
-
+| **Functions** | `function f(ivar a) then ... end` | First-class named functions with lexical closure |
+| **Anonymous Functions** | `function ~(ivar a) then ... end` | Raven-feather tilde (`~`) anonymous lambdas |
+| **Returns** | `return expr;`, `return;` | Immediate function return (defaults to `NULL`) |
+| **Function Hooks** | `hook target(args) then ... end` | Function interception with original invocation via `this(...)` |
+| **Variable Destruction** | `kill x;` | Explicitly frees variable from memory and active scope |

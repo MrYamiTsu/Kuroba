@@ -9,22 +9,22 @@ Kuroba treats functions as first-class citizens (`First-Class Functions`). They 
 Named functions are declared with the `function` keyword, followed by the function name, a comma-separated parameter list where each parameter begins with `ivar`, and an enclosed block terminated by `end`:
 
 ```krb
-function addition(ivar a, ivar b) then
+function add(ivar a, ivar b) then
     return a + b;
 end
 
-pasteLn(addition(10, 5)); ~~ 15
+pasteLn(add(10, 5)); ~~ 15
 ```
 
 ### Parameter Typing & Nullability
 Parameters can be optionally typed using Kuroba's signature tilde syntax `~Type` or made strictly non-nullable with `~(Type)`:
 
 ```krb
-function multiplier(ivar~Int x, ivar~Int y) then
+function multiply(ivar~Int x, ivar~Int y) then
     return x * y;
 end
 
-pasteLn(multiplier(6, 7)); ~~ 42
+pasteLn(multiply(6, 7)); ~~ 42
 ```
 
 ---
@@ -36,13 +36,13 @@ pasteLn(multiplier(6, 7)); ~~ 42
 - If execution reaches `end` without encountering an explicit `return`, the function automatically returns `NULL`:
 
 ```krb
-function saluer(ivar nom) then
-    paste("Bonjour, ");
-    pasteLn(nom);
+function greet(ivar name) then
+    paste("Hello, ");
+    pasteLn(name);
     ~~ No explicit return -> returns NULL automatically
 end
 
-ivar res = saluer("Kuroba");
+ivar res = greet("Kuroba");
 pasteLn(res); ~~ NULL
 ```
 
@@ -64,14 +64,14 @@ pasteLn(doubler(21)); ~~ 42
 Functions can be stored directly inside `Table` collections to act as methods:
 
 ```krb
-ivar heros = {
-    nom: "Kuroba",
-    saluer: function ~(ivar cible) then
-        pasteLn("En garde, " + cible + " !");
+ivar hero = {
+    name: "Kuroba",
+    duel: function ~(ivar target) then
+        pasteLn("En garde, " + target + "!");
     end
 };
 
-heros["saluer"]("Dragon"); ~~ En garde, Dragon !
+hero["duel"]("Dragon"); ~~ En garde, Dragon!
 ```
 
 ---
@@ -81,7 +81,7 @@ heros["saluer"]("Dragon"); ~~ En garde, Dragon !
 Every function captures its enclosing environment at declaration time. Variables in the parent scope remain accessible and can be mutated across multiple invocations:
 
 ```krb
-function creerCompteur() then
+function createCounter() then
     ivar count = 0;
     return function ~() then
         count++;
@@ -89,10 +89,10 @@ function creerCompteur() then
     end;
 end
 
-ivar cpt = creerCompteur();
-pasteLn(cpt()); ~~ 1
-pasteLn(cpt()); ~~ 2
-pasteLn(cpt()); ~~ 3
+ivar counter = createCounter();
+pasteLn(counter()); ~~ 1
+pasteLn(counter()); ~~ 2
+pasteLn(counter()); ~~ 3
 ```
 
 ---
@@ -102,14 +102,14 @@ pasteLn(cpt()); ~~ 3
 Kuroba functions natively support recursion. A function can invoke itself within its own body:
 
 ```krb
-function factorielle(ivar n) then
+function factorial(ivar n) then
     if (n <= 1) then
         return 1;
     end
-    return n * factorielle(n - 1);
+    return n * factorial(n - 1);
 end
 
-pasteLn(factorielle(5)); ~~ 120
+pasteLn(factorial(5)); ~~ 120
 ```
 
 ---
@@ -121,17 +121,17 @@ Kuroba provides native function hooking inspired by game modding architectures. 
 Inside the body of a `hook`, the keyword **`this(...)`** automatically refers to the original function:
 
 ```krb
-function calculerTotal(ivar prix, ivar quantite) then
-    return prix * quantite;
+function calculateTotal(ivar price, ivar quantity) then
+    return price * quantity;
 end
 
-~~ VIP Hook: intercepts calculerTotal and applies a 20% discount
-hook calculerTotal(ivar prix, ivar quantite) then
+~~ VIP Hook: intercepts calculateTotal and applies a 20% discount
+hook calculateTotal(ivar price, ivar quantity) then
     pasteLn("VIP Discount applied!");
-    return this(prix, quantite) * 0.8;
+    return this(price, quantity) * 0.8;
 end
 
-pasteLn(calculerTotal(50, 2)); ~~ 80
+pasteLn(calculateTotal(50, 2)); ~~ 80
 ```
 
 ### Hooking Table Methods (Game Modding Pattern)
@@ -162,17 +162,17 @@ Multiple hooks can be stacked on the same function. Each `this(...)` call seamle
 - **Preserving Return Values (`return this(...)`)**: Recommended practice. Ensures that whatever the original function returns is cleanly passed back to the caller.
 - **Conditional Interception / Cancel**: You can choose whether or not to invoke `this(...)` based on runtime state:
   ```krb
-  hook tirer(ivar cible) then
-      if (cible["invincible"]) then
+  hook shoot(ivar target) then
+      if (target["invincible"]) then
           pasteLn("Shield absorbed the shot!");
           return 0; ~~ 'this' is bypassed completely
       end
-      return this(cible);
+      return this(target);
   end
   ```
 - **Parameter Naming & Transformation**: Parameter names in the hook are purely local to the hook and do not need to match the original parameter names. Furthermore, arguments can be altered before passing them to `this(...)`:
   ```krb
-  hook calculerTotal(ivar p, ivar q) then
+  hook calculateTotal(ivar p, ivar q) then
       return this(p * 2, q); ~~ Alters price before forwarding
   end
   ```
