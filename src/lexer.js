@@ -29,6 +29,7 @@ const KEYWORDS = {
   skip: { type: "SKIP", value: "skip" },
   clear: { type: "CLEAR", value: "clear" },
   exit: { type: "EXIT", value: "exit" },
+  kill: { type: "KILL", value: "kill" }
 };
 
 const SYMBOLS = {

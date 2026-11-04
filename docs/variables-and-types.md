@@ -298,8 +298,37 @@ iconst CONFIG = {
 CONFIG["version"] = 2; ~~ [TypeError] Cannot modify elements of constant Table 'CONFIG'.
 ```
 
+---
 
+## Variable Lifecycle & Manual Destruction (`kill`)
 
+Kuroba provides the `kill` statement to explicitly destroy variables from memory and eliminate them from their active scope:
 
+```krb
+ivar buffer = [1, 2, 3, 4, 5];
+pasteLn(buffer.count()); ~~ 5
 
+kill buffer;             ~~ Releases variable and frees its scope entry
 
+pasteLn(buffer);         ~~ [ReferenceError] Variable 'buffer' is not defined.
+```
+
+### Safety Rules:
+1. **Undefined Variables**: Attempting to kill an undeclared variable throws a `ReferenceError`:
+   ```krb
+   kill unexisting;      ~~ [ReferenceError] Cannot kill undefined variable 'unexisting'.
+   ```
+2. **Constant Protection**: Variables declared with `iconst` are immutable and cannot be destroyed:
+   ```krb
+   iconst PI = 3.14159;
+   kill PI;              ~~ [TypeError] Cannot kill constant variable 'PI'.
+   ```
+3. **Lexical Unshadowing**: When an inner shadowed variable is killed, the outer variable becomes visible again in that scope:
+   ```krb
+   ivar val = "global";
+   if (TRUE) then
+       ivar val = "local";
+       kill val;
+       pasteLn(val);     ~~ "global"
+   end
+   ```

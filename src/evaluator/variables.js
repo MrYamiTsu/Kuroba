@@ -128,5 +128,19 @@ function evalSwap(node, env) {
     varB.value = temp;
 }
 
-module.exports = { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap };
+function evalKill(node, env) {
+    let scope = findScope(node.name, env);
+    if (!scope) {
+        printErr(`[ReferenceError: Line ${node.line}] Cannot kill undefined variable '${node.name}'.`);
+    }
+
+    let targetVar = scope.values[node.name];
+    if (targetVar.isConst) {
+        printErr(`[TypeError: Line ${node.line}] Cannot kill constant variable '${node.name}'.`);
+    }
+
+    delete scope.values[node.name];
+}
+
+module.exports = { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap, evalKill };
 

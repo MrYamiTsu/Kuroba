@@ -616,6 +616,12 @@ function parse(tokens) {
             consume('RPAREN', "Expected ')' after 'exit' condition.");
             stmt = { type: 'ExitStatement', condition };
         }
+        else if (match('KILL')) {
+            let startToken = previous();
+            let varName = consume('IDENTIFIER', "Expected variable name after 'kill'.").value;
+            
+            stmt = { type: 'KillStatement', name: varName, line: startToken.line, col: startToken.col };
+        }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'LBRACKET') {
             let varName = advance().value;
             advance();
