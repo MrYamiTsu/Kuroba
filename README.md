@@ -291,73 +291,73 @@ Kuroba/
 - [x] Dictionaries / Key-Value Tables (`Table`, `{ key: value }`) with field-level typing (`key~Type`), dynamic addition, and field retyping (`table["key"]~Type = ...`)
 - [x] Collection iteration (`for (item in list)` and `for (i, item in list)`) across `List`, `Stack`, `Queue`, and `Table`
 
-### Phase 4: Functions & Metaprogramming
+### Phase 4: Functions, Metaprogramming & Developer Ergonomics `(v1.0.4)`
 
 - [x] Variable lifecycle & manual destruction (`kill variable;`)
-- [x] First-class functions (`function name(args) ... end` and `function ~(args) ... end`) with lexical function scopes & `return`
-- [ ] Tail-call safe recursion helpers (`recur(...)`)
+- [x] First-class functions (`function name(args) ... end` and `function ~(args) ... end`) with lexical closures & `return`
 - [x] Function interception (`hook target(args) then ... end` with `this(...)`) & callbacks
+- [ ] Interactive REPL shell (launching `kb` with no arguments starts an interactive session)
+- [ ] CLI arguments support (`Std.Sys.args` or script arguments array)
 
-### Phase 5: Object-Oriented Programming (OOP) & Namespaces
+### Phase 5: The Vital Standard Library & Multi-File Imports `(v1.0.5)`
 
-- [ ] Class definitions (`class ... end`) with constructors & methods
-- [ ] Single inheritance (`class Sub extends Super ... end`) and `super(...)`
-- [ ] Instance reference (`this` / `self`)
-- [ ] Encapsulation & Access Modifiers (`public` / `private`)
-- [ ] Static members (`static fn ...`, `static ivar ...`)
-- [ ] Interfaces & structural contracts (`interface ... end`)
-- [ ] Namespaces (`namespace Name ... end`) for cross-file architecture
+- [ ] Built-in `Std.Math` Essentials:
+  - [ ] Native random generator (`alea(min, max)` or `random()`)
+  - [ ] Mathematical functions (`floor`, `ceil`, `abs`, `min`, `max`, `sqrt`, `pow`)
+  - [ ] Mathematical constants (`PI`, `E`)
+- [ ] Built-in `Std.Time` (Animation & Tempo):
+  - [ ] Synchronous animation delay `sleep(ms)`
+  - [ ] High-resolution clock timestamp `now()` in milliseconds
+- [ ] Built-in `Std.String` & Zen Syntax Sugar:
+  - [ ] Zen String Interpolation with signature tilde: `~"PV: {hp}/{maxHp} - Nom: {nom}"`
+  - [ ] Length property / method on strings: `.count()` and `.length()`
+  - [ ] Character index read access: `str[0]`
+  - [ ] String utilities: `.split()`, `.trim()`, `.upper()`, `.lower()`
+- [ ] Built-in `Std.IO` (Filesystem & Persistence):
+  - [ ] Synchronous file operations: `fileRead(path)`, `fileWrite(path, content)`, `fileAppend(path, content)`, `fileExists(path)`
+- [ ] Pragmatic Multi-File Imports:
+  - [ ] Clean script importing: `import "monstres.krb";`
 
-### Phase 6: Exception Handling & Modular Architecture
+### Phase 6: Exception Handling & Zen Object-Oriented Programming `(v1.0.6)`
 
-- [ ] Exception throwing and handling (`throw`, `try / catch / finally / end`)
-- [ ] Package architecture with strict metadata headers (`package Name { ... }`)
-- [ ] Lightweight library headers (`library Name;`)
-- [ ] Unified import system (`import Package;`)
-- [ ] Package aliasing (`import Package alias Short;` and prefix drop `import Package alias ~;`)
-- [ ] Selective library imports with signature tilde syntax (`import Package ~(LibA, LibB);`)
-- [ ] Combined selective imports with prefix drop (`import Package ~(LibA) alias ~;`)
-- [ ] Multi-file module imports & exports (`import "file.krb"`, `export`)
+- [ ] Exception throwing and handling (`throw`, `try / catch(err) / finally / end`)
+- [ ] Tail-call safe recursion optimization (`recur(...)` or TCO engine)
+- [ ] Ergonomic Zen Classes (designed as a clean, structured abstraction over `Table`):
+  - [ ] Class definition `class Name ... end` with constructor and instance methods
+  - [ ] Single inheritance `class Sub extends Super ... end` with `super(...)`
+  - [ ] Instance reference (`this`)
+- [ ] Namespaces & modular scoping (`namespace Name ... end`)
 
-### Phase 7: Built-in Packages Ecosystem (`Std`, `StdE`, `Web`, `App`) & Tooling
+### Phase 7: Modular Ecosystem, Standard Extended & Tooling `(v1.0.7)`
 
-- [ ] Built-in `Std` Package (The 5 Core Essentials):
-  - [ ] `Std.Math` (trigonometry, rounding, powers, square roots, constants `PI`, `E`)
-  - [ ] `Std.String` (length, substring, split, join, trim, casing, search & replace)
-  - [ ] `Std.IO` (file system operations: read, write, append, check file existence)
-  - [ ] `Std.Time` (clock, high-res timestamps, date formatting, async delay `sleep(ms)`)
-  - [ ] `Std.Sys` (CLI arguments `args`, environment variables `env`, platform info, exit codes)
+- [ ] Architecture of strict packages & libraries (`package Name { ... }`, `library Name;`)
+- [ ] Selective and aliased package imports (`import Package ~(LibA) alias ~;`)
 - [ ] Built-in `StdE` Package (Standard Extended):
-  - [ ] `StdE.Json` (JSON parsing, serialization, and schema validation)
-  - [ ] `StdE.Path` (path manipulation: join, resolve, dirname, basename, extname)
-  - [ ] `StdE.Regex` (pattern matching, regex validation, extraction & global replace)
-  - [ ] `StdE.Crypto` (hashing `sha256`, `md5`, secure random tokens, UUID generation)
-  - [ ] `StdE.Process` (spawning child processes, command execution, stream pipes)
+  - [ ] `StdE.Json` (native parse and stringify of Tables to JSON)
+  - [ ] `StdE.Path` (join, resolve, dirname, basename, extname)
+  - [ ] `StdE.Process` (spawning child processes, command execution, pipes)
+  - [ ] `StdE.Term` (ANSI text colors & styles, terminal dimensions, cursor positioning)
 - [ ] Built-in `Web` Package (Networking & HTTP):
+  - [ ] HTTP client fetcher (`Web.fetch` for REST API queries)
   - [ ] Native HTTP web server (`Web.serve`, `Web.listen`)
-  - [ ] API routing & request/response lifecycle (`Web.get`, `Web.post`, `Web.put`, `Web.delete`)
-  - [ ] HTTP client fetcher (`Web.fetch` for REST API queries and web scraping)
-  - [ ] Real-time communication (`Web.socket` client/server connections)
+- [ ] Developer Tooling & CLI Ergonomics:
+  - [ ] Official code formatter (`kb fmt`)
+  - [ ] Built-in test runner (`kb test`)
+  - [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
+
+### Phase 8: 2D Game Engine (Package App) & Web Learning Hub `(v1.0.8)`
+
 - [ ] Built-in `App` Package (Native GUI & 2D Game Engine):
   - [ ] Native window creation with framerate and resolution control (`App.window`, `App.fps`)
   - [ ] 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style Raylib / SDL)
   - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
   - [ ] Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
-- [ ] Developer Tooling & CLI Ergonomics:
-  - [ ] Interactive REPL shell (launching `kb` with no arguments starts an interactive session)
-  - [ ] Interactive CLI Debugger (`--debug` flag with step execution, breakpoints, and AST inspector)
-
-### Phase 8: Web Platform, Interactive Tour & Learning Hub
-
 - [ ] Official Kuroba Web Platform & In-Browser Playground:
   - [ ] Zero-install web interpreter running directly in the browser (pure JS / WebAssembly engine)
   - [ ] Live interactive terminal with syntax highlighting, auto-complete, and output console
 - [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
   - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
   - [ ] In-browser code challenges with instant automated grading test suites
-- [ ] Live Documentation Explorer:
-  - [ ] Searchable online documentation with executable "Run Code" snippets
-  - [ ] Code snippet sharing via URL permalinks with base64 encoded states
 
 ---
 
