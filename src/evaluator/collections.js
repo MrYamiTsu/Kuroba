@@ -87,12 +87,29 @@ function evalMethodCall(node, env) {
     let target = evaluate(node.target, env);
     let targetType = getType(target);
 
+    if (target && target.kind === 'Table') {
+        let methodName = node.method;
+        if (methodName in target.fields) {
+            let fnObj = target.fields[methodName].value;
+            if (fnObj && fnObj.kind === 'Function') {
+                if (fnObj.isNative) {
+                    let evaluatedArgs = node.args.map(a => evaluate(a, env));
+                    return fnObj.fn(...evaluatedArgs);
+                }
+                const { evalCall } = require('./functions');
+                return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env);
+            }
+            printErr(`[TypeError] Field '${methodName}' on Table is not a callable function.`);
+        }
+        printErr(`[ReferenceError] Method or field '${methodName}' does not exist on Table.`);
+    }
+
     let isList = Array.isArray(target);
     let isStack = target && target.kind === 'Stack';
     let isQueue = target && target.kind === 'Queue';
 
     if (!isList && !isStack && !isQueue) {
-        printErr(`[TypeError] Cannot call method '.${node.method}()' on type '${targetType}'. Supported types are 'List', 'Stack' and 'Queue'.`);
+        printErr(`[TypeError] Cannot call method '.${node.method}()' on type '${targetType}'. Supported types are 'List', 'Stack', 'Queue' and 'Table'.`);
     }
 
     let items = isList ? target : target.items;

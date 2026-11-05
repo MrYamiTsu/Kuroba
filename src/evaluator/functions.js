@@ -40,6 +40,11 @@ function evalCall(node, env) {
         printErr(`[TypeError] Cannot call non-function value of type '${typeName}'.`);
     }
 
+    if (caller.isNative) {
+        let evaluatedArgs = node.args.map(a => evaluate(a, env));
+        return caller.fn(...evaluatedArgs);
+    }
+
     if (node.args.length !== caller.params.length) {
         let funcName = caller.name || '~';
         printErr(`[TypeError] Function '${funcName}' expects ${caller.params.length} arguments, got ${node.args.length}.`);

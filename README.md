@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.3-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.4-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg?style=for-the-badge)](LICENSE)
@@ -316,12 +316,17 @@ Kuroba/
 - [x] Interactive REPL shell (launching `krb` with no arguments starts an interactive session)
 - [x] CLI arguments support (`args` list & `Std.Sys.args`)
 
-### Phase 5: The Vital Standard Library & Multi-File Imports `(v1.0.5)`
+### Phase 5: The Vital Standard Library & Multi-File Imports `(In Progress - v1.0.5)`
 
-- [ ] Built-in `Std.Math` Essentials:
-  - [ ] Native random generator (`alea(min, max)` or `random()`)
-  - [ ] Mathematical functions (`floor`, `ceil`, `abs`, `min`, `max`, `sqrt`, `pow`)
-  - [ ] Mathematical constants (`PI`, `E`)
+- [x] Pragmatic Multi-File & Package Imports:
+  - [x] Full package & selective module imports: `import Std;`, `import Std alias S;`, `import Std ~(Math) alias ~;`
+  - [x] Direct root module exposure via `alias ~`
+  - [x] Isolated module scope execution with cached table exports
+- [x] Built-in `Std.Math` Essentials:
+  - [x] Polyvalent random generator (`random()`, `random(max)`, `random(min, max)`, `randomItem(list)`)
+  - [x] Mathematical functions (`floor`, `ceil`, `round`, `trunc`, `abs`, `min`, `max`, `clamp`, `sign`, `lerp`, `dist`, `sqrt`, `pow`, `log`, `log10`, `exp`)
+  - [x] Trigonometry & Inverses (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `degToRad`, `radToDeg`)
+  - [x] Mathematical constants (`PI`, `TAU`, `E`)
 - [ ] Built-in `Std.Time` (Animation & Tempo):
   - [ ] Synchronous animation delay `sleep(ms)`
   - [ ] High-resolution clock timestamp `now()` in milliseconds
@@ -332,8 +337,6 @@ Kuroba/
   - [ ] String utilities: `.split()`, `.trim()`, `.upper()`, `.lower()`
 - [ ] Built-in `Std.IO` (Filesystem & Persistence):
   - [ ] Synchronous file operations: `fileRead(path)`, `fileWrite(path, content)`, `fileAppend(path, content)`, `fileExists(path)`
-- [ ] Pragmatic Multi-File Imports:
-  - [ ] Clean script importing: `import "monstres.krb";`
 
 ### Phase 6: Exception Handling & Zen Object-Oriented Programming `(v1.0.6)`
 

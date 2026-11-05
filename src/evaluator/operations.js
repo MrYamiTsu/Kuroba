@@ -30,6 +30,7 @@ function evalMath(node, env) {
 function evalUnary(node, env) {
     let right = evaluate(node.right, env);
     if (node.operator === '!') return !isTruthy(right);
+    if (node.operator === '-') return -right;
     printErr(`[RuntimeError] Unsupported unary operator '${node.operator}'.`);
 }
 

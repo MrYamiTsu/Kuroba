@@ -198,7 +198,7 @@ function parse(tokens) {
     }
 
     function parseUnary() {
-        if (match('NOT')) {
+        if (match('NOT', 'MINUS')) {
             let op = previous().value;
             let right = parseUnary();
             return { type: 'UnaryExpression', operator: op, right };
@@ -730,6 +730,39 @@ function parse(tokens) {
 
             stmt = { type: 'ReturnStatement', value, line: startToken.line, col: startToken.col };
         }
+        else if (match('IMPORT')) {
+            let pkgName = consume('IDENTIFIER', "Expected package name after 'import'.").value;
+            let modules = [];
+
+            if (match('TILDE')) {
+                consume('LPAREN', "Expected '(' after '~' in import statement.");
+
+                if (!check('RPAREN')) {
+                    while (true) {
+                        modules.push(consume('IDENTIFIER', "Expected module name.").value);
+                        if (!match('COMMA')) break;
+                    }
+                }
+
+                consume('RPAREN', "Expected ')' after import module list.");
+            }
+
+            let aliasName = null;
+            if (match('ALIAS')) {
+                if (match('TILDE')) {
+                    aliasName = '~';
+                } else {
+                    aliasName = consume('IDENTIFIER', "Expected alias name or '~' after 'alias'.").value;
+                }
+            }
+
+            stmt = {
+                type: 'ImportStatement',
+                package: pkgName,
+                modules,
+                alias: aliasName
+            };
+        }
         else if (match('PASTE', 'PASTELN')) {
             let isLn = previous().type === 'PASTELN';
             let kw = previous().value;
@@ -789,7 +822,7 @@ function parse(tokens) {
             let rhs = parseAssignSuffix(`list index '${varName}[...]'`);
             stmt = { type: 'IndexAssign', name: varName, index, value: rhs.value, operator: rhs.operator, typeInfo };
         }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DOT' && tokens[cursor + 2] && tokens[cursor + 2].type === 'IDENTIFIER' && (!tokens[cursor + 3] || tokens[cursor + 3].type !== 'LPAREN')) {
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DOT' && tokens[cursor + 2] && tokens[cursor + 2].type === 'IDENTIFIER' && tokens[cursor + 3] && ['ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN', 'INCREMENT', 'DECREMENT', 'TILDE'].includes(tokens[cursor + 3].type)) {
             let varName = advance().value;
             advance();
             let propName = advance().value;

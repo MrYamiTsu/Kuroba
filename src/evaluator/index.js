@@ -8,6 +8,7 @@ function evaluate(node, env = createScope()) {
         case 'Program':
             for (let stmt of node.body) evaluate(stmt, env);
             return;
+        case 'Literal':             return node.value;
         case 'VarDeclar':           return evalVarDeclar(node, env);
         case 'VarAssign':           return evalVarAssign(node, env);
         case 'Variable':            return evalVariable(node, env);
@@ -39,6 +40,7 @@ function evaluate(node, env = createScope()) {
         case 'ReturnStatement':     return evalReturn(node, env);
         case 'CallExpression':      return evalCall(node, env);
         case 'HookStatement':       return evalHook(node, env);
+        case 'ImportStatement':     return evalImport(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }
@@ -52,4 +54,4 @@ const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn } = requir
 const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical } = require('./operations');
 const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');
-
+const { evalImport } = require('./packages');

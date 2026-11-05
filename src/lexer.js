@@ -33,7 +33,9 @@ const KEYWORDS = {
   function: { type: "FUNCTION", value: "function" },
   return: { type: "RETURN", value: "return" },
   hook: { type: "HOOK", value: "hook" },
-  this: { type: "THIS", value: "this" }
+  this: { type: "THIS", value: "this" },
+  import: { type: "IMPORT", value: "import" },
+  alias:  { type: "ALIAS",  value: "alias" }
 };
 
 const SYMBOLS = {
