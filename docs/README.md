@@ -24,8 +24,8 @@ Welcome to the official technical specification and language reference for **Kur
 6. **[Error Reference](errors.md)**  
    Overview and diagnostics for all 5 runtime and syntax error classes (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`, `IndexError`).
 
-7. **[Packages & Standard Library (`Std.Math`)](packages-and-std.md)**  
-   Modular package import system (`import Package ~(Modules) alias Name;`), root scoping (`alias ~`), and complete `Std.Math` reference (constants, polyvalent `random`, trigonometry, logarithms, gamedev helpers).
+7. **[Namespaces, Packages & Standard Library (`Std.Math`)](packages-and-std.md)**  
+   Namespaces architecture (`namespace Main then ... end`, `namespace Package ~Module then ... end`), symbol-based discovery, modular import system (`import Package ~(Modules) alias Name;`), and complete `Std.Math` reference.
 
 ---
 
@@ -132,3 +132,4 @@ kill tempBuffer;                     ~~ Frees variable from memory and scope
 | **Variable Destruction** | `kill x;` | Explicitly frees variable from memory and active scope |
 | **CLI Arguments** | `args`, `Std.Sys.args` | Immutable List of CLI arguments with `.count()` and indexing |
 | **Package Imports** | `import Std;`<br/>`import Std ~(Math) alias ~;` | Full package or specific module imports with isolated scopes & aliases |
+| **Namespaces** | `namespace Main then ... end`<br/>`namespace Std ~Math then ... end` | Scoped code organization with pure symbol discovery & modular slices |

@@ -8,6 +8,12 @@ function evaluate(node, env = createScope()) {
         case 'Program':
             for (let stmt of node.body) evaluate(stmt, env);
             return;
+        case 'NamespaceStatement':
+            for (const stmt of node.body) {
+                let res = evaluate(stmt, env);
+                if (res && (res.isReturn || res.isBreak || res.isSkip)) return res;
+            }
+            return null;
         case 'Literal':             return node.value;
         case 'VarDeclar':           return evalVarDeclar(node, env);
         case 'VarAssign':           return evalVarAssign(node, env);

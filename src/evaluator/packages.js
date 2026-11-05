@@ -9,19 +9,7 @@ const { natives } = require('../runtime/natives');
 
 const moduleCache = {};
 
-function loadKurobaModule(modulePath) {
-    if (moduleCache[modulePath]) {
-        return moduleCache[modulePath];
-    }
-
-    if (!fs.existsSync(modulePath)) {
-        printErr(`[ImportError] Module file not found: '${modulePath}'.`);
-    }
-
-    const source = fs.readFileSync(modulePath, 'utf-8');
-    const tokens = tokenize(source);
-    const ast = parse(tokens);
-
+function evaluateNamespaceBody(statements) {
     const moduleScope = createScope();
 
     for (const [name, fn] of Object.entries(natives)) {
@@ -33,7 +21,9 @@ function loadKurobaModule(modulePath) {
         };
     }
 
-    evaluate(ast, moduleScope);
+    for (const stmt of statements) {
+        evaluate(stmt, moduleScope);
+    }
 
     const tableFields = {};
     for (const [varName, varEntry] of Object.entries(moduleScope.values)) {
@@ -46,51 +36,74 @@ function loadKurobaModule(modulePath) {
         }
     }
 
-    const exportedTable = {
+    return {
         kind: 'Table',
         fields: tableFields
     };
+}
 
-    moduleCache[modulePath] = exportedTable;
-    return exportedTable;
+function discoverNamespaceModules(pkgName, dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        printErr(`[ImportError] Package directory not found: '${dirPath}'.`);
+    }
+
+    const discovered = {};
+    const files = fs.readdirSync(dirPath);
+
+    for (const file of files) {
+        if (!file.endsWith('.krb')) continue;
+
+        const filePath = path.join(dirPath, file);
+        const source = fs.readFileSync(filePath, 'utf-8');
+        const ast = parse(tokenize(source));
+
+        for (const stmt of ast.body) {
+            if (stmt.type === 'NamespaceStatement' && stmt.namespace === pkgName) {
+                const modName = stmt.module || pkgName;
+                const cacheKey = `${pkgName}:${modName}`;
+
+                if (!moduleCache[cacheKey]) {
+                    moduleCache[cacheKey] = evaluateNamespaceBody(stmt.body);
+                }
+
+                discovered[modName] = moduleCache[cacheKey];
+            }
+        }
+    }
+
+    return discovered;
 }
 
 function evalImport(node, env) {
+    if (node.package === 'Main') {
+        printErr("[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.");
+    }
+
     if (node.package !== 'Std') {
         printErr(`[ImportError] Unknown package '${node.package}'. Available packages: 'Std'.`);
     }
 
     const stdLibDir = path.join(__dirname, '../../lib/std');
-    if (!fs.existsSync(stdLibDir)) {
-        printErr(`[ImportError] Package directory not found: '${stdLibDir}'.`);
-    }
+    
+    const availableModules = discoverNamespaceModules(node.package, stdLibDir);
 
     const isFullPackage = !node.modules || node.modules.length === 0;
-    const modulesToLoad = [];
 
+    const modulesToBind = {};
     if (isFullPackage) {
-        const files = fs.readdirSync(stdLibDir);
-        for (const file of files) {
-            if (file.endsWith('.krb')) {
-                const base = path.basename(file, '.krb');
-                const modName = base.charAt(0).toUpperCase() + base.slice(1);
-                modulesToLoad.push({ name: modName, filePath: path.join(stdLibDir, file) });
-            }
-        }
+        Object.assign(modulesToBind, availableModules);
     } else {
         for (const modName of node.modules) {
-            const fileName = modName.toLowerCase() + '.krb';
-            const filePath = path.join(stdLibDir, fileName);
-            modulesToLoad.push({ name: modName, filePath });
+            if (!(modName in availableModules)) {
+                printErr(`[ImportError] Module '${modName}' not found in namespace '${node.package}'.`);
+            }
+            modulesToBind[modName] = availableModules[modName];
         }
     }
 
-    
     if (node.alias === '~') {
-        for (const mod of modulesToLoad) {
-            const modTable = loadKurobaModule(mod.filePath);
-
-            env.values[mod.name] = {
+        for (const [modName, modTable] of Object.entries(modulesToBind)) {
+            env.values[modName] = {
                 value: modTable,
                 type: 'Table',
                 isConst: true,
@@ -98,9 +111,9 @@ function evalImport(node, env) {
             };
         }
     } else {
-        const pkgName = node.alias || node.package;
-        if (!env.values[pkgName]) {
-            env.values[pkgName] = {
+        const targetNamespace = node.alias || node.package;
+        if (!env.values[targetNamespace]) {
+            env.values[targetNamespace] = {
                 value: { kind: 'Table', fields: {} },
                 type: 'Table',
                 isConst: true,
@@ -108,9 +121,8 @@ function evalImport(node, env) {
             };
         }
 
-        for (const mod of modulesToLoad) {
-            const modTable = loadKurobaModule(mod.filePath);
-            env.values[pkgName].value.fields[mod.name] = {
+        for (const [modName, modTable] of Object.entries(modulesToBind)) {
+            env.values[targetNamespace].value.fields[modName] = {
                 value: modTable,
                 type: 'Table',
                 isNullable: false

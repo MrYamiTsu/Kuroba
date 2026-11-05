@@ -1,52 +1,96 @@
-# Packages & Standard Library (Std.Math)
+# Namespaces, Packages & Standard Library (Std.Math)
 
-Kuroba features a modular packaging and module import system designed to keep code organized, clean, and zero-dependency.
+Kuroba features a modern, symbol-based namespace and packaging system designed to keep code organized, clean, and zero-dependency.
 
 ---
 
-## 1. Import Syntax
+## 1. Namespaces & Modules Architecture
 
-Kuroba provides flexible, expressive import styles whether you want the entire package or specific modules:
+Kuroba organizes code using a strict hierarchy:
 
-### A. Importer le package complet
+$$\text{Namespace} \rightarrow \text{Module (Optional Slice)} \rightarrow \text{Members (Functions, Constants, Tables)}$$
+
+### A. The `Main` Namespace (Application Root)
+* `Main` is the single, unified entry point for executable applications.
+* **`Main` is strictly indivisible** : attempting `namespace Main ~Module` will raise a `SyntaxError`.
+* **`Main` cannot be imported** : attempting `import Main;` from another script will raise an `ImportError`.
+
 ```krb
-~~ 1. Import standard : accessible via Std.<Module>
+import Std ~(Math) alias ~;
+
+namespace Main then
+    pasteLn("Application started!");
+    pasteLn("PI: " + Math.PI);
+end
+```
+
+### B. Library Namespaces & Modular Slices (`~Module`)
+Libraries define a namespace (e.g., `Std`, `Game`) and can optionally be split into modular slices using the raven-feather tilde `~` signature:
+
+```krb
+~~ Split into modular slices (e.g. inside lib/std/)
+namespace Std ~Math then
+    iconst PI = 3.141592653589793;
+    function abs(ivar x) then ... end
+end
+```
+
+Or as a single unified library without modules:
+```krb
+namespace Game then
+    function start() then ... end
+end
+```
+
+### C. File-Name Independence (Pure Symbol Discovery)
+Kuroba uses **pure symbol discovery**:
+* The physical file name on disk (e.g. `math.krb`, `math_utils.krb`) **does not matter**.
+* Kuroba scans package files and indexes them strictly by their declared `namespace <Name> [~<Module>]`.
+* Multiple module slices can even reside in the same file.
+
+### D. Standalone Scripts (Without Namespace)
+* A script without any `namespace ... then` block runs normally as an autonomous script.
+* However, a script without a declared namespace **cannot be imported** by other files.
+
+---
+
+## 2. Import Syntax
+
+Imports reside at the top of the file (outside the `namespace` block) and target namespaces and their optional module slices:
+
+### A. Importing the Entire Namespace
+```krb
+~~ 1. Standard import : accessible via Std.<Module>
 import Std;
 pasteLn(Std.Math.PI);
 
-~~ 2. Import avec alias de package : accessible via S.<Module>
+~~ 2. Namespace alias : accessible via S.<Module>
 import Std alias S;
 pasteLn(S.Math.PI);
 
-~~ 3. Import racine direct : expose tous les modules du package dans le scope
+~~ 3. Direct root import : exposes all modules directly in scope
 import Std alias ~;
 pasteLn(Math.PI);
 ```
 
-### B. Importer des modules spécifiques avec signature `~(...)`
+### B. Importing Specific Module Slices (`~(...)`)
 ```krb
-~~ 1. Modules spécifiques avec alias de package (accessible via S.Math)
-import Std ~(Math) alias S;
-pasteLn(S.Math.PI);
+~~ 1. Specific module into root scope (Math accessible directly)
+import Std ~(Math) alias ~;
+pasteLn(Math.PI);
 
-~~ 2. Modules spécifiques sans alias (accessible via Std.Math)
+~~ 2. Specific module under package namespace (accessible via Std.Math)
 import Std ~(Math);
 pasteLn(Std.Math.PI);
 
-~~ 3. Modules spécifiques vers la racine (Math injecté directement dans le scope)
-import Std ~(Math) alias ~;
-pasteLn(Math.PI);
+~~ 3. Specific module under package alias (accessible via S.Math)
+import Std ~(Math) alias S;
+pasteLn(S.Math.PI);
 ```
-
-### Import Rules & Resolution:
-1. **Standard Library (`Std`)**: Located in `lib/std/<module>.krb`.
-2. **Local Packages**: Located relative to the active project root in `lib/<package>/<module>.krb`.
-3. **Module Isolation**: Each imported module is evaluated in its own isolated scope and exported as a strongly-typed Kuroba `Table`.
-4. **Caching**: Modules are cached once loaded; subsequent imports reuse the cached module exports.
 
 ---
 
-## 2. Std.Math Reference
+## 3. Std.Math Reference
 
 The `Std.Math` module provides a comprehensive suite of mathematical constants, hardware-accelerated calculations, trigonometry, and gaming/scripting helpers.
 
@@ -150,28 +194,29 @@ All trigonometric functions operate in **radians**. Conversion helpers `degToRad
 
 ---
 
-## Example: Combat & Movement Simulation
+## 4. Complete Example
 
 ```krb
 import Std ~(Math) alias ~;
 
-~~ Generate random fighter damage between 15 and 30
-ivar dmg = Math.random(15, 30);
-pasteLn("Damage dealt: " + dmg);
+namespace Main then
+    ~~ Generate random fighter damage between 15 and 30
+    ivar dmg = Math.random(15, 30);
+    pasteLn("Damage dealt: " + dmg);
 
-~~ Distance between player and enemy
-ivar playerX = 10;
-ivar playerY = 15;
-ivar enemyX = 40;
-ivar enemyY = 55;
+    ~~ Distance between player and enemy
+    ivar playerX = 10;
+    ivar playerY = 15;
+    ivar enemyX = 40;
+    ivar enemyY = 55;
 
-ivar distance = Math.dist(playerX, playerY, enemyX, enemyY);
-pasteLn("Distance: " + Math.round(distance));
+    ivar distance = Math.dist(playerX, playerY, enemyX, enemyY);
+    pasteLn("Distance: " + Math.round(distance));
 
-~~ Smooth camera tracking using lerp
-ivar currentCamX = 0.0;
-ivar targetCamX = 100.0;
-currentCamX = Math.lerp(currentCamX, targetCamX, 0.1);
-pasteLn("Camera X: " + currentCamX);
+    ~~ Smooth camera tracking using lerp
+    ivar currentCamX = 0.0;
+    ivar targetCamX = 100.0;
+    currentCamX = Math.lerp(currentCamX, targetCamX, 0.1);
+    pasteLn("Camera X: " + currentCamX);
+end
 ```
-

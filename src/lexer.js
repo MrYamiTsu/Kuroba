@@ -35,7 +35,8 @@ const KEYWORDS = {
   hook: { type: "HOOK", value: "hook" },
   this: { type: "THIS", value: "this" },
   import: { type: "IMPORT", value: "import" },
-  alias:  { type: "ALIAS",  value: "alias" }
+  alias:  { type: "ALIAS",  value: "alias" },
+  namespace: { type: "NAMESPACE", value: "namespace" }
 };
 
 const SYMBOLS = {

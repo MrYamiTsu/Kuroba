@@ -731,8 +731,7 @@ function parse(tokens) {
 
         if (match('IVAR', 'ICONST')) {
             stmt = parseVarDeclaration();
-        }
-        else if (match('RETURN')) {
+        } else if (match('RETURN')) {
             let startToken = previous();
 
             let value = null;
@@ -741,8 +740,7 @@ function parse(tokens) {
             }
 
             stmt = { type: 'ReturnStatement', value, line: startToken.line, col: startToken.col };
-        }
-        else if (match('IMPORT')) {
+        } else if (match('IMPORT')) {
             let pkgName = consume('IDENTIFIER', "Expected package name after 'import'.").value;
             let modules = [];
 
@@ -774,8 +772,38 @@ function parse(tokens) {
                 modules,
                 alias: aliasName
             };
-        }
-        else if (match('PASTE', 'PASTELN')) {
+        } else if (match('NAMESPACE')) {
+            let startToken = previous();
+            let nsName = consume('IDENTIFIER', "Expected namespace name after 'namespace'.").value;
+
+            let modName = null;
+
+            if (match('TILDE')) {
+                if (nsName === 'Main') {
+                    printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Namespace 'Main' cannot be split into modules.`);
+                }
+                
+                modName = consume('IDENTIFIER', "Expected module name after '~'.").value;
+            }
+
+            consume('THEN', `Expected 'then' after namespace declaration '${nsName}'.`);
+
+            let body = [];
+            while (!check('END') && !isAtEnd()) {
+                body.push(parseStatement());
+            }
+
+            consume('END', `Expected 'end' to close namespace '${nsName}' block.`);
+
+            return {
+                type: 'NamespaceStatement',
+                namespace: nsName,
+                module: modName,
+                body,
+                line: startToken.line,
+                col: startToken.col
+            };
+        } else if (match('PASTE', 'PASTELN')) {
             let isLn = previous().type === 'PASTELN';
             let kw = previous().value;
 
@@ -792,11 +820,9 @@ function parse(tokens) {
 
             consume('RPAREN', `Expected ')' after '${kw}' argument.`);
             stmt = { type: 'PasteStatement', expr, newLine: isLn, isEmpty };
-        }
-        else if (check('COPY') || check('COPYKEY')) {
+        } else if (check('COPY') || check('COPYKEY')) {
             stmt = parsePrimary();
-        }
-        else if (match('CLEAR')) {
+        } else if (match('CLEAR')) {
             consume('LPAREN', "Expected '(' after 'clear'.");
             
             let condition = null;
@@ -806,8 +832,7 @@ function parse(tokens) {
 
             consume('RPAREN', "Expected ')' after 'clear' condition.");
             stmt = { type: 'ClearStatement', condition };
-        }
-        else if (match('EXIT')) {
+        } else if (match('EXIT')) {
             consume('LPAREN', "Expected '(' after 'exit'.");
             
             let condition = null;
@@ -817,14 +842,12 @@ function parse(tokens) {
 
             consume('RPAREN', "Expected ')' after 'exit' condition.");
             stmt = { type: 'ExitStatement', condition };
-        }
-        else if (match('KILL')) {
+        } else if (match('KILL')) {
             let startToken = previous();
             let varName = consume('IDENTIFIER', "Expected variable name after 'kill'.").value;
             
             stmt = { type: 'KillStatement', name: varName, line: startToken.line, col: startToken.col };
-        }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'LBRACKET') {
+        } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'LBRACKET') {
             let varName = advance().value;
             advance();
             let index = parseLogicOr();
@@ -833,8 +856,7 @@ function parse(tokens) {
             let typeInfo = match('TILDE') ? parseType() : null;
             let rhs = parseAssignSuffix(`list index '${varName}[...]'`);
             stmt = { type: 'IndexAssign', name: varName, index, value: rhs.value, operator: rhs.operator, typeInfo };
-        }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DOT' && isPropertyAssignAhead()) {
+        } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DOT' && isPropertyAssignAhead()) {
             let varName = advance().value;
 
             let path = [];
@@ -855,8 +877,7 @@ function parse(tokens) {
                 operator: rhs.operator, 
                 typeInfo 
             };
-        }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
+        } else if (check('IDENTIFIER') && tokens[cursor + 1] && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
             let varName = advance().value;
             let rhs = parseAssignSuffix(`variable '${varName}'`);
             stmt = {
@@ -866,8 +887,7 @@ function parse(tokens) {
                     ? { type: 'MathExpression', operator: rhs.operator, left: { type: 'Variable', name: varName }, right: rhs.value }
                     : rhs.value
             };
-        }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'TILDE') {
+        } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'TILDE') {
             let varName = advance().value;
             advance();
 
@@ -878,20 +898,16 @@ function parse(tokens) {
             consume('ASSIGN', `Missing '=' assignment operator after '${varName}~${targetType}'.`);
             let value = parseLogicOr();
             stmt = { type: 'VarRetype', name: varName, targetType, isNullable, value, typeInfo };
-        }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'SWAP') {
+        } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'SWAP') {
             let leftVar = advance().value;
             advance();
             let rightVar = consume('IDENTIFIER', "Expected variable name after '<->' swap operator.").value;
             stmt = { type: 'SwapStatement', left: leftVar, right: rightVar };
-        }
-        else if (match('BREAK')) {
+        } else if (match('BREAK')) {
             stmt = { type: 'BreakStatement' };
-        }
-        else if (match('SKIP')) {
+        } else if (match('SKIP')) {
             stmt = { type: 'SkipStatement' };
-        }
-        else {
+        } else {
             stmt = parseLogicOr();
         }
 

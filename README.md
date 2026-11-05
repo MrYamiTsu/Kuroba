@@ -162,10 +162,10 @@ node index.js path/to/script.krb   # Runs script
 
 ### CLI Options
 
-| Command / Flag                     | Description                                                  |
-| :--------------------------------- | :----------------------------------------------------------- |
-| `.\krb` / `.\kuroba` / `node index.js` | Launches the interactive REPL shell (Read-Eval-Print Loop)   |
-| `.\krb <file.krb> [args...]`          | Executes the script with command-line arguments              |
+| Command / Flag                         | Description                                                |
+| :------------------------------------- | :--------------------------------------------------------- |
+| `.\krb` / `.\kuroba` / `node index.js` | Launches the interactive REPL shell (Read-Eval-Print Loop) |
+| `.\krb <file.krb> [args...]`           | Executes the script with command-line arguments            |
 | `.\krb -i`, `--repl`                   | Explicitly forces interactive REPL mode                    |
 | `.\krb -v`, `--version`                | Displays current engine version and build info             |
 | `.\krb -h`, `--help`                   | Prints the CLI help manual                                 |
@@ -204,7 +204,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                              | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                           |
 | **Native Interception (Hooks)** | `hook f(x) then ... end`                                                   | Transparent native monkey-patching with original function delegation via `this(...)`.                                       |
 | **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.              |
-| **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                   | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.             |
+| **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                   |
 
 > Looking for the complete language cheatsheet and guide? **[Browse Full Documentation & Syntax Reference](docs/README.md)**
 
@@ -318,6 +318,11 @@ Kuroba/
 
 ### Phase 5: The Vital Standard Library & Multi-File Imports `(In Progress - v1.0.5)`
 
+- [x] Namespaces & Modular Scoping:
+  - [x] Application root namespace: `namespace Main then ... end` (strictly indivisible, non-importable)
+  - [x] Modular library slices: `namespace Package ~Module then ... end`
+  - [x] Pure symbol discovery (file-name independent module resolution)
+  - [x] Autonomous standalone scripts support (run without namespace, cannot be imported)
 - [x] Pragmatic Multi-File & Package Imports:
   - [x] Full package & selective module imports: `import Std;`, `import Std alias S;`, `import Std ~(Math) alias ~;`
   - [x] Direct root module exposure via `alias ~`
@@ -346,7 +351,6 @@ Kuroba/
   - [ ] Class definition `class Name ... end` with constructor and instance methods
   - [ ] Single inheritance `class Sub extends Super ... end` with `super(...)`
   - [ ] Instance reference (`this`)
-- [ ] Namespaces & modular scoping (`namespace Name ... end`)
 
 ### Phase 7: Modular Ecosystem, Standard Extended & Tooling `(v1.0.7)`
 
