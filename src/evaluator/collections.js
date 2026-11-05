@@ -250,7 +250,21 @@ function evalPropertyAssign(node, env) {
     }
 
     let table = targetVar.value;
-    let key = node.property;
+    let path = node.path || [node.property];
+
+    for (let i = 0; i < path.length - 1; i++) {
+        let seg = path[i];
+        if (!table.fields || !(seg in table.fields)) {
+            printErr(`[ReferenceError] Property '${seg}' does not exist on Table.`);
+        }
+        let child = table.fields[seg].value;
+        if (!child || child.kind !== 'Table') {
+            printErr(`[TypeError] Cannot access property through non-Table field '${seg}'.`);
+        }
+        table = child;
+    }
+    
+    let key = path[path.length - 1];
     let newVal = evaluate(node.value, env);
 
     if (node.operator) {

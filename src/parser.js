@@ -58,6 +58,18 @@ function parse(tokens) {
         printErr(`[SyntaxError: ${formatLocation(token)}] ${message}`);
     }
 
+    function isPropertyAssignAhead() {
+        let k = cursor;
+        
+        while (tokens[k] && tokens[k].type === 'IDENTIFIER' && tokens[k + 1] && tokens[k + 1].type === 'DOT') {
+            k += 2;
+        }
+
+        return tokens[k] && tokens[k].type === 'IDENTIFIER' && tokens[k + 1] && [
+            'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN', 'INCREMENT', 'DECREMENT', 'TILDE'
+        ].includes(tokens[k + 1].type);
+    }
+
     // ========================================================================
     // 2. EXPRESSION PARSING (PRECEDENCE HIERARCHY)
     // ========================================================================
@@ -822,14 +834,27 @@ function parse(tokens) {
             let rhs = parseAssignSuffix(`list index '${varName}[...]'`);
             stmt = { type: 'IndexAssign', name: varName, index, value: rhs.value, operator: rhs.operator, typeInfo };
         }
-        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DOT' && tokens[cursor + 2] && tokens[cursor + 2].type === 'IDENTIFIER' && tokens[cursor + 3] && ['ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN', 'INCREMENT', 'DECREMENT', 'TILDE'].includes(tokens[cursor + 3].type)) {
+        else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DOT' && isPropertyAssignAhead()) {
             let varName = advance().value;
-            advance();
-            let propName = advance().value;
 
+            let path = [];
+            while (match('DOT')) {
+                path.push(consume('IDENTIFIER', "Expected property name after '.'").value);
+            }
+
+            let fullPropStr = varName + '.' + path.join('.');
             let typeInfo = match('TILDE') ? parseType() : null;
-            let rhs = parseAssignSuffix(`property '${varName}.${propName}'`);
-            stmt = { type: 'PropertyAssign', name: varName, property: propName, value: rhs.value, operator: rhs.operator, typeInfo };
+            let rhs = parseAssignSuffix(`property '${fullPropStr}'`);
+
+            stmt = { 
+                type: 'PropertyAssign', 
+                name: varName, 
+                path, 
+                property: path[path.length - 1], 
+                value: rhs.value, 
+                operator: rhs.operator, 
+                typeInfo 
+            };
         }
         else if (check('IDENTIFIER') && tokens[cursor + 1] && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
             let varName = advance().value;
