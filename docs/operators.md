@@ -33,6 +33,12 @@ ivar forced = (10 + 2) * 3;   ~~ 36
 ivar remainder = 14 % 5;      ~~ 4
 ```
 
+Division or modulo by zero raises a `MathError`:
+```krb
+ivar err1 = 10 / 0;           ~~ [MathError] Division by zero is undefined.
+ivar err2 = 10 % 0;           ~~ [MathError] Modulo by zero is undefined.
+```
+
 ### String Concatenation (`+`)
 Strings concatenate seamlessly with `+`. If one operand is a String and the other is a number or boolean, it is automatically converted to text:
 
@@ -41,7 +47,10 @@ ivar greeting = "Hello, " + "World!"; ~~ "Hello, World!"
 ivar scoreMsg = "Score: " + 100;       ~~ "Score: 100"
 ```
 
-### Zen String Interpolation (`~"..."`)
+---
+
+## Zen String Interpolation (`~"..."`)
+
 Kuroba features native string interpolation using the raven-feather tilde prefix `~"..."`. Any valid Kuroba expression can be evaluated inside `{...}`:
 
 ```krb
@@ -60,23 +69,6 @@ pasteLn(~"Force: {hero.stats.force}");
 
 To include literal `{` or `}` inside an interpolated string, escape them with `\\{` or `\\}`.
 
-### String Character Indexing (`str[i]`)
-Characters can be read using 0-based bracket indexing:
-
-```krb
-ivar text = "Kuroba";
-pasteLn(text[0]); ~~ "K"
-pasteLn(text[5]); ~~ "a"
-
-~~ Strings are immutable in Kuroba: character assignment text[0] = "X" is rejected
-```
-
-Division or modulo by zero raises a `MathError`:
-```krb
-ivar err1 = 10 / 0;           ~~ [MathError] Division by zero is undefined.
-ivar err2 = 10 % 0;           ~~ [MathError] Modulo by zero is undefined.
-```
-
 ---
 
 ## Comparisons (`<`, `>`, `<=`, `>=`)
@@ -94,35 +86,52 @@ pasteLn(20 >= 25);            ~~ FALSE
 
 ## Equality (`==`, `!=`)
 
-Kuroba uses strict equality with intuitive boolean and null coercion rules:
-- `0 == FALSE` evaluates to `TRUE`
-- `1 == TRUE` evaluates to `TRUE`
-- `NULL == NULL` evaluates to `TRUE`
+Kuroba enforces type safety during equality comparisons, with explicit coercion for booleans and `NULL`:
 
 ```krb
 pasteLn(10 == 10);            ~~ TRUE
-pasteLn(10 != 20);            ~~ TRUE
-pasteLn(0 == FALSE);          ~~ TRUE
-pasteLn(1 == TRUE);           ~~ TRUE
+pasteLn("a" == "a");          ~~ TRUE
+pasteLn(1 == TRUE);           ~~ TRUE (1 coerces to TRUE)
+pasteLn(0 == FALSE);          ~~ TRUE (0 coerces to FALSE)
 pasteLn(NULL == NULL);        ~~ TRUE
+```
+
+Comparing incompatible types (e.g. `String` and `Int`) evaluates safely to `FALSE` without crashing:
+```krb
+pasteLn("10" == 10);          ~~ FALSE
 ```
 
 ---
 
 ## Logical Operators (`&&`, `||`, `!`)
 
-Evaluate conditions with short-circuiting:
-- `!` inverts truthiness (`!TRUE` -> `FALSE`, `!0` -> `TRUE`).
-- `&&` stops and returns false if the left operand is falsy.
-- `||` stops and returns true if the left operand is truthy.
+Kuroba implements short-circuit evaluation for boolean logic:
 
 ```krb
 ivar a = TRUE;
 ivar b = FALSE;
 
-pasteLn(!a);                  ~~ FALSE
 pasteLn(a && b);              ~~ FALSE
 pasteLn(a || b);              ~~ TRUE
+pasteLn(!a);                  ~~ FALSE
+```
+
+### Short-Circuit Guarantee:
+If the left side of `&&` is `FALSE`, the right side is not evaluated.  
+If the left side of `||` is `TRUE`, the right side is not evaluated.
+
+---
+
+## Bitwise Operators (`&`, `|`, `^`, `<<`, `>>`)
+
+Perform bitwise integer operations:
+
+```krb
+ivar flags = 1 | 2 | 4;       ~~ 7 (Bitwise OR)
+ivar masked = flags & 2;      ~~ 2 (Bitwise AND)
+ivar flipped = flags ^ 2;     ~~ 5 (Bitwise XOR)
+ivar shifted = 1 << 3;        ~~ 8 (Bitwise Left Shift)
+ivar halved = 16 >> 2;        ~~ 4 (Bitwise Right Shift)
 ```
 
 ---
@@ -165,7 +174,7 @@ count--;                      ~~ 0
 
 ---
 
-## Compound Assignments (`+=`, `-=`, `*=`, `/=`, `%=`)
+## Compound Assignment (`+=`, `-=`, `*=`, `/=`, `%=`)
 
 In-place arithmetic reassignment shortcuts:
 
@@ -182,7 +191,7 @@ score %= 4;                   ~~ 2
 
 ## Member Access & Methods (`.`)
 
-Invokes built-in methods on collections:
+Invokes built-in methods on collections (`List`, `Stack`, `Queue`):
 
 ```krb
 ivar~List<Int> numbers = [1, 2, 3];
@@ -192,15 +201,23 @@ numbers.push(4);
 
 ---
 
-## Collection Indexing (`[]`)
+## Indexing (`[]`)
 
-Retrieves or mutates elements by index or key:
+Retrieves or mutates elements by 0-based integer index or table key:
 
 ```krb
+~~ 1. List Indexing (Read & Write)
 ivar~List<String> items = ["sword", "shield"];
 pasteLn(items[0]);            ~~ "sword"
 items[0] = "spear";
 
+~~ 2. String Character Indexing (Read-Only)
+ivar text = "Kuroba";
+pasteLn(text[0]);             ~~ "K"
+pasteLn(text[5]);             ~~ "a"
+~~ Strings are immutable in Kuroba: text[0] = "X" will raise an error
+
+~~ 3. Table Key Indexing (Read & Write)
 ivar~Table hero = { name: "Shinobi", hp: 100 };
 pasteLn(hero["name"]);        ~~ "Shinobi"
 hero["hp"] -= 20;

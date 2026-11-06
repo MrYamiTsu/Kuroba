@@ -2,7 +2,7 @@
 ~~ Kuroba Std Library: String
 ~~ ============================================================================
 namespace Std ~String then
-   iconst DIGITS      = "0123456789";
+    iconst DIGITS = "0123456789";
     iconst ASCII_LOWER = "abcdefghijklmnopqrstuvwxyz";
     iconst ASCII_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 

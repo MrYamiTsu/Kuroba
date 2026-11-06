@@ -2,9 +2,9 @@
 ~~ Kuroba Std Library: Math
 ~~ ============================================================================
 namespace Std ~Math then
-    iconst PI  = 3.141592653589793;
+    iconst PI = 3.141592653589793;
     iconst TAU = 6.283185307179586;
-    iconst E   = 2.718281828459045;
+    iconst E = 2.718281828459045;
 
     ivar random = __native_random;
 
@@ -86,7 +86,7 @@ namespace Std ~Math then
     function dist(ivar x1, ivar y1, ivar x2, ivar y2) then
         ivar dx = x2 - x1;
         ivar dy = y2 - y1;
-        return __native_sqrt((dx * dx) + (dy * dy));
+        return sqrt((dx * dx) + (dy * dy));
     end
 
     function sin(ivar rad) then

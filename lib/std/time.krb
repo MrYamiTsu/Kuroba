@@ -7,7 +7,7 @@ namespace Std ~Time then
     end
 
     function sleepSec(ivar sec) then
-        __native_sleep(sec * 1000);
+        sleep(sec * 1000);
     end
 
     function now() then
@@ -39,17 +39,17 @@ namespace Std ~Time then
     end
 
     function since(ivar timestamp) then
-        return __native_now() - timestamp;
+        return now() - timestamp;
     end
     
     function stopwatch() then
-        ivar start = __native_now();
+        ivar start = now();
         return {
             elapsed: function ~() then
-                return __native_now() - start;
+                return now() - start;
             end,
             reset: function ~() then
-                start = __native_now();
+                start = now();
                 return start;
             end
         };

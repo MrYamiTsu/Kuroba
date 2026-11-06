@@ -1,4 +1,4 @@
-# Namespaces, Packages & Standard Library (Std.Math)
+# Namespaces, Packages & Standard Library (Std.Math, Std.Time, Std.String)
 
 Kuroba features a modern, symbol-based namespace and packaging system designed to keep code organized, clean, and zero-dependency.
 
