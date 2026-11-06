@@ -24,8 +24,8 @@ Welcome to the official technical specification and language reference for **Kur
 6. **[Error Reference](errors.md)**  
    Overview and diagnostics for all 5 runtime and syntax error classes (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`, `IndexError`).
 
-7. **[Namespaces, Packages & Standard Library (`Std.Math`)](packages-and-std.md)**  
-   Namespaces architecture (`namespace Main then ... end`, `namespace Package ~Module then ... end`), symbol-based discovery, modular import system (`import Package ~(Modules) alias Name;`), and complete `Std.Math` reference.
+7. **[Namespaces, Packages & Standard Library (`Std.Math`, `Std.Time`)](packages-and-std.md)**  
+   Namespaces architecture (`namespace Main then ... end`, `namespace Package ~Module then ... end`), symbol-based discovery, modular import system (`import Package ~(Modules) alias Name;`), and complete references for `Std.Math` and `Std.Time`.
 
 ---
 

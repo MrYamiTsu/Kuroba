@@ -332,9 +332,11 @@ Kuroba/
   - [x] Mathematical functions (`floor`, `ceil`, `round`, `trunc`, `abs`, `min`, `max`, `clamp`, `sign`, `lerp`, `dist`, `sqrt`, `pow`, `log`, `log10`, `exp`)
   - [x] Trigonometry & Inverses (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `degToRad`, `radToDeg`)
   - [x] Mathematical constants (`PI`, `TAU`, `E`)
-- [ ] Built-in `Std.Time` (Animation & Tempo):
-  - [ ] Synchronous animation delay `sleep(ms)`
-  - [ ] High-resolution clock timestamp `now()` in milliseconds
+- [x] Built-in `Std.Time` (Animation, Precision & Benchmarking):
+  - [x] CPU-friendly synchronous sleep: `sleep(ms)`, `sleepSec(sec)` using native `Atomics.wait`
+  - [x] High-precision timestamps: `now()`, `unix()`, `perf()` / `hires()`
+  - [x] Clock & ISO formatting: `clock()` (Table), `iso()`
+  - [x] Gamedev helpers: `since(t0)`, `format(ms)`, closure-based `stopwatch()`
 - [ ] Built-in `Std.String` & Zen Syntax Sugar:
   - [ ] Zen String Interpolation with signature tilde: `~"PV: {hp}/{maxHp} - Nom: {nom}"`
   - [ ] Length property / method on strings: `.count()` and `.length()`

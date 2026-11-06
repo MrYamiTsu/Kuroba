@@ -194,29 +194,90 @@ All trigonometric functions operate in **radians**. Conversion helpers `degToRad
 
 ---
 
-## 4. Complete Example
+## 4. Std.Time Reference
+
+The `Std.Time` module provides high-precision timing, CPU-friendly synchronous sleep, timestamping, date/clock breakdown, and game development helpers.
+
+### Import:
+```krb
+import Std ~(Time) alias ~;
+```
+
+---
+
+### Pause & Animation
+
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| `Time.sleep(ms)` | `(ivar ms)` | Synchronously suspends execution for `ms` milliseconds using CPU-friendly `Atomics.wait` (0% CPU burn) |
+| `Time.sleepSec(sec)` | `(ivar sec)` | Convenience wrapper suspending execution for `sec` seconds (`sec * 1000`) |
+
+---
+
+### Timestamps & Chronometry
+
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| `Time.now()` | `() -> Int` | Returns current Unix epoch timestamp in milliseconds |
+| `Time.unix()` | `() -> Int` | Returns current Unix timestamp in whole seconds |
+| `Time.perf()` | `() -> Float` | High-resolution performance timestamp in milliseconds with sub-millisecond precision |
+| `Time.hires()` | `() -> Float` | Alias for `Time.perf()` |
+
+---
+
+### Clock & Date Breakdown
+
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| `Time.clock()` | `() -> Table` | Returns a Kuroba Table with detailed components: `{ year, month, day, hours, minutes, seconds, ms }` |
+| `Time.iso()` | `() -> String` | Returns standard ISO date string (`"YYYY-MM-DDTHH:mm:ss"`) |
 
 ```krb
-import Std ~(Math) alias ~;
+ivar t = Time.clock();
+pasteLn(t.year + "-" + t.month + "-" + t.day + " " + t.hours + ":" + t.minutes + ":" + t.seconds);
+```
+
+---
+
+### Gamedev & Profiling Helpers
+
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| `Time.since(timestamp)` | `(ivar t0) -> Int` | Convenience helper calculating elapsed time since `t0` (`Time.now() - t0`) |
+| `Time.format(ms)` | `(ivar ms) -> String` | Formats milliseconds into human-readable chrono string (`"MM:SS"` or `"HH:MM:SS"`) |
+| `Time.stopwatch()` | `() -> Table` | Creates a stateful stopwatch Table with `.elapsed()` and `.reset()` methods |
+
+#### Stopwatch Usage:
+```krb
+ivar chrono = Time.stopwatch();
+
+~~ Execute profiled workload...
+Time.sleep(150);
+
+pasteLn("Workload took: " + chrono.elapsed() + " ms (" + Time.format(chrono.elapsed()) + ")");
+
+chrono.reset(); ~~ Reset stopwatch to 0
+```
+
+---
+
+## 5. Complete Example
+
+```krb
+import Std ~(Math, Time) alias ~;
 
 namespace Main then
-    ~~ Generate random fighter damage between 15 and 30
-    ivar dmg = Math.random(15, 30);
-    pasteLn("Damage dealt: " + dmg);
+    pasteLn("Dungeon run started at: " + Time.iso());
+    ivar chrono = Time.stopwatch();
 
-    ~~ Distance between player and enemy
-    ivar playerX = 10;
-    ivar playerY = 15;
-    ivar enemyX = 40;
-    ivar enemyY = 55;
+    ~~ Simulate game loop
+    for (ivar frame = 0; frame < 3; frame++) then
+        Time.sleep(100);
+        ivar dmg = Math.random(15, 30);
+        pasteLn("Frame " + frame + ": dealt " + dmg + " damage");
+    end
 
-    ivar distance = Math.dist(playerX, playerY, enemyX, enemyY);
-    pasteLn("Distance: " + Math.round(distance));
-
-    ~~ Smooth camera tracking using lerp
-    ivar currentCamX = 0.0;
-    ivar targetCamX = 100.0;
-    currentCamX = Math.lerp(currentCamX, targetCamX, 0.1);
-    pasteLn("Camera X: " + currentCamX);
+    ivar total = chrono.elapsed();
+    pasteLn("Total run time: " + total + " ms (" + Time.format(total) + ")");
 end
 ```
