@@ -261,23 +261,66 @@ chrono.reset(); ~~ Reset stopwatch to 0
 
 ---
 
-## 5. Complete Example
+## 5. Std.String Reference
+
+The `Std.String` module provides comprehensive text processing, manipulation, splitting, searching, and case transformations.
+
+### Import:
+```krb
+import Std ~(String) alias ~;
+```
+
+---
+
+### Constants
+
+| Constant | Value | Description |
+| :--- | :--- | :--- |
+| `String.DIGITS` | `"0123456789"` | Numeric decimal digits |
+| `String.ASCII_LOWER` | `"abcdefghijklmnopqrstuvwxyz"` | Lowercase ASCII letters |
+| `String.ASCII_UPPER` | `"ABCDEFGHIJKLMNOPQRSTUVWXYZ"` | Uppercase ASCII letters |
+
+---
+
+### Functions
+
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| `String.count(str)` | `(ivar str) -> Int` | Returns the total character length of `str` |
+| `String.upper(str)` | `(ivar str) -> String` | Returns `str` converted to uppercase |
+| `String.lower(str)` | `(ivar str) -> String` | Returns `str` converted to lowercase |
+| `String.trim(str)` | `(ivar str) -> String` | Returns `str` with leading and trailing whitespace stripped |
+| `String.split(str, sep)` | `(ivar str, ivar sep) -> List<String>` | Splits `str` by `sep` delimiter into a Kuroba `List` |
+| `String.join(list, sep)` | `(ivar list, ivar sep) -> String` | Concatenates elements of `list` separated by `sep` |
+| `String.replace(str, target, repl)` | `(str, target, repl) -> String` | Replaces all occurrences of `target` with `repl` |
+| `String.contains(str, sub)` | `(str, sub) -> Bool` | Returns `TRUE` if `sub` is present in `str`, else `FALSE` |
+| `String.startsWith(str, prefix)` | `(str, prefix) -> Bool` | Checks if `str` begins with `prefix` |
+| `String.endsWith(str, suffix)` | `(str, suffix) -> Bool` | Checks if `str` ends with `suffix` |
+| `String.indexOf(str, sub)` | `(str, sub) -> Int` | Returns 0-based index of first occurrence of `sub`, or `-1` |
+| `String.slice(str, start, end)` | `(str, start, end) -> String` | Extracts a substring from `start` up to `end` index |
+| `String.repeat(str, n)` | `(ivar str, ivar n) -> String` | Repeats `str` `n` times |
+| `String.reverse(str)` | `(ivar str) -> String` | Reverses the characters of `str` |
+
+---
+
+## 6. Complete Example
 
 ```krb
-import Std ~(Math, Time) alias ~;
+import Std ~(Math, Time, String) alias ~;
 
 namespace Main then
     pasteLn("Dungeon run started at: " + Time.iso());
     ivar chrono = Time.stopwatch();
 
-    ~~ Simulate game loop
-    for (ivar frame = 0; frame < 3; frame++) then
-        Time.sleep(100);
-        ivar dmg = Math.random(15, 30);
-        pasteLn("Frame " + frame + ": dealt " + dmg + " damage");
+    ivar rawInput = "  guerrier,mage,voleur  ";
+    ivar classes = String.split(String.trim(rawInput), ",");
+    
+    pasteLn("Nombre de classes : " + classes.count());
+    for (ivar i = 0; i < classes.count(); i++) then
+        pasteLn(~"Classe {i + 1}: {String.upper(classes[i])} (Longueur: {String.count(classes[i])})");
     end
 
     ivar total = chrono.elapsed();
-    pasteLn("Total run time: " + total + " ms (" + Time.format(total) + ")");
+    pasteLn("Durée d'initialisation : " + total + " ms (" + Time.format(total) + ")");
 end
 ```

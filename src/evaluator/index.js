@@ -14,6 +14,13 @@ function evaluate(node, env = createScope()) {
                 if (res && (res.isReturn || res.isBreak || res.isSkip)) return res;
             }
             return null;
+        case 'InterpolatedString': 
+            let res = '';
+            for (let part of node.parts) {
+                let v = evaluate(part, env);
+                res += (v === null ? 'null' : String(v));
+            }
+            return res;
         case 'Literal':             return node.value;
         case 'VarDeclar':           return evalVarDeclar(node, env);
         case 'VarAssign':           return evalVarAssign(node, env);

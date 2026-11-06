@@ -1,6 +1,6 @@
 # Kuroba Documentation
 
-Welcome to the official technical specification and language reference for **Kuroba** (*KRB*), a modern, zen, interpreted programming language engineered in pure Node.js with zero external dependencies.
+Welcome to the official technical specification and language reference for **Kuroba** (_KRB_), a modern, zen, interpreted programming language engineered in pure Node.js with zero external dependencies.
 
 ---
 
@@ -24,8 +24,8 @@ Welcome to the official technical specification and language reference for **Kur
 6. **[Error Reference](errors.md)**  
    Overview and diagnostics for all 5 runtime and syntax error classes (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`, `IndexError`).
 
-7. **[Namespaces, Packages & Standard Library (`Std.Math`, `Std.Time`)](packages-and-std.md)**  
-   Namespaces architecture (`namespace Main then ... end`, `namespace Package ~Module then ... end`), symbol-based discovery, modular import system (`import Package ~(Modules) alias Name;`), and complete references for `Std.Math` and `Std.Time`.
+7. **[Namespaces, Packages & Standard Library (`Std.Math`, `Std.Time`, `Std.String`)](packages-and-std.md)**  
+   Namespaces architecture (`namespace Main then ... end`, `namespace Package ~Module then ... end`), symbol-based discovery, modular import system (`import Package ~(Modules) alias Name;`), and complete references for `Std.Math`, `Std.Time`, and `Std.String`.
 
 ---
 
@@ -98,38 +98,40 @@ kill tempBuffer;                     ~~ Frees variable from memory and scope
 
 ## Full Syntax Reference
 
-| Category | Syntax | Description |
-| :--- | :--- | :--- |
-| **Output** | `paste(x);`, `pasteLn(x);` | Prints without newline (`paste`) or with newline (`pasteLn`) |
-| **Input** | `copy("...");`, `copyKey();` | Line input expression (`copy`) or raw single key capture (`copyKey`) |
-| **Screen** | `clear();`, `clear(cond);` | Clears console immediately or guarded by condition |
-| **Comments** | `~~ comment`, `~~{{ ... }}` | Single-line and multi-line block comments |
-| **Variables** | `ivar x = 10;` | Variable declaration with inferred type |
-| **Constants** | `iconst PORT = 8080;` | Read-only constant (cannot be reassigned or killed) |
-| **Coercion** | `ivar~Int age = "25";` | Type coercion prefix (`~String`, `~Int`, `~Float`, `~Bool`) |
-| **Non-Nullable** | `ivar~(String) u = "...";` | Strict non-nullable contract (rejects `NULL`) |
-| **Lists** | `[1, 2, 3]`, `list[0]` | Dynamic arrays with 0-based indexing and nesting |
-| **Generic Lists** | `ivar~List<Int> l = [];` | Strongly typed lists with optional element nullability |
-| **Stacks & Queues** | `ivar~Stack<Int> s = [];`<br/>`ivar~Queue<String> q = [];` | LIFO Stack and FIFO Queue collections |
-| **Tables** | `ivar~Table t = { a: 1 };`<br/>`t.a = 2;` | Key-value associative tables with field-level typing |
-| **Collection Methods** | `.push()`, `.pop()`, `.peek()`, `.count()` | Methods for Lists, Stacks, and Queues |
-| **Index Mutation** | `list[0] = v;`, `list[0] += 5;` | In-place element reassignment and compound operators |
-| **Dynamic Retyping** | `x~String = "A";` | Dynamic in-place transtyping for variables and fields |
-| **Compound Assign** | `x += 5;`, `x *= 2;` | Arithmetic updates (`+=`, `-=`, `*=`, `/=`, `%=`) |
-| **Step Operators** | `i++`, `i--` | Postfix step increment and decrement |
-| **Native Swap** | `a <-> b;` | Atomic in-place variable swap with type & null safety |
-| **Conditionals** | `if c then ... elif ... else ... end` | Conditional block branching |
-| **Pattern Match** | `given x then case: ... break; case: ~ end` | Value pattern matching with fallback (`case: ~`) |
-| **For Loops** | `for (init; cond; step) then ... end` | 3-clause iterative loop supporting `break;` and `skip;` |
-| **Collection Loops** | `for (item in col) then ... end`<br/>`for (i, item in col) then ... end` | Native iteration over List, Stack, Queue, and Table |
-| **While Loop** | `while c then ... end` | Pre-test conditional loop |
-| **Do-While Loop** | `do ... while c;` | Post-test loop guaranteed to execute at least once |
-| **Guard Exit** | `exit();`, `exit(cond);` | Immediate or conditional process exit |
-| **Functions** | `function f(ivar a) then ... end` | First-class named functions with lexical closure |
-| **Anonymous Functions** | `function ~(ivar a) then ... end` | Raven-feather tilde (`~`) anonymous lambdas |
-| **Returns** | `return expr;`, `return;` | Immediate function return (defaults to `NULL`) |
-| **Function Hooks** | `hook target(args) then ... end` | Function interception with original invocation via `this(...)` |
-| **Variable Destruction** | `kill x;` | Explicitly frees variable from memory and active scope |
-| **CLI Arguments** | `args`, `Std.Sys.args` | Immutable List of CLI arguments with `.count()` and indexing |
-| **Package Imports** | `import Std;`<br/>`import Std ~(Math) alias ~;` | Full package or specific module imports with isolated scopes & aliases |
-| **Namespaces** | `namespace Main then ... end`<br/>`namespace Std ~Math then ... end` | Scoped code organization with pure symbol discovery & modular slices |
+| Category                 | Syntax                                                                   | Description                                                            |
+| :----------------------- | :----------------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| **Output**               | `paste(x);`, `pasteLn(x);`                                               | Prints without newline (`paste`) or with newline (`pasteLn`)           |
+| **Input**                | `copy("...");`, `copyKey();`                                             | Line input expression (`copy`) or raw single key capture (`copyKey`)   |
+| **Screen**               | `clear();`, `clear(cond);`                                               | Clears console immediately or guarded by condition                     |
+| **Comments**             | `~~ comment`, `~~{{ ... }}`                                              | Single-line and multi-line block comments                              |
+| **Variables**            | `ivar x = 10;`                                                           | Variable declaration with inferred type                                |
+| **Constants**            | `iconst PORT = 8080;`                                                    | Read-only constant (cannot be reassigned or killed)                    |
+| **Coercion**             | `ivar~Int age = "25";`                                                   | Type coercion prefix (`~String`, `~Int`, `~Float`, `~Bool`)            |
+| **Non-Nullable**         | `ivar~(String) u = "...";`                                               | Strict non-nullable contract (rejects `NULL`)                          |
+| **Lists**                | `[1, 2, 3]`, `list[0]`                                                   | Dynamic arrays with 0-based indexing and nesting                       |
+| **Generic Lists**        | `ivar~List<Int> l = [];`                                                 | Strongly typed lists with optional element nullability                 |
+| **Stacks & Queues**      | `ivar~Stack<Int> s = [];`<br/>`ivar~Queue<String> q = [];`               | LIFO Stack and FIFO Queue collections                                  |
+| **Tables**               | `ivar~Table t = { a: 1 };`<br/>`t.a = 2;`                                | Key-value associative tables with field-level typing                   |
+| **Collection Methods**   | `.push()`, `.pop()`, `.peek()`, `.count()`                               | Methods for Lists, Stacks, and Queues                                  |
+| **Index Mutation**       | `list[0] = v;`, `list[0] += 5;`                                          | In-place element reassignment and compound operators                   |
+| **Dynamic Retyping**     | `x~String = "A";`                                                        | Dynamic in-place transtyping for variables and fields                  |
+| **Compound Assign**      | `x += 5;`, `x *= 2;`                                                     | Arithmetic updates (`+=`, `-=`, `*=`, `/=`, `%=`)                      |
+| **Step Operators**       | `i++`, `i--`                                                             | Postfix step increment and decrement                                   |
+| **Native Swap**          | `a <-> b;`                                                               | Atomic in-place variable swap with type & null safety                  |
+| **Conditionals**         | `if c then ... elif ... else ... end`                                    | Conditional block branching                                            |
+| **Pattern Match**        | `given x then case: ... break; case: ~ end`                              | Value pattern matching with fallback (`case: ~`)                       |
+| **For Loops**            | `for (init; cond; step) then ... end`                                    | 3-clause iterative loop supporting `break;` and `skip;`                |
+| **Collection Loops**     | `for (item in col) then ... end`<br/>`for (i, item in col) then ... end` | Native iteration over List, Stack, Queue, and Table                    |
+| **While Loop**           | `while c then ... end`                                                   | Pre-test conditional loop                                              |
+| **Do-While Loop**        | `do ... while c;`                                                        | Post-test loop guaranteed to execute at least once                     |
+| **Guard Exit**           | `exit();`, `exit(cond);`                                                 | Immediate or conditional process exit                                  |
+| **Functions**            | `function f(ivar a) then ... end`                                        | First-class named functions with lexical closure                       |
+| **Anonymous Functions**  | `function ~(ivar a) then ... end`                                        | Raven-feather tilde (`~`) anonymous lambdas                            |
+| **Returns**              | `return expr;`, `return;`                                                | Immediate function return (defaults to `NULL`)                         |
+| **Function Hooks**       | `hook target(args) then ... end`                                         | Function interception with original invocation via `this(...)`         |
+| **Variable Destruction** | `kill x;`                                                                | Explicitly frees variable from memory and active scope                 |
+| **CLI Arguments**        | `args`, `Std.Sys.args`                                                   | Immutable List of CLI arguments with `.count()` and indexing           |
+| **Package Imports**      | `import Std;`<br/>`import Std ~(Math) alias ~;`                          | Full package or specific module imports with isolated scopes & aliases |
+| **Namespaces**           | `namespace Main then ... end`<br/>`namespace Std ~Math then ... end`     | Scoped code organization with pure symbol discovery & modular slices   |
+| **String Interpolation** | `~"Score: {x}/{max}"`                                                    | Zen string interpolation evaluating embedded expressions               |
+| **String Index**         | `str[0]`                                                                 | 0-based character read access on immutable strings                     |

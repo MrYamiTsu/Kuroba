@@ -41,6 +41,36 @@ ivar greeting = "Hello, " + "World!"; ~~ "Hello, World!"
 ivar scoreMsg = "Score: " + 100;       ~~ "Score: 100"
 ```
 
+### Zen String Interpolation (`~"..."`)
+Kuroba features native string interpolation using the raven-feather tilde prefix `~"..."`. Any valid Kuroba expression can be evaluated inside `{...}`:
+
+```krb
+ivar hp = 85;
+ivar maxHp = 100;
+ivar nom = "Shinobi";
+
+~~ Embedded variables and arithmetic
+ivar msg = ~"Héros: {nom} | PV: {hp}/{maxHp} | Prochain niveau: {hp + 15}";
+pasteLn(msg); ~~ "Héros: Shinobi | PV: 85/100 | Prochain niveau: 100"
+
+~~ Embedded expressions and table lookups
+ivar hero = { stats: { force: 25 } };
+pasteLn(~"Force: {hero.stats.force}");
+```
+
+To include literal `{` or `}` inside an interpolated string, escape them with `\\{` or `\\}`.
+
+### String Character Indexing (`str[i]`)
+Characters can be read using 0-based bracket indexing:
+
+```krb
+ivar text = "Kuroba";
+pasteLn(text[0]); ~~ "K"
+pasteLn(text[5]); ~~ "a"
+
+~~ Strings are immutable in Kuroba: character assignment text[0] = "X" is rejected
+```
+
 Division or modulo by zero raises a `MathError`:
 ```krb
 ivar err1 = 10 / 0;           ~~ [MathError] Division by zero is undefined.

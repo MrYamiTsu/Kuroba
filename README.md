@@ -337,11 +337,10 @@ Kuroba/
   - [x] High-precision timestamps: `now()`, `unix()`, `perf()` / `hires()`
   - [x] Clock & ISO formatting: `clock()` (Table), `iso()`
   - [x] Gamedev helpers: `since(t0)`, `format(ms)`, closure-based `stopwatch()`
-- [ ] Built-in `Std.String` & Zen Syntax Sugar:
-  - [ ] Zen String Interpolation with signature tilde: `~"PV: {hp}/{maxHp} - Nom: {nom}"`
-  - [ ] Length property / method on strings: `.count()` and `.length()`
-  - [ ] Character index read access: `str[0]`
-  - [ ] String utilities: `.split()`, `.trim()`, `.upper()`, `.lower()`
+- [x] Built-in `Std.String` & Zen Syntax Sugar:
+  - [x] Zen String Interpolation with signature tilde: `~"PV: {hp}/{maxHp} - Nom: {nom}"`
+  - [x] Character index read access: `str[0]`
+  - [x] Comprehensive string utilities: `upper`, `lower`, `count`, `trim`, `split`, `join`, `replace`, `contains`, `startsWith`, `endsWith`, `indexOf`, `slice`, `repeat`, `reverse`
 - [ ] Built-in `Std.IO` (Filesystem & Persistence):
   - [ ] Synchronous file operations: `fileRead(path)`, `fileWrite(path, content)`, `fileAppend(path, content)`, `fileExists(path)`
 

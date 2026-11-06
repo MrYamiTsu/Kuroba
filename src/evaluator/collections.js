@@ -25,6 +25,13 @@ function evalIndexAccess(node, env) {
         printErr(`[TypeError] Cannot access '${getType(target)}' with dot notation. Use bracket indexing 'list[index]' instead.`);
     }
 
+    if (typeof target === 'string') {
+        let idx = evaluate(node.index, env);
+        if (!Number.isInteger(idx)) printErr(`[IndexError] String index must be an integer, got '${idx}'.`);
+        if (idx < 0 || idx >= target.length) printErr(`[IndexError] Index ${idx} out of bounds for string of length ${target.length}.`);
+        return target[idx];
+    }
+
     if (!Array.isArray(target)) printErr(`[TypeError] Cannot index non-list value of type '${getType(target)}'.`);
     let idx = evaluate(node.index, env);
     if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
@@ -114,12 +121,13 @@ function evalMethodCall(node, env) {
 
     let items = isList ? target : target.items;
     let method = node.method;
-
     let tInfo = null;
+    
     if (node.target.type === 'Variable') {
         let scope = findScope(node.target.name, env);
         if (scope) tInfo = scope.values[node.target.name].typeInfo;
     }
+
     switch (method) {
         case 'push': {
             if (node.args.length < 1) {

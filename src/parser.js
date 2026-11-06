@@ -1,4 +1,5 @@
 const { printErr } = require('./errors');
+const { tokenize } = require('./lexer');
 
 const OP_MAP = {
     'PLUSASSIGN': '+',
@@ -153,6 +154,9 @@ function parse(tokens) {
         }
         else if (match('INT', 'STRING', 'BOOL', 'FLOAT', 'NULL')) {
             return previous().value;
+        }
+        else if (match('INTERPOLATEDSTRING')) {
+            return parseInterpolatedString(previous());
         }
         else if (match('LPAREN')) {
             let openParen = previous();
@@ -704,6 +708,65 @@ function parse(tokens) {
             body,
             line: startToken.line,
             col: startToken.col
+        };
+    }
+
+    function parseInterpolatedString(token) {
+        let raw = token.value;
+        let parts = [];
+        let i = 0;
+        let textBuf = "";
+
+        while (i < raw.length) {
+            if (raw[i] === '\\' && (raw[i + 1] === '{' || raw[i + 1] === '}' || raw[i + 1] === '"')) {
+                textBuf += raw[i + 1];
+                i += 2;
+                continue;
+            }
+
+            if (raw[i] === '{') {
+                if (textBuf.length > 0) {
+                    parts.push({ type: 'Literal', value: textBuf });
+                    textBuf = "";
+                }
+
+                i++;
+                let exprStr = "";
+                let braceCount = 1;
+
+                while (i < raw.length && braceCount > 0) {
+                    if (raw[i] === '{') braceCount++;
+                    else if (raw[i] === '}') braceCount--;
+                    if (braceCount > 0) exprStr += raw[i];
+                    i++;
+                }
+
+                if (braceCount > 0) {
+                    printErr(`[SyntaxError: Line ${token.line}, Col ${token.col}] Unclosed '{' in interpolated string.`);
+                }
+
+                const innerTokens = tokenize(exprStr + ";");
+                const innerAst = parse(innerTokens);
+
+                if (innerAst.body.length > 0) {
+                    parts.push(innerAst.body[0]);
+                }
+
+                continue;
+            }
+            textBuf += raw[i];
+            i++;
+        }
+
+        if (textBuf.length > 0) {
+            parts.push({ type: 'Literal', value: textBuf });
+        }
+
+        return {
+            type: 'InterpolatedString',
+            parts,
+            line: token.line,
+            col: token.col
         };
     }
 

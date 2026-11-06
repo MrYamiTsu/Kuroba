@@ -62,7 +62,21 @@ const natives = {
             return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
         }
         return `${pad(minutes)}:${pad(seconds)}`;
-    }
+    },
+    strUpper: (str) => String(str).toUpperCase(),
+    strLower: (str) => String(str).toLowerCase(),
+    strCount: (str) => String(str).length,
+    strTrim: (str) => String(str).trim(),
+    strSplit: (str, sep) => String(str).split(sep !== undefined ? String(sep) : ' '),
+    strReplace: (str, target, repl) => String(str).replaceAll(String(target), String(repl)),
+    strContains: (str, sub) => String(str).includes(String(sub)),
+    strStartsWith: (str, prefix) => String(str).startsWith(String(prefix)),
+    strEndsWith: (str, suffix) => String(str).endsWith(String(suffix)),
+    strIndexOf: (str, sub) => String(str).indexOf(String(sub)),
+    strSlice: (str, start, end) => String(str).slice(start, end !== undefined ? end : undefined),
+    strRepeat: (str, n) => String(str).repeat(n),
+    strReverse: (str) => String(str).split('').reverse().join(''),
+    strJoin: (list, sep) => Array.isArray(list) ? list.join(sep !== undefined ? String(sep) : '') : ''
 };
 
 module.exports = { natives };

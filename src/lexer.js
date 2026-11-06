@@ -138,6 +138,45 @@ function tokenize(input) {
           continue;
         }
       }
+      if (input[cursor + 1] === '"') {
+        let startLine = line;
+        let startCol = col;
+        cursor += 2;
+        col += 2;
+        let str = "";
+
+        while (cursor < input.length && input[cursor] !== '"') {
+          if (input[cursor] === "\\") {
+            str += input[cursor] + (input[cursor + 1] || "");
+            cursor += 2;
+            col += 2;
+            continue;
+          }
+          if (input[cursor] === "\n") {
+            line++;
+            col = 1;
+          } else {
+            col++;
+          }
+          str += input[cursor];
+          cursor++;
+        }
+
+        if (cursor >= input.length || input[cursor] !== '"') {
+          printErr(`[SyntaxError: Line ${startLine}, Col ${startCol}] Unterminated interpolated string literal.`);
+        }
+
+        cursor++;
+        col++;
+
+        tokens.push({
+          type: "INTERPOLATEDSTRING",
+          value: str,
+          line: startLine,
+          col: startCol,
+        });
+        continue;
+      }
       tokens.push({ type: "TILDE", value: "~", line, col });
       cursor++;
       col++;
