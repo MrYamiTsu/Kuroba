@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.4-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.5-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg?style=for-the-badge)](LICENSE)
@@ -308,7 +308,7 @@ Kuroba/
 - [x] Dictionaries / Key-Value Tables (`Table`, `{ key: value }`) with field-level typing (`key~Type`), dynamic addition, and field retyping (`table.key~Type = ...`)
 - [x] Collection iteration (`for (item in list)` and `for (i, item in list)`) across `List`, `Stack`, `Queue`, and `Table`
 
-### Phase 4: Functions, Metaprogramming & Developer Ergonomics `(v1.0.4)`
+### Phase 4: Functions, Metaprogramming & Developer Ergonomics `(Completed - v1.0.4)`
 
 - [x] Variable lifecycle & manual destruction (`kill variable;`)
 - [x] First-class functions (`function name(args) ... end` and `function ~(args) ... end`) with lexical closures & `return`
@@ -316,7 +316,7 @@ Kuroba/
 - [x] Interactive REPL shell (launching `krb` with no arguments starts an interactive session)
 - [x] CLI arguments support (`args` list & `Std.Sys.args`)
 
-### Phase 5: The Vital Standard Library & Multi-File Imports `(In Progress - v1.0.5)`
+### Phase 5: The Vital Standard Library & Multi-File Imports `(Completed - v1.0.5)`
 
 - [x] Namespaces & Modular Scoping:
   - [x] Application root namespace: `namespace Main then ... end` (strictly indivisible, non-importable)

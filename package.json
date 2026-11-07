@@ -1,6 +1,6 @@
 {
   "name": "kuroba",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Kuroba (KRB) - A lightweight, zero-dependency interpreted programming language built from scratch in Node.js",
   "main": "index.js",
   "bin": {
