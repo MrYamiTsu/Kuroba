@@ -2,63 +2,22 @@
 ~~ Kuroba Std Library: String
 ~~ ============================================================================
 namespace Std ~String then
-    iconst DIGITS = "0123456789";
+    iconst DIGITS      = "0123456789";
     iconst ASCII_LOWER = "abcdefghijklmnopqrstuvwxyz";
     iconst ASCII_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    function upper(ivar str) then
-        return __native_strUpper(str);
-    end
-
-    function lower(ivar str) then
-        return __native_strLower(str);
-    end
-
-    function count(ivar str) then
-        return __native_strCount(str);
-    end
-
-    function trim(ivar str) then
-        return __native_strTrim(str);
-    end
-
-    function split(ivar str, ivar sep) then
-        return __native_strSplit(str, sep);
-    end
-
-    function replace(ivar str, ivar target, ivar repl) then
-        return __native_strReplace(str, target, repl);
-    end
-
-    function contains(ivar str, ivar sub) then
-        return __native_strContains(str, sub);
-    end
-
-    function startsWith(ivar str, ivar prefix) then
-        return __native_strStartsWith(str, prefix);
-    end
-
-    function endsWith(ivar str, ivar suffix) then
-        return __native_strEndsWith(str, suffix);
-    end
-
-    function indexOf(ivar str, ivar sub) then
-        return __native_strIndexOf(str, sub);
-    end
-
-    function slice(ivar str, ivar start, ivar endIdx) then
-        return __native_strSlice(str, start, endIdx);
-    end
-
-    function repeat(ivar str, ivar n) then
-        return __native_strRepeat(str, n);
-    end
-
-    function reverse(ivar str) then
-        return __native_strReverse(str);
-    end
-
-    function join(ivar list, ivar sep) then
-        return __native_strJoin(list, sep);
-    end
+    iconst upper      = __native_strUpper;
+    iconst lower      = __native_strLower;
+    iconst count      = __native_strCount;
+    iconst trim       = __native_strTrim;
+    iconst split      = __native_strSplit;
+    iconst replace    = __native_strReplace;
+    iconst contains   = __native_strContains;
+    iconst startsWith = __native_strStartsWith;
+    iconst endsWith   = __native_strEndsWith;
+    iconst indexOf    = __native_strIndexOf;
+    iconst slice      = __native_strSlice;
+    iconst repeat     = __native_strRepeat;
+    iconst reverse    = __native_strReverse;
+    iconst join       = __native_strJoin;
 end

@@ -1,0 +1,11 @@
+~~ ============================================================================
+~~ Kuroba Std Library: IO
+~~ ============================================================================
+namespace Std ~IO then
+    iconst fileCopy    = __native_ioCopy;
+    iconst filePaste   = __native_ioPaste;
+    iconst filePasteLn = __native_ioPasteLn;
+    iconst fileAppend  = __native_ioAppend;
+    iconst fileExists  = __native_ioExists;
+    iconst fileKill    = __native_ioKill;
+end

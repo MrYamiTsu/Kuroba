@@ -2,40 +2,17 @@
 ~~ Kuroba Std Library: Time
 ~~ ============================================================================
 namespace Std ~Time then
-    function sleep(ivar ms) then
-        __native_sleep(ms);
-    end
+    iconst sleep  = __native_sleep;
+    iconst now    = __native_now;
+    iconst unix   = __native_unix;
+    iconst perf   = __native_perf;
+    iconst hires  = __native_perf;
+    iconst clock  = __native_clock;
+    iconst iso    = __native_iso;
+    iconst format = __native_timeFormat;
 
     function sleepSec(ivar sec) then
         sleep(sec * 1000);
-    end
-
-    function now() then
-        return __native_now();
-    end
-
-    function unix() then
-        return __native_unix();
-    end
-
-    function perf() then
-        return __native_perf();
-    end
-
-    function hires() then
-        return __native_perf();
-    end
-
-    function clock() then
-        return __native_clock();
-    end
-
-    function iso() then
-        return __native_iso();
-    end
-
-    function format(ivar ms) then
-        return __native_timeFormat(ms);
     end
 
     function since(ivar timestamp) then

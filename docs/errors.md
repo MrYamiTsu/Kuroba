@@ -84,3 +84,16 @@ Occurs when attempting to access an index outside the boundaries of a collection
 [IndexError] Index 5 out of bounds for list of length 2.
 [IndexError] List index must be an integer, got 'abc'.
 ```
+
+---
+
+## 6. IOError
+
+Occurs when a file system operation fails during execution of `Std.IO`:
+- Attempting to read a file that does not exist (`IO.fileCopy`)
+- Attempting to access, write, or delete a file with invalid path or permissions
+
+```text
+[IOError] File not found: 'missing_save.dat'.
+[IOError] Failed to write to file 'protected/root.dat': EACCES: permission denied.
+```

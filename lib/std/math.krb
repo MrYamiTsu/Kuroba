@@ -2,11 +2,23 @@
 ~~ Kuroba Std Library: Math
 ~~ ============================================================================
 namespace Std ~Math then
-    iconst PI = 3.141592653589793;
+    iconst PI  = 3.141592653589793;
     iconst TAU = 6.283185307179586;
-    iconst E = 2.718281828459045;
+    iconst E   = 2.718281828459045;
 
-    ivar random = __native_random;
+    iconst random = __native_random;
+    iconst sqrt   = __native_sqrt;
+    iconst pow    = __native_pow;
+    iconst sin    = __native_sin;
+    iconst cos    = __native_cos;
+    iconst tan    = __native_tan;
+    iconst asin   = __native_asin;
+    iconst acos   = __native_acos;
+    iconst atan   = __native_atan;
+    iconst atan2  = __native_atan2;
+    iconst log    = __native_log;
+    iconst log10  = __native_log10;
+    iconst exp    = __native_exp;
 
     function randomItem(ivar list) then
         if (list.count() == 0) then
@@ -75,34 +87,10 @@ namespace Std ~Math then
         return floor(x + 0.5);
     end
 
-    function sqrt(ivar x) then
-        return __native_sqrt(x);
-    end
-
-    function pow(ivar base, ivar exp) then
-        return __native_pow(base, exp);
-    end
-
     function dist(ivar x1, ivar y1, ivar x2, ivar y2) then
         ivar dx = x2 - x1;
         ivar dy = y2 - y1;
         return sqrt((dx * dx) + (dy * dy));
-    end
-
-    function sin(ivar rad) then
-        return __native_sin(rad);
-    end
-
-    function cos(ivar rad) then
-        return __native_cos(rad);
-    end
-
-    function tan(ivar rad) then
-        return __native_tan(rad);
-    end
-
-    function atan2(ivar y, ivar x) then
-        return __native_atan2(y, x);
     end
 
     function degToRad(ivar deg) then
@@ -121,29 +109,5 @@ namespace Std ~Math then
 
     function lerp(ivar a, ivar b, ivar t) then
         return a + (b - a) * t;
-    end
-
-    function asin(ivar x) then
-        return __native_asin(x);
-    end
-
-    function acos(ivar x) then
-        return __native_acos(x);
-    end
-
-    function atan(ivar x) then
-        return __native_atan(x);
-    end
-
-    function log(ivar x) then
-        return __native_log(x);
-    end
-
-    function log10(ivar x) then
-        return __native_log10(x);
-    end
-
-    function exp(ivar x) then
-        return __native_exp(x);
     end
 end

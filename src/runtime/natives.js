@@ -1,3 +1,6 @@
+const fs = require('fs');
+const { printErr } = require('../errors');
+
 const natives = {
     random: (...args) => {
         if (args.length === 0) {
@@ -76,7 +79,58 @@ const natives = {
     strSlice: (str, start, end) => String(str).slice(start, end !== undefined ? end : undefined),
     strRepeat: (str, n) => String(str).repeat(n),
     strReverse: (str) => String(str).split('').reverse().join(''),
-    strJoin: (list, sep) => Array.isArray(list) ? list.join(sep !== undefined ? String(sep) : '') : ''
+    strJoin: (list, sep) => Array.isArray(list) ? list.join(sep !== undefined ? String(sep) : '') : '',
+    ioCopy: (filePath) => {
+        const p = String(filePath);
+        if (!fs.existsSync(p)) {
+            printErr(`[IOError] File not found: '${p}'.`);
+        }
+        try {
+            return fs.readFileSync(p, 'utf-8');
+        } catch (err) {
+            printErr(`[IOError] Failed to read file '${p}': ${err.message}`);
+        }
+    },
+    ioPaste: (filePath, content) => {
+        const p = String(filePath);
+        try {
+            fs.writeFileSync(p, String(content), 'utf-8');
+            return true;
+        } catch (err) {
+            printErr(`[IOError] Failed to write to file '${p}': ${err.message}`);
+        }
+    },
+    ioPasteLn: (filePath, content) => {
+        const p = String(filePath);
+        try {
+            fs.appendFileSync(p, String(content) + '\n', 'utf-8');
+            return true;
+        } catch (err) {
+            printErr(`[IOError] Failed to append to file '${p}': ${err.message}`);
+        }
+    },
+    ioAppend: (filePath, content) => {
+        const p = String(filePath);
+        try {
+            fs.appendFileSync(p, String(content), 'utf-8');
+            return true;
+        } catch (err) {
+            printErr(`[IOError] Failed to append to file '${p}': ${err.message}`);
+        }
+    },
+    ioExists: (filePath) => {
+        return fs.existsSync(String(filePath));
+    },
+    ioKill: (filePath) => {
+        const p = String(filePath);
+        if (!fs.existsSync(p)) return false;
+        try {
+            fs.unlinkSync(p);
+            return true;
+        } catch (err) {
+            printErr(`[IOError] Failed to delete file '${p}': ${err.message}`);
+        }
+    }
 };
 
 module.exports = { natives };

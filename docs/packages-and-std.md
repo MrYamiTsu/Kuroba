@@ -1,4 +1,4 @@
-# Namespaces, Packages & Standard Library (Std.Math, Std.Time, Std.String)
+# Namespaces, Packages & Standard Library (Std.Math, Std.Time, Std.String, Std.IO)
 
 Kuroba features a modern, symbol-based namespace and packaging system designed to keep code organized, clean, and zero-dependency.
 
@@ -303,10 +303,34 @@ import Std ~(String) alias ~;
 
 ---
 
-## 6. Complete Example
+## 6. Std.IO Reference (Filesystem & Persistence)
+
+The `Std.IO` module provides synchronous file system operations for reading, writing, appending, checking, and deleting files on disk with zero external dependencies.
+
+### Import:
+```krb
+import Std ~(IO) alias ~;
+```
+
+---
+
+### Functions
+
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| `IO.fileCopy(path)` | `(ivar path) -> String` | Reads and returns the entire contents of `path` as a String. Raises `[IOError]` if the file does not exist. |
+| `IO.filePaste(path, content)` | `(ivar path, ivar content) -> Bool` | Writes or overwrites `content` to the file at `path`. |
+| `IO.filePasteLn(path, content)` | `(ivar path, ivar content) -> Bool` | Appends `content` followed by a newline (`\n`) to the file at `path`. |
+| `IO.fileAppend(path, content)` | `(ivar path, ivar content) -> Bool` | Appends raw `content` to the file at `path` without appending a newline. |
+| `IO.fileExists(path)` | `(ivar path) -> Bool` | Returns `TRUE` if the file exists on disk, otherwise `FALSE`. |
+| `IO.fileKill(path)` | `(ivar path) -> Bool` | Deletes the file at `path` from disk. Returns `TRUE` if deleted, or `FALSE` if the file did not exist. |
+
+---
+
+## 7. Complete Example
 
 ```krb
-import Std ~(Math, Time, String) alias ~;
+import Std ~(Math, Time, String, IO) alias ~;
 
 namespace Main then
     pasteLn("Dungeon run started at: " + Time.iso());
@@ -320,7 +344,21 @@ namespace Main then
         pasteLn(~"Classe {i + 1}: {String.upper(classes[i])} (Longueur: {String.count(classes[i])})");
     end
 
+    ~~ Sauvegarde de la session de jeu
+    ivar savePath = "session_log.txt";
+    IO.filePaste(savePath, ~"=== DUNGEON SESSION ({Time.iso()}) ===\n");
+    for (ivar j = 0; j < classes.count(); j++) then
+        ivar nomClasse = classes[j];
+        IO.filePasteLn(savePath, ~"- Joueur {j + 1}: {nomClasse} (Points de vie: {Math.random(80, 120)})");
+    end
+
+    if (IO.fileExists(savePath)) then
+        pasteLn("\n--- Fichier de sauvegarde généré avec succès (" + savePath + ") ---");
+        paste(IO.fileCopy(savePath));
+        IO.fileKill(savePath); ~~ Nettoyage après démonstration
+    end
+
     ivar total = chrono.elapsed();
-    pasteLn("Durée d'initialisation : " + total + " ms (" + Time.format(total) + ")");
+    pasteLn("Durée d'exécution : " + total + " ms (" + Time.format(total) + ")");
 end
 ```

@@ -22,10 +22,10 @@ Welcome to the official technical specification and language reference for **Kur
    Synchronous console output (`paste`, `pasteLn`), line input (`copy`), instant single-keypress capture (`copyKey`), screen management (`clear`), and the Interactive REPL Shell (`krb`).
 
 6. **[Error Reference](errors.md)**  
-   Overview and diagnostics for all 5 runtime and syntax error classes (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`, `IndexError`).
+   Overview and diagnostics for all 6 runtime and syntax error classes (`SyntaxError`, `TypeError`, `ReferenceError`, `MathError`, `IndexError`, `IOError`).
 
-7. **[Namespaces, Packages & Standard Library (`Std.Math`, `Std.Time`, `Std.String`)](packages-and-std.md)**  
-   Namespaces architecture (`namespace Main then ... end`, `namespace Package ~Module then ... end`), symbol-based discovery, modular import system (`import Package ~(Modules) alias Name;`), and complete references for `Std.Math`, `Std.Time`, and `Std.String`.
+7. **[Namespaces, Packages & Standard Library (`Std.Math`, `Std.Time`, `Std.String`, `Std.IO`)](packages-and-std.md)**  
+   Namespaces architecture (`namespace Main then ... end`, `namespace Package ~Module then ... end`), symbol-based discovery, modular import system (`import Package ~(Modules) alias Name;`), and complete references for `Std.Math`, `Std.Time`, `Std.String`, and `Std.IO`.
 
 ---
 
@@ -135,3 +135,4 @@ kill tempBuffer;                     ~~ Frees variable from memory and scope
 | **Namespaces**           | `namespace Main then ... end`<br/>`namespace Std ~Math then ... end`     | Scoped code organization with pure symbol discovery & modular slices   |
 | **String Interpolation** | `~"Score: {x}/{max}"`                                                    | Zen string interpolation evaluating embedded expressions               |
 | **String Index**         | `str[0]`                                                                 | 0-based character read access on immutable strings                     |
+| **Filesystem I/O**       | `IO.fileCopy()`, `IO.filePaste()`                                        | Synchronous file operations (copy, paste, pasteLn, append, exists, kill) |

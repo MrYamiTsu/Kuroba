@@ -341,8 +341,8 @@ Kuroba/
   - [x] Zen String Interpolation with signature tilde: `~"PV: {hp}/{maxHp} - Nom: {nom}"`
   - [x] Character index read access: `str[0]`
   - [x] Comprehensive string utilities: `upper`, `lower`, `count`, `trim`, `split`, `join`, `replace`, `contains`, `startsWith`, `endsWith`, `indexOf`, `slice`, `repeat`, `reverse`
-- [ ] Built-in `Std.IO` (Filesystem & Persistence):
-  - [ ] Synchronous file operations: `fileRead(path)`, `fileWrite(path, content)`, `fileAppend(path, content)`, `fileExists(path)`
+- [x] Built-in `Std.IO` (Filesystem & Persistence):
+  - [x] Synchronous file operations: `fileCopy(path)`, `filePaste(path, content)`, `filePasteLn(path, content)`, `fileAppend(path, content)`, `fileExists(path)`, `fileKill(path)`
 
 ### Phase 6: Exception Handling & Zen Object-Oriented Programming `(v1.0.6)`
 
