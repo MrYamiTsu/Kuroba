@@ -189,22 +189,22 @@ Kuroba features a built-in, zero-dependency interactive REPL shell for instant e
 
 Kuroba combines concepts from multiple language paradigms while introducing its own signature syntax and ergonomics:
 
-| Concept                         | Kuroba Syntax                                                              | How it Differs from JS / Python / C                                                                                         |
-| :------------------------------ | :------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
-| **Comments**                    | `~~ comment`<br/>`~~{{ block }}`                                           | Double-tilde zen feather comments (`~~`) and multi-line block comments (`~~{{ ... }}`) instead of `//` or `/* */`.          |
-| **Native Swap**                 | `a <-> b;`                                                                 | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring.   |
-| **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                          | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration.               |
-| **Dynamic Retyping**            | `score~String = "A";`                                                      | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable.                                    |
-| **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                         | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                    |
-| **Collection Iteration**        | `for (item in list)`<br/>`for (i, item in list)`<br/>`for (k, v in table)` | Zen, unified iteration without variable declaration boilerplate. Seamlessly supports `List`, `Stack`, `Queue`, and `Table`. |
-| **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                         |
-| **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                               |
-| **Pattern Match Fallback**      | `case: ~`                                                                  | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`.                                     |
-| **Explicit Destruction**        | `kill variable;`                                                           | Explicit variable destruction from active scope with strict declaration checks and constant protection.                     |
-| **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                              | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                           |
-| **Native Interception (Hooks)** | `hook f(x) then ... end`                                                   | Transparent native monkey-patching with original function delegation via `this(...)`.                                       |
-| **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.              |
-| **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                   |
+| Concept                         | Kuroba Syntax                                                              | How it Differs from JS / Python / C                                                                                       |
+| :------------------------------ | :------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| **Comments**                    | `~~ comment`<br/>`~~{{ block }}`                                           | Double-tilde feather comments (`~~`) and multi-line block comments (`~~{{ ... }}`) instead of `//` or `/* */`.            |
+| **Native Swap**                 | `a <-> b;`                                                                 | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring. |
+| **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                          | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration.             |
+| **Dynamic Retyping**            | `score~String = "A";`                                                      | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable.                                  |
+| **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                         | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                  |
+| **Collection Iteration**        | `for (item in list)`<br/>`for (i, item in list)`<br/>`for (k, v in table)` | Unified iteration without variable declaration boilerplate. Seamlessly supports `List`, `Stack`, `Queue`, and `Table`.    |
+| **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                       |
+| **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                             |
+| **Pattern Match Fallback**      | `case: ~`                                                                  | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`.                                   |
+| **Explicit Destruction**        | `kill variable;`                                                           | Explicit variable destruction from active scope with strict declaration checks and constant protection.                   |
+| **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                              | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                         |
+| **Native Interception (Hooks)** | `hook f(x) then ... end`                                                   | Transparent native monkey-patching with original function delegation via `this(...)`.                                     |
+| **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.            |
+| **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                 |
 
 > Looking for the complete language cheatsheet and guide? **[Browse Full Documentation & Syntax Reference](docs/README.md)**
 
@@ -337,23 +337,30 @@ Kuroba/
   - [x] High-precision timestamps: `now()`, `unix()`, `perf()` / `hires()`
   - [x] Clock & ISO formatting: `clock()` (Table), `iso()`
   - [x] Gamedev helpers: `since(t0)`, `format(ms)`, closure-based `stopwatch()`
-- [x] Built-in `Std.String` & Zen Syntax Sugar:
-  - [x] Zen String Interpolation with signature tilde: `~"PV: {hp}/{maxHp} - Nom: {nom}"`
+- [x] Built-in `Std.String` & Syntax Sugar:
+  - [x] String Interpolation with signature tilde: `~"PV: {hp}/{maxHp} - Nom: {nom}"`
   - [x] Character index read access: `str[0]`
   - [x] Comprehensive string utilities: `upper`, `lower`, `count`, `trim`, `split`, `join`, `replace`, `contains`, `startsWith`, `endsWith`, `indexOf`, `slice`, `repeat`, `reverse`
 - [x] Built-in `Std.IO` (Filesystem & Persistence):
   - [x] Synchronous file operations: `fileCopy(path)`, `filePaste(path, content)`, `filePasteLn(path, content)`, `fileAppend(path, content)`, `fileExists(path)`, `fileKill(path)`
 
-### Phase 6: Exception Handling & Zen Object-Oriented Programming `(v1.0.6)`
+### Phase 6: Exception Handling & Web Documentation `(v1.0.6)`
 
 - [ ] Exception throwing and handling (`throw`, `try / catch(err) / finally / end`)
 - [ ] Tail-call safe recursion optimization (`recur(...)` or TCO engine)
-- [ ] Ergonomic Zen Classes (designed as a clean, structured abstraction over `Table`):
+- [ ] Official "Kuroba" Web Documentation & Live Playground:
+  - [ ] Minimalist dark-mode web documentation to lighten repository markdown
+  - [ ] Client-side zero-install in-browser code runner / playground
+
+### Phase 7: Object-Oriented Programming `(v1.0.7)`
+
+- [ ] Ergonomic Classes (designed as a clean, structured abstraction over `Table`):
   - [ ] Class definition `class Name ... end` with constructor and instance methods
   - [ ] Single inheritance `class Sub extends Super ... end` with `super(...)`
   - [ ] Instance reference (`this`)
+  - [ ] Namespaces integration & class scoping
 
-### Phase 7: Modular Ecosystem, Standard Extended & Tooling `(v1.0.7)`
+### Phase 8: Modular Ecosystem, Standard Extended & Tooling `(v1.0.8)`
 
 - [ ] Architecture of strict packages & libraries (`package Name { ... }`, `library Name;`)
 - [ ] Selective and aliased package imports (`import Package ~(LibA) alias ~;`)
@@ -370,16 +377,13 @@ Kuroba/
   - [ ] Built-in test runner (`krb test`)
   - [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
 
-### Phase 8: 2D Game Engine (Package App) & Web Learning Hub `(v1.0.8)`
+### Phase 9: Native 2D Game Engine (Package App) & Community Tour `(v2.0.0)`
 
 - [ ] Built-in `App` Package (Native GUI & 2D Game Engine):
   - [ ] Native window creation with framerate and resolution control (`App.window`, `App.fps`)
   - [ ] 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style Raylib / SDL)
   - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
   - [ ] Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
-- [ ] Official Kuroba Web Platform & In-Browser Playground:
-  - [ ] Zero-install web interpreter running directly in the browser (pure JS / WebAssembly engine)
-  - [ ] Live interactive terminal with syntax highlighting, auto-complete, and output console
 - [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
   - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
   - [ ] In-browser code challenges with instant automated grading test suites
