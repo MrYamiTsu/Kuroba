@@ -14,17 +14,18 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 <br/>
 
 [![Version](https://img.shields.io/badge/version-v1.0.5-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Website](https://img.shields.io/badge/website-live-success.svg?style=for-the-badge&logo=githubpages)](https://mryamitsu.github.io/Kuroba/)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg?style=for-the-badge)](LICENSE)
 
 <br/>
 
+[**Official Website**](https://mryamitsu.github.io/Kuroba/) •
+[**Live Playground**](https://mryamitsu.github.io/Kuroba/playground.html) •
+[**Technical Documentation**](https://mryamitsu.github.io/Kuroba/docs.html) •
 [**Quickstart**](#quickstart) •
 [**Showcase**](#showcase) •
-[**Features**](#key-highlights) •
-[**Web Playground**](web/playground.html) •
-[**Full Documentation**](web/docs.html) •
 [**Architecture**](#architecture) •
 [**Roadmap**](#roadmap)
 
@@ -206,7 +207,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.            |
 | **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                 |
 
-> Looking for the complete language specification and cheatsheet? **[Browse the Official Web Documentation](web/docs.html)** or test snippets directly in the **[Interactive Live Playground](web/playground.html)**.
+> Looking for the complete language specification and cheatsheet? **[Browse the Official Web Documentation](https://mryamitsu.github.io/Kuroba/docs.html)** or test snippets directly in the **[Interactive Live Playground](https://mryamitsu.github.io/Kuroba/playground.html)**.
 
 ---
 
