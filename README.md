@@ -23,10 +23,10 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 [**Quickstart**](#quickstart) •
 [**Showcase**](#showcase) •
 [**Features**](#key-highlights) •
-[**Notable Differences**](#notable-differences) •
+[**Web Playground**](web/playground.html) •
+[**Full Documentation**](web/docs.html) •
 [**Architecture**](#architecture) •
-[**Roadmap**](#roadmap) •
-[**Full Documentation**](docs/README.md)
+[**Roadmap**](#roadmap)
 
 ---
 
@@ -206,7 +206,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.            |
 | **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                 |
 
-> Looking for the complete language cheatsheet and guide? **[Browse Full Documentation & Syntax Reference](docs/README.md)**
+> Looking for the complete language specification and cheatsheet? **[Browse the Official Web Documentation](web/docs.html)** or test snippets directly in the **[Interactive Live Playground](web/playground.html)**.
 
 ---
 
@@ -234,7 +234,7 @@ Kuroba/
 ├── config.json       # Engine configuration & version metadata
 ├── package.json      # Project manifest
 ├── main.krb          # Default playground entry file
-├── src/              # Interpreter Core
+├── src/              # Interpreter Core (Lexer, Parser, AST Evaluator)
 │   ├── lexer.js          # Lexical analysis & token stream generation
 │   ├── parser.js         # Recursive descent parser producing the AST
 │   ├── evaluator/        # Modular runtime evaluators
@@ -244,20 +244,24 @@ Kuroba/
 │   │   ├── collections.js    # List, Stack, Queue, Table methods
 │   │   ├── variables.js      # Declarations, types, kill statement
 │   │   └── types.js          # Value formatting & type coercion
+│   ├── runtime/          # Standard library natives (IO, Math, Time, String)
 │   └── errors.js         # Colored diagnostic reporting engine
-├── examples/         # Showcase Games & Demos
-│   ├── deckbuilder.krb   # Roguelike Deckbuilder (Slay the Spire / Balatro style, Relic Hooks)
-│   ├── casino.krb        # Full terminal casino (VIP Hook, Slots, Blackjack, Roulette)
-│   ├── rpg.krb           # Tactical Boss Rush RPG (Relic Hooks, Classes, Queue logs)
-│   └── dungeon.krb       # 2D ASCII Rogue-lite Crawler (Vampiric Blade Hook, Undo Stack)
-└── docs/             # Technical Specification & Manuals
-    ├── README.md         # Documentation index & cheatsheet
-    ├── variables-and-types.md
-    ├── operators.md
-    ├── control-flow.md
-    ├── functions.md      # First-class functions, closures & hooks
-    ├── io.md             # Interactive console I/O & clear
-    └── errors.md
+├── lib/              # Core Standard Library source (.krb)
+│   └── std/              # io.krb, math.krb, string.krb, time.krb
+├── web/              # Official Website, Web Docs & Interactive IDE
+│   ├── index.html        # Language showcase & architectural principles
+│   ├── docs.html         # Complete technical documentation & spec
+│   ├── playground.html   # Fullscreen IDE & live virtual terminal
+│   ├── css/style.css     # Official stylesheet (strict 5-color palette)
+│   ├── js/kuroba-web.js  # Zero-dependency client-side AST engine
+│   └── js/playground.js  # Interactive IDE controller & samples
+├── tools/            # Development & packaging utilities
+│   └── bundle-web.js     # Standalone browser bundle builder
+└── examples/         # Showcase Games & Demos
+    ├── deckbuilder.krb   # Roguelike Deckbuilder (Relic Hooks)
+    ├── casino.krb        # Full terminal casino (VIP Hook, Games)
+    ├── rpg.krb           # Tactical Boss Rush RPG (Relic Hooks, Classes)
+    └── dungeon.krb       # 2D ASCII Rogue-lite Crawler (Vampiric Blade)
 ```
 
 ---
@@ -346,11 +350,12 @@ Kuroba/
 
 ### Phase 6: Exception Handling & Web Documentation `(v1.0.6)`
 
+- [x] Official "Kuroba" Web Presence, Documentation & Live Playground:
+  - [x] Responsive, artisanal web documentation replacing repository markdown
+  - [x] Client-side zero-install in-browser AST code runner & virtual terminal
+  - [x] Strict 5-color palette, zero external npm dependencies
 - [ ] Exception throwing and handling (`throw`, `try / catch(err) / finally / end`)
 - [ ] Tail-call safe recursion optimization (`recur(...)` or TCO engine)
-- [ ] Official "Kuroba" Web Documentation & Live Playground:
-  - [ ] Minimalist dark-mode web documentation to lighten repository markdown
-  - [ ] Client-side zero-install in-browser code runner / playground
 
 ### Phase 7: Object-Oriented Programming `(v1.0.7)`
 

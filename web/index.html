@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuroba — Modern Deterministic Programming Language</title>
+  <link rel="icon" type="image/png" href="assets/kuroba.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Header / Navigation Bar
+       ======================================================================== -->
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
+      <span class="brand-name">Kuroba</span>
+      <span class="version-badge">v1.0.5</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html" class="nav-link active">Home</a>
+      <a href="docs.html" class="nav-link">Documentation</a>
+      <a href="playground.html" class="nav-link cta-btn">Playground ▶</a>
+      <a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer" class="nav-link">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <!-- ========================================================================
+       Hero Section
+       ======================================================================== -->
+  <section class="hero-section">
+    <div class="hero-grid">
+      <div class="hero-content">
+        <div class="hero-badges">
+          <span class="arch-badge"><span class="badge-dot"></span>Zero Dependencies</span>
+          <span class="arch-badge"><span class="badge-dot"></span>Deterministic AST</span>
+          <span class="arch-badge"><span class="badge-dot"></span>Hybrid Typing</span>
+        </div>
+
+        <h1 class="hero-title">Deterministic, Expressive &amp; Self-Contained.</h1>
+        <p class="hero-lead">
+          Kuroba is an interpreted programming language built from scratch in vanilla Node.js with zero third-party dependencies. Powered by a strict recursive-descent AST interpreter, hybrid type inference with explicit coercion, and atomic variable swapping, Kuroba delivers full predictability without runtime bloat.
+        </p>
+
+        <div class="hero-actions">
+          <a href="playground.html" class="btn-primary">Open Live Playground ▶</a>
+          <a href="docs.html" class="btn-secondary">Technical Specification</a>
+        </div>
+
+        <div class="quick-install-box">
+          <code>git clone https://github.com/MrYamiTsu/Kuroba.git &amp;&amp; cd Kuroba &amp;&amp; node index.js main.krb</code>
+          <button id="btn-copy-install" class="copy-btn-inline" title="Copy command">Copy</button>
+        </div>
+      </div>
+
+      <!-- Interactive Hero Code Preview Card -->
+      <div class="hero-code-card">
+        <div class="hero-code-header">
+          <div class="hero-code-tabs">
+            <button class="code-tab active" data-tab="basics">Basics</button>
+            <button class="code-tab" data-tab="io">Std.IO</button>
+            <button class="code-tab" data-tab="collections">Collections</button>
+            <button class="code-tab" data-tab="hooks">Hooks</button>
+          </div>
+          <div class="hero-code-actions">
+            <button id="btn-hero-copy" class="copy-btn-inline" title="Copy snippet">Copy</button>
+            <a href="playground.html" id="btn-hero-run" class="copy-btn-inline btn-hero-run" title="Open snippet in playground">Run ▶</a>
+          </div>
+        </div>
+        <pre class="hero-code-body"><code id="hero-code-content"></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section : Core Engineering Principles
+       ======================================================================== -->
+  <section class="pillars-section">
+    <div class="section-label">ARCHITECTURE &amp; PRINCIPLES</div>
+    <h2 class="section-heading">Engineered for clarity, speed, and determinism.</h2>
+
+    <div class="pillars-grid">
+      <div class="pillar-card">
+        <h3>1. Zero External Dependencies</h3>
+        <p>No Babel, no TypeScript runtime, and no sprawling <code>node_modules</code>. The entire pipeline (Lexer, Parser, AST Evaluator, Scope Machine, and Standard Library) is contained within the repository. The complete codebase can be audited in a single sitting.</p>
+        <pre><code>package.json:
+"dependencies": {} ~~ Exactly 0 packages</code></pre>
+      </div>
+
+      <div class="pillar-card">
+        <h3>2. Hybrid Typing &amp; Strict Non-Nullability</h3>
+        <p>Natural type inference by default (<code>ivar x = 10;</code>), instant explicit coercion (<code>ivar~Int n = "42";</code>), and strict non-nullability contracts (<code>ivar~(String) u = "...";</code>) that categorically reject <code>NULL</code> at runtime.</p>
+        <pre><code>ivar~Int count = "50";    ~~ Coerced to Int 50
+ivar~(String) id = NULL;  ~~ [TypeError] Rejected</code></pre>
+      </div>
+
+      <div class="pillar-card">
+        <h3>3. Native Atomic Swap (<code>&lt;-&gt;</code>)</h3>
+        <p>Eliminates temporary variables. Kuroba validates type compatibility, guards immutable constants, and performs an atomic in-memory variable permutation in a single operation.</p>
+        <pre><code>ivar a = 1; ivar b = 2;
+a &lt;-&gt; b; ~~ a is now 2, b is now 1</code></pre>
+      </div>
+
+      <div class="pillar-card">
+        <h3>4. Synchronous, Predictable I/O</h3>
+        <p>Console I/O and disk persistence (<code>Std.IO</code>) without asynchronous promise clutter or event loop stalls. Features blocking line input (<code>copy</code>), raw single-key capture (<code>copyKey</code>), and direct file read/write operations.</p>
+        <pre><code>IO.filePaste("save.dat", data);
+ivar content = IO.fileCopy("save.dat");</code></pre>
+      </div>
+
+      <div class="pillar-card">
+        <h3>5. Native Function Interception (Hooks)</h3>
+        <p>Lexical monkey-patching that preserves the caller interface. Intercept any target function to inject logging, caching, or data validation with transparent delegation via <code>this(...)</code>.</p>
+        <pre><code>hook compute(ivar x) then
+    pasteLn("Compute called with: " + x);
+    return this(x);
+end</code></pre>
+      </div>
+
+      <div class="pillar-card">
+        <h3>6. Pure Symbol-Based Discovery</h3>
+        <p>Physical file names on disk are irrelevant. Kuroba indexes module libraries strictly by their declared AST symbols (<code>namespace Pkg ~Module then</code>), ensuring modular reusability without path coupling.</p>
+        <pre><code>import Std ~(Math, Time, String, IO) alias ~;
+namespace Main then ... end</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section : Syntax Reference Table
+       ======================================================================== -->
+  <section class="syntax-table-section">
+    <div class="section-label">SYNTAX AT A GLANCE</div>
+    <h2 class="section-heading">Clean grammar without noise.</h2>
+
+    <table class="kuroba-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Kuroba Syntax</th>
+          <th>Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Console Output</strong></td>
+          <td><code>paste(x);</code> / <code>pasteLn(x);</code></td>
+          <td>Direct stdout print without newline (<code>paste</code>) or with trailing newline (<code>pasteLn</code>).</td>
+        </tr>
+        <tr>
+          <td><strong>Console Input</strong></td>
+          <td><code>copy("Prompt: ");</code> / <code>copyKey();</code></td>
+          <td>Synchronous blocking line input or instant raw single-character keypress capture.</td>
+        </tr>
+        <tr>
+          <td><strong>Variables &amp; Constants</strong></td>
+          <td><code>ivar x = 10;</code> / <code>iconst MAX = 100;</code></td>
+          <td>Type-inferred variables and read-only constants protected against reassignment.</td>
+        </tr>
+        <tr>
+          <td><strong>String Interpolation</strong></td>
+          <td><code>~"Score: {x}/{max}"</code></td>
+          <td>Evaluates embedded Kuroba expressions directly inside the string via raven tilde (<code>~</code>).</td>
+        </tr>
+        <tr>
+          <td><strong>Pattern Matching</strong></td>
+          <td><code>given x then case: 1 ... break; case: ~ end</code></td>
+          <td>Value-based pattern matching with a raven tilde fallback branch (<code>case: ~</code>).</td>
+        </tr>
+        <tr>
+          <td><strong>Typed Collections</strong></td>
+          <td><code>List&lt;T&gt;</code>, <code>Stack&lt;T&gt;</code>, <code>Queue&lt;T&gt;</code>, <code>Table</code></td>
+          <td>Heap data structures with native methods (<code>.push()</code>, <code>.pop()</code>, <code>.count()</code>).</td>
+        </tr>
+        <tr>
+          <td><strong>Memory Lifecycle</strong></td>
+          <td><code>kill variable;</code></td>
+          <td>Explicit variable destruction from memory and active lexical scope.</td>
+        </tr>
+        <tr>
+          <td><strong>Disk Persistence</strong></td>
+          <td><code>IO.fileCopy()</code>, <code>IO.filePaste()</code></td>
+          <td>Synchronous filesystem read, write, append, existence, and deletion via <code>Std.IO</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ========================================================================
+       Footer
+       ======================================================================== -->
+  <footer class="site-footer">
+    <p>Kuroba (KRB) • Version 1.0.5 • Pure JavaScript AST Engine • Zero Dependencies • MIT Licensed</p>
+    <p style="margin-top: 0.5rem;"><a href="docs.html">Documentation</a> • <a href="playground.html">Web Playground</a> • <a href="https://github.com/MrYamiTsu/Kuroba">GitHub Repository</a></p>
+  </footer>
+
+  <!-- Interactive Hero Snippet Switcher Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const SNIPPETS = {
+        basics: {
+          raw: `~~ Hybrid typing, coercion, and atomic variable swap
+ivar~String token = 1042;           ~~ Coerced to String "1042"
+ivar~(Int) rank = 1;                ~~ Strict non-nullable contract
+ivar alpha = 40;
+ivar beta = 99;
+
+alpha <-> beta;                     ~~ Atomic in-place permutation
+
+given token then
+    case: "1042"
+        pasteLn(~"Access granted | Rank: {rank} | Value: {alpha}");
+        break;
+    case: ~
+        pasteLn("Access denied");
+end`,
+          html: `<span style="color:#8E8299;">~~ Hybrid typing, coercion, and atomic variable swap</span>
+<span style="color:#B3A18B;">ivar~String</span> token = 1042;           <span style="color:#8E8299;">~~ Coerced to String "1042"</span>
+<span style="color:#B3A18B;">ivar~(Int)</span> rank = 1;                <span style="color:#8E8299;">~~ Strict non-nullable contract</span>
+<span style="color:#B3A18B;">ivar</span> alpha = 40;
+<span style="color:#B3A18B;">ivar</span> beta = 99;
+
+alpha &lt;-&gt; beta;                     <span style="color:#8E8299;">~~ Atomic in-place permutation</span>
+
+<span style="color:#3D7A29;">given</span> token <span style="color:#3D7A29;">then</span>
+    <span style="color:#3D7A29;">case:</span> "1042"
+        pasteLn(~"Access granted | Rank: {rank} | Value: {alpha}");
+        <span style="color:#3D7A29;">break;</span>
+    <span style="color:#3D7A29;">case:</span> ~
+        pasteLn("Access denied");
+<span style="color:#3D7A29;">end</span>`
+        },
+        io: {
+          raw: `import Std ~(IO, Time) alias ~;
+
+namespace Main then
+    ivar saveFile = "game_state.dat";
+    
+    ~~ Synchronous file write
+    IO.filePaste(saveFile, ~"=== SESSION BACKUP ({Time.iso()}) ===\\n");
+    IO.filePasteLn(saveFile, "Player: Ryu | Level: 34 | Gold: 1200");
+    
+    ~~ Check existence and read contents
+    if (IO.fileExists(saveFile)) then
+        ivar data = IO.fileCopy(saveFile);
+        pasteLn("File loaded successfully:\\n" + data);
+        IO.fileKill(saveFile); ~~ Cleanup after verification
+    end
+end`,
+          html: `<span style="color:#3D7A29;">import</span> Std ~(IO, Time) <span style="color:#3D7A29;">alias</span> ~;
+
+<span style="color:#3D7A29;">namespace</span> Main <span style="color:#3D7A29;">then</span>
+    <span style="color:#B3A18B;">ivar</span> saveFile = "game_state.dat";
+    
+    <span style="color:#8E8299;">~~ Synchronous file write</span>
+    IO.filePaste(saveFile, ~"=== SESSION BACKUP ({Time.iso()}) ===\\n");
+    IO.filePasteLn(saveFile, "Player: Ryu | Level: 34 | Gold: 1200");
+    
+    <span style="color:#8E8299;">~~ Check existence and read contents</span>
+    <span style="color:#3D7A29;">if</span> (IO.fileExists(saveFile)) <span style="color:#3D7A29;">then</span>
+        <span style="color:#B3A18B;">ivar</span> data = IO.fileCopy(saveFile);
+        pasteLn("File loaded successfully:\\n" + data);
+        IO.fileKill(saveFile); <span style="color:#8E8299;">~~ Cleanup after verification</span>
+    <span style="color:#3D7A29;">end</span>
+<span style="color:#3D7A29;">end</span>`
+        },
+        collections: {
+          raw: `~~ Generic collections and associative tables
+ivar~List<Int> dice = [4, 6, 8, 12, 20];
+dice.push(100);
+
+ivar~Table player = {
+    name: "Kenji",
+    role: "Shadow Ninja",
+    stats: { strength: 28, agility: 35 },
+    inventory: ["Katana", "Smoke Bomb", "Elixir"]
+};
+
+player.stats.strength += 10;
+pasteLn(~"Player: {player.name} ({player.role})");
+pasteLn(~"Updated Strength: {player.stats.strength}");
+pasteLn(~"Dice pool size: {dice.count()}");`,
+          html: `<span style="color:#8E8299;">~~ Generic collections and associative tables</span>
+<span style="color:#B3A18B;">ivar~List&lt;Int&gt;</span> dice = [4, 6, 8, 12, 20];
+dice.push(100);
+
+<span style="color:#B3A18B;">ivar~Table</span> player = {
+    name: "Kenji",
+    role: "Shadow Ninja",
+    stats: { strength: 28, agility: 35 },
+    inventory: ["Katana", "Smoke Bomb", "Elixir"]
+};
+
+player.stats.strength += 10;
+pasteLn(~"Player: {player.name} ({player.role})");
+pasteLn(~"Updated Strength: {player.stats.strength}");
+pasteLn(~"Dice pool size: {dice.count()}");`
+        },
+        hooks: {
+          raw: `~~ First-class functions and lexical hooks
+function processPayment(ivar amount, ivar fee) then
+    return amount + fee;
+end
+
+~~ Dynamic audit hook without modifying source function
+hook processPayment(ivar amount, ivar fee) then
+    pasteLn(~"[AUDIT] Payment requested: {amount}$ (Fee: {fee}$)");
+    ivar total = this(amount, fee);
+    pasteLn(~"[AUDIT] Validation approved: Total = {total}$");
+    return total;
+end
+
+ivar invoice = processPayment(250, 15);`,
+          html: `<span style="color:#8E8299;">~~ First-class functions and lexical hooks</span>
+<span style="color:#3D7A29;">function</span> processPayment(<span style="color:#B3A18B;">ivar</span> amount, <span style="color:#B3A18B;">ivar</span> fee) <span style="color:#3D7A29;">then</span>
+    <span style="color:#3D7A29;">return</span> amount + fee;
+<span style="color:#3D7A29;">end</span>
+
+<span style="color:#8E8299;">~~ Dynamic audit hook without modifying source function</span>
+<span style="color:#3D7A29;">hook</span> processPayment(<span style="color:#B3A18B;">ivar</span> amount, <span style="color:#B3A18B;">ivar</span> fee) <span style="color:#3D7A29;">then</span>
+    pasteLn(~"[AUDIT] Payment requested: {amount}$ (Fee: {fee}$)");
+    <span style="color:#B3A18B;">ivar</span> total = <span style="color:#3D7A29;">this</span>(amount, fee);
+    pasteLn(~"[AUDIT] Validation approved: Total = {total}$");
+    <span style="color:#3D7A29;">return</span> total;
+<span style="color:#3D7A29;">end</span>
+
+<span style="color:#B3A18B;">ivar</span> invoice = processPayment(250, 15);`
+        }
+      };
+
+      const codeContent = document.getElementById('hero-code-content');
+      const tabButtons = document.querySelectorAll('.code-tab');
+      const btnHeroCopy = document.getElementById('btn-hero-copy');
+      const btnHeroRun = document.getElementById('btn-hero-run');
+      const btnCopyInstall = document.getElementById('btn-copy-install');
+
+      let currentTab = 'basics';
+
+      function loadTab(tabKey) {
+        if (!SNIPPETS[tabKey]) return;
+        currentTab = tabKey;
+        tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabKey));
+        codeContent.innerHTML = SNIPPETS[tabKey].html;
+        btnHeroRun.href = `playground.html?code=${encodeURIComponent(SNIPPETS[tabKey].raw)}`;
+      }
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => loadTab(btn.dataset.tab));
+      });
+
+      btnHeroCopy.addEventListener('click', () => {
+        navigator.clipboard.writeText(SNIPPETS[currentTab].raw).then(() => {
+          btnHeroCopy.textContent = '✓ Copied';
+          setTimeout(() => { btnHeroCopy.textContent = 'Copy'; }, 1800);
+        });
+      });
+
+      btnCopyInstall.addEventListener('click', () => {
+        const cmd = 'git clone https://github.com/MrYamiTsu/Kuroba.git && cd Kuroba && node index.js main.krb';
+        navigator.clipboard.writeText(cmd).then(() => {
+          btnCopyInstall.textContent = '✓ Copied';
+          setTimeout(() => { btnCopyInstall.textContent = 'Copy'; }, 1800);
+        });
+      });
+
+      // Initial load
+      loadTab('basics');
+    });
+  </script>
+</body>
+</html>

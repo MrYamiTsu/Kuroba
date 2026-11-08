@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Technical Documentation — Kuroba</title>
+  <link rel="icon" type="image/png" href="assets/kuroba.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Header / Navigation Bar
+       ======================================================================== -->
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
+      <span class="brand-name">Kuroba</span>
+      <span class="version-badge">v1.0.5</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="docs.html" class="nav-link active">Documentation</a>
+      <a href="playground.html" class="nav-link">Playground ▶</a>
+      <a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer" class="nav-link">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <!-- ========================================================================
+       Documentation Layout (Sidebar + Content)
+       ======================================================================== -->
+  <div class="docs-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="docs-sidebar">
+      <div class="docs-search">
+        <input type="text" id="docs-search-input" placeholder="Search documentation..." />
+      </div>
+
+      <div class="docs-group">
+        <div class="docs-group-label">Architecture &amp; Setup</div>
+        <a href="#quickstart" class="docs-item-link">Quickstart &amp; Installation</a>
+        <a href="#cli" class="docs-item-link">CLI &amp; Arguments (`args`)</a>
+        <a href="#repl" class="docs-item-link">Interactive REPL Shell (`krb`)</a>
+      </div>
+
+      <div class="docs-group">
+        <div class="docs-group-label">Language Core</div>
+        <a href="#variables" class="docs-item-link">Variables, Constants &amp; `kill`</a>
+        <a href="#types" class="docs-item-link">Type System &amp; Non-Nullability</a>
+        <a href="#operators" class="docs-item-link">Operators &amp; Precedence Table</a>
+        <a href="#control" class="docs-item-link">Control Flow &amp; Pattern Match</a>
+        <a href="#io-primitives" class="docs-item-link">Console I/O (`paste`, `copyKey`)</a>
+        <a href="#collections" class="docs-item-link">Typed Collections (List, Stack, Queue, Table)</a>
+        <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
+      </div>
+
+      <div class="docs-group">
+        <div class="docs-group-label">Namespaces &amp; Standard Library</div>
+        <a href="#namespaces" class="docs-item-link">Namespaces &amp; Symbol Discovery</a>
+        <a href="#std-math" class="docs-item-link">Std.Math (Constants &amp; Algorithms)</a>
+        <a href="#std-time" class="docs-item-link">Std.Time (Timers &amp; Chronometry)</a>
+        <a href="#std-string" class="docs-item-link">Std.String (Text Processing)</a>
+        <a href="#std-io" class="docs-item-link">Std.IO (Filesystem Persistence)</a>
+        <a href="#errors" class="docs-item-link">Error Diagnostics (All 6 Classes)</a>
+      </div>
+    </aside>
+
+    <!-- Main Documentation Articles -->
+    <main class="docs-article-body">
+
+      <!-- ====================================================================
+           Section : Quickstart & Installation
+           ==================================================================== -->
+      <section id="quickstart">
+        <h1>Quickstart &amp; Installation</h1>
+        <p>Kuroba is fully self-contained with <strong>zero npm dependencies</strong>. A standard Node.js runtime (v16.0.0 or higher) is all that is required to execute scripts or run the interactive REPL shell.</p>
+        
+        <h3>Local Installation via Git</h3>
+        <pre><code class="language-kuroba">git clone https://github.com/MrYamiTsu/Kuroba.git
+cd Kuroba
+node index.js main.krb</code></pre>
+
+        <p>Kuroba source files use the conventional <code>.krb</code> extension. On Windows, you can also use the bundled convenience launcher <code>.\krb.cmd main.krb</code>.</p>
+      </section>
+
+      <!-- ====================================================================
+           Section : CLI & Arguments
+           ==================================================================== -->
+      <section id="cli">
+        <h2>CLI &amp; Command-Line Arguments</h2>
+        <p>Kuroba automatically parses and injects all trailing parameters into the global scope as an immutable <code>List&lt;String&gt;</code> accessible through either <code>args</code> or <code>Std.Sys.args</code>:</p>
+        <pre><code class="language-kuroba">node index.js script.krb --host 127.0.0.1 --port 8080 --verbose</code></pre>
+
+        <h3>Processing Arguments in Kuroba</h3>
+        <pre><code class="language-kuroba">pasteLn("Arguments received: " + args.count());
+
+for (i, param in args) then
+    pasteLn("Arg #" + i + ": " + param);
+end
+
+if (args.count() > 0) then
+    if (args[0] == "--help" || args[0] == "-h") then
+        pasteLn("Displaying script manual...");
+    end
+end</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Interactive REPL Shell
+           ==================================================================== -->
+      <section id="repl">
+        <h2>Interactive REPL Shell (`krb`)</h2>
+        <p>Invoking <code>index.js</code> or the launcher shortcut <code>./krb.cmd</code> without arguments starts an interactive read-eval-print loop shell:</p>
+        <pre><code class="language-kuroba">node index.js
+~~ Or via shortcut:
+./krb.cmd</code></pre>
+
+        <h3>Shell Features</h3>
+        <ul>
+          <li><strong>Instant Expression Evaluation:</strong> Values like <code>42</code>, <code>"Kuroba"</code>, <code>TRUE</code>, and math expressions evaluate and display immediately.</li>
+          <li><strong>Stateful Scope:</strong> Declared variables (<code>ivar</code>, <code>iconst</code>) and functions persist throughout the entire session.</li>
+          <li><strong>Smart Multi-line Buffering:</strong> Writing open blocks (<code>if ... then</code>, <code>function ... then</code>, <code>for ... then</code>) switches the prompt to <code>... </code> until closed by <code>end</code>.</li>
+          <li><strong>Built-in Commands:</strong> <code>help()</code> for usage tips, <code>clear()</code> to clear the screen, and <code>exit()</code> (or <code>Ctrl+C</code>) to terminate cleanly.</li>
+        </ul>
+      </section>
+
+      <!-- ====================================================================
+           Section : Variables, Constants & Lifecycle
+           ==================================================================== -->
+      <section id="variables">
+        <h2>Variables, Constants &amp; Lifecycle</h2>
+        <p>Kuroba enforces clear boundaries between mutable variables and immutable constants declared at initialization:</p>
+        
+        <h3>Variable Declaration (<code>ivar</code>)</h3>
+        <p>Declares a variable whose initial type is inferred from the assigned expression:</p>
+        <pre><code class="language-kuroba">ivar score = 100;       ~~ Inferred as Int
+ivar hero = "Shinobi";  ~~ Inferred as String
+ivar ratio = 3.14;      ~~ Inferred as Float
+ivar active = TRUE;     ~~ Inferred as Bool
+score += 25;            ~~ Reassignment allowed</code></pre>
+
+        <h3>Constant Declaration (<code>iconst</code>)</h3>
+        <p>Declares an immutable constant. Any attempt to reassign, retype, or destroy a constant triggers an immediate runtime <code>[TypeError]</code>:</p>
+        <pre><code class="language-kuroba">iconst PI = 3.141592653589793;
+iconst PORT = 8080;
+PORT = 3000; ~~ [TypeError] Cannot reassign constant 'PORT'.</code></pre>
+
+        <h3>Variable Destruction (<code>kill</code>)</h3>
+        <p>The <code>kill</code> statement explicitly purges a variable from memory and active scope. Constants cannot be killed. If an inner shadowed variable is killed, the outer variable becomes visible again:</p>
+        <pre><code class="language-kuroba">ivar buffer = [1, 2, 3, 4, 5];
+pasteLn(buffer.count()); ~~ 5
+
+kill buffer;             ~~ Releases variable and frees its scope entry
+pasteLn(buffer);         ~~ [ReferenceError] Variable 'buffer' is not defined.</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Type System & Non-Nullability
+           ==================================================================== -->
+      <section id="types">
+        <h2>Type System &amp; Non-Nullability</h2>
+        <p>Kuroba balances dynamic ergonomics with static-grade runtime safety contracts.</p>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Kind</th>
+              <th>Example Literal</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Int</code></td>
+              <td>Primitive</td>
+              <td><code>42</code>, <code>-10</code></td>
+              <td>64-bit integer numbers</td>
+            </tr>
+            <tr>
+              <td><code>Float</code></td>
+              <td>Primitive</td>
+              <td><code>3.14159</code>, <code>-0.05</code></td>
+              <td>Floating-point numbers</td>
+            </tr>
+            <tr>
+              <td><code>String</code></td>
+              <td>Primitive</td>
+              <td><code>"Kuroba"</code>, <code>""</code></td>
+              <td>UTF-8 text strings</td>
+            </tr>
+            <tr>
+              <td><code>Bool</code></td>
+              <td>Primitive</td>
+              <td><code>TRUE</code>, <code>FALSE</code></td>
+              <td>Boolean truth values (<code>1 == TRUE</code>, <code>0 == FALSE</code>)</td>
+            </tr>
+            <tr>
+              <td><code>NULL</code></td>
+              <td>Primitive</td>
+              <td><code>NULL</code></td>
+              <td>Intentional absence of a value</td>
+            </tr>
+            <tr>
+              <td><code>List&lt;T&gt;</code></td>
+              <td>Compound</td>
+              <td><code>[1, 2, 3]</code></td>
+              <td>Dynamic, 0-indexed ordered array</td>
+            </tr>
+            <tr>
+              <td><code>Stack&lt;T&gt;</code></td>
+              <td>Compound</td>
+              <td><code>[10, 20]</code></td>
+              <td>LIFO (Last In, First Out) stack</td>
+            </tr>
+            <tr>
+              <td><code>Queue&lt;T&gt;</code></td>
+              <td>Compound</td>
+              <td><code>["A", "B"]</code></td>
+              <td>FIFO (First In, First Out) queue</td>
+            </tr>
+            <tr>
+              <td><code>Table</code></td>
+              <td>Compound</td>
+              <td><code>{ name: "Kuroba", hp: 100 }</code></td>
+              <td>Key-value associative dictionary with typed fields</td>
+            </tr>
+            <tr>
+              <td><code>Function</code></td>
+              <td>First-Class</td>
+              <td><code>function f(...) then ... end</code></td>
+              <td>Named or anonymous callable closure</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Explicit Type Coercion (<code>~Type</code>)</h3>
+        <p>Appending <code>~Type</code> to <code>ivar</code> converts the right-hand value immediately:</p>
+        <pre><code class="language-kuroba">ivar~Int counter = "42";   ~~ Coerced to Int 42
+ivar~String port = 8080;   ~~ Coerced to String "8080"
+ivar~Bool active = 1;      ~~ Coerced to TRUE (0 becomes FALSE)
+ivar~Float ratio = "3.14"; ~~ Coerced to Float 3.14</code></pre>
+
+        <h3>Strict Non-Nullable Contract (<code>~(Type)</code>)</h3>
+        <p>Guarantees that a variable or field can <strong>never</strong> receive <code>NULL</code>, raising an immediate <code>[TypeError]</code> upon violation:</p>
+        <pre><code class="language-kuroba">ivar~(String) user = "Admin";
+user = NULL; ~~ [TypeError] Cannot assign NULL to non-nullable variable 'user'.</code></pre>
+
+        <h3>Dynamic In-Place Retyping</h3>
+        <p>An existing variable can change type dynamically during assignment using <code>var~Type = val;</code>:</p>
+        <pre><code class="language-kuroba">ivar score = 100;           ~~ Inferred as Int
+score~String = "Top Score"; ~~ Retyped to String in-place
+score~Float = 99.5;         ~~ Retyped to Float in-place</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Operators & Precedence
+           ==================================================================== -->
+      <section id="operators">
+        <h2>Operators &amp; Precedence Table</h2>
+        <p>Kuroba evaluates expressions following standard mathematical precedence rules:</p>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>Category</th>
+              <th>Operator</th>
+              <th>Description</th>
+              <th>Associativity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1</strong></td>
+              <td>Primary</td>
+              <td><code>(...)</code>, <code>[]</code>, <code>.</code>, <code>()</code></td>
+              <td>Grouping, indexing, member access, function calls</td>
+              <td>Left-to-right</td>
+            </tr>
+            <tr>
+              <td><strong>2</strong></td>
+              <td>Unary</td>
+              <td><code>!</code>, <code>++</code>, <code>--</code>, <code>-</code></td>
+              <td>Logical NOT, postfix step increment/decrement, negation</td>
+              <td>Right-to-left</td>
+            </tr>
+            <tr>
+              <td><strong>3</strong></td>
+              <td>Multiplicative</td>
+              <td><code>*</code>, <code>/</code>, <code>%</code></td>
+              <td>Multiplication, division, modulo (0-check enforced)</td>
+              <td>Left-to-right</td>
+            </tr>
+            <tr>
+              <td><strong>4</strong></td>
+              <td>Additive</td>
+              <td><code>+</code>, <code>-</code></td>
+              <td>Addition, string concatenation, subtraction</td>
+              <td>Left-to-right</td>
+            </tr>
+            <tr>
+              <td><strong>5</strong></td>
+              <td>Relational</td>
+              <td><code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code></td>
+              <td>Numeric and comparative order checks</td>
+              <td>Left-to-right</td>
+            </tr>
+            <tr>
+              <td><strong>6</strong></td>
+              <td>Equality</td>
+              <td><code>==</code>, <code>!=</code></td>
+              <td>Strict equality with boolean/NULL coercion</td>
+              <td>Left-to-right</td>
+            </tr>
+            <tr>
+              <td><strong>7</strong></td>
+              <td>Logical AND</td>
+              <td><code>&amp;&amp;</code></td>
+              <td>Short-circuit boolean AND</td>
+              <td>Left-to-right</td>
+            </tr>
+            <tr>
+              <td><strong>8</strong></td>
+              <td>Logical OR</td>
+              <td><code>||</code></td>
+              <td>Short-circuit boolean OR</td>
+              <td>Left-to-right</td>
+            </tr>
+            <tr>
+              <td><strong>9</strong></td>
+              <td>Native Swap</td>
+              <td><code>&lt;-&gt;</code></td>
+              <td>Atomic in-place variable swap</td>
+              <td>Non-associative</td>
+            </tr>
+            <tr>
+              <td><strong>10</strong></td>
+              <td>Assignment</td>
+              <td><code>=</code>, <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code></td>
+              <td>Variable assignment and compound updates</td>
+              <td>Right-to-left</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Native Atomic Swap (<code>&lt;-&gt;</code>)</h3>
+        <p>Exchanges the values of two variables in-place without a temporary holder. It validates type compatibility, guards constants, and prevents transferring <code>NULL</code> into a non-nullable variable:</p>
+        <pre><code class="language-kuroba">ivar a = 10;
+ivar b = 99;
+a <-> b;
+pasteLn(a); ~~ 99
+pasteLn(b); ~~ 10</code></pre>
+
+        <h3>String Interpolation (<code>~"..."</code>)</h3>
+        <p>The raven tilde prefix allows embedded Kuroba expressions between curly braces:</p>
+        <pre><code class="language-kuroba">ivar hero = "Kenji";
+ivar hp = 85;
+pasteLn(~"Hero: {hero} | Health: {hp}/100 | Boosted: {hp + 15}");</code></pre>
+
+        <h3>Bitwise Operators (<code>&amp;</code>, <code>|</code>, <code>^</code>, <code>&lt;&lt;</code>, <code>&gt;&gt;</code>)</h3>
+        <pre><code class="language-kuroba">ivar flags = 1 | 2 | 4;   ~~ 7 (Bitwise OR)
+ivar masked = flags & 2;  ~~ 2 (Bitwise AND)
+ivar shifted = 1 << 3;    ~~ 8 (Bitwise Left Shift)</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Control Flow & Pattern Matching
+           ==================================================================== -->
+      <section id="control">
+        <h2>Control Flow &amp; Pattern Matching</h2>
+        <p>Block statements conclude explicitly with the <code>end</code> keyword and do not require a trailing semicolon.</p>
+
+        <h3>Conditionals (<code>if / elif / else / end</code>)</h3>
+        <pre><code class="language-kuroba">ivar score = 75;
+
+if (score == 100) then
+    pasteLn("Perfect score!");
+elif (score >= 75) then
+    pasteLn("Good job!");
+else
+    pasteLn("Try again.");
+end
+
+ivar running = TRUE;
+if running then ~~ Single variable checks do not require parentheses
+    pasteLn("System operational.");
+end</code></pre>
+
+        <h3>Pattern Matching &amp; Redirect Rule (<code>given / case: / end</code>)</h3>
+        <p>Branch selector matching a target value against <code>case:</code> options. Kuroba implements a unique <strong>Redirect Rule</strong>: if <code>break;</code> is omitted, execution does not bleed into subsequent cases — it redirects straight to the default <code>case: ~</code> fallback branch:</p>
+        <pre><code class="language-kuroba">ivar role = "admin";
+
+given role then
+    case: "user"
+        pasteLn("Standard user dashboard");
+        break;
+    case: "admin"
+        pasteLn("Full administrative privileges");
+        break;
+    case: ~
+        pasteLn("Unknown role; access restricted.");
+end</code></pre>
+
+        <h3>Loops: <code>for</code>, <code>while</code>, <code>do-while</code></h3>
+        <pre><code class="language-kuroba">~~ 1. Standard 3-clause for loop (break; and skip; supported)
+for (ivar i = 0; i < 5; i++) then
+    if (i == 2) then skip; end
+    pasteLn(i);
+end
+
+~~ 2. While loop
+ivar count = 0;
+while (count < 3) then
+    pasteLn(count);
+    count++;
+end
+
+~~ 3. Do-While loop (guaranteed at least one execution)
+ivar n = 0;
+do
+    pasteLn(n);
+    n++;
+while (n < 3);</code></pre>
+
+        <h3>Collection Iteration (<code>for ... in</code>)</h3>
+        <pre><code class="language-kuroba">ivar~List<String> fruits = ["apple", "banana", "cherry"];
+for (fruit in fruits) then
+    pasteLn(fruit);
+end
+
+ivar~Table hero = { name: "Kenji", class: "Shinobi" };
+for (key, val in hero) then
+    pasteLn(key + " => " + val);
+end</code></pre>
+
+        <h3>Inline Guards &amp; Termination (<code>exit</code>)</h3>
+        <pre><code class="language-kuroba">exit();          ~~ Exits immediately with code 0
+exit(score < 0); ~~ Inline guard clause: exits only if condition evaluates to true</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Console I/O & Interactive Input
+           ==================================================================== -->
+      <section id="io-primitives">
+        <h2>Console I/O &amp; Interactive Input</h2>
+        <p>Kuroba provides synchronous primitives for building responsive terminal applications and CLI tools.</p>
+
+        <h3>Output: <code>paste</code> &amp; <code>pasteLn</code></h3>
+        <pre><code class="language-kuroba">paste("Loading: ");
+paste("50%...");
+pasteLn(" Done!");
+pasteLn(); ~~ Prints an empty line</code></pre>
+
+        <h3>Line Input: <code>copy(...)</code></h3>
+        <p>Blocks execution synchronously and reads an entire line of text until the user presses Enter:</p>
+        <pre><code class="language-kuroba">ivar username = copy("Enter your name: ");
+pasteLn("Greetings, " + username);
+
+ivar~Int age = copy("Your age: ");
+pasteLn("Next year: " + (age + 1));</code></pre>
+
+        <h3>Single Keypress: <code>copyKey()</code></h3>
+        <p>Captures a single keypress immediately in raw terminal mode without waiting for the Enter key. Pressing <code>Ctrl+C</code> cleanly exits:</p>
+        <pre><code class="language-kuroba">paste("Proceed with update? (y/n): ");
+ivar key = copyKey();
+pasteLn("");
+
+if (key == "y" || key == "Y") then
+    pasteLn("Update starting...");
+end</code></pre>
+
+        <h3>Screen Management: <code>clear</code></h3>
+        <pre><code class="language-kuroba">clear();            ~~ Clears the terminal screen immediately
+clear(round > 1);   ~~ Clears screen only if condition is true</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Collections Deep Dive
+           ==================================================================== -->
+      <section id="collections">
+        <h2>Typed Collections (List, Stack, Queue, Table)</h2>
+        <p>Kuroba offers four built-in high-performance data structures:</p>
+
+        <h3>1. Lists (<code>List&lt;T&gt;</code>)</h3>
+        <p>Dynamic 0-indexed arrays supporting generic typing, nullability contracts, and methods:</p>
+        <pre><code class="language-kuroba">ivar~List<Int> numbers = [10, 30];
+numbers.push(20, 1);      ~~ Inserts 20 at index 1 -> [10, 20, 30]
+pasteLn(numbers.peek(1)); ~~ 20 (inspects element at index 1)
+pasteLn(numbers.pop(0));  ~~ 10 (removes and returns element at index 0)
+pasteLn(numbers.count()); ~~ 2</code></pre>
+
+        <h3>Generic Typing &amp; Nullability Matrix</h3>
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Syntax</th>
+              <th>List Nullable?</th>
+              <th>Elements Nullable?</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>ivar~List&lt;Type&gt;</code></td>
+              <td><strong>Yes</strong></td>
+              <td><strong>Yes</strong></td>
+              <td>Nullable list; elements can be <code>Type</code> or <code>NULL</code>.</td>
+            </tr>
+            <tr>
+              <td><code>ivar~List&lt;(Type)&gt;</code></td>
+              <td><strong>Yes</strong></td>
+              <td><strong>No</strong></td>
+              <td>Nullable list; elements must strictly be non-null <code>Type</code>.</td>
+            </tr>
+            <tr>
+              <td><code>ivar~(List&lt;Type&gt;)</code></td>
+              <td><strong>No</strong></td>
+              <td><strong>No</strong></td>
+              <td>Non-nullable list and non-nullable elements.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>2. Stacks (<code>Stack&lt;T&gt;</code> — LIFO)</h3>
+        <pre><code class="language-kuroba">ivar~Stack<Int> stack = [10, 20];
+stack.push(30);         ~~ Pushes to top: [10, 20, 30]
+pasteLn(stack.peek());  ~~ 30 (inspects top without removing)
+pasteLn(stack.pop());   ~~ 30 (removes and returns top)
+pasteLn(stack.count()); ~~ 2</code></pre>
+
+        <h3>3. Queues (<code>Queue&lt;T&gt;</code> — FIFO)</h3>
+        <pre><code class="language-kuroba">ivar~Queue<String> clients = ["Alice", "Bob"];
+clients.push("Charlie");   ~~ Adds to back
+pasteLn(clients.peek());   ~~ "Alice" (inspects front without removing)
+pasteLn(clients.pop());    ~~ "Alice" (removes and returns front)
+pasteLn(clients.count());  ~~ 2</code></pre>
+
+        <h3>4. Tables (<code>Table</code>)</h3>
+        <p>Key-value associative maps accessed exclusively through dot notation (<code>table.field</code>). Reading an undefined field returns <code>NULL</code>:</p>
+        <pre><code class="language-kuroba">ivar~Table hero = {
+    name: "Kuroba",
+    hp: 100,
+    port~Int: "8080",          ~~ Field-level type coercion
+    token~(String): "xyz123"   ~~ Field-level strict non-nullability
+};
+
+hero.hp -= 15;                 ~~ In-place update
+hero.level = 5;                ~~ Dynamically creates field 'level'
+pasteLn(hero.missingProp);     ~~ NULL (safe access)</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Functions & Native Hooks
+           ==================================================================== -->
+      <section id="functions">
+        <h2>Functions &amp; Native Hooks</h2>
+        
+        <h3>Named Functions &amp; Signatures</h3>
+        <p>Named functions declare parameters prefixed by <code>ivar</code> with optional type coercion (<code>ivar~Int x</code>) and non-nullability constraints (<code>ivar~(String) name</code>):</p>
+        <pre><code class="language-kuroba">function calculateDamage(ivar base, ivar~Int multiplier) then
+    return base * multiplier;
+end
+
+pasteLn(calculateDamage(25, 2)); ~~ 50</code></pre>
+
+        <h3>Anonymous Lambdas (<code>function ~</code>) &amp; Closures</h3>
+        <pre><code class="language-kuroba">function createMultiplier(ivar factor) then
+    return function ~(ivar n) then
+        return n * factor;
+    end;
+end
+
+ivar triple = createMultiplier(3);
+pasteLn(triple(10)); ~~ 30</code></pre>
+
+        <h3>Native Function Interception (Hooks)</h3>
+        <p>The <code>hook</code> statement intercepts existing function calls (or Table methods) to inject telemetry, caching, or data validation without altering the caller interface. Inside the hook body, <strong><code>this(...)</code></strong> invokes the original function:</p>
+        <pre><code class="language-kuroba">function processPayment(ivar amount, ivar fee) then
+    return amount + fee;
+end
+
+~~ Interception hook
+hook processPayment(ivar amount, ivar fee) then
+    pasteLn(~"[AUDIT] Processing payment: {amount}$ (Fee: {fee}$)");
+    ivar total = this(amount, fee);
+    pasteLn(~"[AUDIT] Validation approved: Total = {total}$");
+    return total;
+end
+
+ivar invoice = processPayment(250, 15);</code></pre>
+
+        <h3>Hooking Table Methods</h3>
+        <pre><code class="language-kuroba">ivar Game = {
+    start: function ~(ivar self) then
+        return { running: TRUE };
+    end
+};
+
+hook Game["start"](ivar self) then
+    ivar state = this(self);
+    state["godMode"] = TRUE;
+    return state;
+end</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Namespaces & Symbol Discovery
+           ==================================================================== -->
+      <section id="namespaces">
+        <h2>Namespaces &amp; Module Discovery</h2>
+        <p>Kuroba resolves modules purely from declared AST symbols, independent of physical file names on disk:</p>
+
+        <h3>Hierarchy: <code>Namespace &rarr; Module Slice (~Module) &rarr; Members</code></h3>
+        <ul>
+          <li><strong><code>Main</code> Namespace:</strong> Single entry point for applications. Strictly indivisible (cannot have <code>~Module</code>) and cannot be imported by other files.</li>
+          <li><strong>Library Namespaces:</strong> Declare reusable modules using <code>namespace Lib ~Slice then ... end</code>.</li>
+          <li><strong>Symbol Discovery:</strong> Kuroba indexes files by declared symbols. Renaming <code>math.krb</code> to <code>algorithms.krb</code> does not break any imports.</li>
+        </ul>
+
+        <h3>Import Variations</h3>
+        <pre><code class="language-kuroba">~~ 1. Entire namespace
+import Std;
+pasteLn(Std.Math.PI);
+
+~~ 2. Namespace alias
+import Std alias S;
+pasteLn(S.Math.PI);
+
+~~ 3. Root exposure of entire namespace
+import Std alias ~;
+pasteLn(Math.PI);
+
+~~ 4. Selective module slices into root scope
+import Std ~(Math, Time, String, IO) alias ~;
+pasteLn(Math.sqrt(16));</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Std.Math Reference
+           ==================================================================== -->
+      <section id="std-math">
+        <h2>Std.Math (Constants &amp; Algorithms)</h2>
+        <p>Hardware-accelerated mathematical calculations, trigonometry, and gamedev helpers.</p>
+        <pre><code class="language-kuroba">import Std ~(Math) alias ~;</code></pre>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Type / Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Math.PI</code></td>
+              <td><code>Float</code> (3.14159...)</td>
+              <td>Archimedes' constant &pi;</td>
+            </tr>
+            <tr>
+              <td><code>Math.TAU</code></td>
+              <td><code>Float</code> (6.28318...)</td>
+              <td>Circle constant &tau; = 2&pi;</td>
+            </tr>
+            <tr>
+              <td><code>Math.E</code></td>
+              <td><code>Float</code> (2.71828...)</td>
+              <td>Euler's number e</td>
+            </tr>
+            <tr>
+              <td><code>Math.random()</code></td>
+              <td><code>() -&gt; Float</code></td>
+              <td>Random float between 0.0 (inclusive) and 1.0 (exclusive)</td>
+            </tr>
+            <tr>
+              <td><code>Math.random(max)</code></td>
+              <td><code>(ivar max) -&gt; Int</code></td>
+              <td>Random integer between 1 and max (inclusive)</td>
+            </tr>
+            <tr>
+              <td><code>Math.random(min, max)</code></td>
+              <td><code>(min, max) -&gt; Int</code></td>
+              <td>Random integer between min and max (inclusive)</td>
+            </tr>
+            <tr>
+              <td><code>Math.randomItem(list)</code></td>
+              <td><code>(list) -&gt; Any</code></td>
+              <td>Random element chosen from a Kuroba List</td>
+            </tr>
+            <tr>
+              <td><code>Math.floor(x)</code></td>
+              <td><code>(x) -&gt; Int</code></td>
+              <td>Largest integer less than or equal to x</td>
+            </tr>
+            <tr>
+              <td><code>Math.ceil(x)</code></td>
+              <td><code>(x) -&gt; Int</code></td>
+              <td>Smallest integer greater than or equal to x</td>
+            </tr>
+            <tr>
+              <td><code>Math.round(x)</code></td>
+              <td><code>(x) -&gt; Int</code></td>
+              <td>Rounds x to nearest integer</td>
+            </tr>
+            <tr>
+              <td><code>Math.trunc(x)</code></td>
+              <td><code>(x) -&gt; Int</code></td>
+              <td>Discards fractional digits, truncating towards zero</td>
+            </tr>
+            <tr>
+              <td><code>Math.abs(x)</code></td>
+              <td><code>(x) -&gt; Number</code></td>
+              <td>Absolute value of x</td>
+            </tr>
+            <tr>
+              <td><code>Math.min(a, b)</code></td>
+              <td><code>(a, b) -&gt; Number</code></td>
+              <td>Returns the smaller of two numbers</td>
+            </tr>
+            <tr>
+              <td><code>Math.max(a, b)</code></td>
+              <td><code>(a, b) -&gt; Number</code></td>
+              <td>Returns the larger of two numbers</td>
+            </tr>
+            <tr>
+              <td><code>Math.clamp(v, min, max)</code></td>
+              <td><code>(v, min, max) -&gt; Number</code></td>
+              <td>Clamps value within [min, max] range</td>
+            </tr>
+            <tr>
+              <td><code>Math.sign(x)</code></td>
+              <td><code>(x) -&gt; Int</code></td>
+              <td>Returns 1 if x &gt; 0, -1 if x &lt; 0, or 0</td>
+            </tr>
+            <tr>
+              <td><code>Math.sqrt(x)</code></td>
+              <td><code>(x) -&gt; Float</code></td>
+              <td>Square root of x</td>
+            </tr>
+            <tr>
+              <td><code>Math.pow(base, exp)</code></td>
+              <td><code>(b, e) -&gt; Number</code></td>
+              <td>Base raised to power exp</td>
+            </tr>
+            <tr>
+              <td><code>Math.log(x)</code></td>
+              <td><code>(x) -&gt; Float</code></td>
+              <td>Natural logarithm (ln)</td>
+            </tr>
+            <tr>
+              <td><code>Math.log10(x)</code></td>
+              <td><code>(x) -&gt; Float</code></td>
+              <td>Base-10 logarithm</td>
+            </tr>
+            <tr>
+              <td><code>Math.exp(x)</code></td>
+              <td><code>(x) -&gt; Float</code></td>
+              <td>Euler's number e raised to power x</td>
+            </tr>
+            <tr>
+              <td><code>Math.sin(rad)</code></td>
+              <td><code>(rad) -&gt; Float</code></td>
+              <td>Sine in radians</td>
+            </tr>
+            <tr>
+              <td><code>Math.cos(rad)</code></td>
+              <td><code>(rad) -&gt; Float</code></td>
+              <td>Cosine in radians</td>
+            </tr>
+            <tr>
+              <td><code>Math.tan(rad)</code></td>
+              <td><code>(rad) -&gt; Float</code></td>
+              <td>Tangent in radians</td>
+            </tr>
+            <tr>
+              <td><code>Math.asin(x)</code></td>
+              <td><code>(x) -&gt; Float</code></td>
+              <td>Arcsine in radians</td>
+            </tr>
+            <tr>
+              <td><code>Math.acos(x)</code></td>
+              <td><code>(x) -&gt; Float</code></td>
+              <td>Arccosine in radians</td>
+            </tr>
+            <tr>
+              <td><code>Math.atan(x)</code></td>
+              <td><code>(x) -&gt; Float</code></td>
+              <td>Arctangent in radians</td>
+            </tr>
+            <tr>
+              <td><code>Math.atan2(y, x)</code></td>
+              <td><code>(y, x) -&gt; Float</code></td>
+              <td>Angle in radians between x-axis and point (x, y)</td>
+            </tr>
+            <tr>
+              <td><code>Math.degToRad(deg)</code></td>
+              <td><code>(deg) -&gt; Float</code></td>
+              <td>Converts degrees to radians</td>
+            </tr>
+            <tr>
+              <td><code>Math.radToDeg(rad)</code></td>
+              <td><code>(rad) -&gt; Float</code></td>
+              <td>Converts radians to degrees</td>
+            </tr>
+            <tr>
+              <td><code>Math.dist(x1, y1, x2, y2)</code></td>
+              <td><code>(...) -&gt; Float</code></td>
+              <td>2D Euclidean distance between two points</td>
+            </tr>
+            <tr>
+              <td><code>Math.lerp(a, b, t)</code></td>
+              <td><code>(a, b, t) -&gt; Float</code></td>
+              <td>Linear interpolation between a and b with factor t</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : Std.Time Reference
+           ==================================================================== -->
+      <section id="std-time">
+        <h2>Std.Time (Timers &amp; Chronometry)</h2>
+        <p>Synchronous timing and sleep operations with <strong>0% CPU burn</strong> (powered by <code>Atomics.wait</code>).</p>
+        <pre><code class="language-kuroba">import Std ~(Time) alias ~;</code></pre>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Function</th>
+              <th>Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Time.sleep(ms)</code></td>
+              <td><code>(ivar ms)</code></td>
+              <td>Synchronously suspends execution for <code>ms</code> milliseconds (0% CPU burn)</td>
+            </tr>
+            <tr>
+              <td><code>Time.sleepSec(sec)</code></td>
+              <td><code>(ivar sec)</code></td>
+              <td>Synchronously suspends execution for <code>sec</code> seconds (<code>sec * 1000</code>)</td>
+            </tr>
+            <tr>
+              <td><code>Time.now()</code></td>
+              <td><code>() -&gt; Int</code></td>
+              <td>Current Unix epoch timestamp in milliseconds</td>
+            </tr>
+            <tr>
+              <td><code>Time.unix()</code></td>
+              <td><code>() -&gt; Int</code></td>
+              <td>Current Unix timestamp in seconds</td>
+            </tr>
+            <tr>
+              <td><code>Time.perf()</code></td>
+              <td><code>() -&gt; Float</code></td>
+              <td>High-resolution performance timestamp in milliseconds</td>
+            </tr>
+            <tr>
+              <td><code>Time.hires()</code></td>
+              <td><code>() -&gt; Float</code></td>
+              <td>Alias for <code>Time.perf()</code></td>
+            </tr>
+            <tr>
+              <td><code>Time.clock()</code></td>
+              <td><code>() -&gt; Table</code></td>
+              <td>Returns Table: <code>{ year, month, day, hours, minutes, seconds, ms }</code></td>
+            </tr>
+            <tr>
+              <td><code>Time.iso()</code></td>
+              <td><code>() -&gt; String</code></td>
+              <td>ISO date string representation (<code>"YYYY-MM-DDTHH:mm:ss"</code>)</td>
+            </tr>
+            <tr>
+              <td><code>Time.since(t0)</code></td>
+              <td><code>(ivar t0) -&gt; Int</code></td>
+              <td>Calculates elapsed milliseconds since timestamp <code>t0</code></td>
+            </tr>
+            <tr>
+              <td><code>Time.format(ms)</code></td>
+              <td><code>(ivar ms) -&gt; String</code></td>
+              <td>Formats milliseconds into human-readable chronometer string (<code>"MM:SS"</code>)</td>
+            </tr>
+            <tr>
+              <td><code>Time.stopwatch()</code></td>
+              <td><code>() -&gt; Table</code></td>
+              <td>Returns a stateful stopwatch Table with <code>.elapsed()</code> and <code>.reset()</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : Std.String Reference
+           ==================================================================== -->
+      <section id="std-string">
+        <h2>Std.String (Text Processing)</h2>
+        <p>Text manipulation, string transformations, splitting, and searching.</p>
+        <pre><code class="language-kuroba">import Std ~(String) alias ~;</code></pre>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Type / Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>String.DIGITS</code></td>
+              <td><code>String</code></td>
+              <td>Numeric characters (<code>"0123456789"</code>)</td>
+            </tr>
+            <tr>
+              <td><code>String.ASCII_LOWER</code></td>
+              <td><code>String</code></td>
+              <td>Lowercase ASCII characters</td>
+            </tr>
+            <tr>
+              <td><code>String.ASCII_UPPER</code></td>
+              <td><code>String</code></td>
+              <td>Uppercase ASCII characters</td>
+            </tr>
+            <tr>
+              <td><code>String.count(str)</code></td>
+              <td><code>(str) -&gt; Int</code></td>
+              <td>Total character length of <code>str</code></td>
+            </tr>
+            <tr>
+              <td><code>String.upper(str)</code></td>
+              <td><code>(str) -&gt; String</code></td>
+              <td>Converts <code>str</code> to uppercase</td>
+            </tr>
+            <tr>
+              <td><code>String.lower(str)</code></td>
+              <td><code>(str) -&gt; String</code></td>
+              <td>Converts <code>str</code> to lowercase</td>
+            </tr>
+            <tr>
+              <td><code>String.trim(str)</code></td>
+              <td><code>(str) -&gt; String</code></td>
+              <td>Strips leading and trailing whitespace</td>
+            </tr>
+            <tr>
+              <td><code>String.split(str, sep)</code></td>
+              <td><code>(str, sep) -&gt; List&lt;String&gt;</code></td>
+              <td>Splits <code>str</code> by delimiter into a Kuroba <code>List</code></td>
+            </tr>
+            <tr>
+              <td><code>String.join(list, sep)</code></td>
+              <td><code>(list, sep) -&gt; String</code></td>
+              <td>Concatenates list elements with delimiter</td>
+            </tr>
+            <tr>
+              <td><code>String.replace(s, target, repl)</code></td>
+              <td><code>(...) -&gt; String</code></td>
+              <td>Replaces all occurrences of <code>target</code> with <code>repl</code></td>
+            </tr>
+            <tr>
+              <td><code>String.contains(s, sub)</code></td>
+              <td><code>(s, sub) -&gt; Bool</code></td>
+              <td>Returns <code>TRUE</code> if <code>sub</code> is in <code>s</code>, else <code>FALSE</code></td>
+            </tr>
+            <tr>
+              <td><code>String.startsWith(s, prefix)</code></td>
+              <td><code>(s, p) -&gt; Bool</code></td>
+              <td>Returns <code>TRUE</code> if string starts with prefix</td>
+            </tr>
+            <tr>
+              <td><code>String.endsWith(s, suffix)</code></td>
+              <td><code>(s, suf) -&gt; Bool</code></td>
+              <td>Returns <code>TRUE</code> if string ends with suffix</td>
+            </tr>
+            <tr>
+              <td><code>String.indexOf(s, sub)</code></td>
+              <td><code>(s, sub) -&gt; Int</code></td>
+              <td>0-based index of first occurrence, or <code>-1</code> if not found</td>
+            </tr>
+            <tr>
+              <td><code>String.slice(s, start, end)</code></td>
+              <td><code>(...) -&gt; String</code></td>
+              <td>Extracts substring from <code>start</code> up to <code>end</code></td>
+            </tr>
+            <tr>
+              <td><code>String.repeat(s, n)</code></td>
+              <td><code>(s, n) -&gt; String</code></td>
+              <td>Repeats string <code>n</code> times</td>
+            </tr>
+            <tr>
+              <td><code>String.reverse(s)</code></td>
+              <td><code>(s) -&gt; String</code></td>
+              <td>Reverses all characters of <code>s</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : Std.IO Reference
+           ==================================================================== -->
+      <section id="std-io">
+        <h2>Std.IO (Filesystem Persistence)</h2>
+        <p>Synchronous disk file operations with zero third-party dependencies.</p>
+        <pre><code class="language-kuroba">import Std ~(IO) alias ~;</code></pre>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Function</th>
+              <th>Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>IO.fileCopy(path)</code></td>
+              <td><code>(ivar path) -&gt; String</code></td>
+              <td>Reads entire file contents as a String. Raises <code>[IOError]</code> if missing.</td>
+            </tr>
+            <tr>
+              <td><code>IO.filePaste(path, content)</code></td>
+              <td><code>(path, content) -&gt; Bool</code></td>
+              <td>Writes or overwrites content to file at path.</td>
+            </tr>
+            <tr>
+              <td><code>IO.filePasteLn(path, content)</code></td>
+              <td><code>(path, content) -&gt; Bool</code></td>
+              <td>Appends content followed by a newline character (<code>\n</code>) to file.</td>
+            </tr>
+            <tr>
+              <td><code>IO.fileAppend(path, content)</code></td>
+              <td><code>(path, content) -&gt; Bool</code></td>
+              <td>Appends raw content to file without appending a trailing newline.</td>
+            </tr>
+            <tr>
+              <td><code>IO.fileExists(path)</code></td>
+              <td><code>(ivar path) -&gt; Bool</code></td>
+              <td>Returns <code>TRUE</code> if file exists on disk, otherwise <code>FALSE</code>.</td>
+            </tr>
+            <tr>
+              <td><code>IO.fileKill(path)</code></td>
+              <td><code>(ivar path) -&gt; Bool</code></td>
+              <td>Deletes the file from disk. Returns <code>TRUE</code> if deleted, <code>FALSE</code> if not found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : Error Diagnostics
+           ==================================================================== -->
+      <section id="errors">
+        <h2>Error Diagnostics (All 6 Classes)</h2>
+        <p>Kuroba provides exact line, column, and contextual diagnostics for rapid debugging:</p>
+
+        <h3>1. SyntaxError</h3>
+        <p>Grammar violations during tokenization or AST parsing:</p>
+        <pre><code class="language-kuroba">[SyntaxError: Line 2, Col 1] Missing semicolon ';' at the end of statement.
+[SyntaxError: Line 4, Col 12] Unclosed parenthesis. Missing closing ')' to match '(' at Line 4, Col 6.
+[SyntaxError: Line 10, Col 5] Return statements are only allowed inside functions.</code></pre>
+
+        <h3>2. TypeError</h3>
+        <p>Violations of runtime type compatibility or non-nullability contracts:</p>
+        <pre><code class="language-kuroba">[TypeError] Cannot assign type 'String' to variable 'count' of type 'Int'.
+[TypeError] Cannot reassign constant 'PORT'.
+[TypeError] Cannot assign NULL to non-nullable variable 'user' of type '(String)'.
+[TypeError] Cannot kill constant variable 'PI'.
+[TypeError] Cannot hook non-function target 'score'.</code></pre>
+
+        <h3>3. ReferenceError</h3>
+        <p>Referencing undeclared identifiers or out-of-scope hook contexts:</p>
+        <pre><code class="language-kuroba">[ReferenceError] Variable 'unknown' is not defined.
+[ReferenceError] Cannot call 'this()' outside of a hook interception.
+[ReferenceError] Cannot kill undefined variable 'temp'.</code></pre>
+
+        <h3>4. MathError</h3>
+        <p>Undefined mathematical calculations:</p>
+        <pre><code class="language-kuroba">[MathError] Division by zero is undefined.
+[MathError] Modulo by zero is undefined.</code></pre>
+
+        <h3>5. IndexError</h3>
+        <p>Accessing out-of-bounds indices or non-integer collection lookups:</p>
+        <pre><code class="language-kuroba">[IndexError] Index 5 out of bounds for list of length 2.
+[IndexError] List index must be an integer, got 'abc'.</code></pre>
+
+        <h3>6. IOError</h3>
+        <p>Filesystem access or permission failures in <code>Std.IO</code>:</p>
+        <pre><code class="language-kuroba">[IOError] File not found: 'missing_save.dat'.
+[IOError] Failed to write to file 'protected/root.dat': EACCES: permission denied.</code></pre>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>Kuroba (KRB) • Technical Documentation v1.0.5 • Pure JavaScript AST Engine • MIT Licensed</p>
+    <p style="margin-top: 0.5rem;"><a href="index.html">Home</a> • <a href="playground.html">Web Playground</a> • <a href="https://github.com/MrYamiTsu/Kuroba">GitHub Repository</a></p>
+  </footer>
+
+  <!-- Documentation Enhancements: Code Actions, Copy Buttons, Playground Link, ScrollSpy -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Live Filter Search
+      const searchInput = document.getElementById('docs-search-input');
+      const navLinks = document.querySelectorAll('.docs-item-link');
+      
+      searchInput.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        navLinks.forEach(link => {
+          link.style.display = link.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+        });
+      });
+
+      // 2. Wrap all code blocks with Action Bar (Copy + Run in Playground)
+      document.querySelectorAll('pre code').forEach((codeBlock) => {
+        const pre = codeBlock.parentElement;
+        const rawCode = codeBlock.textContent.trim();
+
+        // Create card container
+        const card = document.createElement('div');
+        card.className = 'doc-code-card';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'doc-code-header';
+
+        const title = document.createElement('div');
+        title.className = 'doc-code-title';
+        title.innerHTML = '<span class="badge-dot"></span><span>kuroba</span>';
+
+        const actions = document.createElement('div');
+        actions.className = 'doc-code-actions';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'doc-btn-copy';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(rawCode).then(() => {
+            copyBtn.textContent = '✓ Copied';
+            setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1800);
+          });
+        });
+
+        const runLink = document.createElement('a');
+        runLink.className = 'doc-btn-run';
+        runLink.textContent = 'Run in Playground ↗';
+        runLink.href = `playground.html?code=${encodeURIComponent(rawCode)}`;
+
+        actions.appendChild(copyBtn);
+        actions.appendChild(runLink);
+        header.appendChild(title);
+        header.appendChild(actions);
+
+        // Replace pre with card containing header + pre
+        pre.parentNode.insertBefore(card, pre);
+        card.appendChild(header);
+        pre.classList.add('doc-code-pre');
+        card.appendChild(pre);
+      });
+
+      // 3. ScrollSpy: Highlight active section in sidebar during scroll
+      const sections = document.querySelectorAll('main.docs-article-body section');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            navLinks.forEach(link => {
+              link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+            });
+          }
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+
+      sections.forEach(sec => observer.observe(sec));
+    });
+  </script>
+</body>
+</html>

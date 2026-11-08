@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Playground — Kuroba</title>
+  <link rel="icon" type="image/png" href="assets/kuroba.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="ide-body">
+
+  <!-- ========================================================================
+       Header / Navigation Bar
+       ======================================================================== -->
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
+      <span class="brand-name">Kuroba</span>
+      <span class="version-badge">v1.0.5</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="docs.html" class="nav-link">Documentation</a>
+      <a href="playground.html" class="nav-link active">Playground ▶</a>
+      <a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer" class="nav-link">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <!-- ========================================================================
+       Playground Fullscreen Interface (Editor 50% | Terminal 50%)
+       ======================================================================== -->
+  <main class="playground-fullscreen">
+    
+    <!-- Left Panel: Code Editor -->
+    <div class="ide-panel ide-panel-editor">
+      <div class="ide-toolbar">
+        <div class="ide-toolbar-left">
+          <span class="ide-toolbar-title">Editor</span>
+          <span class="ide-file-badge">main.krb</span>
+          <select class="ide-select" id="select-sample">
+            <option value="hello">Example: Hello Kuroba</option>
+            <option value="strings">Example: Strings &amp; Text Processing</option>
+            <option value="math_time">Example: Math &amp; Stopwatch Timer</option>
+            <option value="io">Example: Disk Persistence (Std.IO)</option>
+            <option value="collections">Example: Typed Collections &amp; Tables</option>
+            <option value="hooks">Example: Native Interception Hooks</option>
+            <option value="game">Example: Tactical Combat RPG</option>
+          </select>
+        </div>
+
+        <div class="ide-toolbar-right">
+          <button class="ide-btn" id="btn-clear-editor" title="Clear editor content">Clear</button>
+          <button class="ide-btn ide-btn-run" id="btn-execute" title="Execute script (Ctrl + Enter)">Run ▶</button>
+        </div>
+      </div>
+
+      <!-- Editor Body with Synchronized Line Numbers -->
+      <div class="ide-editor-container">
+        <div class="ide-line-numbers" id="ide-gutter"></div>
+        <textarea class="ide-textarea" id="ide-editor" spellcheck="false" placeholder="Write Kuroba (.krb) code here..."></textarea>
+      </div>
+
+      <!-- Bottom Status Bar -->
+      <div class="ide-statusbar">
+        <span class="ide-status-item">
+          <span class="status-indicator">●</span> Vanilla JS AST Engine
+        </span>
+        <span class="ide-status-item" id="status-cursor">Ln 1, Col 1</span>
+        <span class="ide-status-item ide-shortcuts-hint">[Ctrl+Enter] Run &nbsp;•&nbsp; [Ctrl+L] Clear</span>
+      </div>
+    </div>
+
+    <!-- Right Panel: Virtual Terminal in Deep Canopy Green (#083305) -->
+    <div class="ide-panel ide-panel-terminal">
+      <div class="ide-toolbar">
+        <div class="ide-toolbar-left">
+          <span class="ide-toolbar-title">Virtual Terminal</span>
+          <span id="timing-badge" class="ide-timing-badge" style="display: none;">• 0.0 ms</span>
+        </div>
+
+        <div class="ide-toolbar-right">
+          <button class="ide-btn" id="btn-clear-term" title="Clear console output">Clear Console</button>
+        </div>
+      </div>
+
+      <div class="ide-terminal-area" id="terminal-screen">
+        <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.5</div>
+        <div class="term-line sys">Pure JavaScript AST Interpreter • Zero Dependencies • Deterministic Execution</div>
+        <div class="term-line sys">Type your code on the left and click [Run ▶] or press [Ctrl + Enter].</div>
+        <div class="term-line sys">--------------------------------------------------------------------------------</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Kuroba Web Engine and Controller Scripts -->
+  <script src="js/kuroba-web.js"></script>
+  <script src="js/playground.js"></script>
+</body>
+</html>

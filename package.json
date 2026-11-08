@@ -10,7 +10,8 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node index.js main.krb"
+    "test": "node index.js main.krb",
+    "build:web": "node tools/bundle-web.js"
   },
   "keywords": [
     "kuroba",
