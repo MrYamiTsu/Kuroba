@@ -44,6 +44,15 @@
         throw new Error(msg);
     }
 
+    function printException(msg) {
+        if (activeErrorHandler) {
+            activeErrorHandler(msg, true);
+        } else {
+            console.error(msg);
+        }
+        throw new Error(msg);
+    }
+
     // =========================================================================
     // 1. LEXER
     // =========================================================================
@@ -79,6 +88,7 @@ const KEYWORDS = {
   clear: { type: "CLEAR", value: "clear" },
   exit: { type: "EXIT", value: "exit" },
   kill: { type: "KILL", value: "kill" },
+  throw: { type: "THROW", value: "throw" },
   function: { type: "FUNCTION", value: "function" },
   return: { type: "RETURN", value: "return" },
   hook: { type: "HOOK", value: "hook" },
@@ -1393,6 +1403,10 @@ function parse(tokens) {
             let varName = consume('IDENTIFIER', "Expected variable name after 'kill'.").value;
             
             stmt = { type: 'KillStatement', name: varName, line: startToken.line, col: startToken.col };
+        } else if (match('THROW')) {
+            let startToken = previous();
+            let value = parseLogicOr();
+            stmt = { type: 'ThrowStatement', value, line: startToken.line, col: startToken.col };
         } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'LBRACKET') {
             let varName = advance().value;
             advance();
@@ -2403,6 +2417,41 @@ function evalForIn(node, env) {
     }
 }
 
+function evalThrow(node, env) {
+    let rawVal = evaluate(node.value, env);
+
+    let name = "Exception";
+    let showLines = true;
+    let code = null;
+    let context = null;
+
+    if (rawVal && rawVal.kind === 'Table' && rawVal.fields) {
+        if ('exName' in rawVal.fields && rawVal.fields.exName.value !== null) {
+            name = String(rawVal.fields.exName.value);
+        }
+        if ('exLines' in rawVal.fields) {
+            let lVal = rawVal.fields.exLines.value;
+            showLines = (lVal !== false && lVal !== 0);
+        }
+        if ('exCode' in rawVal.fields && rawVal.fields.exCode.value !== null) {
+            code = rawVal.fields.exCode.value;
+        }
+        if ('exContext' in rawVal.fields && rawVal.fields.exContext.value !== null) {
+            context = String(rawVal.fields.exContext.value);
+        }
+    }
+
+    let loc = (node.line !== undefined) ? `Line ${node.line}, Col ${node.col}` : null;
+    let header = `[${name}${showLines && loc ? ': ' + loc : ''}]`;
+
+    let desc = (context !== null) ? context : formatKurobaValue(rawVal);
+    if (code !== null) {
+        desc = `Error ${code}: ${desc}`;
+    }
+
+    printException(`${header} ${desc}`);
+}
+
 
 
 
@@ -2739,6 +2788,7 @@ function evaluate(node, env = createScope()) {
         case 'CopyExpression':      return evalCopy(node, env);
         case 'ClearStatement':      return evalClear(node, env);
         case 'ExitStatement':       return evalExit(node, env);
+        case 'ThrowStatement':      return evalThrow(node, env);
         case 'MathExpression':      return evalMath(node, env);
         case 'UnaryExpression':     return evalUnary(node, env);
         case 'LogicalExpression':   return evalLogical(node, env);

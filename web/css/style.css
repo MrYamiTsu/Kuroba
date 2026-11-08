@@ -736,6 +736,18 @@ nav.main-nav {
   border: 1px solid #281F3B;
 }
 
+.docs-article-body h1 code,
+.docs-article-body h2 code,
+.docs-article-body h3 code,
+.docs-article-body h4 code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-family: var(--font-mono) !important;
+  color: var(--text-sand) !important;
+  font-size: inherit !important;
+}
+
 .docs-article-body pre code,
 .doc-code-card pre code {
   background: transparent !important;
@@ -1075,6 +1087,11 @@ nav.main-nav {
 
 .term-line.err {
   color: #FF6B6B;
+  font-weight: 600;
+}
+
+.term-line.exc {
+  color: #FF5500;
   font-weight: 600;
 }
 

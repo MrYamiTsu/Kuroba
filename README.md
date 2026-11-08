@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/kuroba.png" alt="Kuroba Logo" width="120" />
+<img src="web/assets/kuroba.png" alt="Kuroba Logo" width="120" />
 
 # Kuroba — KRB
 

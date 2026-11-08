@@ -30,6 +30,7 @@ const KEYWORDS = {
   clear: { type: "CLEAR", value: "clear" },
   exit: { type: "EXIT", value: "exit" },
   kill: { type: "KILL", value: "kill" },
+  throw: { type: "THROW", value: "throw" },
   function: { type: "FUNCTION", value: "function" },
   return: { type: "RETURN", value: "return" },
   hook: { type: "HOOK", value: "hook" },

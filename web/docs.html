@@ -54,6 +54,7 @@
         <a href="#types" class="docs-item-link">Type System &amp; Non-Nullability</a>
         <a href="#operators" class="docs-item-link">Operators &amp; Precedence Table</a>
         <a href="#control" class="docs-item-link">Control Flow &amp; Pattern Match</a>
+        <a href="#exceptions" class="docs-item-link">Exceptions (`throw`)</a>
         <a href="#io-primitives" class="docs-item-link">Console I/O (`paste`, `copyKey`)</a>
         <a href="#collections" class="docs-item-link">Typed Collections (List, Stack, Queue, Table)</a>
         <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
@@ -93,7 +94,7 @@ node index.js main.krb</code></pre>
            ==================================================================== -->
       <section id="cli">
         <h2>CLI &amp; Command-Line Arguments</h2>
-        <p>Kuroba automatically parses and injects all trailing parameters into the global scope as an immutable <code>List&lt;String&gt;</code> accessible through either <code>args</code> or <code>Std.Sys.args</code>:</p>
+        <p>Kuroba automatically parses and injects all trailing parameters into the global scope as an immutable <code>List&lt;String&gt;</code> accessible through <code>args</code>:</p>
         <pre><code class="language-kuroba">node index.js script.krb --host 127.0.0.1 --port 8080 --verbose</code></pre>
 
         <h3>Processing Arguments in Kuroba</h3>
@@ -362,11 +363,6 @@ pasteLn(b); ~~ 10</code></pre>
         <pre><code class="language-kuroba">ivar hero = "Kenji";
 ivar hp = 85;
 pasteLn(~"Hero: {hero} | Health: {hp}/100 | Boosted: {hp + 15}");</code></pre>
-
-        <h3>Bitwise Operators (<code>&amp;</code>, <code>|</code>, <code>^</code>, <code>&lt;&lt;</code>, <code>&gt;&gt;</code>)</h3>
-        <pre><code class="language-kuroba">ivar flags = 1 | 2 | 4;   ~~ 7 (Bitwise OR)
-ivar masked = flags & 2;  ~~ 2 (Bitwise AND)
-ivar shifted = 1 << 3;    ~~ 8 (Bitwise Left Shift)</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -442,6 +438,85 @@ end</code></pre>
         <h3>Inline Guards &amp; Termination (<code>exit</code>)</h3>
         <pre><code class="language-kuroba">exit();          ~~ Exits immediately with code 0
 exit(score < 0); ~~ Inline guard clause: exits only if condition evaluates to true</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Exceptions & Error Raising (throw)
+           ==================================================================== -->
+      <section id="exceptions">
+        <h2>Exceptions &amp; Error Raising (<code>throw</code>)</h2>
+        <p>The <code>throw &lt;expression&gt;;</code> statement halts execution immediately, displays a distinct vermilion / orange-red diagnostic (ANSI <code>\x1b[38;2;255;85;0m</code> / <code>#FF5500</code>), and exits the process with status code <code>1</code>.</p>
+
+        <h3>1. Throwing Primitives &amp; Values</h3>
+        <p>Any Kuroba expression can be thrown directly:</p>
+        <pre><code class="language-kuroba">~~ Throwing a String
+throw "Invalid user credentials";
+~~ Output: [Exception: Line 2, Col 1] Invalid user credentials
+
+~~ Throwing an HTTP status code
+throw 404;
+~~ Output: [Exception: Line 6, Col 1] 404</code></pre>
+
+        <h3>2. Structured Exception Tables</h3>
+        <p>When throwing a <code>Table</code>, Kuroba recognizes special metadata fields to format the diagnostic output with precision:</p>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Default</th>
+              <th>Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>exName</code></td>
+              <td><code>String</code></td>
+              <td><code>"Exception"</code></td>
+              <td>Replaces the bracketed header name (e.g. <code>[AuthError]</code> instead of <code>[Exception]</code>).</td>
+            </tr>
+            <tr>
+              <td><code>exLines</code></td>
+              <td><code>Bool</code></td>
+              <td><code>TRUE</code></td>
+              <td>When <code>FALSE</code>, suppresses line and column numbers from the header.</td>
+            </tr>
+            <tr>
+              <td><code>exCode</code></td>
+              <td><code>Int / String</code></td>
+              <td><code>NULL</code></td>
+              <td>Prefixes the diagnostic message with <code>Error &lt;exCode&gt;: </code>.</td>
+            </tr>
+            <tr>
+              <td><code>exContext</code></td>
+              <td><code>String</code></td>
+              <td><code>NULL</code></td>
+              <td>Sets the error description body, replacing default table serialization.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Examples of Structured Exceptions</h3>
+        <pre><code class="language-kuroba">~~ Custom name, HTTP code, and description
+throw {
+    exName: "AccessDenied",
+    exCode: 403,
+    exContext: "Root privileges required for this operation"
+};
+~~ Output: [AccessDenied: Line 2, Col 1] Error 403: Root privileges required for this operation
+
+~~ Suppressing line tracking for clean CLI alerts
+throw {
+    exName: "SecurityPanic",
+    exLines: FALSE,
+    exContext: "Immediate intrusion alert detected"
+};
+~~ Output: [SecurityPanic] Immediate intrusion alert detected
+
+~~ Code without context (formats the table data)
+throw { exCode: 404, route: "/api/v1/users" };
+~~ Output: [Exception: Line 13, Col 1] Error 404: { route: "/api/v1/users", exCode: 404 }</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -594,19 +669,6 @@ hook processPayment(ivar amount, ivar fee) then
 end
 
 ivar invoice = processPayment(250, 15);</code></pre>
-
-        <h3>Hooking Table Methods</h3>
-        <pre><code class="language-kuroba">ivar Game = {
-    start: function ~(ivar self) then
-        return { running: TRUE };
-    end
-};
-
-hook Game["start"](ivar self) then
-    ivar state = this(self);
-    state["godMode"] = TRUE;
-    return state;
-end</code></pre>
       </section>
 
       <!-- ====================================================================

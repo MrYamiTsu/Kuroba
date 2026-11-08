@@ -39,6 +39,7 @@ function evaluate(node, env = createScope()) {
         case 'CopyExpression':      return evalCopy(node, env);
         case 'ClearStatement':      return evalClear(node, env);
         case 'ExitStatement':       return evalExit(node, env);
+        case 'ThrowStatement':      return evalThrow(node, env);
         case 'MathExpression':      return evalMath(node, env);
         case 'UnaryExpression':     return evalUnary(node, env);
         case 'LogicalExpression':   return evalLogical(node, env);
@@ -63,7 +64,7 @@ module.exports = { evaluate };
 
 const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap, evalKill } = require('./variables');
 const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalPropertyAssign, evalMethodCall, evalTableLiteral } = require('./collections');
-const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn } = require('./control');
+const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow } = require('./control');
 const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical } = require('./operations');
 const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');

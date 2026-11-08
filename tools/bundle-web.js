@@ -52,6 +52,15 @@ const bundleCode = `/**
         throw new Error(msg);
     }
 
+    function printException(msg) {
+        if (activeErrorHandler) {
+            activeErrorHandler(msg, true);
+        } else {
+            console.error(msg);
+        }
+        throw new Error(msg);
+    }
+
     // =========================================================================
     // 1. LEXER
     // =========================================================================

@@ -216,6 +216,7 @@ end`
     const timeStr = now.toTimeString().split(' ')[0];
     printTerminal(`[${timeStr}] kuroba@runtime:~$ run main.krb`, "sys");
     const t0 = performance.now();
+    let hasEncounteredError = false;
 
     try {
       if (typeof window.Kuroba === 'undefined' || typeof window.Kuroba.run !== 'function') {
@@ -226,8 +227,9 @@ end`
         onPrint: (txt, newLine) => {
           printTerminal(txt, 'out');
         },
-        onError: (err) => {
-          printTerminal(err, 'err');
+        onError: (err, isException) => {
+          hasEncounteredError = true;
+          printTerminal(err, isException ? 'exc' : 'err');
         },
         onClear: () => {
           clearTerminal();
@@ -245,7 +247,9 @@ end`
       const elapsed = (t1 - t0).toFixed(1);
       timingBadge.textContent = `• ${elapsed} ms`;
       timingBadge.style.display = 'inline';
-      printTerminal(e.message || String(e), 'err');
+      if (!hasEncounteredError) {
+        printTerminal(e.message || String(e), 'err');
+      }
     }
   }
 

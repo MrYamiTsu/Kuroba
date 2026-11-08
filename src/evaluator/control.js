@@ -1,5 +1,5 @@
-const { isTruthy, getType } = require('./types');
-const { printErr } = require('../errors');
+const { isTruthy, getType, formatKurobaValue } = require('./types');
+const { printErr, printException } = require('../errors');
 const { createScope } = require('./scope');
 const { evaluate } = require('./index');
 
@@ -141,5 +141,40 @@ function evalForIn(node, env) {
     }
 }
 
-module.exports = { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn };
+function evalThrow(node, env) {
+    let rawVal = evaluate(node.value, env);
+
+    let name = "Exception";
+    let showLines = true;
+    let code = null;
+    let context = null;
+
+    if (rawVal && rawVal.kind === 'Table' && rawVal.fields) {
+        if ('exName' in rawVal.fields && rawVal.fields.exName.value !== null) {
+            name = String(rawVal.fields.exName.value);
+        }
+        if ('exLines' in rawVal.fields) {
+            let lVal = rawVal.fields.exLines.value;
+            showLines = (lVal !== false && lVal !== 0);
+        }
+        if ('exCode' in rawVal.fields && rawVal.fields.exCode.value !== null) {
+            code = rawVal.fields.exCode.value;
+        }
+        if ('exContext' in rawVal.fields && rawVal.fields.exContext.value !== null) {
+            context = String(rawVal.fields.exContext.value);
+        }
+    }
+
+    let loc = (node.line !== undefined) ? `Line ${node.line}, Col ${node.col}` : null;
+    let header = `[${name}${showLines && loc ? ': ' + loc : ''}]`;
+
+    let desc = (context !== null) ? context : formatKurobaValue(rawVal);
+    if (code !== null) {
+        desc = `Error ${code}: ${desc}`;
+    }
+
+    printException(`${header} ${desc}`);
+}
+
+module.exports = { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow };
 
