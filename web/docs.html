@@ -388,18 +388,18 @@ if running then ~~ Single variable checks do not require parentheses
     pasteLn("System operational.");
 end</code></pre>
 
-        <h3>Pattern Matching &amp; Redirect Rule (<code>given / case: / end</code>)</h3>
-        <p>Branch selector matching a target value against <code>case:</code> options. Kuroba implements a unique <strong>Redirect Rule</strong>: if <code>break;</code> is omitted, execution does not bleed into subsequent cases — it redirects straight to the default <code>case: ~</code> fallback branch:</p>
+        <h3>Pattern Matching &amp; Redirect Rule (<code>given / case ... then / end</code>)</h3>
+        <p>Branch selector matching a target value against <code>case ... then</code> options. Kuroba implements a unique <strong>Redirect Rule</strong>: if <code>break;</code> is omitted, execution does not bleed into subsequent cases — it redirects straight to the default <code>case ~ then</code> fallback branch:</p>
         <pre><code class="language-kuroba">ivar role = "admin";
 
 given role then
-    case: "user"
+    case "user" then
         pasteLn("Standard user dashboard");
         break;
-    case: "admin"
+    case "admin" then
         pasteLn("Full administrative privileges");
         break;
-    case: ~
+    case ~ then
         pasteLn("Unknown role; access restricted.");
 end</code></pre>
 

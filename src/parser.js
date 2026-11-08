@@ -484,7 +484,6 @@ function parse(tokens) {
 
         while (!check('END') && !isAtEnd()) {
             consume('CASE', "Expected 'case' in 'given' block.");
-            consume('COLON', "Expected ':' after 'case'.");
 
             let isDefault = false;
             let caseValue = null;
@@ -494,6 +493,8 @@ function parse(tokens) {
             } else {
                 caseValue = parseEquality();
             }
+
+            consume('THEN', "Expected 'then' after case condition.");
 
             let caseBody = [];
             while (!check('CASE') && !check('END') && !isAtEnd()) {
