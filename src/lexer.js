@@ -37,7 +37,10 @@ const KEYWORDS = {
   this: { type: "THIS", value: "this" },
   import: { type: "IMPORT", value: "import" },
   alias:  { type: "ALIAS",  value: "alias" },
-  namespace: { type: "NAMESPACE", value: "namespace" }
+  namespace: { type: "NAMESPACE", value: "namespace" },
+  try: { type: "TRY", value: "try"},
+  catch: { type: "CATCH", value: "catch"},
+  finally: { type: "FINALLY", value: "finally"},
 };
 
 const SYMBOLS = {

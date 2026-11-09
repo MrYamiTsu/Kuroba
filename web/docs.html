@@ -54,7 +54,7 @@
         <a href="#types" class="docs-item-link">Type System &amp; Non-Nullability</a>
         <a href="#operators" class="docs-item-link">Operators &amp; Precedence Table</a>
         <a href="#control" class="docs-item-link">Control Flow &amp; Pattern Match</a>
-        <a href="#exceptions" class="docs-item-link">Exceptions (`throw`)</a>
+        <a href="#exceptions" class="docs-item-link">Exceptions (`throw`, `try / catch`)</a>
         <a href="#io-primitives" class="docs-item-link">Console I/O (`paste`, `copyKey`)</a>
         <a href="#collections" class="docs-item-link">Typed Collections (List, Stack, Queue, Table)</a>
         <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
@@ -441,11 +441,11 @@ exit(score < 0); ~~ Inline guard clause: exits only if condition evaluates to tr
       </section>
 
       <!-- ====================================================================
-           Section : Exceptions & Error Raising (throw)
+           Section : Exceptions & Error Handling (throw, try / catch)
            ==================================================================== -->
       <section id="exceptions">
-        <h2>Exceptions &amp; Error Raising (<code>throw</code>)</h2>
-        <p>The <code>throw &lt;expression&gt;;</code> statement halts execution immediately, displays a distinct vermilion / orange-red diagnostic (ANSI <code>\x1b[38;2;255;85;0m</code> / <code>#FF5500</code>), and exits the process with status code <code>1</code>.</p>
+        <h2>Exceptions &amp; Error Handling (<code>throw</code>, <code>try / catch</code>)</h2>
+        <p>The <code>throw &lt;expression&gt;;</code> statement halts execution immediately, displays a distinct vermilion / orange-red diagnostic (ANSI <code>\x1b[38;2;255;85;0m</code> / <code>#FF5500</code>), and exits the process with status code <code>1</code> when uncaught. To safely intercept errors at runtime, Kuroba provides the <code>try ... catch (ivar e) ... finally ... end</code> construct.</p>
 
         <h3>1. Throwing Primitives &amp; Values</h3>
         <p>Any Kuroba expression can be thrown directly:</p>
@@ -517,6 +517,36 @@ throw {
 ~~ Code without context (formats the table data)
 throw { exCode: 404, route: "/api/v1/users" };
 ~~ Output: [Exception: Line 13, Col 1] Error 404: { route: "/api/v1/users", exCode: 404 }</code></pre>
+
+        <h3>3. Exception Handling (<code>try ... catch (ivar e) ... finally ... end</code>)</h3>
+        <p>The <code>try</code> block wraps guarded operations. The trailing <code>then</code> keyword is optional across all clauses (<code>try</code> or <code>try then</code>, <code>catch (ivar e)</code> or <code>catch (ivar e) then</code>, <code>finally</code> or <code>finally then</code>):</p>
+
+        <pre><code class="language-kuroba">try
+    pasteLn("1. Attempting secure transaction...");
+    throw {
+        exName: "PaymentError",
+        exContext: "Insufficient account balance"
+    };
+catch (ivar err) then
+    pasteLn("2. Caught exception: " + err.exName);
+    pasteLn("   Reason: " + err.exContext);
+finally
+    pasteLn("3. Transaction session closed.");
+end</code></pre>
+
+        <h3>4. Intercepting Native Runtime Errors</h3>
+        <p>Kuroba's <code>try / catch</code> seamlessly captures built-in runtime failures (such as division by zero, missing files, or out-of-bounds indexing) and transforms them into structured tables with <code>exName</code> and <code>exContext</code> fields:</p>
+
+        <pre><code class="language-kuroba">try
+    ~~ Trigger a division by zero error
+    ivar result = 100 / 0;
+catch (ivar e) then
+    pasteLn("Error intercepted: " + e.exName);
+    pasteLn("Details: " + e.exContext);
+end
+~~ Output:
+~~ Error intercepted: MathError
+~~ Details: Division by zero is undefined.</code></pre>
       </section>
 
       <!-- ====================================================================

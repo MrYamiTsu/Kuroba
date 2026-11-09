@@ -43,7 +43,32 @@ const bundleCode = `/**
     let activeErrorHandler = (err) => { throw new Error(err); };
     let activeClearHandler = () => {};
 
+    let tryDepth = 0;
+    function pushTryContext() { tryDepth++; }
+    function popTryContext() { tryDepth--; }
+    function isInsideTry() { return tryDepth > 0; }
+
+    class KurobaUserException extends Error {
+        constructor(value, formattedMsg) {
+            super(formattedMsg);
+            this.isKurobaUserException = true;
+            this.value = value;
+            this.formattedMsg = formattedMsg;
+        }
+    }
+
+    class KurobaRuntimeError extends Error {
+        constructor(message) {
+            super(message);
+            this.isKurobaRuntimeError = true;
+            this.message = message;
+        }
+    }
+
     function printErr(msg) {
+        if (tryDepth > 0) {
+            throw new KurobaRuntimeError(msg);
+        }
         if (activeErrorHandler) {
             activeErrorHandler(msg);
         } else {

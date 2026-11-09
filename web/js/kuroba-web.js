@@ -35,7 +35,32 @@
     let activeErrorHandler = (err) => { throw new Error(err); };
     let activeClearHandler = () => {};
 
+    let tryDepth = 0;
+    function pushTryContext() { tryDepth++; }
+    function popTryContext() { tryDepth--; }
+    function isInsideTry() { return tryDepth > 0; }
+
+    class KurobaUserException extends Error {
+        constructor(value, formattedMsg) {
+            super(formattedMsg);
+            this.isKurobaUserException = true;
+            this.value = value;
+            this.formattedMsg = formattedMsg;
+        }
+    }
+
+    class KurobaRuntimeError extends Error {
+        constructor(message) {
+            super(message);
+            this.isKurobaRuntimeError = true;
+            this.message = message;
+        }
+    }
+
     function printErr(msg) {
+        if (tryDepth > 0) {
+            throw new KurobaRuntimeError(msg);
+        }
         if (activeErrorHandler) {
             activeErrorHandler(msg);
         } else {
@@ -95,7 +120,10 @@ const KEYWORDS = {
   this: { type: "THIS", value: "this" },
   import: { type: "IMPORT", value: "import" },
   alias:  { type: "ALIAS",  value: "alias" },
-  namespace: { type: "NAMESPACE", value: "namespace" }
+  namespace: { type: "NAMESPACE", value: "namespace" },
+  try: { type: "TRY", value: "try"},
+  catch: { type: "CATCH", value: "catch"},
+  finally: { type: "FINALLY", value: "finally"},
 };
 
 const SYMBOLS = {
@@ -1264,6 +1292,58 @@ function parse(tokens) {
         };
     }
 
+    function parseTryStatement() {
+        let startToken = previous();
+        match('THEN');
+
+        let tryBlock = [];
+        while (!check('CATCH') && !check('FINALLY') && !check('END') && !isAtEnd()) {
+            tryBlock.push(parseStatement());
+        }
+
+        let catchVar = null;
+        let catchBlock = null;
+
+        if (match('CATCH')) {
+            consume('LPAREN', "Expected '(' after 'catch'.");
+            consume('IVAR', "Expected 'ivar' in catch parameter.");
+            catchVar = consume('IDENTIFIER', "Expected variable name after 'ivar' in catch.").value;
+            consume('RPAREN', "Expected ')' after catch parameter.");
+            match('THEN');
+
+            catchBlock = [];
+            while (!check('FINALLY') && !check('END') && !isAtEnd()) {
+                catchBlock.push(parseStatement());
+            }
+        }
+
+        let finallyBlock = null;
+        if (match('FINALLY')) {
+            match('THEN');
+
+            finallyBlock = [];
+            while (!check('END') && !isAtEnd()) {
+                finallyBlock.push(parseStatement());
+            }
+        }
+
+        if (!catchBlock && !finallyBlock) {
+            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] 'try' block must contain at least a 'catch' or 'finally' clause.`);
+        }
+
+        consume('END', "Unclosed 'try' block. Expected 'end'.");
+
+        return {
+            type: 'TryStatement',
+            tryBlock,
+            catchVar,
+            catchBlock,
+            finallyBlock,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
     function parseAssignSuffix(targetDesc) {
         if (match('INCREMENT')) return { value: 1, operator: '+' };
         if (match('DECREMENT')) return { value: 1, operator: '-' };
@@ -1285,7 +1365,8 @@ function parse(tokens) {
         if (match('DO'))       return parseDoWhileStatement();
         if (match('FUNCTION')) return parseFunctionDeclaration(false);
         if (match('HOOK'))     return parseHookStatement();
-
+        if (match('TRY'))      return parseTryStatement();
+        
         if (match('IVAR', 'ICONST')) {
             stmt = parseVarDeclaration();
         } else if (match('RETURN')) {
@@ -2450,10 +2531,74 @@ function evalThrow(node, env) {
         desc = `Error ${code}: ${desc}`;
     }
 
-    printException(`${header} ${desc}`);
+    let formattedMsg = `${header} ${desc}`;
+    if (isInsideTry()) {
+        throw new KurobaUserException(rawVal, formattedMsg);
+    }
+    printException(formattedMsg);
 }
 
+function evalTry(node, env) {
+    let tryEnv = createScope(env);
+    let caughtValue = null;
+    let hasError = false;
+    let blockResult = null;
+    let unhandledError = null;
 
+    pushTryContext();
+    try {
+        blockResult = executeBlock(node.tryBlock, tryEnv);
+    } catch (err) {
+        hasError = true;
+        if (err && err.isKurobaUserException) {
+            caughtValue = err.value;
+        } else if (err && err.isKurobaRuntimeError) {
+            caughtValue = parseRuntimeErrorToTable(err.message);
+        } else {
+            unhandledError = err;
+        }
+    } finally {
+        popTryContext();
+    }
+
+    if (unhandledError) throw unhandledError;
+
+    if (hasError && node.catchBlock) {
+        let catchEnv = createScope(env);
+        if (node.catchVar) {
+            catchEnv.values[node.catchVar] = {
+                value: caughtValue,
+                type: getType(caughtValue),
+                isConst: false,
+                isNullable: true
+            };
+        }
+        blockResult = executeBlock(node.catchBlock, catchEnv);
+    }
+
+    if (node.finallyBlock) {
+        let finallyEnv = createScope(env);
+        let finRes = executeBlock(node.finallyBlock, finallyEnv);
+        if (finRes && (finRes.isReturn || finRes.isBreak || finRes.isSkip)) {
+            blockResult = finRes;
+        }
+    }
+
+    return blockResult;
+}
+
+function parseRuntimeErrorToTable(message) {
+    let match = message.match(/^\[([a-zA-Z]+)(?::\s*Line\s*(\d+),\s*Col\s*(\d+))?\]\s*(.*)$/s);
+    let name = match ? match[1] : "RuntimeError";
+    let context = match ? match[4] : message;
+    return {
+        kind: 'Table',
+        fields: {
+            exName: { value: name, type: 'String', isNullable: false },
+            exContext: { value: context, type: 'String', isNullable: false }
+        }
+    };
+}
 
 
 
@@ -2805,6 +2950,7 @@ function evaluate(node, env = createScope()) {
         case 'CallExpression':      return evalCall(node, env);
         case 'HookStatement':       return evalHook(node, env);
         case 'ImportStatement':     return evalImport(node, env);
+        case 'TryStatement':        return evalTry(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }

@@ -66,7 +66,7 @@ Atomic in-place variable swap (`a <-> b;`) enforcing type equality, immutability
 
 ### Expressive Control Flow
 
-Clean block boundaries (`end`), multi-branch pattern matching (`given / case:`), and inline conditional guard clauses (`exit(cond);`).
+Clean block boundaries (`end`), multi-branch pattern matching (`given / case ... then`), robust exception handling (`try / catch / finally`), and inline conditional guard clauses (`exit(cond);`).
 
 </td>
 </tr>
@@ -116,11 +116,20 @@ end
 
 ~~ Pattern matching with automatic fallback redirection
 given username then
-    case: "admin"
+    case "admin" then
         paste("Access Granted");
         break;
-    case: ~
+    case ~ then
         paste("Welcome Guest: " + username);
+end
+
+~~ Exception handling with structured recovery
+try
+    ivar res = 100 / 0;
+catch (ivar err) then
+    pasteLn("Intercepted: " + err.exName);
+finally
+    pasteLn("Execution restored.");
 end
 ```
 
@@ -200,12 +209,13 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Collection Iteration**        | `for (item in list)`<br/>`for (i, item in list)`<br/>`for (k, v in table)` | Unified iteration without variable declaration boilerplate. Seamlessly supports `List`, `Stack`, `Queue`, and `Table`.    |
 | **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                       |
 | **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                             |
-| **Pattern Match Fallback**      | `case: ~`                                                                  | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`.                                   |
+| **Pattern Match Fallback**      | `case ~ then`                                                              | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                            |
+| **Exception Handling**          | `throw <expr>;`<br/>`try ... catch (ivar e) ... finally ... end`           | Uncaught throws exit with vermilion diagnostic `#FF5500`. Try/catch safely traps user throws and native runtime errors.   |
 | **Explicit Destruction**        | `kill variable;`                                                           | Explicit variable destruction from active scope with strict declaration checks and constant protection.                   |
 | **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                              | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                         |
 | **Native Interception (Hooks)** | `hook f(x) then ... end`                                                   | Transparent native monkey-patching with original function delegation via `this(...)`.                                     |
 | **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.            |
-| **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                 |
+| **Native CLI Arguments**        | `args`                                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                 |
 
 > Looking for the complete language specification and cheatsheet? **[Browse the Official Web Documentation](https://mryamitsu.github.io/Kuroba/docs.html)** or test snippets directly in the **[Interactive Live Playground](https://mryamitsu.github.io/Kuroba/playground.html)**.
 
@@ -355,7 +365,11 @@ Kuroba/
   - [x] Responsive, artisanal web documentation replacing repository markdown
   - [x] Client-side zero-install in-browser AST code runner & virtual terminal
   - [x] Strict 5-color palette, zero external npm dependencies
-- [ ] Exception throwing and handling (`throw`, `try / catch(err) / finally / end`)
+- [x] Exception throwing and handling (`throw`, `try / catch(ivar e) / finally / end`):
+  - [x] Distinct vermilion / orange-red diagnostics (`#FF5500`) with line/col reporting
+  - [x] Structured exception metadata tables (`exName`, `exLines`, `exCode`, `exContext`)
+  - [x] Safe runtime error trapping (`MathError`, `TypeError`, `IndexError`, `IOError`) translated to structured tables
+  - [x] Optional `then` keyword across `try`, `catch`, and `finally`
 - [ ] Tail-call safe recursion optimization (`recur(...)` or TCO engine)
 
 ### Phase 7: Object-Oriented Programming `(v1.0.7)`

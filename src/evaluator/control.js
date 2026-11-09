@@ -1,5 +1,5 @@
 const { isTruthy, getType, formatKurobaValue } = require('./types');
-const { printErr, printException } = require('../errors');
+const { printErr, printException, pushTryContext, popTryContext, isInsideTry, KurobaUserException, KurobaRuntimeError } = require('../errors');
 const { createScope } = require('./scope');
 const { evaluate } = require('./index');
 
@@ -173,8 +173,73 @@ function evalThrow(node, env) {
         desc = `Error ${code}: ${desc}`;
     }
 
-    printException(`${header} ${desc}`);
+    let formattedMsg = `${header} ${desc}`;
+    if (isInsideTry()) {
+        throw new KurobaUserException(rawVal, formattedMsg);
+    }
+    printException(formattedMsg);
 }
 
-module.exports = { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow };
+function evalTry(node, env) {
+    let tryEnv = createScope(env);
+    let caughtValue = null;
+    let hasError = false;
+    let blockResult = null;
+    let unhandledError = null;
 
+    pushTryContext();
+    try {
+        blockResult = executeBlock(node.tryBlock, tryEnv);
+    } catch (err) {
+        hasError = true;
+        if (err && err.isKurobaUserException) {
+            caughtValue = err.value;
+        } else if (err && err.isKurobaRuntimeError) {
+            caughtValue = parseRuntimeErrorToTable(err.message);
+        } else {
+            unhandledError = err;
+        }
+    } finally {
+        popTryContext();
+    }
+
+    if (unhandledError) throw unhandledError;
+
+    if (hasError && node.catchBlock) {
+        let catchEnv = createScope(env);
+        if (node.catchVar) {
+            catchEnv.values[node.catchVar] = {
+                value: caughtValue,
+                type: getType(caughtValue),
+                isConst: false,
+                isNullable: true
+            };
+        }
+        blockResult = executeBlock(node.catchBlock, catchEnv);
+    }
+
+    if (node.finallyBlock) {
+        let finallyEnv = createScope(env);
+        let finRes = executeBlock(node.finallyBlock, finallyEnv);
+        if (finRes && (finRes.isReturn || finRes.isBreak || finRes.isSkip)) {
+            blockResult = finRes;
+        }
+    }
+
+    return blockResult;
+}
+
+function parseRuntimeErrorToTable(message) {
+    let match = message.match(/^\[([a-zA-Z]+)(?::\s*Line\s*(\d+),\s*Col\s*(\d+))?\]\s*(.*)$/s);
+    let name = match ? match[1] : "RuntimeError";
+    let context = match ? match[4] : message;
+    return {
+        kind: 'Table',
+        fields: {
+            exName: { value: name, type: 'String', isNullable: false },
+            exContext: { value: context, type: 'String', isNullable: false }
+        }
+    };
+}
+
+module.exports = { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow, evalTry };

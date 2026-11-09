@@ -771,6 +771,58 @@ function parse(tokens) {
         };
     }
 
+    function parseTryStatement() {
+        let startToken = previous();
+        match('THEN');
+
+        let tryBlock = [];
+        while (!check('CATCH') && !check('FINALLY') && !check('END') && !isAtEnd()) {
+            tryBlock.push(parseStatement());
+        }
+
+        let catchVar = null;
+        let catchBlock = null;
+
+        if (match('CATCH')) {
+            consume('LPAREN', "Expected '(' after 'catch'.");
+            consume('IVAR', "Expected 'ivar' in catch parameter.");
+            catchVar = consume('IDENTIFIER', "Expected variable name after 'ivar' in catch.").value;
+            consume('RPAREN', "Expected ')' after catch parameter.");
+            match('THEN');
+
+            catchBlock = [];
+            while (!check('FINALLY') && !check('END') && !isAtEnd()) {
+                catchBlock.push(parseStatement());
+            }
+        }
+
+        let finallyBlock = null;
+        if (match('FINALLY')) {
+            match('THEN');
+
+            finallyBlock = [];
+            while (!check('END') && !isAtEnd()) {
+                finallyBlock.push(parseStatement());
+            }
+        }
+
+        if (!catchBlock && !finallyBlock) {
+            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] 'try' block must contain at least a 'catch' or 'finally' clause.`);
+        }
+
+        consume('END', "Unclosed 'try' block. Expected 'end'.");
+
+        return {
+            type: 'TryStatement',
+            tryBlock,
+            catchVar,
+            catchBlock,
+            finallyBlock,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
     function parseAssignSuffix(targetDesc) {
         if (match('INCREMENT')) return { value: 1, operator: '+' };
         if (match('DECREMENT')) return { value: 1, operator: '-' };
@@ -792,7 +844,8 @@ function parse(tokens) {
         if (match('DO'))       return parseDoWhileStatement();
         if (match('FUNCTION')) return parseFunctionDeclaration(false);
         if (match('HOOK'))     return parseHookStatement();
-
+        if (match('TRY'))      return parseTryStatement();
+        
         if (match('IVAR', 'ICONST')) {
             stmt = parseVarDeclaration();
         } else if (match('RETURN')) {

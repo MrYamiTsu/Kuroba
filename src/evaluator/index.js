@@ -55,6 +55,7 @@ function evaluate(node, env = createScope()) {
         case 'CallExpression':      return evalCall(node, env);
         case 'HookStatement':       return evalHook(node, env);
         case 'ImportStatement':     return evalImport(node, env);
+        case 'TryStatement':        return evalTry(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }
@@ -64,7 +65,7 @@ module.exports = { evaluate };
 
 const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap, evalKill } = require('./variables');
 const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalPropertyAssign, evalMethodCall, evalTableLiteral } = require('./collections');
-const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow } = require('./control');
+const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow, evalTry } = require('./control');
 const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical } = require('./operations');
 const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');
