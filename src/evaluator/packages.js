@@ -4,12 +4,11 @@ const { printErr } = require('../errors');
 const { createScope } = require('./scope');
 const { tokenize } = require('../lexer');
 const { parse } = require('../parser');
-const { evaluate } = require('./index');
 const { natives } = require('../runtime/natives');
 
 const moduleCache = {};
 
-function evaluateNamespaceBody(statements) {
+function evaluateNamespaceBody(statements, evaluate) {
     const moduleScope = createScope();
 
     for (const [name, fn] of Object.entries(natives)) {
@@ -42,7 +41,7 @@ function evaluateNamespaceBody(statements) {
     };
 }
 
-function discoverNamespaceModules(pkgName, dirPath) {
+function discoverNamespaceModules(pkgName, dirPath, evaluate) {
     if (!fs.existsSync(dirPath)) {
         printErr(`[ImportError] Package directory not found: '${dirPath}'.`);
     }
@@ -63,7 +62,7 @@ function discoverNamespaceModules(pkgName, dirPath) {
                 const cacheKey = `${pkgName}:${modName}`;
 
                 if (!moduleCache[cacheKey]) {
-                    moduleCache[cacheKey] = evaluateNamespaceBody(stmt.body);
+                    moduleCache[cacheKey] = evaluateNamespaceBody(stmt.body, evaluate);
                 }
 
                 discovered[modName] = moduleCache[cacheKey];
@@ -74,7 +73,7 @@ function discoverNamespaceModules(pkgName, dirPath) {
     return discovered;
 }
 
-function evalImport(node, env) {
+function evalImport(node, env, evaluate) {
     if (node.package === 'Main') {
         printErr("[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.");
     }
@@ -85,7 +84,7 @@ function evalImport(node, env) {
 
     const stdLibDir = path.join(__dirname, '../../lib/std');
     
-    const availableModules = discoverNamespaceModules(node.package, stdLibDir);
+    const availableModules = discoverNamespaceModules(node.package, stdLibDir, evaluate);
 
     const isFullPackage = !node.modules || node.modules.length === 0;
 

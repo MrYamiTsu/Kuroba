@@ -81,10 +81,8 @@
     // =========================================================================
     // 1. LEXER
     // =========================================================================
-    
-
-// ============================================================================
-// 1. KEYWORDS & SYMBOL DEFINITIONS
+    // ============================================================================
+// Kuroba Lexer: Token Definitions, Keywords & Predicates
 // ============================================================================
 
 const KEYWORDS = {
@@ -119,11 +117,11 @@ const KEYWORDS = {
   hook: { type: "HOOK", value: "hook" },
   this: { type: "THIS", value: "this" },
   import: { type: "IMPORT", value: "import" },
-  alias:  { type: "ALIAS",  value: "alias" },
+  alias: { type: "ALIAS", value: "alias" },
   namespace: { type: "NAMESPACE", value: "namespace" },
-  try: { type: "TRY", value: "try"},
-  catch: { type: "CATCH", value: "catch"},
-  finally: { type: "FINALLY", value: "finally"},
+  try: { type: "TRY", value: "try" },
+  catch: { type: "CATCH", value: "catch" },
+  finally: { type: "FINALLY", value: "finally" }
 };
 
 const SYMBOLS = {
@@ -144,8 +142,18 @@ const SYMBOLS = {
   "}": "RBRACE"
 };
 
+const isDigit = (c) => c >= "0" && c <= "9";
+const isLetter = (c) =>
+  (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
+const isIdentChar = (c) => isLetter(c) || isDigit(c);
+
+
+
+    
+
+
 // ============================================================================
-// 2. TOKENIZER MAIN LOOP
+// Kuroba Lexer: Tokenizer Scanner
 // ============================================================================
 
 function tokenize(input) {
@@ -154,17 +162,10 @@ function tokenize(input) {
   let line = 1;
   let col = 1;
 
-  const isDigit = (c) => c >= "0" && c <= "9";
-  const isLetter = (c) =>
-    (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
-  const isIdentChar = (c) => isLetter(c) || isDigit(c);
-
   while (cursor < input.length) {
     let char = input[cursor];
 
-    // --------------------------------------------------------------------
     // Whitespace & Line tracking
-    // --------------------------------------------------------------------
     if (char === " ") {
       cursor++;
       col++;
@@ -181,9 +182,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // Comments & Tildes
-    // --------------------------------------------------------------------
     if (char === "~") {
       if (input[cursor + 1] === "~") {
         if (input[cursor + 2] === "{" && input[cursor + 3] === "{") {
@@ -270,9 +269,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // String Literals
-    // --------------------------------------------------------------------
     if (char === '"') {
       let startLine = line;
       let startCol = col;
@@ -308,9 +305,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // Numeric Literals
-    // --------------------------------------------------------------------
     if (isDigit(char)) {
       let startLine = line;
       let startCol = col;
@@ -345,9 +340,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // Identifiers & Keywords
-    // --------------------------------------------------------------------
     if (isLetter(char)) {
       let startLine = line;
       let startCol = col;
@@ -378,9 +371,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // Operators & Punctuation
-    // --------------------------------------------------------------------
     if (char === "=") {
       if (input[cursor + 1] === "=") {
         tokens.push({ type: "EQUALS", value: "==", line, col });
@@ -521,7 +512,6 @@ function tokenize(input) {
     // =========================================================================
     
 
-
 const OP_MAP = {
     'PLUSASSIGN': '+',
     'MINUSASSIGN': '-',
@@ -530,74 +520,127 @@ const OP_MAP = {
     'MODULOASSIGN': '%'
 };
 
-function parse(tokens) {
-    let cursor = 0;
+class ParserCursor {
+    constructor(tokens) {
+        this.tokens = tokens;
+        this.cursor = 0;
+    }
 
-    // ========================================================================
-    // 1. TOKEN STREAM CURSOR & MATCHING UTILITIES
-    // ========================================================================
-
-    function formatLocation(token) {
+    formatLocation(token) {
         if (!token) return 'at end of file';
         return `Line ${token.line}, Col ${token.col}`;
     }
 
-    function peek() {
-        return tokens[cursor];
+    peek() {
+        return this.tokens[this.cursor];
     }
 
-    function previous() {
-        return tokens[cursor - 1];
+    previous() {
+        return this.tokens[this.cursor - 1];
     }
 
-    function isAtEnd() {
-        return cursor >= tokens.length;
+    isAtEnd() {
+        return this.cursor >= this.tokens.length;
     }
 
-    function check(type) {
-        if (isAtEnd()) return false;
-        return peek().type === type;
+    check(type) {
+        if (this.isAtEnd()) return false;
+        return this.peek().type === type;
     }
 
-    function advance() {
-        if (!isAtEnd()) cursor++;
-        return previous();
+    advance() {
+        if (!this.isAtEnd()) this.cursor++;
+        return this.previous();
     }
 
-    function match(...types) {
+    match(...types) {
         for (let type of types) {
-            if (check(type)) {
-                advance();
+            if (this.check(type)) {
+                this.advance();
                 return true;
             }
         }
         return false;
     }
 
-    function consume(type, message) {
-        if (check(type)) return advance();
-        let token = peek() || previous();
-        printErr(`[SyntaxError: ${formatLocation(token)}] ${message}`);
+    consume(type, message) {
+        if (this.check(type)) return this.advance();
+        let token = this.peek() || this.previous();
+        printErr(`[SyntaxError: ${this.formatLocation(token)}] ${message}`);
     }
 
-    function isPropertyAssignAhead() {
-        let k = cursor;
+    isPropertyAssignAhead() {
+        let k = this.cursor;
         
-        while (tokens[k] && tokens[k].type === 'IDENTIFIER' && tokens[k + 1] && tokens[k + 1].type === 'DOT') {
+        while (this.tokens[k] && this.tokens[k].type === 'IDENTIFIER' && this.tokens[k + 1] && this.tokens[k + 1].type === 'DOT') {
             k += 2;
         }
 
-        return tokens[k] && tokens[k].type === 'IDENTIFIER' && tokens[k + 1] && [
+        return this.tokens[k] && this.tokens[k].type === 'IDENTIFIER' && this.tokens[k + 1] && [
             'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN', 'INCREMENT', 'DECREMENT', 'TILDE'
-        ].includes(tokens[k + 1].type);
+        ].includes(this.tokens[k + 1].type);
     }
+}
 
-    // ========================================================================
-    // 2. EXPRESSION PARSING (PRECEDENCE HIERARCHY)
-    // ========================================================================
 
-    function parsePrimary() {
-        let token = peek();
+
+    
+
+class ParserTypes extends ParserCursor {
+    parseType() {
+        let isNullable = true;
+        let baseType = null;
+        let elemType = null;
+        let isElemNullable = true;
+
+        if (this.match('LPAREN')) {
+            isNullable = false;
+            baseType = this.consume('IDENTIFIER', "Expected type identifier inside '(...)'. (e.g. String, Int, List)").value;
+            
+            if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && this.match('LESS')) {
+                isElemNullable = false;
+
+                if (this.match('LPAREN')) {
+                    elemType = this.consume('IDENTIFIER', "Expected element type inside 'List<(...)>'.").value;
+                    this.consume('RPAREN', "Expected closing ')' after element type.");
+                } else {
+                    elemType = this.consume('IDENTIFIER', "Expected element type inside 'List<...>'.").value;
+                }
+
+                this.consume('GREATER', "Expected closing '>' after List type.");
+            }
+
+            this.consume('RPAREN', "Expected closing ')' after non-nullable type.");
+        } else {
+            baseType = this.consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Int, List).").value;
+
+            if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && this.match('LESS')) {
+                if (this.match('LPAREN')) {
+                    isElemNullable = false;
+                    elemType = this.consume('IDENTIFIER', "Expected element type inside 'List<(...)>'.").value;
+                    this.consume('RPAREN', "Expected closing ')' after element type.");
+                } else {
+                    isElemNullable = true;
+                    elemType = this.consume('IDENTIFIER', "Expected element type inside 'List<...>'.").value;
+                }
+
+                this.consume('GREATER', "Expected closing '>' after List type.");
+            }
+        }
+
+        return { baseType, isNullable, elemType, isElemNullable };
+    }
+}
+
+
+
+    
+
+
+
+class ParserExpressions extends ParserTypes {
+    parsePrimary() {
+        let token = this.peek();
 
         if (!token) {
             printErr("[SyntaxError: at end of file] Unexpected end of input. Expected expression.");
@@ -605,126 +648,122 @@ function parse(tokens) {
 
         let expr = null;
 
-        if (match('LBRACKET')) {
+        if (this.match('LBRACKET')) {
             let elements = [];
 
-            if (!check('RBRACKET')) {
+            if (!this.check('RBRACKET')) {
                 while (true) {
-                    elements.push(parseLogicOr());
-                    if (!match('COMMA')) break;
-                    if (check('RBRACKET')) break;
+                    elements.push(this.parseLogicOr());
+                    if (!this.match('COMMA')) break;
+                    if (this.check('RBRACKET')) break;
                 }
             }
 
-            consume('RBRACKET', "Expected closing ']' after list elements.");
-
+            this.consume('RBRACKET', "Expected closing ']' after list elements.");
             expr = { type: 'ListLiteral', elements };
         }
-        else if (match('LBRACE')) {
+        else if (this.match('LBRACE')) {
             let entries = [];
 
-            if (!check('RBRACE')) {
+            if (!this.check('RBRACE')) {
                 while (true) {
                     let key = null;
 
-                    if (match('IDENTIFIER', 'STRING')) {
-                        key = previous().value;
+                    if (this.match('IDENTIFIER', 'STRING')) {
+                        key = this.previous().value;
                     } else {
-                        printErr(`[SyntaxError: ${formatLocation(peek())}] Expected key (identifier or string) in Table literal.`);
+                        printErr(`[SyntaxError: ${this.formatLocation(this.peek())}] Expected key (identifier or string) in Table literal.`);
                     }
 
                     let typeInfo = null;
-
-                    if (match('TILDE')) {
-                        typeInfo = parseType();
+                    if (this.match('TILDE')) {
+                        typeInfo = this.parseType();
                     }
 
-                    consume('COLON', `Expected ':' after key '${key}' in Table literal.`);
-
-                    let value = parseLogicOr();
+                    this.consume('COLON', `Expected ':' after key '${key}' in Table literal.`);
+                    let value = this.parseLogicOr();
                     entries.push({ key, value, typeInfo });
 
-                    if (!match('COMMA')) break;
-                    if (check('RBRACE')) break;
+                    if (!this.match('COMMA')) break;
+                    if (this.check('RBRACE')) break;
                 }
             }
-            consume('RBRACE', "Expected closing '}' after Table entries.");
+            this.consume('RBRACE', "Expected closing '}' after Table entries.");
             expr = { type: 'TableLiteral', entries };
         }
-        else if (match('COPY', 'COPYKEY')) {
-            let isOneKey = (previous().type === 'COPYKEY');
+        else if (this.match('COPY', 'COPYKEY')) {
+            let isOneKey = (this.previous().type === 'COPYKEY');
 
-            consume('LPAREN', "Expected '(' after 'copy'.");
+            this.consume('LPAREN', "Expected '(' after 'copy'.");
 
             let prompt = null;
-            if (!check('RPAREN')) {
-                prompt = parseLogicOr();
+            if (!this.check('RPAREN')) {
+                prompt = this.parseLogicOr();
             }
 
-            consume('RPAREN', "Expected ')' after 'copy' prompt.");
+            this.consume('RPAREN', "Expected ')' after 'copy' prompt.");
             expr = { type: 'CopyExpression', prompt, oneKey: isOneKey };
         }
-        else if (match('FUNCTION')) {
-            expr = parseFunctionDeclaration(true);
+        else if (this.match('FUNCTION')) {
+            expr = this.parseFunctionDeclaration(true);
         }
-        else if (match('THIS')) {
+        else if (this.match('THIS')) {
             expr = { type: 'Variable', name: 'this' };
         }
-        else if (match('IDENTIFIER')) {
-            expr = { type: 'Variable', name: previous().value };
+        else if (this.match('IDENTIFIER')) {
+            expr = { type: 'Variable', name: this.previous().value };
         }
-        else if (match('INT', 'STRING', 'BOOL', 'FLOAT', 'NULL')) {
-            return previous().value;
+        else if (this.match('INT', 'STRING', 'BOOL', 'FLOAT', 'NULL')) {
+            return this.previous().value;
         }
-        else if (match('INTERPOLATEDSTRING')) {
-            return parseInterpolatedString(previous());
+        else if (this.match('INTERPOLATEDSTRING')) {
+            return this.parseInterpolatedString(this.previous());
         }
-        else if (match('LPAREN')) {
-            let openParen = previous();
-            expr = parseLogicOr();
+        else if (this.match('LPAREN')) {
+            let openParen = this.previous();
+            expr = this.parseLogicOr();
 
-            if (!match('RPAREN')) {
-                printErr(`[SyntaxError: ${formatLocation(peek() || openParen)}] Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`);
+            if (!this.match('RPAREN')) {
+                printErr(`[SyntaxError: ${this.formatLocation(this.peek() || openParen)}] Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`);
             }
         }
         else {
-            printErr(`[SyntaxError: ${formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
+            printErr(`[SyntaxError: ${this.formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
         }
 
         while (true) {
-            if (match('LBRACKET')) {
-                let index = parseLogicOr();
-                consume('RBRACKET', "Expected closing ']' after index.");
+            if (this.match('LBRACKET')) {
+                let index = this.parseLogicOr();
+                this.consume('RBRACKET', "Expected closing ']' after index.");
                 expr = { type: 'IndexAccess', target: expr, index };
-            } else if (match('DOT')) {
-                let memberName = consume('IDENTIFIER', "Expected property or method name after '.' (e.g. push, pop, peek, count, args).").value;
-                if (match('LPAREN')) {
+            } else if (this.match('DOT')) {
+                let memberName = this.consume('IDENTIFIER', "Expected property or method name after '.' (e.g. push, pop, peek, count, args).").value;
+                if (this.match('LPAREN')) {
                     let args = [];
 
-                    if (!check('RPAREN')) {
+                    if (!this.check('RPAREN')) {
                         while (true) {
-                            args.push(parseLogicOr());
-                            if (!match('COMMA')) break;
+                            args.push(this.parseLogicOr());
+                            if (!this.match('COMMA')) break;
                         }
                     }
 
-                    consume('RPAREN', `Expected ')' after method arguments.`);
+                    this.consume('RPAREN', "Expected ')' after method arguments.");
                     expr = { type: 'MethodCall', target: expr, method: memberName, args };
                 } else {
                     expr = { type: 'IndexAccess', target: expr, index: memberName, isDotAccess: true };
                 }
-            } else if (match('LPAREN')) {
+            } else if (this.match('LPAREN')) {
                 let args = [];
 
-                if (!check('RPAREN')) {
+                if (!this.check('RPAREN')) {
                     while (true) {
-                        args.push(parseLogicOr());
-                        if (!match('COMMA')) break;
+                        args.push(this.parseLogicOr());
+                        if (!this.match('COMMA')) break;
                     }
                 }
 
-                consume('RPAREN', "Expected ')' after function arguments.");
-
+                this.consume('RPAREN', "Expected ')' after function arguments.");
                 expr = { type: 'CallExpression', caller: expr, args };
             } else {
                 break;
@@ -734,506 +773,7 @@ function parse(tokens) {
         return expr;
     }
 
-    function parseUnary() {
-        if (match('NOT', 'MINUS')) {
-            let op = previous().value;
-            let right = parseUnary();
-            return { type: 'UnaryExpression', operator: op, right };
-        }
-        return parsePrimary();
-    }
-
-    function parseMult() {
-        let left = parseUnary();
-
-        while (match('MULT', 'DIVIDE', 'MODULO')) {
-            let op = previous().value;
-            let right = parseUnary();
-            left = { type: 'MathExpression', operator: op, left, right };
-        }
-
-        return left;
-    }
-
-    function parseAdd() {
-        let left = parseMult();
-
-        while (match('PLUS', 'MINUS')) {
-            let op = previous().value;
-            let right = parseMult();
-            left = { type: 'MathExpression', operator: op, left, right };
-        }
-
-        return left;
-    }
-
-    function parseComparaison() {
-        let left = parseAdd();
-
-        while (match('LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL')) {
-            let op = previous().value;
-            let right = parseAdd();
-            left = { type: 'MathExpression', operator: op, left, right};
-        }
-
-        return left;
-    }
-
-    function parseEquality() {
-        let left = parseComparaison();
-
-        while (match('EQUALS', 'NOTEQUALS')) {
-            let op = previous().value;
-            let right = parseComparaison();
-            left = { type: 'MathExpression', operator: op, left, right };
-        }
-
-        return left;
-    }
-
-    function parseLogicAnd() {
-        let left = parseEquality();
-
-        while (match('AND')) {
-            let op = previous().value;
-            let right = parseEquality();
-            left = { type: 'LogicalExpression', operator: op, left, right };
-        }
-
-        return left;
-    }
-
-    function parseLogicOr() {
-        let left = parseLogicAnd();
-
-        while (match('OR')) {
-            let op = previous().value;
-            let right = parseLogicAnd();
-            left = { type: 'LogicalExpression', operator: op, left, right };
-        }
-
-        return left;
-    }
-
-    function parseCondition() {
-        if (match('LPAREN')) {
-            let cond = parseLogicOr();
-            consume('RPAREN', "Unclosed parenthesis in condition.");
-            return cond;
-        } else if (check('IDENTIFIER')) {
-            return { type: 'Variable', name: advance().value };
-        } else if (check('NOT')) {
-            return parseUnary();
-        } else {
-            printErr("[SyntaxError] Comparisons in conditions must be wrapped in parentheses '(...)'.");
-        }
-    }
-
-    // ========================================================================
-    // 3. STATEMENT PARSING & CONTROL FLOW
-    // ========================================================================
-
-    function parseIfStatement() {
-        let cond = parseCondition();
-        consume('THEN', "Expected 'then' after 'if' condition.");
-
-        let thenBranch = [];
-        while (!check('ELIF') && !check('ELSE') && !check('END') && !isAtEnd()) {
-            thenBranch.push(parseStatement());
-        }
-
-        let elifBranches = [];
-        while (match('ELIF')) {
-            let elifCond = parseCondition();
-            consume('THEN', "Expected 'then' after 'elif' condition.");
-
-            let elifBody = [];
-            while (!check('ELIF') && !check('ELSE') && !check('END') && !isAtEnd()) {
-                elifBody.push(parseStatement());
-            }
-            elifBranches.push({ condition: elifCond, body: elifBody });
-        }
-
-        let elseBranch = null;
-        if (match('ELSE')) {
-            elseBranch = [];
-            while (!check('END') && !isAtEnd()) {
-                elseBranch.push(parseStatement());
-            }
-        }
-
-        consume('END', "Unclosed 'if' block. Expected 'end'.");
-        return {
-            type: 'IfStatement',
-            condition: cond,
-            thenBranch,
-            elifBranches,
-            elseBranch
-        };
-    }
-
-    function parseForStatement() {
-        let startToken = previous();
-        consume('LPAREN', "Expected '(' before for-loop header.");
-
-        let isForIn = false;
-        for (let i = cursor; i < tokens.length; i++) {
-            if (tokens[i].type === 'SEMICOLON' || tokens[i].type === 'RPAREN') break;
-            if (tokens[i].type === 'IN') {
-                isForIn = true;
-                break;
-            }
-        }
-
-        if (isForIn) {
-            let firstVar = consume('IDENTIFIER', "Expected variable name in for-in loop.").value;
-            let indexVar = null;
-            let itemVar = firstVar;
-
-            if (match('COMMA')) {
-                indexVar = firstVar;
-                itemVar = consume('IDENTIFIER', "Expected item variable name after ',' in for-in loop.").value;
-            }
-
-            consume('IN', "Expected 'in' keyword in for-in loop.");
-            let iterable = parseLogicOr();
-            consume('RPAREN', "Expected ')' after for-in loop header.");
-            consume('THEN', "Expected 'then' after for-in loop header.");
-
-            let body = [];
-            while (!check('END') && !isAtEnd()) {
-                body.push(parseStatement());
-            }
-            consume('END', "Unclosed 'for' loop. Expected 'end'.");
-
-            return {
-                type: 'ForInStatement',
-                indexVar,
-                itemVar,
-                iterable,
-                body,
-                line: startToken.line,
-                col: startToken.col
-            };
-        }
-
-        let init = null;
-        if (!check('SEMICOLON')) {
-            if (match('IVAR', 'ICONST')) {
-                init = parseVarDeclaration();
-            } else {
-                init = parseAssignmentOrExpr();
-            }
-        }
-        consume('SEMICOLON', "Expected ';' after for-loop initialization.");
-
-        let condition = null;
-        if (!check('SEMICOLON')) {
-            condition = parseLogicOr();
-        }
-        consume('SEMICOLON', "Expected ';' after for-loop condition.");
-
-        let update = null;
-        if (!check('RPAREN')) {
-            update = parseAssignmentOrExpr();
-        }
-        consume('RPAREN', "Expected ')' after for-loop header.");
-        consume('THEN', "Expected 'then' after for-loop header.");
-
-        let body = [];
-        while (!check('END') && !isAtEnd()) {
-            body.push(parseStatement());
-        }
-        consume('END', "Unclosed 'for' loop. Expected 'end'.");
-
-        return {
-            type: 'ForStatement',
-            init,
-            condition,
-            update,
-            body
-        };
-    }
-
-    function parseAssignmentOrExpr() {
-        if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'INCREMENT') {
-            let varName = advance().value;
-            advance();
-            return {
-                type: 'VarAssign',
-                name: varName,
-                value: { type: 'MathExpression', operator: '+', left: { type: 'Variable', name: varName }, right: 1 }
-            };
-        }
-        if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DECREMENT') {
-            let varName = advance().value;
-            advance();
-            return {
-                type: 'VarAssign',
-                name: varName,
-                value: { type: 'MathExpression', operator: '-', left: { type: 'Variable', name: varName }, right: 1 }
-            };
-        }
-        if (check('IDENTIFIER') && tokens[cursor + 1] && ['ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
-            let varName = advance().value;
-            let assignToken = advance();
-            let expr = parseLogicOr();
-            if (assignToken.type === 'ASSIGN') {
-                return { type: 'VarAssign', name: varName, value: expr };
-            }
-            let opMap = {
-                'PLUSASSIGN': '+',
-                'MINUSASSIGN': '-',
-                'MULTASSIGN': '*',
-                'DIVIDEASSIGN': '/',
-                'MODULOASSIGN': '%'
-            };
-            return {
-                type: 'VarAssign',
-                name: varName,
-                value: { type: 'MathExpression', operator: opMap[assignToken.type], left: { type: 'Variable', name: varName }, right: expr }
-            };
-        }
-        return parseLogicOr();
-    }
-
-    function parseGivenStatement() {
-        let exprTarget = parseEquality();
-        let cases = [];
-
-        consume('THEN', "Expected 'then' after 'given' expression.");
-
-        while (!check('END') && !isAtEnd()) {
-            consume('CASE', "Expected 'case' in 'given' block.");
-
-            let isDefault = false;
-            let caseValue = null;
-
-            if (match('TILDE')) {
-                isDefault = true;
-            } else {
-                caseValue = parseEquality();
-            }
-
-            consume('THEN', "Expected 'then' after case condition.");
-
-            let caseBody = [];
-            while (!check('CASE') && !check('END') && !isAtEnd()) {
-                caseBody.push(parseStatement());
-            }
-
-            cases.push({ isDefault, value: caseValue, body: caseBody });
-        }
-
-        consume('END', "Unclosed 'given' block. Expected 'end'.");
-        return {
-            type: 'GivenStatement',
-            target: exprTarget,
-            cases
-        };
-    }
-
-    function parseType() {
-        let isNullable = true;
-        let baseType = null;
-        let elemType = null;
-        let isElemNullable = true;
-
-        if (match('LPAREN')) {
-            isNullable = false;
-            baseType = consume('IDENTIFIER', "Expected type identifier inside '(...)'. (e.g. String, Int, List)").value;
-            
-            if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && match('LESS')) {
-                isElemNullable = false;
-
-                if (match('LPAREN')) {
-                    elemType = consume('IDENTIFIER', "Expected element type inside 'List<(...)>'.").value;
-                    consume('RPAREN', "Expected closing ')' after element type.");
-                } else {
-                    elemType = consume('IDENTIFIER', "Expected element type inside 'List<...>'.").value;
-                }
-
-                consume('GREATER', "Expected closing '>' after List type.");
-            }
-
-            consume('RPAREN', "Expected closing ')' after non-nullable type.");
-        } else {
-            baseType = consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Int, List).").value;
-
-            if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && match('LESS')) {
-                if (match('LPAREN')) {
-                    isElemNullable = false;
-                    elemType = consume('IDENTIFIER', "Expected element type inside 'List<(...)>'.").value;
-                    consume('RPAREN', "Expected closing ')' after element type.");
-                } else {
-                    isElemNullable = true;
-                    elemType = consume('IDENTIFIER', "Expected element type inside 'List<...>'.").value;
-                }
-
-                consume('GREATER', "Expected closing '>' after List type.");
-            }
-        }
-
-        return { baseType, isNullable, elemType, isElemNullable };
-    }
-
-    function parseVarDeclaration() {
-        let isConst = previous().type === 'ICONST';
-        let isNullable = true;
-        let explType = null;
-
-        let typeInfo = null;
-        if (match('TILDE')) {
-            typeInfo = parseType();
-            explType = typeInfo.baseType;
-            isNullable = typeInfo.isNullable;
-        }
-
-        let varName = consume('IDENTIFIER', "Expected variable name in declaration.").value;
-        consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
-        let value = parseLogicOr();
-
-        return { type: 'VarDeclar', name: varName, explType, isNullable, value, isConst, typeInfo };
-    }
-
-    function parseWhileStatement() {
-        let condition = parseCondition();
-        consume('THEN', "Expected 'then' after 'while' condition.");
-
-        let body = [];
-        while (!check('END') && !isAtEnd()) {
-            body.push(parseStatement());
-        }
-        consume('END', "Unclosed 'while' loop. Expected 'end'.");
-        
-        return {
-            type: 'WhileStatement',
-            condition,
-            body
-        };
-    }
-
-    function parseDoWhileStatement() {
-        let body = [];
-        while (!check('WHILE') && !isAtEnd()) {
-            body.push(parseStatement());
-        }
-        consume('WHILE', "Expected 'while' after 'do' loop body.");
-        let condition = parseCondition();
-        consume('SEMICOLON', "Expected ';' after 'do ... while' condition.")
-        
-        return {
-            type: 'DoWhileStatement',
-            condition,
-            body
-        };
-    }
-
-    function parseHookStatement() {
-        let startToken = previous();
-        
-        let varName = consume('IDENTIFIER', "Expected function name or table after 'hook'.").value;
-        let target = { type: 'Variable', name: varName };
-
-        while (match('LBRACKET')) {
-            let index = parseLogicOr();
-            consume('RBRACKET', "Expected ']' after index in hook target.");
-            target = { type: 'IndexAccess', target, index };
-        }
-
-        consume('LPAREN', "Expected '(' after hook target.");
-        let params = [];
-
-        if (!check('RPAREN')) {
-            while (true) {
-                consume('IVAR', "Expected 'ivar' before parameter name.");
-
-                let typeInfo = null;
-                if (match('TILDE')) {
-                    typeInfo = parseType();
-                }
-
-                let paramName = consume('IDENTIFIER', "Expected parameter name.").value;
-                params.push({ name: paramName, typeInfo });
-
-                if (!match('COMMA')) break;
-            }
-        }
-
-        consume('RPAREN', "Expected ')' after hook parameters.");
-        consume('THEN', "Expected 'then' after hook header.");
-
-        let body = [];
-        while (!check('END') && !isAtEnd()) {
-            body.push(parseStatement());
-        }
-
-        consume('END', "Unclosed hook. Expected 'end'.");
-
-        return {
-            type: 'HookStatement',
-            target,
-            params,
-            body,
-            line: startToken.line,
-            col: startToken.col
-        };
-    }
-
-    function parseFunctionDeclaration(isExpresion = false) {
-        let startToken = previous();
-        let name = null;
-        let isAnonymous = false;
-
-        if (match('TILDE')) {
-            isAnonymous = true;
-        } else if (check('IDENTIFIER')) {
-            name = advance().value;
-        } else {
-            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Expected function name or '~' for anonymous function after 'function'.`);
-        }
-
-        consume('LPAREN', "Expected '(' after function name or '~'.");
-        let params = [];
-
-        if (!check('RPAREN')) {
-            while (true) {
-                consume('IVAR', "Expected 'ivar' before parameter name.");
-
-                let typeInfo = null;
-                if (match('TILDE')) {
-                    typeInfo = parseType();
-                }
-
-                let paramName = consume('IDENTIFIER', "Expected parameter name.").value;
-                params.push({ name: paramName, typeInfo });
-
-                if (!match('COMMA')) break;
-            }
-        }
-
-        consume('RPAREN', "Expected ')' after function parameters.");
-        consume('THEN', "Expected 'then' after function header.");
-
-        let body = [];
-        while (!check('END') && !isAtEnd()) {
-            body.push(parseStatement());
-        }
-
-        consume('END', "Unclosed function. Expected 'end'.");
-
-        return {
-            type: 'FunctionDeclaration',
-            name,
-            isAnonymous,
-            params,
-            body,
-            line: startToken.line,
-            col: startToken.col
-        };
-    }
-
-    function parseInterpolatedString(token) {
+    parseInterpolatedString(token) {
         let raw = token.value;
         let parts = [];
         let i = 0;
@@ -1268,7 +808,7 @@ function parse(tokens) {
                 }
 
                 const innerTokens = tokenize(exprStr + ";");
-                const innerAst = parse(innerTokens);
+                const innerAst = new this.constructor(innerTokens).parseProgram();
 
                 if (innerAst.body.length > 0) {
                     parts.push(innerAst.body[0]);
@@ -1292,38 +832,471 @@ function parse(tokens) {
         };
     }
 
-    function parseTryStatement() {
-        let startToken = previous();
-        match('THEN');
+    parseUnary() {
+        if (this.match('NOT', 'MINUS')) {
+            let op = this.previous().value;
+            let right = this.parseUnary();
+            return { type: 'UnaryExpression', operator: op, right };
+        }
+        return this.parsePrimary();
+    }
+
+    parseMult() {
+        let left = this.parseUnary();
+
+        while (this.match('MULT', 'DIVIDE', 'MODULO')) {
+            let op = this.previous().value;
+            let right = this.parseUnary();
+            left = { type: 'MathExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    parseAdd() {
+        let left = this.parseMult();
+
+        while (this.match('PLUS', 'MINUS')) {
+            let op = this.previous().value;
+            let right = this.parseMult();
+            left = { type: 'MathExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    parseComparaison() {
+        let left = this.parseAdd();
+
+        while (this.match('LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL')) {
+            let op = this.previous().value;
+            let right = this.parseAdd();
+            left = { type: 'MathExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    parseEquality() {
+        let left = this.parseComparaison();
+
+        while (this.match('EQUALS', 'NOTEQUALS')) {
+            let op = this.previous().value;
+            let right = this.parseComparaison();
+            left = { type: 'MathExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    parseLogicAnd() {
+        let left = this.parseEquality();
+
+        while (this.match('AND')) {
+            let op = this.previous().value;
+            let right = this.parseEquality();
+            left = { type: 'LogicalExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    parseLogicOr() {
+        let left = this.parseLogicAnd();
+
+        while (this.match('OR')) {
+            let op = this.previous().value;
+            let right = this.parseLogicAnd();
+            left = { type: 'LogicalExpression', operator: op, left, right };
+        }
+
+        return left;
+    }
+
+    parseCondition() {
+        if (this.match('LPAREN')) {
+            let cond = this.parseLogicOr();
+            this.consume('RPAREN', "Unclosed parenthesis in condition.");
+            return cond;
+        } else if (this.check('IDENTIFIER')) {
+            return { type: 'Variable', name: this.advance().value };
+        } else if (this.check('NOT')) {
+            return this.parseUnary();
+        } else {
+            printErr("[SyntaxError] Comparisons in conditions must be wrapped in parentheses '(...)'.");
+        }
+    }
+}
+
+
+
+    
+
+
+
+class ParserControl extends ParserExpressions {
+    parseIfStatement() {
+        let cond = this.parseCondition();
+        this.consume('THEN', "Expected 'then' after 'if' condition.");
+
+        let thenBranch = [];
+        while (!this.check('ELIF') && !this.check('ELSE') && !this.check('END') && !this.isAtEnd()) {
+            thenBranch.push(this.parseStatement());
+        }
+
+        let elifBranches = [];
+        while (this.match('ELIF')) {
+            let elifCond = this.parseCondition();
+            this.consume('THEN', "Expected 'then' after 'elif' condition.");
+
+            let elifBody = [];
+            while (!this.check('ELIF') && !this.check('ELSE') && !this.check('END') && !this.isAtEnd()) {
+                elifBody.push(this.parseStatement());
+            }
+            elifBranches.push({ condition: elifCond, body: elifBody });
+        }
+
+        let elseBranch = null;
+        if (this.match('ELSE')) {
+            elseBranch = [];
+            while (!this.check('END') && !this.isAtEnd()) {
+                elseBranch.push(this.parseStatement());
+            }
+        }
+
+        this.consume('END', "Unclosed 'if' block. Expected 'end'.");
+        return {
+            type: 'IfStatement',
+            condition: cond,
+            thenBranch,
+            elifBranches,
+            elseBranch
+        };
+    }
+
+    parseForStatement() {
+        let startToken = this.previous();
+        this.consume('LPAREN', "Expected '(' before for-loop header.");
+
+        let isForIn = false;
+        for (let i = this.cursor; i < this.tokens.length; i++) {
+            if (this.tokens[i].type === 'SEMICOLON' || this.tokens[i].type === 'RPAREN') break;
+            if (this.tokens[i].type === 'IN') {
+                isForIn = true;
+                break;
+            }
+        }
+
+        if (isForIn) {
+            let firstVar = this.consume('IDENTIFIER', "Expected variable name in for-in loop.").value;
+            let indexVar = null;
+            let itemVar = firstVar;
+
+            if (this.match('COMMA')) {
+                indexVar = firstVar;
+                itemVar = this.consume('IDENTIFIER', "Expected item variable name after ',' in for-in loop.").value;
+            }
+
+            this.consume('IN', "Expected 'in' keyword in for-in loop.");
+            let iterable = this.parseLogicOr();
+            this.consume('RPAREN', "Expected ')' after for-in loop header.");
+            this.consume('THEN', "Expected 'then' after for-in loop header.");
+
+            let body = [];
+            while (!this.check('END') && !this.isAtEnd()) {
+                body.push(this.parseStatement());
+            }
+            this.consume('END', "Unclosed 'for' loop. Expected 'end'.");
+
+            return {
+                type: 'ForInStatement',
+                indexVar,
+                itemVar,
+                iterable,
+                body,
+                line: startToken.line,
+                col: startToken.col
+            };
+        }
+
+        let init = null;
+        if (!this.check('SEMICOLON')) {
+            if (this.match('IVAR', 'ICONST')) {
+                init = this.parseVarDeclaration();
+            } else {
+                init = this.parseAssignmentOrExpr();
+            }
+        }
+        this.consume('SEMICOLON', "Expected ';' after for-loop initialization.");
+
+        let condition = null;
+        if (!this.check('SEMICOLON')) {
+            condition = this.parseLogicOr();
+        }
+        this.consume('SEMICOLON', "Expected ';' after for-loop condition.");
+
+        let update = null;
+        if (!this.check('RPAREN')) {
+            update = this.parseAssignmentOrExpr();
+        }
+        this.consume('RPAREN', "Expected ')' after for-loop header.");
+        this.consume('THEN', "Expected 'then' after for-loop header.");
+
+        let body = [];
+        while (!this.check('END') && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+        this.consume('END', "Unclosed 'for' loop. Expected 'end'.");
+
+        return {
+            type: 'ForStatement',
+            init,
+            condition,
+            update,
+            body
+        };
+    }
+
+    parseAssignmentOrExpr() {
+        if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'INCREMENT') {
+            let varName = this.advance().value;
+            this.advance();
+            return {
+                type: 'VarAssign',
+                name: varName,
+                value: { type: 'MathExpression', operator: '+', left: { type: 'Variable', name: varName }, right: 1 }
+            };
+        }
+        if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'DECREMENT') {
+            let varName = this.advance().value;
+            this.advance();
+            return {
+                type: 'VarAssign',
+                name: varName,
+                value: { type: 'MathExpression', operator: '-', left: { type: 'Variable', name: varName }, right: 1 }
+            };
+        }
+        if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && ['ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(this.tokens[this.cursor + 1].type)) {
+            let varName = this.advance().value;
+            let assignToken = this.advance();
+            let expr = this.parseLogicOr();
+            if (assignToken.type === 'ASSIGN') {
+                return { type: 'VarAssign', name: varName, value: expr };
+            }
+            return {
+                type: 'VarAssign',
+                name: varName,
+                value: { type: 'MathExpression', operator: OP_MAP[assignToken.type], left: { type: 'Variable', name: varName }, right: expr }
+            };
+        }
+        return this.parseLogicOr();
+    }
+
+    parseGivenStatement() {
+        let exprTarget = this.parseEquality();
+        let cases = [];
+
+        this.consume('THEN', "Expected 'then' after 'given' expression.");
+
+        while (!this.check('END') && !this.isAtEnd()) {
+            this.consume('CASE', "Expected 'case' in 'given' block.");
+
+            let isDefault = false;
+            let caseValue = null;
+
+            if (this.match('TILDE')) {
+                isDefault = true;
+            } else {
+                caseValue = this.parseEquality();
+            }
+
+            this.consume('THEN', "Expected 'then' after case condition.");
+
+            let caseBody = [];
+            while (!this.check('CASE') && !this.check('END') && !this.isAtEnd()) {
+                caseBody.push(this.parseStatement());
+            }
+
+            cases.push({ isDefault, value: caseValue, body: caseBody });
+        }
+
+        this.consume('END', "Unclosed 'given' block. Expected 'end'.");
+        return {
+            type: 'GivenStatement',
+            target: exprTarget,
+            cases
+        };
+    }
+
+    parseWhileStatement() {
+        let condition = this.parseCondition();
+        this.consume('THEN', "Expected 'then' after 'while' condition.");
+
+        let body = [];
+        while (!this.check('END') && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+        this.consume('END', "Unclosed 'while' loop. Expected 'end'.");
+        
+        return {
+            type: 'WhileStatement',
+            condition,
+            body
+        };
+    }
+
+    parseDoWhileStatement() {
+        let body = [];
+        while (!this.check('WHILE') && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+        this.consume('WHILE', "Expected 'while' after 'do' loop body.");
+        let condition = this.parseCondition();
+        this.consume('SEMICOLON', "Expected ';' after 'do ... while' condition.");
+        
+        return {
+            type: 'DoWhileStatement',
+            condition,
+            body
+        };
+    }
+
+    parseHookStatement() {
+        let startToken = this.previous();
+        
+        let varName = this.consume('IDENTIFIER', "Expected function name or table after 'hook'.").value;
+        let target = { type: 'Variable', name: varName };
+
+        while (this.match('LBRACKET')) {
+            let index = this.parseLogicOr();
+            this.consume('RBRACKET', "Expected ']' after index in hook target.");
+            target = { type: 'IndexAccess', target, index };
+        }
+
+        this.consume('LPAREN', "Expected '(' after hook target.");
+        let params = [];
+
+        if (!this.check('RPAREN')) {
+            while (true) {
+                this.consume('IVAR', "Expected 'ivar' before parameter name.");
+
+                let typeInfo = null;
+                if (this.match('TILDE')) {
+                    typeInfo = this.parseType();
+                }
+
+                let paramName = this.consume('IDENTIFIER', "Expected parameter name.").value;
+                params.push({ name: paramName, typeInfo });
+
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        this.consume('RPAREN', "Expected ')' after hook parameters.");
+        this.consume('THEN', "Expected 'then' after hook header.");
+
+        let body = [];
+        while (!this.check('END') && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+
+        this.consume('END', "Unclosed hook. Expected 'end'.");
+
+        return {
+            type: 'HookStatement',
+            target,
+            params,
+            body,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
+    parseFunctionDeclaration(isExpression = false) {
+        let startToken = this.previous();
+        let name = null;
+        let isAnonymous = false;
+
+        if (this.match('TILDE')) {
+            isAnonymous = true;
+        } else if (this.check('IDENTIFIER')) {
+            name = this.advance().value;
+        } else {
+            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Expected function name or '~' for anonymous function after 'function'.`);
+        }
+
+        this.consume('LPAREN', "Expected '(' after function name or '~'.");
+        let params = [];
+
+        if (!this.check('RPAREN')) {
+            while (true) {
+                this.consume('IVAR', "Expected 'ivar' before parameter name.");
+
+                let typeInfo = null;
+                if (this.match('TILDE')) {
+                    typeInfo = this.parseType();
+                }
+
+                let paramName = this.consume('IDENTIFIER', "Expected parameter name.").value;
+                params.push({ name: paramName, typeInfo });
+
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        this.consume('RPAREN', "Expected ')' after function parameters.");
+        this.consume('THEN', "Expected 'then' after function header.");
+
+        let body = [];
+        while (!this.check('END') && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+
+        this.consume('END', "Unclosed function. Expected 'end'.");
+
+        return {
+            type: 'FunctionDeclaration',
+            name,
+            isAnonymous,
+            params,
+            body,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
+    parseTryStatement() {
+        let startToken = this.previous();
+        this.match('THEN');
 
         let tryBlock = [];
-        while (!check('CATCH') && !check('FINALLY') && !check('END') && !isAtEnd()) {
-            tryBlock.push(parseStatement());
+        while (!this.check('CATCH') && !this.check('FINALLY') && !this.check('END') && !this.isAtEnd()) {
+            tryBlock.push(this.parseStatement());
         }
 
         let catchVar = null;
         let catchBlock = null;
 
-        if (match('CATCH')) {
-            consume('LPAREN', "Expected '(' after 'catch'.");
-            consume('IVAR', "Expected 'ivar' in catch parameter.");
-            catchVar = consume('IDENTIFIER', "Expected variable name after 'ivar' in catch.").value;
-            consume('RPAREN', "Expected ')' after catch parameter.");
-            match('THEN');
+        if (this.match('CATCH')) {
+            this.consume('LPAREN', "Expected '(' after 'catch'.");
+            this.consume('IVAR', "Expected 'ivar' in catch parameter.");
+            catchVar = this.consume('IDENTIFIER', "Expected variable name after 'ivar' in catch.").value;
+            this.consume('RPAREN', "Expected ')' after catch parameter.");
+            this.match('THEN');
 
             catchBlock = [];
-            while (!check('FINALLY') && !check('END') && !isAtEnd()) {
-                catchBlock.push(parseStatement());
+            while (!this.check('FINALLY') && !this.check('END') && !this.isAtEnd()) {
+                catchBlock.push(this.parseStatement());
             }
         }
 
         let finallyBlock = null;
-        if (match('FINALLY')) {
-            match('THEN');
+        if (this.match('FINALLY')) {
+            this.match('THEN');
 
             finallyBlock = [];
-            while (!check('END') && !isAtEnd()) {
-                finallyBlock.push(parseStatement());
+            while (!this.check('END') && !this.isAtEnd()) {
+                finallyBlock.push(this.parseStatement());
             }
         }
 
@@ -1331,7 +1304,7 @@ function parse(tokens) {
             printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] 'try' block must contain at least a 'catch' or 'finally' clause.`);
         }
 
-        consume('END', "Unclosed 'try' block. Expected 'end'.");
+        this.consume('END', "Unclosed 'try' block. Expected 'end'.");
 
         return {
             type: 'TryStatement',
@@ -1343,64 +1316,91 @@ function parse(tokens) {
             col: startToken.col
         };
     }
+}
 
-    function parseAssignSuffix(targetDesc) {
-        if (match('INCREMENT')) return { value: 1, operator: '+' };
-        if (match('DECREMENT')) return { value: 1, operator: '-' };
-        if (match('ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN')) {
-            let op = OP_MAP[previous().type] || null;
-            let expr = parseLogicOr();
-            return { value: expr, operator: op };
+
+
+    
+
+
+
+class ParserStatements extends ParserControl {
+    parseVarDeclaration() {
+        let isConst = this.previous().type === 'ICONST';
+        let isNullable = true;
+        let explType = null;
+
+        let typeInfo = null;
+        if (this.match('TILDE')) {
+            typeInfo = this.parseType();
+            explType = typeInfo.baseType;
+            isNullable = typeInfo.isNullable;
         }
-        printErr(`[SyntaxError: ${formatLocation(peek())}] Expected assignment operator after ${targetDesc}.`);
+
+        let varName = this.consume('IDENTIFIER', "Expected variable name in declaration.").value;
+        this.consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
+        let value = this.parseLogicOr();
+
+        return { type: 'VarDeclar', name: varName, explType, isNullable, value, isConst, typeInfo };
     }
 
-    function parseStatement() {
+    parseAssignSuffix(targetDesc) {
+        if (this.match('INCREMENT')) return { value: 1, operator: '+' };
+        if (this.match('DECREMENT')) return { value: 1, operator: '-' };
+        if (this.match('ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN')) {
+            let op = OP_MAP[this.previous().type] || null;
+            let expr = this.parseLogicOr();
+            return { value: expr, operator: op };
+        }
+        printErr(`[SyntaxError: ${this.formatLocation(this.peek())}] Expected assignment operator after ${targetDesc}.`);
+    }
+
+    parseStatement() {
         let stmt;
 
-        if (match('IF'))       return parseIfStatement();
-        if (match('FOR'))      return parseForStatement();
-        if (match('WHILE'))    return parseWhileStatement();
-        if (match('GIVEN'))    return parseGivenStatement();
-        if (match('DO'))       return parseDoWhileStatement();
-        if (match('FUNCTION')) return parseFunctionDeclaration(false);
-        if (match('HOOK'))     return parseHookStatement();
-        if (match('TRY'))      return parseTryStatement();
+        if (this.match('IF'))       return this.parseIfStatement();
+        if (this.match('FOR'))      return this.parseForStatement();
+        if (this.match('WHILE'))    return this.parseWhileStatement();
+        if (this.match('GIVEN'))    return this.parseGivenStatement();
+        if (this.match('DO'))       return this.parseDoWhileStatement();
+        if (this.match('FUNCTION')) return this.parseFunctionDeclaration(false);
+        if (this.match('HOOK'))     return this.parseHookStatement();
+        if (this.match('TRY'))      return this.parseTryStatement();
         
-        if (match('IVAR', 'ICONST')) {
-            stmt = parseVarDeclaration();
-        } else if (match('RETURN')) {
-            let startToken = previous();
+        if (this.match('IVAR', 'ICONST')) {
+            stmt = this.parseVarDeclaration();
+        } else if (this.match('RETURN')) {
+            let startToken = this.previous();
 
             let value = null;
-            if (!check('SEMICOLON')) {
-                value = parseLogicOr();
+            if (!this.check('SEMICOLON')) {
+                value = this.parseLogicOr();
             }
 
             stmt = { type: 'ReturnStatement', value, line: startToken.line, col: startToken.col };
-        } else if (match('IMPORT')) {
-            let pkgName = consume('IDENTIFIER', "Expected package name after 'import'.").value;
+        } else if (this.match('IMPORT')) {
+            let pkgName = this.consume('IDENTIFIER', "Expected package name after 'import'.").value;
             let modules = [];
 
-            if (match('TILDE')) {
-                consume('LPAREN', "Expected '(' after '~' in import statement.");
+            if (this.match('TILDE')) {
+                this.consume('LPAREN', "Expected '(' after '~' in import statement.");
 
-                if (!check('RPAREN')) {
+                if (!this.check('RPAREN')) {
                     while (true) {
-                        modules.push(consume('IDENTIFIER', "Expected module name.").value);
-                        if (!match('COMMA')) break;
+                        modules.push(this.consume('IDENTIFIER', "Expected module name.").value);
+                        if (!this.match('COMMA')) break;
                     }
                 }
 
-                consume('RPAREN', "Expected ')' after import module list.");
+                this.consume('RPAREN', "Expected ')' after import module list.");
             }
 
             let aliasName = null;
-            if (match('ALIAS')) {
-                if (match('TILDE')) {
+            if (this.match('ALIAS')) {
+                if (this.match('TILDE')) {
                     aliasName = '~';
                 } else {
-                    aliasName = consume('IDENTIFIER', "Expected alias name or '~' after 'alias'.").value;
+                    aliasName = this.consume('IDENTIFIER', "Expected alias name or '~' after 'alias'.").value;
                 }
             }
 
@@ -1410,28 +1410,28 @@ function parse(tokens) {
                 modules,
                 alias: aliasName
             };
-        } else if (match('NAMESPACE')) {
-            let startToken = previous();
-            let nsName = consume('IDENTIFIER', "Expected namespace name after 'namespace'.").value;
+        } else if (this.match('NAMESPACE')) {
+            let startToken = this.previous();
+            let nsName = this.consume('IDENTIFIER', "Expected namespace name after 'namespace'.").value;
 
             let modName = null;
 
-            if (match('TILDE')) {
+            if (this.match('TILDE')) {
                 if (nsName === 'Main') {
                     printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Namespace 'Main' cannot be split into modules.`);
                 }
                 
-                modName = consume('IDENTIFIER', "Expected module name after '~'.").value;
+                modName = this.consume('IDENTIFIER', "Expected module name after '~'.").value;
             }
 
-            consume('THEN', `Expected 'then' after namespace declaration '${nsName}'.`);
+            this.consume('THEN', `Expected 'then' after namespace declaration '${nsName}'.`);
 
             let body = [];
-            while (!check('END') && !isAtEnd()) {
-                body.push(parseStatement());
+            while (!this.check('END') && !this.isAtEnd()) {
+                body.push(this.parseStatement());
             }
 
-            consume('END', `Expected 'end' to close namespace '${nsName}' block.`);
+            this.consume('END', `Expected 'end' to close namespace '${nsName}' block.`);
 
             return {
                 type: 'NamespaceStatement',
@@ -1441,74 +1441,74 @@ function parse(tokens) {
                 line: startToken.line,
                 col: startToken.col
             };
-        } else if (match('PASTE', 'PASTELN')) {
-            let isLn = previous().type === 'PASTELN';
-            let kw = previous().value;
+        } else if (this.match('PASTE', 'PASTELN')) {
+            let isLn = this.previous().type === 'PASTELN';
+            let kw = this.previous().value;
 
-            consume('LPAREN', `Expected '(' after '${kw}'.`);
+            this.consume('LPAREN', `Expected '(' after '${kw}'.`);
 
             let expr = undefined;
             let isEmpty = false;
 
-            if (isLn && check('RPAREN')) {
+            if (isLn && this.check('RPAREN')) {
                 isEmpty = true;
             } else {
-                expr = parseLogicOr();
+                expr = this.parseLogicOr();
             }
 
-            consume('RPAREN', `Expected ')' after '${kw}' argument.`);
+            this.consume('RPAREN', `Expected ')' after '${kw}' argument.`);
             stmt = { type: 'PasteStatement', expr, newLine: isLn, isEmpty };
-        } else if (check('COPY') || check('COPYKEY')) {
-            stmt = parsePrimary();
-        } else if (match('CLEAR')) {
-            consume('LPAREN', "Expected '(' after 'clear'.");
+        } else if (this.check('COPY') || this.check('COPYKEY')) {
+            stmt = this.parsePrimary();
+        } else if (this.match('CLEAR')) {
+            this.consume('LPAREN', "Expected '(' after 'clear'.");
             
             let condition = null;
-            if (!check('RPAREN')) {
-                condition = parseLogicOr();
+            if (!this.check('RPAREN')) {
+                condition = this.parseLogicOr();
             }
 
-            consume('RPAREN', "Expected ')' after 'clear' condition.");
+            this.consume('RPAREN', "Expected ')' after 'clear' condition.");
             stmt = { type: 'ClearStatement', condition };
-        } else if (match('EXIT')) {
-            consume('LPAREN', "Expected '(' after 'exit'.");
+        } else if (this.match('EXIT')) {
+            this.consume('LPAREN', "Expected '(' after 'exit'.");
             
             let condition = null;
-            if (!check('RPAREN')) {
-                condition = parseLogicOr();
+            if (!this.check('RPAREN')) {
+                condition = this.parseLogicOr();
             }
 
-            consume('RPAREN', "Expected ')' after 'exit' condition.");
+            this.consume('RPAREN', "Expected ')' after 'exit' condition.");
             stmt = { type: 'ExitStatement', condition };
-        } else if (match('KILL')) {
-            let startToken = previous();
-            let varName = consume('IDENTIFIER', "Expected variable name after 'kill'.").value;
+        } else if (this.match('KILL')) {
+            let startToken = this.previous();
+            let varName = this.consume('IDENTIFIER', "Expected variable name after 'kill'.").value;
             
             stmt = { type: 'KillStatement', name: varName, line: startToken.line, col: startToken.col };
-        } else if (match('THROW')) {
-            let startToken = previous();
-            let value = parseLogicOr();
+        } else if (this.match('THROW')) {
+            let startToken = this.previous();
+            let value = this.parseLogicOr();
             stmt = { type: 'ThrowStatement', value, line: startToken.line, col: startToken.col };
-        } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'LBRACKET') {
-            let varName = advance().value;
-            advance();
-            let index = parseLogicOr();
-            consume('RBRACKET', "Expected ']' after list index.");
+        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'LBRACKET') {
+            let varName = this.advance().value;
+            this.advance();
+            let index = this.parseLogicOr();
+            this.consume('RBRACKET', "Expected ']' after list index.");
 
-            let typeInfo = match('TILDE') ? parseType() : null;
-            let rhs = parseAssignSuffix(`list index '${varName}[...]'`);
+            let typeInfo = this.match('TILDE') ? this.parseType() : null;
+            let rhs = this.parseAssignSuffix(`list index '${varName}[...]'`);
             stmt = { type: 'IndexAssign', name: varName, index, value: rhs.value, operator: rhs.operator, typeInfo };
-        } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'DOT' && isPropertyAssignAhead()) {
-            let varName = advance().value;
+        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'DOT' && this.isPropertyAssignAhead()) {
+            let varName = this.advance().value;
 
             let path = [];
-            while (match('DOT')) {
-                path.push(consume('IDENTIFIER', "Expected property name after '.'").value);
+            while (this.match('DOT')) {
+                path.push(this.consume('IDENTIFIER', "Expected property name after '.'").value);
             }
 
             let fullPropStr = varName + '.' + path.join('.');
-            let typeInfo = match('TILDE') ? parseType() : null;
-            let rhs = parseAssignSuffix(`property '${fullPropStr}'`);
+            let typeInfo = this.match('TILDE') ? this.parseType() : null;
+            let rhs = this.parseAssignSuffix(`property '${fullPropStr}'`);
 
             stmt = { 
                 type: 'PropertyAssign', 
@@ -1519,9 +1519,9 @@ function parse(tokens) {
                 operator: rhs.operator, 
                 typeInfo 
             };
-        } else if (check('IDENTIFIER') && tokens[cursor + 1] && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(tokens[cursor + 1].type)) {
-            let varName = advance().value;
-            let rhs = parseAssignSuffix(`variable '${varName}'`);
+        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(this.tokens[this.cursor + 1].type)) {
+            let varName = this.advance().value;
+            let rhs = this.parseAssignSuffix(`variable '${varName}'`);
             stmt = {
                 type: 'VarAssign',
                 name: varName,
@@ -1529,47 +1529,54 @@ function parse(tokens) {
                     ? { type: 'MathExpression', operator: rhs.operator, left: { type: 'Variable', name: varName }, right: rhs.value }
                     : rhs.value
             };
-        } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'TILDE') {
-            let varName = advance().value;
-            advance();
+        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'TILDE') {
+            let varName = this.advance().value;
+            this.advance();
 
-            let typeInfo = parseType();
+            let typeInfo = this.parseType();
             let targetType = typeInfo.baseType;
             let isNullable = typeInfo.isNullable;
 
-            consume('ASSIGN', `Missing '=' assignment operator after '${varName}~${targetType}'.`);
-            let value = parseLogicOr();
+            this.consume('ASSIGN', `Missing '=' assignment operator after '${varName}~${targetType}'.`);
+            let value = this.parseLogicOr();
             stmt = { type: 'VarRetype', name: varName, targetType, isNullable, value, typeInfo };
-        } else if (check('IDENTIFIER') && tokens[cursor + 1] && tokens[cursor + 1].type === 'SWAP') {
-            let leftVar = advance().value;
-            advance();
-            let rightVar = consume('IDENTIFIER', "Expected variable name after '<->' swap operator.").value;
+        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'SWAP') {
+            let leftVar = this.advance().value;
+            this.advance();
+            let rightVar = this.consume('IDENTIFIER', "Expected variable name after '<->' swap operator.").value;
             stmt = { type: 'SwapStatement', left: leftVar, right: rightVar };
-        } else if (match('BREAK')) {
+        } else if (this.match('BREAK')) {
             stmt = { type: 'BreakStatement' };
-        } else if (match('SKIP')) {
+        } else if (this.match('SKIP')) {
             stmt = { type: 'SkipStatement' };
         } else {
-            stmt = parseLogicOr();
+            stmt = this.parseLogicOr();
         }
 
-        consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");
+        this.consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");
         return stmt;
     }
 
-    // ========================================================================
-    // 4. PARSER ENTRYPOINT (PROGRAM)
-    // ========================================================================
+    parseProgram() {
+        let statements = [];
+        while (!this.isAtEnd()) {
+            statements.push(this.parseStatement());
+        }
 
-    let statements = [];
-    while (!isAtEnd()) {
-        statements.push(parseStatement());
+        return {
+            type: 'Program',
+            body: statements
+        };
     }
+}
 
-    return {
-        type: 'Program',
-        body: statements
-    };
+
+
+    
+
+function parse(tokens) {
+    const parser = new ParserStatements(tokens);
+    return parser.parseProgram();
 }
 
 
@@ -1823,8 +1830,7 @@ function formatKurobaValue(val, isInsideList = false) {
     
 
 
-
-function evalMath(node, env) {
+function evalMath(node, env, evaluate) {
     let left = evaluate(node.left, env);
     let right = evaluate(node.right, env);
 
@@ -1849,14 +1855,14 @@ function evalMath(node, env) {
     }
 }
 
-function evalUnary(node, env) {
+function evalUnary(node, env, evaluate) {
     let right = evaluate(node.right, env);
     if (node.operator === '!') return !isTruthy(right);
     if (node.operator === '-') return -right;
     printErr(`[RuntimeError] Unsupported unary operator '${node.operator}'.`);
 }
 
-function evalLogical(node, env) {
+function evalLogical(node, env, evaluate) {
     let left = evaluate(node.left, env);
     if (node.operator === '&&') {
         if (!isTruthy(left)) return false;
@@ -1874,7 +1880,6 @@ function evalLogical(node, env) {
 
 
     
-
 
 
 
@@ -1927,7 +1932,7 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
     return val;
 }
 
-function evalVarDeclar(node, env) {
+function evalVarDeclar(node, env, evaluate) {
     let rawVal = evaluate(node.value, env);
     let val = validateAndCast(rawVal, node.explType, node.isNullable !== false, node.typeInfo, node.name);
 
@@ -1941,7 +1946,7 @@ function evalVarDeclar(node, env) {
     return val;
 }
 
-function evalVarAssign(node, env) {
+function evalVarAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Cannot reassign undeclared variable '${node.name}'.`);
     let target = scope.values[node.name];
@@ -1965,7 +1970,7 @@ function evalVariable(node, env) {
     printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
 }
 
-function evalVarRetype(node, env) {
+function evalVarRetype(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Cannot retype undeclared variable '${node.name}'.`);
     let target = scope.values[node.name];
@@ -2026,11 +2031,11 @@ function evalKill(node, env) {
 
 
 
-function evalListLiteral(node, env) {
+function evalListLiteral(node, env, evaluate) {
     return node.elements.map(el => evaluate(el, env));
 }
 
-function evalIndexAccess(node, env) {
+function evalIndexAccess(node, env, evaluate) {
     let target = evaluate(node.target, env);
 
     if (target && target.kind === 'Table') {
@@ -2062,7 +2067,7 @@ function evalIndexAccess(node, env) {
     return target[idx];
 }
 
-function evalIndexAssign(node, env) {
+function evalIndexAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
 
@@ -2113,7 +2118,7 @@ function evalIndexAssign(node, env) {
     return newVal;
 }
 
-function evalMethodCall(node, env) {
+function evalMethodCall(node, env, evaluate) {
     let target = evaluate(node.target, env);
     let targetType = getType(target);
 
@@ -2126,8 +2131,7 @@ function evalMethodCall(node, env) {
                     let evaluatedArgs = node.args.map(a => evaluate(a, env));
                     return fnObj.fn(...evaluatedArgs);
                 }
-                
-                return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env);
+                return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
             printErr(`[TypeError] Field '${methodName}' on Table is not a callable function.`);
         }
@@ -2236,7 +2240,15 @@ function evalMethodCall(node, env) {
     }
 }
 
-function evalTableLiteral(node, env) {
+
+
+
+
+    
+
+
+
+function evalTableLiteral(node, env, evaluate) {
     let fields = {};
 
     for (let entry of node.entries) {
@@ -2266,8 +2278,7 @@ function evalTableLiteral(node, env) {
     return { kind: 'Table', fields };
 }
 
-
-function evalPropertyAssign(node, env) {
+function evalPropertyAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
 
@@ -2355,13 +2366,11 @@ function evalPropertyAssign(node, env) {
 
 
 
-
     
 
 
 
-
-function executeBlock(statements, parentEnv) {
+function executeBlock(statements, parentEnv, evaluate) {
     let blockEnv = createScope(parentEnv);
     for (let stmt of statements) {
         let res = evaluate(stmt, blockEnv);
@@ -2370,29 +2379,29 @@ function executeBlock(statements, parentEnv) {
     return null;
 }
 
-function evalIf(node, env) {
+function evalIf(node, env, evaluate) {
     if (isTruthy(evaluate(node.condition, env))) {
-        return executeBlock(node.thenBranch, env);
+        return executeBlock(node.thenBranch, env, evaluate);
     }
     if (node.elifBranches && node.elifBranches.length > 0) {
         for (let elif of node.elifBranches) {
             if (isTruthy(evaluate(elif.condition, env))) {
-                return executeBlock(elif.body, env);
+                return executeBlock(elif.body, env, evaluate);
             }
         }
     }
     if (node.elseBranch) {
-        return executeBlock(node.elseBranch, env);
+        return executeBlock(node.elseBranch, env, evaluate);
     }
 }
 
-function evalFor(node, env) {
+function evalFor(node, env, evaluate) {
     let forEnv = createScope(env);
     if (node.init) evaluate(node.init, forEnv);
 
     while (true) {
         if (node.condition && !isTruthy(evaluate(node.condition, forEnv))) break;
-        let res = executeBlock(node.body, forEnv);
+        let res = executeBlock(node.body, forEnv, evaluate);
         
         if (res && res.isBreak) break;
 
@@ -2402,9 +2411,9 @@ function evalFor(node, env) {
     }
 }
 
-function evalWhile(node, env) {
+function evalWhile(node, env, evaluate) {
     while (isTruthy(evaluate(node.condition, env))) {
-        let res = executeBlock(node.body, env);
+        let res = executeBlock(node.body, env, evaluate);
 
         if (res && res.isBreak) break;
 
@@ -2412,9 +2421,9 @@ function evalWhile(node, env) {
     }
 }
 
-function evalDoWhile(node, env) {
+function evalDoWhile(node, env, evaluate) {
     do {
-        let res = executeBlock(node.body, env);
+        let res = executeBlock(node.body, env, evaluate);
 
         if (res && res.isBreak) break;
 
@@ -2422,7 +2431,7 @@ function evalDoWhile(node, env) {
     } while (isTruthy(evaluate(node.condition, env)));
 }
 
-function evalGiven(node, env) {
+function evalGiven(node, env, evaluate) {
     let val = evaluate(node.target || node.expr, env);
     let matchedIndex = -1;
     let defaultIndex = -1;
@@ -2439,16 +2448,16 @@ function evalGiven(node, env) {
     }
 
     if (matchedIndex !== -1) {
-        let res = executeBlock(node.cases[matchedIndex].body, env);
+        let res = executeBlock(node.cases[matchedIndex].body, env, evaluate);
         if ((!res || !res.isBreak) && defaultIndex !== -1) {
-            executeBlock(node.cases[defaultIndex].body, env);
+            executeBlock(node.cases[defaultIndex].body, env, evaluate);
         }
     } else if (defaultIndex !== -1) {
-        executeBlock(node.cases[defaultIndex].body, env);
+        executeBlock(node.cases[defaultIndex].body, env, evaluate);
     }
 }
 
-function evalForIn(node, env) {
+function evalForIn(node, env, evaluate) {
     let collection = evaluate(node.iterable, env);
     if (collection === null || collection === undefined) {
         printErr(`[TypeError: Line ${node.line}] Cannot iterate over '${collection}'.`);
@@ -2491,7 +2500,7 @@ function evalForIn(node, env) {
             type: getType(val)
         };
 
-        let res = executeBlock(node.body, forEnv);
+        let res = executeBlock(node.body, forEnv, evaluate);
 
         if (res && res.isBreak) break;
 
@@ -2499,7 +2508,7 @@ function evalForIn(node, env) {
     }
 }
 
-function evalThrow(node, env) {
+function evalThrow(node, env, evaluate) {
     let rawVal = evaluate(node.value, env);
 
     let name = "Exception";
@@ -2538,7 +2547,7 @@ function evalThrow(node, env) {
     printException(formattedMsg);
 }
 
-function evalTry(node, env) {
+function evalTry(node, env, evaluate) {
     let tryEnv = createScope(env);
     let caughtValue = null;
     let hasError = false;
@@ -2547,7 +2556,7 @@ function evalTry(node, env) {
 
     pushTryContext();
     try {
-        blockResult = executeBlock(node.tryBlock, tryEnv);
+        blockResult = executeBlock(node.tryBlock, tryEnv, evaluate);
     } catch (err) {
         hasError = true;
         if (err && err.isKurobaUserException) {
@@ -2573,12 +2582,12 @@ function evalTry(node, env) {
                 isNullable: true
             };
         }
-        blockResult = executeBlock(node.catchBlock, catchEnv);
+        blockResult = executeBlock(node.catchBlock, catchEnv, evaluate);
     }
 
     if (node.finallyBlock) {
         let finallyEnv = createScope(env);
-        let finRes = executeBlock(node.finallyBlock, finallyEnv);
+        let finRes = executeBlock(node.finallyBlock, finallyEnv, evaluate);
         if (finRes && (finRes.isReturn || finRes.isBreak || finRes.isSkip)) {
             blockResult = finRes;
         }
@@ -2606,7 +2615,6 @@ function parseRuntimeErrorToTable(message) {
 
 
 
-
 function evalFunctionDeclaration(node, env) {
     let funcObj = {
         kind: 'Function',
@@ -2628,7 +2636,7 @@ function evalFunctionDeclaration(node, env) {
     return funcObj;
 }
 
-function evalReturn(node, env) {
+function evalReturn(node, env, evaluate) {
     let value = null;
     if (node.value) {
         value = evaluate(node.value, env);
@@ -2636,7 +2644,7 @@ function evalReturn(node, env) {
     return { isReturn: true, value };
 }
 
-function evalCall(node, env) {
+function evalCall(node, env, evaluate) {
     let caller = evaluate(node.caller, env);
 
     if (!caller || caller.kind !== 'Function') {
@@ -2690,7 +2698,7 @@ function evalCall(node, env) {
     return null;
 }
 
-function evalHook(node, env) {
+function evalHook(node, env, evaluate) {
     let origFunc = evaluate(node.target, env);
 
     if (!origFunc || origFunc.kind !== 'Function') {
@@ -2896,6 +2904,14 @@ function evalHook(node, env) {
     
 
 
+
+
+
+
+
+
+
+
 function evaluate(node, env = createScope()) {
     if (!node || !node.type) return node;
 
@@ -2917,52 +2933,44 @@ function evaluate(node, env = createScope()) {
             }
             return res;
         case 'Literal':             return node.value;
-        case 'VarDeclar':           return evalVarDeclar(node, env);
-        case 'VarAssign':           return evalVarAssign(node, env);
+        case 'VarDeclar':           return evalVarDeclar(node, env, evaluate);
+        case 'VarAssign':           return evalVarAssign(node, env, evaluate);
         case 'Variable':            return evalVariable(node, env);
-        case 'VarRetype':           return evalVarRetype(node, env);
+        case 'VarRetype':           return evalVarRetype(node, env, evaluate);
         case 'SwapStatement':       return evalSwap(node, env);
-        case 'IfStatement':         return evalIf(node, env);
-        case 'ForStatement':        return evalFor(node, env);
-        case 'WhileStatement':      return evalWhile(node, env);
-        case 'DoWhileStatement':    return evalDoWhile(node, env);
-        case 'GivenStatement':      return evalGiven(node, env);
-        case 'ForInStatement':      return evalForIn(node, env);
+        case 'IfStatement':         return evalIf(node, env, evaluate);
+        case 'ForStatement':        return evalFor(node, env, evaluate);
+        case 'WhileStatement':      return evalWhile(node, env, evaluate);
+        case 'DoWhileStatement':    return evalDoWhile(node, env, evaluate);
+        case 'GivenStatement':      return evalGiven(node, env, evaluate);
+        case 'ForInStatement':      return evalForIn(node, env, evaluate);
         case 'BreakStatement':      return { isBreak: true };
         case 'SkipStatement':       return { isSkip: true };
-        case 'PasteStatement':      return evalPaste(node, env);
-        case 'CopyExpression':      return evalCopy(node, env);
-        case 'ClearStatement':      return evalClear(node, env);
-        case 'ExitStatement':       return evalExit(node, env);
-        case 'ThrowStatement':      return evalThrow(node, env);
-        case 'MathExpression':      return evalMath(node, env);
-        case 'UnaryExpression':     return evalUnary(node, env);
-        case 'LogicalExpression':   return evalLogical(node, env);
-        case 'ListLiteral':         return evalListLiteral(node, env);
-        case 'IndexAccess':         return evalIndexAccess(node, env);
-        case 'IndexAssign':         return evalIndexAssign(node, env);
-        case 'PropertyAssign':      return evalPropertyAssign(node, env);
-        case 'MethodCall':          return evalMethodCall(node, env);
-        case 'TableLiteral':        return evalTableLiteral(node, env);
+        case 'PasteStatement':      return evalPaste(node, env, evaluate);
+        case 'CopyExpression':      return evalCopy(node, env, evaluate);
+        case 'ClearStatement':      return evalClear(node, env, evaluate);
+        case 'ExitStatement':       return evalExit(node, env, evaluate);
+        case 'ThrowStatement':      return evalThrow(node, env, evaluate);
+        case 'TryStatement':        return evalTry(node, env, evaluate);
+        case 'MathExpression':      return evalMath(node, env, evaluate);
+        case 'UnaryExpression':     return evalUnary(node, env, evaluate);
+        case 'LogicalExpression':   return evalLogical(node, env, evaluate);
+        case 'ListLiteral':         return evalListLiteral(node, env, evaluate);
+        case 'IndexAccess':         return evalIndexAccess(node, env, evaluate);
+        case 'IndexAssign':         return evalIndexAssign(node, env, evaluate);
+        case 'PropertyAssign':      return evalPropertyAssign(node, env, evaluate);
+        case 'MethodCall':          return evalMethodCall(node, env, evaluate);
+        case 'TableLiteral':        return evalTableLiteral(node, env, evaluate);
         case 'KillStatement':       return evalKill(node, env);
         case 'FunctionDeclaration': return evalFunctionDeclaration(node, env);
-        case 'ReturnStatement':     return evalReturn(node, env);
-        case 'CallExpression':      return evalCall(node, env);
-        case 'HookStatement':       return evalHook(node, env);
-        case 'ImportStatement':     return evalImport(node, env);
-        case 'TryStatement':        return evalTry(node, env);
+        case 'ReturnStatement':     return evalReturn(node, env, evaluate);
+        case 'CallExpression':      return evalCall(node, env, evaluate);
+        case 'HookStatement':       return evalHook(node, env, evaluate);
+        case 'ImportStatement':     return evalImport(node, env, evaluate);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }
 }
-
-
-
-
-
-
-
-
 
 
 

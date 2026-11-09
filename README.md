@@ -244,19 +244,34 @@ Kuroba/
 ├── krb.cmd           # Windows short alias launcher
 ├── config.json       # Engine configuration & version metadata
 ├── package.json      # Project manifest
-├── main.krb          # Default playground entry file
-├── src/              # Interpreter Core (Lexer, Parser, AST Evaluator)
-│   ├── lexer.js          # Lexical analysis & token stream generation
-│   ├── parser.js         # Recursive descent parser producing the AST
-│   ├── evaluator/        # Modular runtime evaluators
-│   │   ├── index.js          # Evaluator entry point & scope dispatcher
-│   │   ├── control.js        # Branches, loops, return propagation
-│   │   ├── functions.js      # Closures, lambdas, and hook interception
-│   │   ├── collections.js    # List, Stack, Queue, Table methods
-│   │   ├── variables.js      # Declarations, types, kill statement
-│   │   └── types.js          # Value formatting & type coercion
-│   ├── runtime/          # Standard library natives (IO, Math, Time, String)
-│   └── errors.js         # Colored diagnostic reporting engine
+├── main.krb          # Full test suite & language validation runner
+├── src/              # Interpreter Core (Modular Lexer, Parser, AST Evaluator)
+│   ├── errors.js         # Colored diagnostic reporting engine & try/catch context
+│   ├── repl.js           # Interactive REPL shell with multi-line support
+│   ├── lexer/            # Modular Lexical Analysis
+│   │   ├── tokens.js         # Keywords, symbols, and character classification
+│   │   └── index.js          # Lexer engine & token stream generator
+│   ├── parser/           # Modular AST Recursive Descent Parser
+│   │   ├── cursor.js         # Token cursor, lookahead, and consumption utilities
+│   │   ├── types.js          # Type annotation & nullability contract parser
+│   │   ├── expressions.js    # Precedence hierarchy & primary expressions
+│   │   ├── control.js        # Control structures (if, for, while, given, try, hook...)
+│   │   ├── statements.js     # Statements, assignments, variable declarations & program
+│   │   └── index.js          # Parser entrypoint parse(tokens)
+│   ├── evaluator/        # Modular Runtime AST Evaluators (Zero circular imports)
+│   │   ├── index.js          # Main AST dispatcher evaluate(node, env)
+│   │   ├── operations.js     # Arithmetic, comparison, unary & logical operations
+│   │   ├── scope.js          # Environment scope frames and lookup
+│   │   ├── types.js          # Type coercion, checking and value representations
+│   │   ├── io.js             # Built-in I/O (paste, pasteln, copy, clear, exit)
+│   │   ├── tables.js         # Table literals & property mutations
+│   │   ├── collections.js    # List, Stack, Queue methods and indexing
+│   │   ├── variables.js      # Variable declarations, retyping, and destruction (kill)
+│   │   ├── functions.js      # Closures, lambdas, returns and hook interception
+│   │   ├── control.js        # Flow control (if, for, for-in, while, do-while, given, try)
+│   │   └── packages.js       # Modular package imports and namespaces
+│   └── runtime/          # Built-in runtime native functions (Math, Date, IO)
+│       └── natives.js        # Standard library natives bridge
 ├── lib/              # Core Standard Library source (.krb)
 │   └── std/              # io.krb, math.krb, string.krb, time.krb
 ├── web/              # Official Website, Web Docs & Interactive IDE
@@ -289,7 +304,7 @@ Kuroba/
 - [x] Diagnostic error engine (`printErr`)
 - [x] Booleans (`TRUE`, `FALSE`), equality (`==`, `!=`) with `0 == FALSE` and `1 == TRUE`
 - [x] Conditional branches (`if / elif / else / end`)
-- [x] Pattern matching (`given / case: / break; / case: ~`)
+- [x] Pattern matching (`given / case ... then / break; / case ~ then`)
 - [x] Short-circuit logic (`&&`, `||`, `!`)
 
 ### Phase 1: Fundamental Operators & Types `(Completed - v1.0.1)`

@@ -10,6 +10,12 @@ for (const file of fs.readdirSync(stdDir)) {
     }
 }
 
+function readSource(relPath) {
+    return fs.readFileSync(path.join(__dirname, relPath), 'utf-8')
+        .replace(/const\s*\{[^}]*\}\s*=\s*require\([^)]+\);?/g, '')
+        .replace(/module\.exports\s*=\s*\{[^}]*\};?/g, '');
+}
+
 // Generate self-contained bundle for browser
 const bundleCode = `/**
  * Kuroba (黒羽) — In-Browser Runtime Engine v1.0.5
@@ -89,17 +95,18 @@ const bundleCode = `/**
     // =========================================================================
     // 1. LEXER
     // =========================================================================
-    ${fs.readFileSync(path.join(__dirname, '../src/lexer.js'), 'utf-8')
-        .replace(/const\s*{\s*printErr\s*}\s*=\s*require\([^)]+\);?/, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readSource('../src/lexer/tokens.js')}
+    ${readSource('../src/lexer/index.js')}
 
     // =========================================================================
     // 2. PARSER
     // =========================================================================
-    ${fs.readFileSync(path.join(__dirname, '../src/parser.js'), 'utf-8')
-        .replace(/const\s*{\s*printErr\s*}\s*=\s*require\([^)]+\);?/, '')
-        .replace(/const\s*{\s*tokenize\s*}\s*=\s*require\([^)]+\);?/, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readSource('../src/parser/cursor.js')}
+    ${readSource('../src/parser/types.js')}
+    ${readSource('../src/parser/expressions.js')}
+    ${readSource('../src/parser/control.js')}
+    ${readSource('../src/parser/statements.js')}
+    ${readSource('../src/parser/index.js')}
 
     // =========================================================================
     // 3. RUNTIME NATIVES
@@ -228,6 +235,10 @@ const bundleCode = `/**
         .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
 
     ${fs.readFileSync(path.join(__dirname, '../src/evaluator/collections.js'), 'utf-8')
+        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
+        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+
+    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/tables.js'), 'utf-8')
         .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
         .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
 

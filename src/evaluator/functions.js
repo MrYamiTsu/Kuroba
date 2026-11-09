@@ -1,7 +1,6 @@
 const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
 const { createScope, findScope } = require('./scope');
-const { evaluate } = require('./index');
 
 function evalFunctionDeclaration(node, env) {
     let funcObj = {
@@ -24,7 +23,7 @@ function evalFunctionDeclaration(node, env) {
     return funcObj;
 }
 
-function evalReturn(node, env) {
+function evalReturn(node, env, evaluate) {
     let value = null;
     if (node.value) {
         value = evaluate(node.value, env);
@@ -32,7 +31,7 @@ function evalReturn(node, env) {
     return { isReturn: true, value };
 }
 
-function evalCall(node, env) {
+function evalCall(node, env, evaluate) {
     let caller = evaluate(node.caller, env);
 
     if (!caller || caller.kind !== 'Function') {
@@ -86,7 +85,7 @@ function evalCall(node, env) {
     return null;
 }
 
-function evalHook(node, env) {
+function evalHook(node, env, evaluate) {
     let origFunc = evaluate(node.target, env);
 
     if (!origFunc || origFunc.kind !== 'Function') {

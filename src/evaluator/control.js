@@ -1,9 +1,8 @@
 const { isTruthy, getType, formatKurobaValue } = require('./types');
 const { printErr, printException, pushTryContext, popTryContext, isInsideTry, KurobaUserException, KurobaRuntimeError } = require('../errors');
 const { createScope } = require('./scope');
-const { evaluate } = require('./index');
 
-function executeBlock(statements, parentEnv) {
+function executeBlock(statements, parentEnv, evaluate) {
     let blockEnv = createScope(parentEnv);
     for (let stmt of statements) {
         let res = evaluate(stmt, blockEnv);
@@ -12,29 +11,29 @@ function executeBlock(statements, parentEnv) {
     return null;
 }
 
-function evalIf(node, env) {
+function evalIf(node, env, evaluate) {
     if (isTruthy(evaluate(node.condition, env))) {
-        return executeBlock(node.thenBranch, env);
+        return executeBlock(node.thenBranch, env, evaluate);
     }
     if (node.elifBranches && node.elifBranches.length > 0) {
         for (let elif of node.elifBranches) {
             if (isTruthy(evaluate(elif.condition, env))) {
-                return executeBlock(elif.body, env);
+                return executeBlock(elif.body, env, evaluate);
             }
         }
     }
     if (node.elseBranch) {
-        return executeBlock(node.elseBranch, env);
+        return executeBlock(node.elseBranch, env, evaluate);
     }
 }
 
-function evalFor(node, env) {
+function evalFor(node, env, evaluate) {
     let forEnv = createScope(env);
     if (node.init) evaluate(node.init, forEnv);
 
     while (true) {
         if (node.condition && !isTruthy(evaluate(node.condition, forEnv))) break;
-        let res = executeBlock(node.body, forEnv);
+        let res = executeBlock(node.body, forEnv, evaluate);
         
         if (res && res.isBreak) break;
 
@@ -44,9 +43,9 @@ function evalFor(node, env) {
     }
 }
 
-function evalWhile(node, env) {
+function evalWhile(node, env, evaluate) {
     while (isTruthy(evaluate(node.condition, env))) {
-        let res = executeBlock(node.body, env);
+        let res = executeBlock(node.body, env, evaluate);
 
         if (res && res.isBreak) break;
 
@@ -54,9 +53,9 @@ function evalWhile(node, env) {
     }
 }
 
-function evalDoWhile(node, env) {
+function evalDoWhile(node, env, evaluate) {
     do {
-        let res = executeBlock(node.body, env);
+        let res = executeBlock(node.body, env, evaluate);
 
         if (res && res.isBreak) break;
 
@@ -64,7 +63,7 @@ function evalDoWhile(node, env) {
     } while (isTruthy(evaluate(node.condition, env)));
 }
 
-function evalGiven(node, env) {
+function evalGiven(node, env, evaluate) {
     let val = evaluate(node.target || node.expr, env);
     let matchedIndex = -1;
     let defaultIndex = -1;
@@ -81,16 +80,16 @@ function evalGiven(node, env) {
     }
 
     if (matchedIndex !== -1) {
-        let res = executeBlock(node.cases[matchedIndex].body, env);
+        let res = executeBlock(node.cases[matchedIndex].body, env, evaluate);
         if ((!res || !res.isBreak) && defaultIndex !== -1) {
-            executeBlock(node.cases[defaultIndex].body, env);
+            executeBlock(node.cases[defaultIndex].body, env, evaluate);
         }
     } else if (defaultIndex !== -1) {
-        executeBlock(node.cases[defaultIndex].body, env);
+        executeBlock(node.cases[defaultIndex].body, env, evaluate);
     }
 }
 
-function evalForIn(node, env) {
+function evalForIn(node, env, evaluate) {
     let collection = evaluate(node.iterable, env);
     if (collection === null || collection === undefined) {
         printErr(`[TypeError: Line ${node.line}] Cannot iterate over '${collection}'.`);
@@ -133,7 +132,7 @@ function evalForIn(node, env) {
             type: getType(val)
         };
 
-        let res = executeBlock(node.body, forEnv);
+        let res = executeBlock(node.body, forEnv, evaluate);
 
         if (res && res.isBreak) break;
 
@@ -141,7 +140,7 @@ function evalForIn(node, env) {
     }
 }
 
-function evalThrow(node, env) {
+function evalThrow(node, env, evaluate) {
     let rawVal = evaluate(node.value, env);
 
     let name = "Exception";
@@ -180,7 +179,7 @@ function evalThrow(node, env) {
     printException(formattedMsg);
 }
 
-function evalTry(node, env) {
+function evalTry(node, env, evaluate) {
     let tryEnv = createScope(env);
     let caughtValue = null;
     let hasError = false;
@@ -189,7 +188,7 @@ function evalTry(node, env) {
 
     pushTryContext();
     try {
-        blockResult = executeBlock(node.tryBlock, tryEnv);
+        blockResult = executeBlock(node.tryBlock, tryEnv, evaluate);
     } catch (err) {
         hasError = true;
         if (err && err.isKurobaUserException) {
@@ -215,12 +214,12 @@ function evalTry(node, env) {
                 isNullable: true
             };
         }
-        blockResult = executeBlock(node.catchBlock, catchEnv);
+        blockResult = executeBlock(node.catchBlock, catchEnv, evaluate);
     }
 
     if (node.finallyBlock) {
         let finallyEnv = createScope(env);
-        let finRes = executeBlock(node.finallyBlock, finallyEnv);
+        let finRes = executeBlock(node.finallyBlock, finallyEnv, evaluate);
         if (finRes && (finRes.isReturn || finRes.isBreak || finRes.isSkip)) {
             blockResult = finRes;
         }

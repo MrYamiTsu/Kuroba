@@ -1,68 +1,8 @@
-const { printErr } = require("./errors");
+const { printErr } = require("../errors");
+const { KEYWORDS, SYMBOLS, isDigit, isLetter, isIdentChar } = require("./tokens");
 
 // ============================================================================
-// 1. KEYWORDS & SYMBOL DEFINITIONS
-// ============================================================================
-
-const KEYWORDS = {
-  TRUE: { type: "BOOL", value: true },
-  FALSE: { type: "BOOL", value: false },
-  NULL: { type: "NULL", value: null },
-  paste: { type: "PASTE", value: "paste" },
-  pasteLn: { type: "PASTELN", value: "pasteLn" },
-  copy: { type: "COPY", value: "copy" },
-  copyKey: { type: "COPYKEY", value: "copyKey" },
-  ivar: { type: "IVAR", value: "ivar" },
-  iconst: { type: "ICONST", value: "iconst" },
-  if: { type: "IF", value: "if" },
-  then: { type: "THEN", value: "then" },
-  elif: { type: "ELIF", value: "elif" },
-  else: { type: "ELSE", value: "else" },
-  end: { type: "END", value: "end" },
-  for: { type: "FOR", value: "for" },
-  while: { type: "WHILE", value: "while" },
-  given: { type: "GIVEN", value: "given" },
-  do: { type: "DO", value: "do" },
-  in: { type: "IN", value: "in" },
-  case: { type: "CASE", value: "case" },
-  break: { type: "BREAK", value: "break" },
-  skip: { type: "SKIP", value: "skip" },
-  clear: { type: "CLEAR", value: "clear" },
-  exit: { type: "EXIT", value: "exit" },
-  kill: { type: "KILL", value: "kill" },
-  throw: { type: "THROW", value: "throw" },
-  function: { type: "FUNCTION", value: "function" },
-  return: { type: "RETURN", value: "return" },
-  hook: { type: "HOOK", value: "hook" },
-  this: { type: "THIS", value: "this" },
-  import: { type: "IMPORT", value: "import" },
-  alias:  { type: "ALIAS",  value: "alias" },
-  namespace: { type: "NAMESPACE", value: "namespace" },
-  try: { type: "TRY", value: "try"},
-  catch: { type: "CATCH", value: "catch"},
-  finally: { type: "FINALLY", value: "finally"},
-};
-
-const SYMBOLS = {
-  ";": "SEMICOLON",
-  "+": "PLUS",
-  "-": "MINUS",
-  "*": "MULT",
-  "/": "DIVIDE",
-  "(": "LPAREN",
-  ")": "RPAREN",
-  ":": "COLON",
-  "%": "MODULO",
-  "[": "LBRACKET",
-  "]": "RBRACKET",
-  ",": "COMMA",
-  ".": "DOT",
-  "{": "LBRACE",
-  "}": "RBRACE"
-};
-
-// ============================================================================
-// 2. TOKENIZER MAIN LOOP
+// Kuroba Lexer: Tokenizer Scanner
 // ============================================================================
 
 function tokenize(input) {
@@ -71,17 +11,10 @@ function tokenize(input) {
   let line = 1;
   let col = 1;
 
-  const isDigit = (c) => c >= "0" && c <= "9";
-  const isLetter = (c) =>
-    (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
-  const isIdentChar = (c) => isLetter(c) || isDigit(c);
-
   while (cursor < input.length) {
     let char = input[cursor];
 
-    // --------------------------------------------------------------------
     // Whitespace & Line tracking
-    // --------------------------------------------------------------------
     if (char === " ") {
       cursor++;
       col++;
@@ -98,9 +31,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // Comments & Tildes
-    // --------------------------------------------------------------------
     if (char === "~") {
       if (input[cursor + 1] === "~") {
         if (input[cursor + 2] === "{" && input[cursor + 3] === "{") {
@@ -187,9 +118,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // String Literals
-    // --------------------------------------------------------------------
     if (char === '"') {
       let startLine = line;
       let startCol = col;
@@ -225,9 +154,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // Numeric Literals
-    // --------------------------------------------------------------------
     if (isDigit(char)) {
       let startLine = line;
       let startCol = col;
@@ -262,9 +189,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // Identifiers & Keywords
-    // --------------------------------------------------------------------
     if (isLetter(char)) {
       let startLine = line;
       let startCol = col;
@@ -295,9 +220,7 @@ function tokenize(input) {
       continue;
     }
 
-    // --------------------------------------------------------------------
     // Operators & Punctuation
-    // --------------------------------------------------------------------
     if (char === "=") {
       if (input[cursor + 1] === "=") {
         tokens.push({ type: "EQUALS", value: "==", line, col });

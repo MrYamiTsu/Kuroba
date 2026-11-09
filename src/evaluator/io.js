@@ -1,8 +1,7 @@
 const fs = require('fs');
 const { formatKurobaValue, isTruthy } = require('./types');
-const { evaluate } = require('./index');
 
-function evalPaste(node, env) {
+function evalPaste(node, env, evaluate) {
     if (node.isEmpty) {
         if (node.newLine) console.log();
         return null;
@@ -14,7 +13,7 @@ function evalPaste(node, env) {
     return val;
 }
 
-function evalCopy(node, env) {
+function evalCopy(node, env, evaluate) {
     if (node.prompt !== null) {
         let val = evaluate(node.prompt, env);
         process.stdout.write(formatKurobaValue(val));
@@ -48,13 +47,13 @@ function evalCopy(node, env) {
     return chunks.join('');
 }
 
-function evalClear(node, env) {
+function evalClear(node, env, evaluate) {
     if (node.condition === null || isTruthy(evaluate(node.condition, env))) {
         process.stdout.write('\x1Bc');
     }
 }
 
-function evalExit(node, env) {
+function evalExit(node, env, evaluate) {
     if (node.condition === null || isTruthy(evaluate(node.condition, env))) {
         process.exit(0);
     }
