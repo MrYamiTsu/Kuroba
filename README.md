@@ -382,10 +382,10 @@ Kuroba/
   - [x] Strict 5-color palette, zero external npm dependencies
 - [x] Exception throwing and handling (`throw`, `try / catch(ivar e) / finally / end`):
   - [x] Distinct vermilion / orange-red diagnostics (`#FF5500`) with line/col reporting
-  - [x] Structured exception metadata tables (`exName`, `exLines`, `exCode`, `exContext`)
+  - [x] Structured exception metadata tables (`exName`, `exLines`, `exCode`, `exContext`, `exTime`)
   - [x] Safe runtime error trapping (`MathError`, `TypeError`, `IndexError`, `IOError`) translated to structured tables
   - [x] Optional `then` keyword across `try`, `catch`, and `finally`
-- [ ] Tail-call safe recursion optimization (`recur(...)` or TCO engine)
+- [x] Call stack depth limit with catchable `[RecursionError]` diagnostics
 
 ### Phase 7: Object-Oriented Programming `(v1.0.7)`
 

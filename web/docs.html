@@ -494,17 +494,24 @@ throw 404;
               <td><code>NULL</code></td>
               <td>Sets the error description body, replacing default table serialization.</td>
             </tr>
+            <tr>
+              <td><code>exTime</code></td>
+              <td><code>Bool</code></td>
+              <td><code>FALSE</code></td>
+              <td>When <code>TRUE</code>, prepends the local timestamp (<code>[YYYY-MM-DD HH:MM:SS]</code>) at the start of the error line.</td>
+            </tr>
           </tbody>
         </table>
 
         <h3>Examples of Structured Exceptions</h3>
-        <pre><code class="language-kuroba">~~ Custom name, HTTP code, and description
+        <pre><code class="language-kuroba">~~ Custom name, HTTP code, description, and timestamp
 throw {
     exName: "AccessDenied",
     exCode: 403,
+    exTime: TRUE,
     exContext: "Root privileges required for this operation"
 };
-~~ Output: [AccessDenied: Line 2, Col 1] Error 403: Root privileges required for this operation
+~~ Output: [2026-11-10 13:22:09] [AccessDenied: Line 2, Col 1] Error 403: Root privileges required for this operation
 
 ~~ Suppressing line tracking for clean CLI alerts
 throw {

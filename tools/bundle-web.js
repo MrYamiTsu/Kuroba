@@ -16,6 +16,13 @@ function readSource(relPath) {
         .replace(/module\.exports\s*=\s*\{[^}]*\};?/g, '');
 }
 
+function readErrorFormatters() {
+    const src = fs.readFileSync(path.join(__dirname, '../src/errors.js'), 'utf-8');
+    const idx = src.indexOf('function formatTimestamp()');
+    if (idx === -1) throw new Error('formatTimestamp not found in src/errors.js');
+    return src.slice(idx).replace(/module\.exports\s*=\s*\{[^}]*\};?/g, '').trim();
+}
+
 // Generate self-contained bundle for browser
 const bundleCode = `/**
  * Kuroba (黒羽) — In-Browser Runtime Engine v1.0.5
@@ -91,6 +98,8 @@ const bundleCode = `/**
         }
         throw new Error(msg);
     }
+
+    ${readErrorFormatters()}
 
     // =========================================================================
     // 1. LEXER

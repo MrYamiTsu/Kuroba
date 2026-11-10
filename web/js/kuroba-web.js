@@ -78,6 +78,67 @@
         throw new Error(msg);
     }
 
+    function formatTimestamp() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    return `${date} ${time}`;
+}
+
+function formatExceptionMessage(rawVal, line, col, fallbackFormatted) {
+    let name = "Exception";
+    let showLines = true;
+    let showTime = false;
+    let code = null;
+    let context = null;
+
+    if (rawVal && rawVal.kind === 'Table' && rawVal.fields) {
+        if ('exName' in rawVal.fields && rawVal.fields.exName.value !== null) {
+            name = String(rawVal.fields.exName.value);
+        }
+        if ('exLines' in rawVal.fields) {
+            let lVal = rawVal.fields.exLines.value;
+            showLines = (lVal !== false && lVal !== 0);
+        }
+        if ('exTime' in rawVal.fields) {
+            let tVal = rawVal.fields.exTime.value;
+            showTime = (tVal !== false && tVal !== 0 && tVal !== null);
+        }
+        if ('exCode' in rawVal.fields && rawVal.fields.exCode.value !== null) {
+            code = rawVal.fields.exCode.value;
+        }
+        if ('exContext' in rawVal.fields && rawVal.fields.exContext.value !== null) {
+            context = String(rawVal.fields.exContext.value);
+        }
+    }
+
+    let loc = (line !== undefined) ? `Line ${line}, Col ${col}` : null;
+    let header = `[${name}${showLines && loc ? ': ' + loc : ''}]`;
+
+    let desc = (context !== null) ? context : fallbackFormatted;
+    if (code !== null) {
+        desc = `Error ${code}: ${desc}`;
+    }
+
+    let timePrefix = showTime ? `[${formatTimestamp()}] ` : '';
+    return `${timePrefix}${header} ${desc}`;
+}
+
+function parseRuntimeErrorToTable(message) {
+    let match = message.match(/^\[([a-zA-Z]+)(?::\s*Line\s*(\d+),\s*Col\s*(\d+))?\]\s*(.*)$/s);
+    let name = match ? match[1] : "RuntimeError";
+    let context = match ? match[4] : message;
+    return {
+        kind: 'Table',
+        fields: {
+            exName: { value: name, type: 'String', isNullable: false },
+            exContext: { value: context, type: 'String', isNullable: false },
+            exTime: { value: false, type: 'Bool', isNullable: false }
+        }
+    };
+}
+
     // =========================================================================
     // 1. LEXER
     // =========================================================================
@@ -2510,37 +2571,7 @@ function evalForIn(node, env, evaluate) {
 
 function evalThrow(node, env, evaluate) {
     let rawVal = evaluate(node.value, env);
-
-    let name = "Exception";
-    let showLines = true;
-    let code = null;
-    let context = null;
-
-    if (rawVal && rawVal.kind === 'Table' && rawVal.fields) {
-        if ('exName' in rawVal.fields && rawVal.fields.exName.value !== null) {
-            name = String(rawVal.fields.exName.value);
-        }
-        if ('exLines' in rawVal.fields) {
-            let lVal = rawVal.fields.exLines.value;
-            showLines = (lVal !== false && lVal !== 0);
-        }
-        if ('exCode' in rawVal.fields && rawVal.fields.exCode.value !== null) {
-            code = rawVal.fields.exCode.value;
-        }
-        if ('exContext' in rawVal.fields && rawVal.fields.exContext.value !== null) {
-            context = String(rawVal.fields.exContext.value);
-        }
-    }
-
-    let loc = (node.line !== undefined) ? `Line ${node.line}, Col ${node.col}` : null;
-    let header = `[${name}${showLines && loc ? ': ' + loc : ''}]`;
-
-    let desc = (context !== null) ? context : formatKurobaValue(rawVal);
-    if (code !== null) {
-        desc = `Error ${code}: ${desc}`;
-    }
-
-    let formattedMsg = `${header} ${desc}`;
+    let formattedMsg = formatExceptionMessage(rawVal, node.line, node.col, formatKurobaValue(rawVal));
     if (isInsideTry()) {
         throw new KurobaUserException(rawVal, formattedMsg);
     }
@@ -2596,24 +2627,14 @@ function evalTry(node, env, evaluate) {
     return blockResult;
 }
 
-function parseRuntimeErrorToTable(message) {
-    let match = message.match(/^\[([a-zA-Z]+)(?::\s*Line\s*(\d+),\s*Col\s*(\d+))?\]\s*(.*)$/s);
-    let name = match ? match[1] : "RuntimeError";
-    let context = match ? match[4] : message;
-    return {
-        kind: 'Table',
-        fields: {
-            exName: { value: name, type: 'String', isNullable: false },
-            exContext: { value: context, type: 'String', isNullable: false }
-        }
-    };
-}
-
 
 
     
 
 
+
+const MAX_CALL_DEPTH = 512;
+let callDepth = 0;
 
 function evalFunctionDeclaration(node, env) {
     let funcObj = {
@@ -2638,13 +2659,17 @@ function evalFunctionDeclaration(node, env) {
 
 function evalReturn(node, env, evaluate) {
     let value = null;
-    if (node.value) {
+    if (node.value !== null && node.value !== undefined) {
         value = evaluate(node.value, env);
     }
     return { isReturn: true, value };
 }
 
 function evalCall(node, env, evaluate) {
+    if (callDepth >= MAX_CALL_DEPTH) {
+        printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded.`);
+    }
+
     let caller = evaluate(node.caller, env);
 
     if (!caller || caller.kind !== 'Function') {
@@ -2662,40 +2687,50 @@ function evalCall(node, env, evaluate) {
         printErr(`[TypeError] Function '${funcName}' expects ${caller.params.length} arguments, got ${node.args.length}.`);
     }
 
-    let fnEnv = createScope(caller.closure);
+    if (callDepth >= MAX_CALL_DEPTH) {
+        let funcName = caller.name || '~';
+        printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded in function '${funcName}'.`);
+    }
 
-    for (let i = 0; i < caller.params.length; i++) {
-        let param = caller.params[i];
-        let argVal = evaluate(node.args[i], env);
+    callDepth++;
+    try {
+        let fnEnv = createScope(caller.closure);
 
-        if (param.typeInfo) {
-            let baseType = param.typeInfo.baseType;
-            let isNullable = param.typeInfo.isNullable;
+        for (let i = 0; i < caller.params.length; i++) {
+            let param = caller.params[i];
+            let argVal = evaluate(node.args[i], env);
 
-            if (!isNullable && argVal === null) {
-                printErr(`[TypeError] Cannot pass NULL to non-nullable parameter '${param.name}' of type '(${baseType})'.`);
+            if (param.typeInfo) {
+                let baseType = param.typeInfo.baseType;
+                let isNullable = param.typeInfo.isNullable;
+
+                if (!isNullable && argVal === null) {
+                    printErr(`[TypeError] Cannot pass NULL to non-nullable parameter '${param.name}' of type '(${baseType})'.`);
+                }
+                if (argVal !== null) {
+                    argVal = castToType(argVal, baseType);
+                }
             }
-            if (argVal !== null) {
-                argVal = castToType(argVal, baseType);
+
+            fnEnv.values[param.name] = {
+                value: argVal,
+                type: getType(argVal),
+                isNullable: true,
+                isConst: false
+            };
+        }
+
+        for (let stmt of caller.body) {
+            let res = evaluate(stmt, fnEnv);
+            if (res && res.isReturn) {
+                return res.value;
             }
         }
 
-        fnEnv.values[param.name] = {
-            value: argVal,
-            type: getType(argVal),
-            isNullable: true,
-            isConst: false
-        };
+        return null;
+    } finally {
+        callDepth--;
     }
-
-    for (let stmt of caller.body) {
-        let res = evaluate(stmt, fnEnv);
-        if (res && res.isReturn) {
-            return res.value;
-        }
-    }
-
-    return null;
 }
 
 function evalHook(node, env, evaluate) {

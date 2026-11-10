@@ -1,5 +1,5 @@
 const { isTruthy, getType, formatKurobaValue } = require('./types');
-const { printErr, printException, pushTryContext, popTryContext, isInsideTry, KurobaUserException, KurobaRuntimeError } = require('../errors');
+const { printErr, printException, pushTryContext, popTryContext, isInsideTry, KurobaUserException, KurobaRuntimeError, formatExceptionMessage, parseRuntimeErrorToTable } = require('../errors');
 const { createScope } = require('./scope');
 
 function executeBlock(statements, parentEnv, evaluate) {
@@ -142,37 +142,7 @@ function evalForIn(node, env, evaluate) {
 
 function evalThrow(node, env, evaluate) {
     let rawVal = evaluate(node.value, env);
-
-    let name = "Exception";
-    let showLines = true;
-    let code = null;
-    let context = null;
-
-    if (rawVal && rawVal.kind === 'Table' && rawVal.fields) {
-        if ('exName' in rawVal.fields && rawVal.fields.exName.value !== null) {
-            name = String(rawVal.fields.exName.value);
-        }
-        if ('exLines' in rawVal.fields) {
-            let lVal = rawVal.fields.exLines.value;
-            showLines = (lVal !== false && lVal !== 0);
-        }
-        if ('exCode' in rawVal.fields && rawVal.fields.exCode.value !== null) {
-            code = rawVal.fields.exCode.value;
-        }
-        if ('exContext' in rawVal.fields && rawVal.fields.exContext.value !== null) {
-            context = String(rawVal.fields.exContext.value);
-        }
-    }
-
-    let loc = (node.line !== undefined) ? `Line ${node.line}, Col ${node.col}` : null;
-    let header = `[${name}${showLines && loc ? ': ' + loc : ''}]`;
-
-    let desc = (context !== null) ? context : formatKurobaValue(rawVal);
-    if (code !== null) {
-        desc = `Error ${code}: ${desc}`;
-    }
-
-    let formattedMsg = `${header} ${desc}`;
+    let formattedMsg = formatExceptionMessage(rawVal, node.line, node.col, formatKurobaValue(rawVal));
     if (isInsideTry()) {
         throw new KurobaUserException(rawVal, formattedMsg);
     }
@@ -226,19 +196,6 @@ function evalTry(node, env, evaluate) {
     }
 
     return blockResult;
-}
-
-function parseRuntimeErrorToTable(message) {
-    let match = message.match(/^\[([a-zA-Z]+)(?::\s*Line\s*(\d+),\s*Col\s*(\d+))?\]\s*(.*)$/s);
-    let name = match ? match[1] : "RuntimeError";
-    let context = match ? match[4] : message;
-    return {
-        kind: 'Table',
-        fields: {
-            exName: { value: name, type: 'String', isNullable: false },
-            exContext: { value: context, type: 'String', isNullable: false }
-        }
-    };
 }
 
 module.exports = { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow, evalTry };
