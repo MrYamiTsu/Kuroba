@@ -300,8 +300,10 @@ const bundleCode = `/**
         throw new Error("[Exit] Programme arrêté (exit).");
     }
 
-    // Web Packages functions (using in-memory virtual standard library)
+    // Web Packages functions (using virtual stdlib + user workspace files)
     const moduleCache = {};
+    let activeWorkspaceFiles = {};
+    let workspaceModuleCache = {};
 
     function evaluateNamespaceBody(statements) {
         const moduleScope = createScope();
@@ -331,19 +333,44 @@ const bundleCode = `/**
 
     function discoverNamespaceModules(pkgName) {
         const discovered = {};
-        for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
+
+        if (pkgName === 'Std') {
+            for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
+                const ast = parse(tokenize(source));
+                for (const stmt of ast.body) {
+                    if (stmt.type === 'NamespaceStatement' && stmt.namespace === pkgName) {
+                        const modName = stmt.module || pkgName;
+                        const cacheKey = pkgName + ':' + modName;
+                        if (!moduleCache[cacheKey]) {
+                            moduleCache[cacheKey] = {
+                                isRoot: !stmt.module,
+                                table: evaluateNamespaceBody(stmt.body)
+                            };
+                        }
+                        discovered[modName] = moduleCache[cacheKey];
+                    }
+                }
+            }
+        }
+
+        for (const [fileName, source] of Object.entries(activeWorkspaceFiles)) {
+            if (fileName === 'main.krb' || !source || !source.trim()) continue;
             const ast = parse(tokenize(source));
             for (const stmt of ast.body) {
                 if (stmt.type === 'NamespaceStatement' && stmt.namespace === pkgName) {
                     const modName = stmt.module || pkgName;
-                    const cacheKey = pkgName + ':' + modName;
-                    if (!moduleCache[cacheKey]) {
-                        moduleCache[cacheKey] = evaluateNamespaceBody(stmt.body);
+                    const cacheKey = pkgName + ':' + modName + ':' + (stmt.module ? 'sub' : 'root');
+                    if (!workspaceModuleCache[cacheKey]) {
+                        workspaceModuleCache[cacheKey] = {
+                            isRoot: !stmt.module,
+                            table: evaluateNamespaceBody(stmt.body)
+                        };
                     }
-                    discovered[modName] = moduleCache[cacheKey];
+                    discovered[modName] = workspaceModuleCache[cacheKey];
                 }
             }
         }
+
         return discovered;
     }
 
@@ -351,10 +378,12 @@ const bundleCode = `/**
         if (node.package === 'Main') {
             printErr("[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.");
         }
-        if (node.package !== 'Std') {
-            printErr("[ImportError] Unknown package '" + node.package + "'. Available packages: 'Std'.");
-        }
+
         const availableModules = discoverNamespaceModules(node.package);
+        if (Object.keys(availableModules).length === 0) {
+            printErr("[ImportError] Unknown package or namespace '" + node.package + "'. Create a file with 'namespace " + node.package + " then ... end' or import 'Std'.");
+        }
+
         const isFullPackage = !node.modules || node.modules.length === 0;
         const modulesToBind = {};
         if (isFullPackage) {
@@ -369,13 +398,26 @@ const bundleCode = `/**
         }
 
         if (node.alias === '~') {
-            for (const [modName, modTable] of Object.entries(modulesToBind)) {
-                env.values[modName] = {
-                    value: modTable,
-                    type: 'Table',
-                    isConst: true,
-                    isNullable: false
-                };
+            for (const [modName, entry] of Object.entries(modulesToBind)) {
+                if (entry.isRoot) {
+                    for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
+                        if (fieldName !== 'args' && fieldName !== 'Std') {
+                            env.values[fieldName] = {
+                                value: fieldDef.value,
+                                type: fieldDef.type,
+                                isConst: true,
+                                isNullable: fieldDef.isNullable
+                            };
+                        }
+                    }
+                } else {
+                    env.values[modName] = {
+                        value: entry.table,
+                        type: 'Table',
+                        isConst: true,
+                        isNullable: false
+                    };
+                }
             }
             return null;
         }
@@ -385,12 +427,20 @@ const bundleCode = `/**
             kind: 'Table',
             fields: {}
         };
-        for (const [modName, modTable] of Object.entries(modulesToBind)) {
-            pkgTable.fields[modName] = {
-                value: modTable,
-                type: 'Table',
-                isNullable: false
-            };
+        for (const [modName, entry] of Object.entries(modulesToBind)) {
+            if (entry.isRoot) {
+                for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
+                    if (fieldName !== 'args' && fieldName !== 'Std') {
+                        pkgTable.fields[fieldName] = fieldDef;
+                    }
+                }
+            } else {
+                pkgTable.fields[modName] = {
+                    value: entry.table,
+                    type: 'Table',
+                    isNullable: false
+                };
+            }
         }
         env.values[targetName] = {
             value: pkgTable,
@@ -422,6 +472,8 @@ const bundleCode = `/**
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });
             activeClearHandler = options.onClear || (() => {});
+            activeWorkspaceFiles = options.files || {};
+            workspaceModuleCache = {};
 
             const tokens = tokenize(sourceCode);
             const ast = parse(tokens);

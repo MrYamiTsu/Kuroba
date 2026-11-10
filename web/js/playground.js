@@ -9,143 +9,226 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRun = document.getElementById('btn-execute');
   const btnClearEditor = document.getElementById('btn-clear-editor');
   const btnClearTerm = document.getElementById('btn-clear-term');
-  const selectSample = document.getElementById('select-sample');
   const timingBadge = document.getElementById('timing-badge');
   const statusCursor = document.getElementById('status-cursor');
+  const tabsList = document.getElementById('ide-file-tabs-list');
+  const btnAddFile = document.getElementById('btn-add-file');
+  const statusActiveFile = document.getElementById('status-active-file');
+
+  const ENTRY_FILE = 'main.krb';
+  const STORAGE_KEY = 'kuroba_playground_workspace_v1';
 
   // ==========================================================================
-  // Sample Programs in Idiomatic English
+  // Multi-File Workspace State & Persistence
   // ==========================================================================
-  const SAMPLES = {
-    hello: `~~ Welcome to Kuroba (KRB) v1.0.5 !
-ivar player = "Shinobi";
-ivar level = 12;
-ivar healthPoints = 100;
+  let workspaceFiles = { [ENTRY_FILE]: '' };
+  let fileOrder = [ENTRY_FILE];
+  let activeFile = ENTRY_FILE;
 
-pasteLn(~"Greetings, {player}!");
-pasteLn(~"Status: Level {level} | HP: {healthPoints}/100");
-pasteLn("Executed client-side by Kuroba's pure JavaScript AST engine.");`,
+  function loadWorkspace() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.files && typeof parsed.files[ENTRY_FILE] === 'string') {
+          workspaceFiles = parsed.files;
+          fileOrder = Array.isArray(parsed.order)
+            ? parsed.order.filter(f => f in workspaceFiles)
+            : Object.keys(workspaceFiles);
+          if (!fileOrder.includes(ENTRY_FILE)) fileOrder.unshift(ENTRY_FILE);
+          activeFile = (parsed.active && parsed.active in workspaceFiles) ? parsed.active : ENTRY_FILE;
+        }
+      }
+    } catch (e) {}
+  }
 
-    strings: `import Std ~(String) alias ~;
+  function saveWorkspace() {
+    try {
+      workspaceFiles[activeFile] = editor.value;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        files: workspaceFiles,
+        order: fileOrder,
+        active: activeFile
+      }));
+    } catch (e) {}
+  }
 
-namespace Main then
-    ivar text = "  sanctuary of kuroba  ";
-    ivar clean = String.trim(text);
-    
-    pasteLn("Original: '" + text + "'");
-    pasteLn(~"Uppercase: {String.upper(clean)}");
-    pasteLn(~"Length:    {String.count(clean)} characters");
-    pasteLn(~"Reversed:  {String.reverse(clean)}");
-    
-    ivar tokens = String.split(clean, " ");
-    pasteLn(~"Words found: {tokens.count()}");
-    for (i, word in tokens) then
-        pasteLn(~"  [{i}] -> {word}");
-    end
-end`,
+  function updateActiveFileStatus() {
+    if (!statusActiveFile) return;
+    if (activeFile === ENTRY_FILE) {
+      statusActiveFile.innerHTML = `<span class="status-indicator">●</span> Entry: ${ENTRY_FILE}`;
+    } else {
+      statusActiveFile.innerHTML = `<span class="status-indicator">●</span> Editing: ${activeFile} (Run executes ${ENTRY_FILE})`;
+    }
+  }
 
-    math_time: `import Std ~(Math, Time) alias ~;
+  function switchToFile(fileName) {
+    if (!(fileName in workspaceFiles)) return;
+    workspaceFiles[activeFile] = editor.value;
+    activeFile = fileName;
+    editor.value = workspaceFiles[activeFile];
+    editor.scrollTop = 0;
+    if (gutter) gutter.scrollTop = 0;
+    updateGutter();
+    updateCursorPosition();
+    updateActiveFileStatus();
+    renderFileTabs();
+    saveWorkspace();
+  }
 
-namespace Main then
-    pasteLn("Geometric calculation and timing metrics:");
-    ivar radius = 8.0;
-    ivar area = Math.PI * Math.pow(radius, 2);
-    pasteLn(~"Circle with radius {radius} -> Area: {area}");
+  function normalizeFilename(rawName) {
+    let clean = rawName.trim().replace(/[^a-zA-Z0-9_.-]/g, '');
+    if (!clean) return null;
+    if (!clean.endsWith('.krb')) clean += '.krb';
+    return clean;
+  }
 
-    ivar roll = Math.random(1, 100);
-    pasteLn(~"Random number rolled: {roll}");
+  function startRenameTab(fileName, tabEl, labelEl) {
+    if (fileName === ENTRY_FILE) return;
 
-    ivar chrono = Time.stopwatch();
-    Time.sleep(40); ~~ Synchronous CPU-friendly pause
-    ivar elapsed = chrono.elapsed();
-    pasteLn(~"Stopwatch duration: {elapsed} ms ({Time.format(elapsed)})");
-end`,
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'ide-tab-rename-input';
+    input.value = fileName;
 
-    io: `import Std ~(IO) alias ~;
+    let committed = false;
+    function finishRename(apply) {
+      if (committed) return;
+      committed = true;
 
-namespace Main then
-    ivar filename = "session.dat";
-    
-    pasteLn("1. Writing save state to virtual filesystem...");
-    IO.filePaste(filename, "=== KUROBA BACKUP STATE ===\\n");
-    IO.filePasteLn(filename, "Hero: Kenji | Level: 25");
-    IO.filePasteLn(filename, "Inventory: [Katana, Elixir, Smoke Bomb]");
+      if (apply) {
+        const nextName = normalizeFilename(input.value);
+        if (nextName && nextName !== fileName && nextName !== ENTRY_FILE && !(nextName in workspaceFiles)) {
+          workspaceFiles[activeFile] = editor.value;
+          workspaceFiles[nextName] = workspaceFiles[fileName];
+          delete workspaceFiles[fileName];
+          const idx = fileOrder.indexOf(fileName);
+          if (idx !== -1) fileOrder[idx] = nextName;
+          if (activeFile === fileName) activeFile = nextName;
+          saveWorkspace();
+        }
+      }
+      renderFileTabs();
+      updateActiveFileStatus();
+    }
 
-    if (IO.fileExists(filename)) then
-        pasteLn("\\n2. File detected in virtual memory! Reading contents:");
-        pasteLn("------------------------------------------------------");
-        paste(IO.fileCopy(filename));
-        pasteLn("------------------------------------------------------");
-        
-        IO.fileKill(filename);
-        pasteLn("\\n3. File cleaned up. Still exists? " + IO.fileExists(filename));
-    end
-end`,
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        finishRename(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        finishRename(false);
+      }
+    });
+    input.addEventListener('blur', () => finishRename(true));
+    input.addEventListener('click', (e) => e.stopPropagation());
 
-    collections: `~~ Typed collections & associative tables
-ivar~List<Int> dice = [4, 6, 8, 12, 20];
-dice.push(100);
-pasteLn(~"Dice pool ({dice.count()}) : " + dice);
+    labelEl.replaceWith(input);
+    input.focus();
+    const dotIdx = input.value.lastIndexOf('.');
+    input.setSelectionRange(0, dotIdx > 0 ? dotIdx : input.value.length);
+  }
 
-ivar~Table character = {
-    name: "Kenji",
-    role: "Shadow Ninja",
-    stats: { strength: 28, agility: 35 },
-    inventory: ["Shuriken", "Smoke Bomb", "Elixir"]
-};
+  function deleteFile(fileName) {
+    if (fileName === ENTRY_FILE || !(fileName in workspaceFiles)) return;
+    const idx = fileOrder.indexOf(fileName);
+    delete workspaceFiles[fileName];
+    if (idx !== -1) fileOrder.splice(idx, 1);
+    if (activeFile === fileName) {
+      activeFile = fileOrder[Math.max(0, idx - 1)] || ENTRY_FILE;
+      editor.value = workspaceFiles[activeFile];
+      updateGutter();
+      updateCursorPosition();
+    }
+    updateActiveFileStatus();
+    renderFileTabs();
+    saveWorkspace();
+  }
 
-character.stats.strength += 10;
-pasteLn(~"Hero: {character.name} ({character.role})");
-pasteLn(~"Boosted Strength: {character.stats.strength}");
-pasteLn(~"Inventory items: " + character.inventory);`,
+  function createNewFile() {
+    workspaceFiles[activeFile] = editor.value;
+    let counter = 1;
+    let candidate = `file${counter}.krb`;
+    while (candidate in workspaceFiles) {
+      counter++;
+      candidate = `file${counter}.krb`;
+    }
 
-    hooks: `~~ First-class functions and lexical hooks
-function computeInvoice(ivar base, ivar tax) then
-    return base + (base * tax);
-end
+    workspaceFiles[candidate] = '';
+    fileOrder.push(candidate);
+    activeFile = candidate;
+    editor.value = '';
+    updateGutter();
+    updateCursorPosition();
+    updateActiveFileStatus();
+    renderFileTabs();
+    saveWorkspace();
+    editor.focus();
+  }
 
-~~ Interception hook delegating to original with this(...)
-hook computeInvoice(ivar base, ivar tax) then
-    pasteLn(~"[Audit Hook] Invoice calculation for base amount: {base}$");
-    ivar rawTotal = this(base, tax);
-    return rawTotal - 15; ~~ Member discount
-end
+  function renderFileTabs(autoRenameTarget = null) {
+    if (!tabsList) return;
+    tabsList.innerHTML = '';
 
-ivar total = computeInvoice(150, 0.15);
-pasteLn(~"Final invoice total: {total}$");`,
+    for (const fileName of fileOrder) {
+      const isEntry = (fileName === ENTRY_FILE);
+      const tab = document.createElement('div');
+      tab.className = `ide-file-tab${fileName === activeFile ? ' active' : ''}${isEntry ? ' locked' : ''}`;
+      tab.title = isEntry
+        ? 'Entry point executed by Run ▶ (locked)'
+        : 'Click to edit • Double-click name to rename';
 
-    game: `import Std ~(Math) alias ~;
+      const label = document.createElement('span');
+      label.className = 'ide-tab-label';
+      label.textContent = fileName;
+      tab.appendChild(label);
 
-namespace Main then
-    pasteLn("=== TACTICAL COMBAT SIMULATION ===");
-    ivar playerHp = 50;
-    ivar bossHp = 45;
-    ivar round = 1;
+      if (isEntry) {
+        const tag = document.createElement('span');
+        tag.className = 'ide-tab-entry-tag';
+        tag.textContent = 'entry';
+        tab.appendChild(tag);
+      } else {
+        label.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          startRenameTab(fileName, tab, label);
+        });
 
-    while (playerHp > 0 && bossHp > 0) then
-        pasteLn(~"\\n--- Round {round} ---");
-        ivar playerDamage = Math.random(10, 18);
-        bossHp -= playerDamage;
-        pasteLn(~"You strike the boss: -{playerDamage} HP (Remaining: {Math.max(0, bossHp)})");
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'ide-tab-rename';
+        renameBtn.title = `Rename ${fileName}`;
+        renameBtn.innerHTML = '&#9998;';
+        renameBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          startRenameTab(fileName, tab, label);
+        });
+        tab.appendChild(renameBtn);
 
-        if (bossHp <= 0) then
-            pasteLn("\\n>> VICTORY! The dungeon boss has fallen! ⚔️✨");
-            break;
-        end
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'ide-tab-close';
+        closeBtn.title = `Delete ${fileName}`;
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteFile(fileName);
+        });
+        tab.appendChild(closeBtn);
+      }
 
-        ivar bossDamage = Math.random(8, 15);
-        playerHp -= bossDamage;
-        pasteLn(~"The boss retaliates: -{bossDamage} HP (Remaining: {Math.max(0, playerHp)})");
+      tab.addEventListener('click', () => {
+        if (activeFile !== fileName) {
+          switchToFile(fileName);
+        }
+      });
 
-        if (playerHp <= 0) then
-            pasteLn("\\n>> DEFEAT! You were defeated in battle... 💀");
-            break;
-        end
+      tabsList.appendChild(tab);
 
-        round++;
-    end
-end`
-  };
+      if (autoRenameTarget === fileName) {
+        startRenameTab(fileName, tab, label);
+      }
+    }
+  }
 
   // ==========================================================================
   // Line Number Gutter Synchronization
@@ -173,6 +256,7 @@ end`
   editor.addEventListener('input', () => {
     updateGutter();
     updateCursorPosition();
+    saveWorkspace();
   });
 
   editor.addEventListener('scroll', () => {
@@ -203,18 +287,21 @@ end`
   }
 
   // ==========================================================================
-  // Execution Engine Call
+  // Execution Engine Call (Always executes main.krb with workspace files)
   // ==========================================================================
   function executeScript() {
-    const code = editor.value;
+    workspaceFiles[activeFile] = editor.value;
+    saveWorkspace();
+
+    const code = workspaceFiles[ENTRY_FILE] || '';
     if (!code.trim()) {
-      printTerminal("Notice: Editor is empty. Write or select a sample first.", "sys");
+      printTerminal(`Notice: '${ENTRY_FILE}' is empty. Write entry code in ${ENTRY_FILE} first.`, "sys");
       return;
     }
 
     const now = new Date();
     const timeStr = now.toTimeString().split(' ')[0];
-    printTerminal(`[${timeStr}] kuroba@runtime:~$ run main.krb`, "sys");
+    printTerminal(`[${timeStr}] kuroba@runtime:~$ run ${ENTRY_FILE}`, "sys");
     const t0 = performance.now();
     let hasEncounteredError = false;
 
@@ -224,6 +311,7 @@ end`
       }
 
       window.Kuroba.run(code, {
+        files: workspaceFiles,
         onPrint: (txt, newLine) => {
           printTerminal(txt, 'out');
         },
@@ -256,21 +344,16 @@ end`
   // ==========================================================================
   // Event Listeners & Keyboard Shortcuts
   // ==========================================================================
-  selectSample.addEventListener('change', (e) => {
-    const key = e.target.value;
-    if (SAMPLES[key]) {
-      editor.value = SAMPLES[key];
-      updateGutter();
-      updateCursorPosition();
-      editor.scrollTop = 0;
-      if (gutter) gutter.scrollTop = 0;
-    }
-  });
+  if (btnAddFile) {
+    btnAddFile.addEventListener('click', createNewFile);
+  }
 
   btnClearEditor.addEventListener('click', () => {
     editor.value = '';
+    workspaceFiles[activeFile] = '';
     updateGutter();
     updateCursorPosition();
+    saveWorkspace();
     editor.focus();
   });
 
@@ -278,7 +361,7 @@ end`
   btnRun.addEventListener('click', executeScript);
 
   editor.addEventListener('keydown', (e) => {
-    // Ctrl + Enter to Run
+    // Ctrl + Enter to Run main.krb
     if (e.ctrlKey && e.key === 'Enter') {
       e.preventDefault();
       executeScript();
@@ -297,25 +380,30 @@ end`
       editor.selectionStart = editor.selectionEnd = start + 4;
       updateGutter();
       updateCursorPosition();
+      saveWorkspace();
     }
   });
 
   // ==========================================================================
-  // URL Parameter Detection: ?code=...
+  // Workspace Initialization & URL Parameter (?code=...)
   // ==========================================================================
+  loadWorkspace();
+
   const urlParams = new URLSearchParams(window.location.search);
   const codeParam = urlParams.get('code');
 
   if (codeParam) {
     try {
-      editor.value = decodeURIComponent(codeParam);
+      workspaceFiles[ENTRY_FILE] = decodeURIComponent(codeParam);
     } catch (e) {
-      editor.value = codeParam;
+      workspaceFiles[ENTRY_FILE] = codeParam;
     }
-  } else {
-    editor.value = SAMPLES.hello;
+    activeFile = ENTRY_FILE;
   }
 
+  editor.value = workspaceFiles[activeFile] || '';
   updateGutter();
   updateCursorPosition();
+  updateActiveFileStatus();
+  renderFileTabs();
 });

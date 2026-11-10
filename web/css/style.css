@@ -44,8 +44,9 @@
   --action-active: #2F601F;
 
   /* Fonts */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Consolas', monospace;
 
   --header-height: 64px;
 }
@@ -73,6 +74,10 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, .brand-name {
+  font-family: var(--font-display);
 }
 
 body.ide-body {
@@ -239,7 +244,7 @@ nav.main-nav {
 
 .hero-title {
   font-size: 2.85rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.16;
   color: var(--text-sand);
   letter-spacing: -0.8px;
@@ -383,36 +388,59 @@ nav.main-nav {
   gap: 0.5rem;
 }
 
-.hero-code-tabs {
+.hero-code-nav {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  overflow-x: auto;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
-.code-tab {
+.hero-nav-btn {
   background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-muted);
+  border: 1px solid var(--border-code);
+  color: var(--text-sand);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  padding: 0.35rem 0.65rem;
+  font-size: 1rem;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
   border-radius: 4px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.code-tab:hover {
-  color: var(--text-sand);
-  background: #0E350B;
-}
-
-.code-tab.active {
-  color: var(--text-sand);
+.hero-nav-btn:hover {
+  color: var(--text-primary);
   background: #11420E;
-  border-color: #3D7A29;
+  border-color: var(--moss-green);
+}
+
+.hero-code-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.hero-code-index {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.hero-code-title {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
   font-weight: 600;
+  color: var(--text-sand);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hero-code-actions {
@@ -429,7 +457,51 @@ nav.main-nav {
   font-size: 0.88rem;
   line-height: 1.65;
   color: #DFD7CC;
-  min-height: 380px;
+  min-height: 310px;
+}
+
+.hero-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.15em;
+  background: var(--text-moss);
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: kuroba-caret-blink 0.9s step-end infinite;
+}
+
+@keyframes kuroba-caret-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.hero-code-output {
+  background: var(--bg-code-header);
+  border-top: 1px solid var(--border-code);
+  padding: 0.65rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 42px;
+}
+
+.hero-output-prompt {
+  color: var(--text-moss);
+  font-weight: 700;
+  user-select: none;
+}
+
+.hero-output-text {
+  color: var(--text-sand);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.hero-output-text.visible {
+  opacity: 1;
 }
 
 /* ============================================================================
@@ -685,7 +757,7 @@ nav.main-nav {
 
 .docs-article-body h1 {
   font-size: 2.2rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text-sand);
   margin-bottom: 1rem;
   letter-spacing: -0.4px;
@@ -976,6 +1048,123 @@ nav.main-nav {
   border: 1px solid var(--border-code);
   padding: 0.15rem 0.45rem;
   border-radius: 3px;
+}
+
+/* Multi-File Workspace Tabs */
+.ide-file-tabs {
+  background: #14101F;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.65rem;
+  gap: 0.5rem;
+  min-height: 36px;
+  flex-shrink: 0;
+}
+
+.ide-file-tabs-list {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  flex: 1;
+}
+
+.ide-file-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.ide-file-tab:hover {
+  color: var(--text-primary);
+  background: #1D182B;
+}
+
+.ide-file-tab.active {
+  background: var(--plum-dark);
+  color: var(--text-sand);
+  border-color: var(--border-strong);
+  border-bottom-color: var(--moss-green);
+}
+
+.ide-file-tab.locked .ide-tab-entry-tag {
+  font-size: 0.65rem;
+  color: var(--text-moss);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+
+.ide-tab-rename,
+.ide-tab-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0.1rem 0.2rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ide-tab-rename:hover {
+  color: var(--text-sand);
+  background: #2B233D;
+}
+
+.ide-tab-close {
+  font-size: 0.88rem;
+}
+
+.ide-tab-close:hover {
+  color: #FF5500;
+  background: #2B233D;
+}
+
+.ide-tab-rename-input {
+  background: var(--plum-mid);
+  border: 1px solid var(--moss-green);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  outline: none;
+  width: 120px;
+}
+
+.ide-add-file-btn {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-sand);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.ide-add-file-btn:hover {
+  border-color: var(--moss-green);
+  background: #1D182B;
+  color: var(--text-primary);
 }
 
 /* Editor Container & Line Numbers */
