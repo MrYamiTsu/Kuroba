@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.5</span>
+      <span class="version-badge">v1.0.6</span>
     </a>
 
     <nav class="main-nav">
@@ -61,18 +61,24 @@
       <!-- Interactive Hero Code Preview Card -->
       <div class="hero-code-card">
         <div class="hero-code-header">
-          <div class="hero-code-tabs">
-            <button class="code-tab active" data-tab="basics">Basics</button>
-            <button class="code-tab" data-tab="io">Std.IO</button>
-            <button class="code-tab" data-tab="collections">Collections</button>
-            <button class="code-tab" data-tab="hooks">Hooks</button>
+          <div class="hero-code-nav">
+            <button id="btn-hero-prev" class="hero-nav-btn" title="Previous snippet" aria-label="Previous snippet">&lsaquo;</button>
+            <button id="btn-hero-next" class="hero-nav-btn" title="Next snippet" aria-label="Next snippet">&rsaquo;</button>
+            <div class="hero-code-title-wrap">
+              <span id="hero-code-index" class="hero-code-index">01/12</span>
+              <span id="hero-code-title" class="hero-code-title">Hello, Kuroba!</span>
+            </div>
           </div>
           <div class="hero-code-actions">
             <button id="btn-hero-copy" class="copy-btn-inline" title="Copy snippet">Copy</button>
             <a href="playground.html" id="btn-hero-run" class="copy-btn-inline btn-hero-run" title="Open snippet in playground">Run ▶</a>
           </div>
         </div>
-        <pre class="hero-code-body"><code id="hero-code-content"></code></pre>
+        <pre class="hero-code-body"><code id="hero-code-content"></code><span class="hero-cursor"></span></pre>
+        <div class="hero-code-output">
+          <span class="hero-output-prompt">&gt;</span>
+          <span id="hero-output-text" class="hero-output-text"></span>
+        </div>
       </div>
     </div>
   </section>
@@ -169,8 +175,8 @@ namespace Main then ... end</code></pre>
         </tr>
         <tr>
           <td><strong>Pattern Matching</strong></td>
-          <td><code>given x then case: 1 ... break; case: ~ end</code></td>
-          <td>Value-based pattern matching with a raven tilde fallback branch (<code>case: ~</code>).</td>
+          <td><code>given x then case 1 then ... break; case ~ then ... end</code></td>
+          <td>Value-based pattern matching with a raven tilde fallback branch (<code>case ~ then</code>).</td>
         </tr>
         <tr>
           <td><strong>Typed Collections</strong></td>
@@ -195,166 +201,316 @@ namespace Main then ... end</code></pre>
        Footer
        ======================================================================== -->
   <footer class="site-footer">
-    <p>Kuroba (KRB) • Version 1.0.5 • Pure JavaScript AST Engine • Zero Dependencies • MIT Licensed</p>
+    <p>Kuroba (KRB) • Version 1.0.6 • Pure JavaScript AST Engine • Zero Dependencies • MIT Licensed</p>
     <p style="margin-top: 0.5rem;"><a href="docs.html">Documentation</a> • <a href="playground.html">Web Playground</a> • <a href="https://github.com/MrYamiTsu/Kuroba">GitHub Repository</a></p>
   </footer>
 
-  <!-- Interactive Hero Snippet Switcher Script -->
+  <!-- Interactive Hero Typewriter Snippet Script -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const SNIPPETS = {
-        basics: {
-          raw: `~~ Hybrid typing, coercion, and atomic variable swap
-ivar~String token = 1042;           ~~ Coerced to String "1042"
-ivar~(Int) rank = 1;                ~~ Strict non-nullable contract
-ivar alpha = 40;
-ivar beta = 99;
+      const SNIPPETS = [
+        {
+          title: 'Hello, Kuroba!',
+          raw: `~~ Welcome to Kuroba
+ivar target = "World";
+pasteLn(~"Hello {target}!");`,
+          output: 'Hello World!'
+        },
+        {
+          title: 'Variables & Atomic Swap',
+          raw: `~~ Hybrid typing & atomic swap
+ivar a = 10;
+ivar b = 99;
+a <-> b;
 
-alpha <-> beta;                     ~~ Atomic in-place permutation
+ivar~String score = a;
+pasteLn(~"New value: {score}");`,
+          output: 'New value: 99'
+        },
+        {
+          title: 'Dynamic Retyping',
+          raw: `~~ Strict non-nullability & transtyping
+ivar~(Int) level = 1;
+level~String = "Max";
 
-given token then
-    case: "1042"
-        pasteLn(~"Access granted | Rank: {rank} | Value: {alpha}");
+pasteLn(~"Level: {level}");`,
+          output: 'Level: Max'
+        },
+        {
+          title: 'Pattern Matching (given)',
+          raw: `~~ Clean branching with tilde fallback
+ivar role = "admin";
+
+given role then
+    case "admin" then
+        pasteLn("Full access granted.");
         break;
-    case: ~
-        pasteLn("Access denied");
+    case ~ then
+        pasteLn("Guest session.");
 end`,
-          html: `<span style="color:#8E8299;">~~ Hybrid typing, coercion, and atomic variable swap</span>
-<span style="color:#B3A18B;">ivar~String</span> token = 1042;           <span style="color:#8E8299;">~~ Coerced to String "1042"</span>
-<span style="color:#B3A18B;">ivar~(Int)</span> rank = 1;                <span style="color:#8E8299;">~~ Strict non-nullable contract</span>
-<span style="color:#B3A18B;">ivar</span> alpha = 40;
-<span style="color:#B3A18B;">ivar</span> beta = 99;
-
-alpha &lt;-&gt; beta;                     <span style="color:#8E8299;">~~ Atomic in-place permutation</span>
-
-<span style="color:#3D7A29;">given</span> token <span style="color:#3D7A29;">then</span>
-    <span style="color:#3D7A29;">case:</span> "1042"
-        pasteLn(~"Access granted | Rank: {rank} | Value: {alpha}");
-        <span style="color:#3D7A29;">break;</span>
-    <span style="color:#3D7A29;">case:</span> ~
-        pasteLn("Access denied");
-<span style="color:#3D7A29;">end</span>`
+          output: 'Full access granted.'
         },
-        io: {
-          raw: `import Std ~(IO, Time) alias ~;
+        {
+          title: 'Loops & Skip',
+          raw: `~~ Filtering iterations cleanly with skip
+ivar total = 0;
 
-namespace Main then
-    ivar saveFile = "game_state.dat";
-    
-    ~~ Synchronous file write
-    IO.filePaste(saveFile, ~"=== SESSION BACKUP ({Time.iso()}) ===\\n");
-    IO.filePasteLn(saveFile, "Player: Ryu | Level: 34 | Gold: 1200");
-    
-    ~~ Check existence and read contents
-    if (IO.fileExists(saveFile)) then
-        ivar data = IO.fileCopy(saveFile);
-        pasteLn("File loaded successfully:\\n" + data);
-        IO.fileKill(saveFile); ~~ Cleanup after verification
-    end
-end`,
-          html: `<span style="color:#3D7A29;">import</span> Std ~(IO, Time) <span style="color:#3D7A29;">alias</span> ~;
-
-<span style="color:#3D7A29;">namespace</span> Main <span style="color:#3D7A29;">then</span>
-    <span style="color:#B3A18B;">ivar</span> saveFile = "game_state.dat";
-    
-    <span style="color:#8E8299;">~~ Synchronous file write</span>
-    IO.filePaste(saveFile, ~"=== SESSION BACKUP ({Time.iso()}) ===\\n");
-    IO.filePasteLn(saveFile, "Player: Ryu | Level: 34 | Gold: 1200");
-    
-    <span style="color:#8E8299;">~~ Check existence and read contents</span>
-    <span style="color:#3D7A29;">if</span> (IO.fileExists(saveFile)) <span style="color:#3D7A29;">then</span>
-        <span style="color:#B3A18B;">ivar</span> data = IO.fileCopy(saveFile);
-        pasteLn("File loaded successfully:\\n" + data);
-        IO.fileKill(saveFile); <span style="color:#8E8299;">~~ Cleanup after verification</span>
-    <span style="color:#3D7A29;">end</span>
-<span style="color:#3D7A29;">end</span>`
-        },
-        collections: {
-          raw: `~~ Generic collections and associative tables
-ivar~List<Int> dice = [4, 6, 8, 12, 20];
-dice.push(100);
-
-ivar~Table player = {
-    name: "Kenji",
-    role: "Shadow Ninja",
-    stats: { strength: 28, agility: 35 },
-    inventory: ["Katana", "Smoke Bomb", "Elixir"]
-};
-
-player.stats.strength += 10;
-pasteLn(~"Player: {player.name} ({player.role})");
-pasteLn(~"Updated Strength: {player.stats.strength}");
-pasteLn(~"Dice pool size: {dice.count()}");`,
-          html: `<span style="color:#8E8299;">~~ Generic collections and associative tables</span>
-<span style="color:#B3A18B;">ivar~List&lt;Int&gt;</span> dice = [4, 6, 8, 12, 20];
-dice.push(100);
-
-<span style="color:#B3A18B;">ivar~Table</span> player = {
-    name: "Kenji",
-    role: "Shadow Ninja",
-    stats: { strength: 28, agility: 35 },
-    inventory: ["Katana", "Smoke Bomb", "Elixir"]
-};
-
-player.stats.strength += 10;
-pasteLn(~"Player: {player.name} ({player.role})");
-pasteLn(~"Updated Strength: {player.stats.strength}");
-pasteLn(~"Dice pool size: {dice.count()}");`
-        },
-        hooks: {
-          raw: `~~ First-class functions and lexical hooks
-function processPayment(ivar amount, ivar fee) then
-    return amount + fee;
+for (ivar i = 1; i <= 5; i++) then
+    if (i == 3) then skip; end
+    total += i;
 end
 
-~~ Dynamic audit hook without modifying source function
-hook processPayment(ivar amount, ivar fee) then
-    pasteLn(~"[AUDIT] Payment requested: {amount}$ (Fee: {fee}$)");
-    ivar total = this(amount, fee);
-    pasteLn(~"[AUDIT] Validation approved: Total = {total}$");
-    return total;
+pasteLn(~"Sum without 3: {total}");`,
+          output: 'Sum without 3: 12'
+        },
+        {
+          title: 'Typed Lists & For-In',
+          raw: `~~ Generic list with direct iteration
+ivar~List<Int> scores = [10, 20];
+scores.push(30);
+
+ivar sum = 0;
+for (pts in scores) then
+    sum += pts;
 end
 
-ivar invoice = processPayment(250, 15);`,
-          html: `<span style="color:#8E8299;">~~ First-class functions and lexical hooks</span>
-<span style="color:#3D7A29;">function</span> processPayment(<span style="color:#B3A18B;">ivar</span> amount, <span style="color:#B3A18B;">ivar</span> fee) <span style="color:#3D7A29;">then</span>
-    <span style="color:#3D7A29;">return</span> amount + fee;
-<span style="color:#3D7A29;">end</span>
+pasteLn(~"Total points: {sum}");`,
+          output: 'Total points: 60'
+        },
+        {
+          title: 'Associative Tables',
+          raw: `~~ Structured dictionaries with dot access
+ivar hero = {
+    name: "Kenji",
+    hp: 100
+};
 
-<span style="color:#8E8299;">~~ Dynamic audit hook without modifying source function</span>
-<span style="color:#3D7A29;">hook</span> processPayment(<span style="color:#B3A18B;">ivar</span> amount, <span style="color:#B3A18B;">ivar</span> fee) <span style="color:#3D7A29;">then</span>
-    pasteLn(~"[AUDIT] Payment requested: {amount}$ (Fee: {fee}$)");
-    <span style="color:#B3A18B;">ivar</span> total = <span style="color:#3D7A29;">this</span>(amount, fee);
-    pasteLn(~"[AUDIT] Validation approved: Total = {total}$");
-    <span style="color:#3D7A29;">return</span> total;
-<span style="color:#3D7A29;">end</span>
+hero.hp -= 15;
+pasteLn(~"{hero.name} HP: {hero.hp}");`,
+          output: 'Kenji HP: 85'
+        },
+        {
+          title: 'Closures & Lambdas',
+          raw: `~~ First-class anonymous functions (~)
+function makeMultiplier(ivar factor) then
+    return function ~(ivar n) then
+        return n * factor;
+    end;
+end
 
-<span style="color:#B3A18B;">ivar</span> invoice = processPayment(250, 15);`
+ivar triple = makeMultiplier(3);
+pasteLn(~"Result: {triple(14)}");`,
+          output: 'Result: 42'
+        },
+        {
+          title: 'Function Hooks',
+          raw: `~~ Intercept calls without editing source
+function greet(ivar name) then
+    return "Hello, " + name;
+end
+
+hook greet(ivar name) then
+    return this(name) + "!";
+end
+
+pasteLn(greet("Kuroba"));`,
+          output: 'Hello, Kuroba!'
+        },
+        {
+          title: 'Try / Catch Exceptions',
+          raw: `~~ Trapping native errors as Tables
+try
+    ivar x = 100 / 0;
+catch (ivar err) then
+    pasteLn(~"[{err.exName}] {err.exContext}");
+end`,
+          output: '[MathError] Division by zero is undefined.'
+        },
+        {
+          title: 'Standard Library (Std)',
+          raw: `~~ Selective module import with alias ~
+import Std ~(String, Math) alias ~;
+
+ivar tag = String.upper(String.trim("  kuroba  "));
+ivar val = Math.round(9.7);
+pasteLn(~"{tag} #{val}");`,
+          output: 'KUROBA #10'
+        },
+        {
+          title: 'LIFO Stack',
+          raw: `~~ Typed Stack collection (LIFO)
+ivar~Stack<String> deck = [];
+deck.push("Katana");
+deck.push("Shuriken");
+
+pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
+          output: 'Top: Shuriken | Left: 1'
         }
-      };
+      ];
+
+      const FLOW_KEYWORDS = new Set([
+        'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
+        'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
+        'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
+        'TRUE', 'FALSE', 'NULL'
+      ]);
+
+      function escHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function highlightKuroba(code) {
+        let html = '';
+        let i = 0;
+
+        while (i < code.length) {
+          if (code[i] === '~' && code[i + 1] === '~') {
+            let end = code.indexOf('\n', i);
+            if (end === -1) end = code.length;
+            html += `<span style="color:#8E8299;">${escHtml(code.slice(i, end))}</span>`;
+            i = end;
+            continue;
+          }
+
+          if ((code[i] === '~' && code[i + 1] === '"') || code[i] === '"') {
+            let start = i;
+            i += (code[i] === '~') ? 2 : 1;
+            while (i < code.length && code[i] !== '"') i++;
+            if (i < code.length) i++;
+            html += `<span style="color:#E6D3B3;">${escHtml(code.slice(start, i))}</span>`;
+            continue;
+          }
+
+          if (code.slice(i, i + 3) === '<->') {
+            html += `<span style="color:#B3A18B;">&lt;-&gt;</span>`;
+            i += 3;
+            continue;
+          }
+
+          if (/[a-zA-Z_]/.test(code[i])) {
+            let start = i;
+            while (i < code.length && /[a-zA-Z0-9_]/.test(code[i])) i++;
+            let word = code.slice(start, i);
+
+            if (word === 'ivar' || word === 'iconst') {
+              if (code[i] === '~') {
+                let tEnd = i + 1;
+                if (code[tEnd] === '(') {
+                  while (tEnd < code.length && code[tEnd] !== ')') tEnd++;
+                  if (tEnd < code.length) tEnd++;
+                } else {
+                  while (tEnd < code.length && /[a-zA-Z0-9_<>]/.test(code[tEnd])) tEnd++;
+                }
+                word = code.slice(start, tEnd);
+                i = tEnd;
+              }
+              html += `<span style="color:#B3A18B;">${escHtml(word)}</span>`;
+              continue;
+            }
+
+            if (FLOW_KEYWORDS.has(word)) {
+              html += `<span style="color:#5AB53C;">${escHtml(word)}</span>`;
+              continue;
+            }
+
+            html += escHtml(word);
+            continue;
+          }
+
+          html += escHtml(code[i]);
+          i++;
+        }
+
+        return html;
+      }
 
       const codeContent = document.getElementById('hero-code-content');
-      const tabButtons = document.querySelectorAll('.code-tab');
+      const outputText = document.getElementById('hero-output-text');
+      const codeIndexEl = document.getElementById('hero-code-index');
+      const codeTitleEl = document.getElementById('hero-code-title');
+      const btnHeroPrev = document.getElementById('btn-hero-prev');
+      const btnHeroNext = document.getElementById('btn-hero-next');
       const btnHeroCopy = document.getElementById('btn-hero-copy');
       const btnHeroRun = document.getElementById('btn-hero-run');
       const btnCopyInstall = document.getElementById('btn-copy-install');
 
-      let currentTab = 'basics';
+      let currentIdx = 0;
+      let activeTimer = null;
+      let animRunId = 0;
 
-      function loadTab(tabKey) {
-        if (!SNIPPETS[tabKey]) return;
-        currentTab = tabKey;
-        tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabKey));
-        codeContent.innerHTML = SNIPPETS[tabKey].html;
-        btnHeroRun.href = `playground.html?code=${encodeURIComponent(SNIPPETS[tabKey].raw)}`;
+      function getHumanDelay(ch, nextCh) {
+        if (ch === '\n') return 210 + Math.random() * 110;
+        if (ch === ';') return 160 + Math.random() * 100;
+        if (ch === ' ' && nextCh === ' ') return 10;
+        if (' (){}=,.'.includes(ch)) return 50 + Math.random() * 35;
+        return 25 + Math.random() * 26;
       }
 
-      tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => loadTab(btn.dataset.tab));
-      });
+      function startSnippetTyping(idx) {
+        if (activeTimer) clearTimeout(activeTimer);
+
+        animRunId++;
+        const runId = animRunId;
+        currentIdx = (idx + SNIPPETS.length) % SNIPPETS.length;
+        const snippet = SNIPPETS[currentIdx];
+
+        const pad = (n) => String(n).padStart(2, '0');
+        codeIndexEl.textContent = `${pad(currentIdx + 1)}/${pad(SNIPPETS.length)}`;
+        codeTitleEl.textContent = snippet.title;
+        btnHeroRun.href = `playground.html?code=${encodeURIComponent(snippet.raw)}`;
+
+        outputText.classList.remove('visible');
+        outputText.textContent = '';
+        codeContent.innerHTML = '';
+
+        const fullCode = snippet.raw;
+        let charIndex = 0;
+
+        function typeNext() {
+          if (runId !== animRunId) return;
+
+          if (charIndex < fullCode.length) {
+            charIndex++;
+            codeContent.innerHTML = highlightKuroba(fullCode.slice(0, charIndex));
+            const delay = getHumanDelay(fullCode[charIndex - 1], fullCode[charIndex]);
+            activeTimer = setTimeout(typeNext, delay);
+            return;
+          }
+
+          outputText.textContent = snippet.output;
+          outputText.classList.add('visible');
+
+          activeTimer = setTimeout(() => {
+            if (runId !== animRunId) return;
+            eraseAndAdvance();
+          }, 3000);
+        }
+
+        function eraseAndAdvance() {
+          if (runId !== animRunId) return;
+
+          outputText.classList.remove('visible');
+          if (charIndex > 0) {
+            charIndex = Math.max(0, charIndex - 4);
+            codeContent.innerHTML = highlightKuroba(fullCode.slice(0, charIndex));
+            activeTimer = setTimeout(eraseAndAdvance, 12);
+            return;
+          }
+
+          activeTimer = setTimeout(() => {
+            if (runId !== animRunId) return;
+            startSnippetTyping(currentIdx + 1);
+          }, 260);
+        }
+
+        activeTimer = setTimeout(typeNext, 200);
+      }
+
+      btnHeroPrev.addEventListener('click', () => startSnippetTyping(currentIdx - 1));
+      btnHeroNext.addEventListener('click', () => startSnippetTyping(currentIdx + 1));
 
       btnHeroCopy.addEventListener('click', () => {
-        navigator.clipboard.writeText(SNIPPETS[currentTab].raw).then(() => {
+        navigator.clipboard.writeText(SNIPPETS[currentIdx].raw).then(() => {
           btnHeroCopy.textContent = '✓ Copied';
           setTimeout(() => { btnHeroCopy.textContent = 'Copy'; }, 1800);
         });
@@ -368,8 +524,7 @@ ivar invoice = processPayment(250, 15);`,
         });
       });
 
-      // Initial load
-      loadTab('basics');
+      startSnippetTyping(0);
     });
   </script>
 </body>

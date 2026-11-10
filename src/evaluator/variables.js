@@ -1,7 +1,6 @@
 const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
 const { findScope } = require('./scope');
-const { evaluate } = require('./index');
 
 function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
     if (val === null) {
@@ -52,7 +51,7 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
     return val;
 }
 
-function evalVarDeclar(node, env) {
+function evalVarDeclar(node, env, evaluate) {
     let rawVal = evaluate(node.value, env);
     let val = validateAndCast(rawVal, node.explType, node.isNullable !== false, node.typeInfo, node.name);
 
@@ -66,7 +65,7 @@ function evalVarDeclar(node, env) {
     return val;
 }
 
-function evalVarAssign(node, env) {
+function evalVarAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Cannot reassign undeclared variable '${node.name}'.`);
     let target = scope.values[node.name];
@@ -90,7 +89,7 @@ function evalVariable(node, env) {
     printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
 }
 
-function evalVarRetype(node, env) {
+function evalVarRetype(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Cannot retype undeclared variable '${node.name}'.`);
     let target = scope.values[node.name];

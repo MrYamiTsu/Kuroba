@@ -10,9 +10,22 @@ for (const file of fs.readdirSync(stdDir)) {
     }
 }
 
+function readSource(relPath) {
+    return fs.readFileSync(path.join(__dirname, relPath), 'utf-8')
+        .replace(/const\s*\{[^}]*\}\s*=\s*require\([^)]+\);?/g, '')
+        .replace(/module\.exports\s*=\s*\{[^}]*\};?/g, '');
+}
+
+function readErrorFormatters() {
+    const src = fs.readFileSync(path.join(__dirname, '../src/errors.js'), 'utf-8');
+    const idx = src.indexOf('function formatTimestamp()');
+    if (idx === -1) throw new Error('formatTimestamp not found in src/errors.js');
+    return src.slice(idx).replace(/module\.exports\s*=\s*\{[^}]*\};?/g, '').trim();
+}
+
 // Generate self-contained bundle for browser
 const bundleCode = `/**
- * Kuroba (黒羽) — In-Browser Runtime Engine v1.0.5
+ * Kuroba — In-Browser Runtime Engine v1.0.6
  * Zero External Dependencies • Pure Vanilla JavaScript
  */
 (function(global) {
@@ -43,7 +56,32 @@ const bundleCode = `/**
     let activeErrorHandler = (err) => { throw new Error(err); };
     let activeClearHandler = () => {};
 
+    let tryDepth = 0;
+    function pushTryContext() { tryDepth++; }
+    function popTryContext() { tryDepth--; }
+    function isInsideTry() { return tryDepth > 0; }
+
+    class KurobaUserException extends Error {
+        constructor(value, formattedMsg) {
+            super(formattedMsg);
+            this.isKurobaUserException = true;
+            this.value = value;
+            this.formattedMsg = formattedMsg;
+        }
+    }
+
+    class KurobaRuntimeError extends Error {
+        constructor(message) {
+            super(message);
+            this.isKurobaRuntimeError = true;
+            this.message = message;
+        }
+    }
+
     function printErr(msg) {
+        if (tryDepth > 0) {
+            throw new KurobaRuntimeError(msg);
+        }
         if (activeErrorHandler) {
             activeErrorHandler(msg);
         } else {
@@ -52,20 +90,32 @@ const bundleCode = `/**
         throw new Error(msg);
     }
 
+    function printException(msg) {
+        if (activeErrorHandler) {
+            activeErrorHandler(msg, true);
+        } else {
+            console.error(msg);
+        }
+        throw new Error(msg);
+    }
+
+    ${readErrorFormatters()}
+
     // =========================================================================
     // 1. LEXER
     // =========================================================================
-    ${fs.readFileSync(path.join(__dirname, '../src/lexer.js'), 'utf-8')
-        .replace(/const\s*{\s*printErr\s*}\s*=\s*require\([^)]+\);?/, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readSource('../src/lexer/tokens.js')}
+    ${readSource('../src/lexer/index.js')}
 
     // =========================================================================
     // 2. PARSER
     // =========================================================================
-    ${fs.readFileSync(path.join(__dirname, '../src/parser.js'), 'utf-8')
-        .replace(/const\s*{\s*printErr\s*}\s*=\s*require\([^)]+\);?/, '')
-        .replace(/const\s*{\s*tokenize\s*}\s*=\s*require\([^)]+\);?/, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readSource('../src/parser/cursor.js')}
+    ${readSource('../src/parser/types.js')}
+    ${readSource('../src/parser/expressions.js')}
+    ${readSource('../src/parser/control.js')}
+    ${readSource('../src/parser/statements.js')}
+    ${readSource('../src/parser/index.js')}
 
     // =========================================================================
     // 3. RUNTIME NATIVES
@@ -197,6 +247,10 @@ const bundleCode = `/**
         .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
         .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
 
+    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/tables.js'), 'utf-8')
+        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
+        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+
     ${fs.readFileSync(path.join(__dirname, '../src/evaluator/control.js'), 'utf-8')
         .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
         .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
@@ -246,8 +300,10 @@ const bundleCode = `/**
         throw new Error("[Exit] Programme arrêté (exit).");
     }
 
-    // Web Packages functions (using in-memory virtual standard library)
+    // Web Packages functions (using virtual stdlib + user workspace files)
     const moduleCache = {};
+    let activeWorkspaceFiles = {};
+    let workspaceModuleCache = {};
 
     function evaluateNamespaceBody(statements) {
         const moduleScope = createScope();
@@ -277,19 +333,44 @@ const bundleCode = `/**
 
     function discoverNamespaceModules(pkgName) {
         const discovered = {};
-        for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
+
+        if (pkgName === 'Std') {
+            for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
+                const ast = parse(tokenize(source));
+                for (const stmt of ast.body) {
+                    if (stmt.type === 'NamespaceStatement' && stmt.namespace === pkgName) {
+                        const modName = stmt.module || pkgName;
+                        const cacheKey = pkgName + ':' + modName;
+                        if (!moduleCache[cacheKey]) {
+                            moduleCache[cacheKey] = {
+                                isRoot: !stmt.module,
+                                table: evaluateNamespaceBody(stmt.body)
+                            };
+                        }
+                        discovered[modName] = moduleCache[cacheKey];
+                    }
+                }
+            }
+        }
+
+        for (const [fileName, source] of Object.entries(activeWorkspaceFiles)) {
+            if (fileName === 'main.krb' || !source || !source.trim()) continue;
             const ast = parse(tokenize(source));
             for (const stmt of ast.body) {
                 if (stmt.type === 'NamespaceStatement' && stmt.namespace === pkgName) {
                     const modName = stmt.module || pkgName;
-                    const cacheKey = pkgName + ':' + modName;
-                    if (!moduleCache[cacheKey]) {
-                        moduleCache[cacheKey] = evaluateNamespaceBody(stmt.body);
+                    const cacheKey = pkgName + ':' + modName + ':' + (stmt.module ? 'sub' : 'root');
+                    if (!workspaceModuleCache[cacheKey]) {
+                        workspaceModuleCache[cacheKey] = {
+                            isRoot: !stmt.module,
+                            table: evaluateNamespaceBody(stmt.body)
+                        };
                     }
-                    discovered[modName] = moduleCache[cacheKey];
+                    discovered[modName] = workspaceModuleCache[cacheKey];
                 }
             }
         }
+
         return discovered;
     }
 
@@ -297,10 +378,12 @@ const bundleCode = `/**
         if (node.package === 'Main') {
             printErr("[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.");
         }
-        if (node.package !== 'Std') {
-            printErr("[ImportError] Unknown package '" + node.package + "'. Available packages: 'Std'.");
-        }
+
         const availableModules = discoverNamespaceModules(node.package);
+        if (Object.keys(availableModules).length === 0) {
+            printErr("[ImportError] Unknown package or namespace '" + node.package + "'. Create a file with 'namespace " + node.package + " then ... end' or import 'Std'.");
+        }
+
         const isFullPackage = !node.modules || node.modules.length === 0;
         const modulesToBind = {};
         if (isFullPackage) {
@@ -315,13 +398,26 @@ const bundleCode = `/**
         }
 
         if (node.alias === '~') {
-            for (const [modName, modTable] of Object.entries(modulesToBind)) {
-                env.values[modName] = {
-                    value: modTable,
-                    type: 'Table',
-                    isConst: true,
-                    isNullable: false
-                };
+            for (const [modName, entry] of Object.entries(modulesToBind)) {
+                if (entry.isRoot) {
+                    for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
+                        if (fieldName !== 'args' && fieldName !== 'Std') {
+                            env.values[fieldName] = {
+                                value: fieldDef.value,
+                                type: fieldDef.type,
+                                isConst: true,
+                                isNullable: fieldDef.isNullable
+                            };
+                        }
+                    }
+                } else {
+                    env.values[modName] = {
+                        value: entry.table,
+                        type: 'Table',
+                        isConst: true,
+                        isNullable: false
+                    };
+                }
             }
             return null;
         }
@@ -331,12 +427,20 @@ const bundleCode = `/**
             kind: 'Table',
             fields: {}
         };
-        for (const [modName, modTable] of Object.entries(modulesToBind)) {
-            pkgTable.fields[modName] = {
-                value: modTable,
-                type: 'Table',
-                isNullable: false
-            };
+        for (const [modName, entry] of Object.entries(modulesToBind)) {
+            if (entry.isRoot) {
+                for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
+                    if (fieldName !== 'args' && fieldName !== 'Std') {
+                        pkgTable.fields[fieldName] = fieldDef;
+                    }
+                }
+            } else {
+                pkgTable.fields[modName] = {
+                    value: entry.table,
+                    type: 'Table',
+                    isNullable: false
+                };
+            }
         }
         env.values[targetName] = {
             value: pkgTable,
@@ -363,11 +467,13 @@ const bundleCode = `/**
 
     // Expose Kuroba API on global window
     global.Kuroba = {
-        version: '1.0.5',
+        version: '1.0.6',
         run: function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });
             activeClearHandler = options.onClear || (() => {});
+            activeWorkspaceFiles = options.files || {};
+            workspaceModuleCache = {};
 
             const tokens = tokenize(sourceCode);
             const ast = parse(tokens);

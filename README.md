@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/kuroba.png" alt="Kuroba Logo" width="120" />
+<img src="web/assets/kuroba.png" alt="Kuroba Logo" width="120" />
 
 # Kuroba — KRB
 
@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.5-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.6-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Website](https://img.shields.io/badge/website-live-success.svg?style=for-the-badge&logo=githubpages)](https://mryamitsu.github.io/Kuroba/)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
@@ -66,7 +66,7 @@ Atomic in-place variable swap (`a <-> b;`) enforcing type equality, immutability
 
 ### Expressive Control Flow
 
-Clean block boundaries (`end`), multi-branch pattern matching (`given / case:`), and inline conditional guard clauses (`exit(cond);`).
+Clean block boundaries (`end`), multi-branch pattern matching (`given / case ... then`), robust exception handling (`try / catch / finally`), and inline conditional guard clauses (`exit(cond);`).
 
 </td>
 </tr>
@@ -116,11 +116,20 @@ end
 
 ~~ Pattern matching with automatic fallback redirection
 given username then
-    case: "admin"
+    case "admin" then
         paste("Access Granted");
         break;
-    case: ~
+    case ~ then
         paste("Welcome Guest: " + username);
+end
+
+~~ Exception handling with structured recovery
+try
+    ivar res = 100 / 0;
+catch (ivar err) then
+    pasteLn("Intercepted: " + err.exName);
+finally
+    pasteLn("Execution restored.");
 end
 ```
 
@@ -200,12 +209,13 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Collection Iteration**        | `for (item in list)`<br/>`for (i, item in list)`<br/>`for (k, v in table)` | Unified iteration without variable declaration boilerplate. Seamlessly supports `List`, `Stack`, `Queue`, and `Table`.    |
 | **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                       |
 | **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                             |
-| **Pattern Match Fallback**      | `case: ~`                                                                  | Fallback default branch in `given / case:` blocks using the signature tilde symbol `~`.                                   |
+| **Pattern Match Fallback**      | `case ~ then`                                                              | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                            |
+| **Exception Handling**          | `throw <expr>;`<br/>`try ... catch (ivar e) ... finally ... end`           | Uncaught throws exit with vermilion diagnostic `#FF5500`. Try/catch safely traps user throws and native runtime errors.   |
 | **Explicit Destruction**        | `kill variable;`                                                           | Explicit variable destruction from active scope with strict declaration checks and constant protection.                   |
 | **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                              | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                         |
 | **Native Interception (Hooks)** | `hook f(x) then ... end`                                                   | Transparent native monkey-patching with original function delegation via `this(...)`.                                     |
 | **Interactive Key Capture**     | `copyKey()`                                                                | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.            |
-| **Native CLI Arguments**        | `args`, `Std.Sys.args`                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                 |
+| **Native CLI Arguments**        | `args`                                                                     | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                 |
 
 > Looking for the complete language specification and cheatsheet? **[Browse the Official Web Documentation](https://mryamitsu.github.io/Kuroba/docs.html)** or test snippets directly in the **[Interactive Live Playground](https://mryamitsu.github.io/Kuroba/playground.html)**.
 
@@ -234,19 +244,34 @@ Kuroba/
 ├── krb.cmd           # Windows short alias launcher
 ├── config.json       # Engine configuration & version metadata
 ├── package.json      # Project manifest
-├── main.krb          # Default playground entry file
-├── src/              # Interpreter Core (Lexer, Parser, AST Evaluator)
-│   ├── lexer.js          # Lexical analysis & token stream generation
-│   ├── parser.js         # Recursive descent parser producing the AST
-│   ├── evaluator/        # Modular runtime evaluators
-│   │   ├── index.js          # Evaluator entry point & scope dispatcher
-│   │   ├── control.js        # Branches, loops, return propagation
-│   │   ├── functions.js      # Closures, lambdas, and hook interception
-│   │   ├── collections.js    # List, Stack, Queue, Table methods
-│   │   ├── variables.js      # Declarations, types, kill statement
-│   │   └── types.js          # Value formatting & type coercion
-│   ├── runtime/          # Standard library natives (IO, Math, Time, String)
-│   └── errors.js         # Colored diagnostic reporting engine
+├── main.krb          # Full test suite & language validation runner
+├── src/              # Interpreter Core (Modular Lexer, Parser, AST Evaluator)
+│   ├── errors.js         # Colored diagnostic reporting engine & try/catch context
+│   ├── repl.js           # Interactive REPL shell with multi-line support
+│   ├── lexer/            # Modular Lexical Analysis
+│   │   ├── tokens.js         # Keywords, symbols, and character classification
+│   │   └── index.js          # Lexer engine & token stream generator
+│   ├── parser/           # Modular AST Recursive Descent Parser
+│   │   ├── cursor.js         # Token cursor, lookahead, and consumption utilities
+│   │   ├── types.js          # Type annotation & nullability contract parser
+│   │   ├── expressions.js    # Precedence hierarchy & primary expressions
+│   │   ├── control.js        # Control structures (if, for, while, given, try, hook...)
+│   │   ├── statements.js     # Statements, assignments, variable declarations & program
+│   │   └── index.js          # Parser entrypoint parse(tokens)
+│   ├── evaluator/        # Modular Runtime AST Evaluators (Zero circular imports)
+│   │   ├── index.js          # Main AST dispatcher evaluate(node, env)
+│   │   ├── operations.js     # Arithmetic, comparison, unary & logical operations
+│   │   ├── scope.js          # Environment scope frames and lookup
+│   │   ├── types.js          # Type coercion, checking and value representations
+│   │   ├── io.js             # Built-in I/O (paste, pasteln, copy, clear, exit)
+│   │   ├── tables.js         # Table literals & property mutations
+│   │   ├── collections.js    # List, Stack, Queue methods and indexing
+│   │   ├── variables.js      # Variable declarations, retyping, and destruction (kill)
+│   │   ├── functions.js      # Closures, lambdas, returns and hook interception
+│   │   ├── control.js        # Flow control (if, for, for-in, while, do-while, given, try)
+│   │   └── packages.js       # Modular package imports and namespaces
+│   └── runtime/          # Built-in runtime native functions (Math, Date, IO)
+│       └── natives.js        # Standard library natives bridge
 ├── lib/              # Core Standard Library source (.krb)
 │   └── std/              # io.krb, math.krb, string.krb, time.krb
 ├── web/              # Official Website, Web Docs & Interactive IDE
@@ -279,7 +304,7 @@ Kuroba/
 - [x] Diagnostic error engine (`printErr`)
 - [x] Booleans (`TRUE`, `FALSE`), equality (`==`, `!=`) with `0 == FALSE` and `1 == TRUE`
 - [x] Conditional branches (`if / elif / else / end`)
-- [x] Pattern matching (`given / case: / break; / case: ~`)
+- [x] Pattern matching (`given / case ... then / break; / case ~ then`)
 - [x] Short-circuit logic (`&&`, `||`, `!`)
 
 ### Phase 1: Fundamental Operators & Types `(Completed - v1.0.1)`
@@ -349,14 +374,18 @@ Kuroba/
 - [x] Built-in `Std.IO` (Filesystem & Persistence):
   - [x] Synchronous file operations: `fileCopy(path)`, `filePaste(path, content)`, `filePasteLn(path, content)`, `fileAppend(path, content)`, `fileExists(path)`, `fileKill(path)`
 
-### Phase 6: Exception Handling & Web Documentation `(v1.0.6)`
+### Phase 6: Exception Handling & Web Documentation `(Completed - v1.0.6)`
 
 - [x] Official "Kuroba" Web Presence, Documentation & Live Playground:
   - [x] Responsive, artisanal web documentation replacing repository markdown
-  - [x] Client-side zero-install in-browser AST code runner & virtual terminal
-  - [x] Strict 5-color palette, zero external npm dependencies
-- [ ] Exception throwing and handling (`throw`, `try / catch(err) / finally / end`)
-- [ ] Tail-call safe recursion optimization (`recur(...)` or TCO engine)
+  - [x] Client-side zero-install in-browser AST code runner & virtual terminal with multi-file namespace workspace (`main.krb` + custom `.krb` tabs)
+  - [x] Strict 5-color palette, bespoke engineering typography (`Space Grotesk`, `IBM Plex Sans`, `IBM Plex Mono`), zero external npm dependencies
+- [x] Exception throwing and handling (`throw`, `try / catch(ivar e) / finally / end`):
+  - [x] Distinct vermilion / orange-red diagnostics (`#FF5500`) with line/col reporting
+  - [x] Structured exception metadata tables (`exName`, `exLines`, `exCode`, `exContext`, `exTime`)
+  - [x] Safe runtime error trapping (`MathError`, `TypeError`, `IndexError`, `IOError`) translated to structured tables
+  - [x] Optional `then` keyword across `try`, `catch`, and `finally`
+- [x] Call stack depth limit with catchable `[RecursionError]` diagnostics
 
 ### Phase 7: Object-Oriented Programming `(v1.0.7)`
 

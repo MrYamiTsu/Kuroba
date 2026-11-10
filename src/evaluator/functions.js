@@ -1,7 +1,9 @@
 const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
 const { createScope, findScope } = require('./scope');
-const { evaluate } = require('./index');
+
+const MAX_CALL_DEPTH = 512;
+let callDepth = 0;
 
 function evalFunctionDeclaration(node, env) {
     let funcObj = {
@@ -24,15 +26,19 @@ function evalFunctionDeclaration(node, env) {
     return funcObj;
 }
 
-function evalReturn(node, env) {
+function evalReturn(node, env, evaluate) {
     let value = null;
-    if (node.value) {
+    if (node.value !== null && node.value !== undefined) {
         value = evaluate(node.value, env);
     }
     return { isReturn: true, value };
 }
 
-function evalCall(node, env) {
+function evalCall(node, env, evaluate) {
+    if (callDepth >= MAX_CALL_DEPTH) {
+        printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded.`);
+    }
+
     let caller = evaluate(node.caller, env);
 
     if (!caller || caller.kind !== 'Function') {
@@ -50,43 +56,53 @@ function evalCall(node, env) {
         printErr(`[TypeError] Function '${funcName}' expects ${caller.params.length} arguments, got ${node.args.length}.`);
     }
 
-    let fnEnv = createScope(caller.closure);
+    if (callDepth >= MAX_CALL_DEPTH) {
+        let funcName = caller.name || '~';
+        printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded in function '${funcName}'.`);
+    }
 
-    for (let i = 0; i < caller.params.length; i++) {
-        let param = caller.params[i];
-        let argVal = evaluate(node.args[i], env);
+    callDepth++;
+    try {
+        let fnEnv = createScope(caller.closure);
 
-        if (param.typeInfo) {
-            let baseType = param.typeInfo.baseType;
-            let isNullable = param.typeInfo.isNullable;
+        for (let i = 0; i < caller.params.length; i++) {
+            let param = caller.params[i];
+            let argVal = evaluate(node.args[i], env);
 
-            if (!isNullable && argVal === null) {
-                printErr(`[TypeError] Cannot pass NULL to non-nullable parameter '${param.name}' of type '(${baseType})'.`);
+            if (param.typeInfo) {
+                let baseType = param.typeInfo.baseType;
+                let isNullable = param.typeInfo.isNullable;
+
+                if (!isNullable && argVal === null) {
+                    printErr(`[TypeError] Cannot pass NULL to non-nullable parameter '${param.name}' of type '(${baseType})'.`);
+                }
+                if (argVal !== null) {
+                    argVal = castToType(argVal, baseType);
+                }
             }
-            if (argVal !== null) {
-                argVal = castToType(argVal, baseType);
+
+            fnEnv.values[param.name] = {
+                value: argVal,
+                type: getType(argVal),
+                isNullable: true,
+                isConst: false
+            };
+        }
+
+        for (let stmt of caller.body) {
+            let res = evaluate(stmt, fnEnv);
+            if (res && res.isReturn) {
+                return res.value;
             }
         }
 
-        fnEnv.values[param.name] = {
-            value: argVal,
-            type: getType(argVal),
-            isNullable: true,
-            isConst: false
-        };
+        return null;
+    } finally {
+        callDepth--;
     }
-
-    for (let stmt of caller.body) {
-        let res = evaluate(stmt, fnEnv);
-        if (res && res.isReturn) {
-            return res.value;
-        }
-    }
-
-    return null;
 }
 
-function evalHook(node, env) {
+function evalHook(node, env, evaluate) {
     let origFunc = evaluate(node.target, env);
 
     if (!origFunc || origFunc.kind !== 'Function') {

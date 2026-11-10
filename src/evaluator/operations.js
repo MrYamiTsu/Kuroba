@@ -1,8 +1,7 @@
 const { printErr } = require('../errors');
 const { isKurobaEqual, isTruthy } = require('./types');
-const { evaluate } = require('./index');
 
-function evalMath(node, env) {
+function evalMath(node, env, evaluate) {
     let left = evaluate(node.left, env);
     let right = evaluate(node.right, env);
 
@@ -27,14 +26,14 @@ function evalMath(node, env) {
     }
 }
 
-function evalUnary(node, env) {
+function evalUnary(node, env, evaluate) {
     let right = evaluate(node.right, env);
     if (node.operator === '!') return !isTruthy(right);
     if (node.operator === '-') return -right;
     printErr(`[RuntimeError] Unsupported unary operator '${node.operator}'.`);
 }
 
-function evalLogical(node, env) {
+function evalLogical(node, env, evaluate) {
     let left = evaluate(node.left, env);
     if (node.operator === '&&') {
         if (!isTruthy(left)) return false;

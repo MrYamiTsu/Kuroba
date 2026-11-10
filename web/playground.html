@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="ide-body">
 
@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.5</span>
+      <span class="version-badge">v1.0.6</span>
     </a>
 
     <nav class="main-nav">
@@ -40,22 +40,18 @@
       <div class="ide-toolbar">
         <div class="ide-toolbar-left">
           <span class="ide-toolbar-title">Editor</span>
-          <span class="ide-file-badge">main.krb</span>
-          <select class="ide-select" id="select-sample">
-            <option value="hello">Example: Hello Kuroba</option>
-            <option value="strings">Example: Strings &amp; Text Processing</option>
-            <option value="math_time">Example: Math &amp; Stopwatch Timer</option>
-            <option value="io">Example: Disk Persistence (Std.IO)</option>
-            <option value="collections">Example: Typed Collections &amp; Tables</option>
-            <option value="hooks">Example: Native Interception Hooks</option>
-            <option value="game">Example: Tactical Combat RPG</option>
-          </select>
         </div>
 
         <div class="ide-toolbar-right">
-          <button class="ide-btn" id="btn-clear-editor" title="Clear editor content">Clear</button>
-          <button class="ide-btn ide-btn-run" id="btn-execute" title="Execute script (Ctrl + Enter)">Run ▶</button>
+          <button class="ide-btn" id="btn-clear-editor" title="Clear active file content">Clear</button>
+          <button class="ide-btn ide-btn-run" id="btn-execute" title="Run main.krb (Ctrl + Enter)">Run main.krb ▶</button>
         </div>
+      </div>
+
+      <!-- Multi-File Workspace Tabs (main.krb is pinned as entry point) -->
+      <div class="ide-file-tabs" id="ide-file-tabs">
+        <div class="ide-file-tabs-list" id="ide-file-tabs-list"></div>
+        <button class="ide-add-file-btn" id="btn-add-file" title="Create new .krb module file">+ New File</button>
       </div>
 
       <!-- Editor Body with Synchronized Line Numbers -->
@@ -66,8 +62,8 @@
 
       <!-- Bottom Status Bar -->
       <div class="ide-statusbar">
-        <span class="ide-status-item">
-          <span class="status-indicator">●</span> Vanilla JS AST Engine
+        <span class="ide-status-item" id="status-active-file">
+          <span class="status-indicator">●</span> Entry: main.krb
         </span>
         <span class="ide-status-item" id="status-cursor">Ln 1, Col 1</span>
         <span class="ide-status-item ide-shortcuts-hint">[Ctrl+Enter] Run &nbsp;•&nbsp; [Ctrl+L] Clear</span>
@@ -88,7 +84,7 @@
       </div>
 
       <div class="ide-terminal-area" id="terminal-screen">
-        <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.5</div>
+        <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.6</div>
         <div class="term-line sys">Pure JavaScript AST Interpreter • Zero Dependencies • Deterministic Execution</div>
         <div class="term-line sys">Type your code on the left and click [Run ▶] or press [Ctrl + Enter].</div>
         <div class="term-line sys">--------------------------------------------------------------------------------</div>

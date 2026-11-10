@@ -1,5 +1,13 @@
 const { printErr } = require('../errors');
 const { createScope } = require('./scope');
+const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap, evalKill } = require('./variables');
+const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall } = require('./collections');
+const { evalTableLiteral, evalPropertyAssign } = require('./tables');
+const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow, evalTry } = require('./control');
+const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
+const { evalMath, evalUnary, evalLogical } = require('./operations');
+const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');
+const { evalImport } = require('./packages');
 
 function evaluate(node, env = createScope()) {
     if (!node || !node.type) return node;
@@ -22,49 +30,43 @@ function evaluate(node, env = createScope()) {
             }
             return res;
         case 'Literal':             return node.value;
-        case 'VarDeclar':           return evalVarDeclar(node, env);
-        case 'VarAssign':           return evalVarAssign(node, env);
+        case 'VarDeclar':           return evalVarDeclar(node, env, evaluate);
+        case 'VarAssign':           return evalVarAssign(node, env, evaluate);
         case 'Variable':            return evalVariable(node, env);
-        case 'VarRetype':           return evalVarRetype(node, env);
+        case 'VarRetype':           return evalVarRetype(node, env, evaluate);
         case 'SwapStatement':       return evalSwap(node, env);
-        case 'IfStatement':         return evalIf(node, env);
-        case 'ForStatement':        return evalFor(node, env);
-        case 'WhileStatement':      return evalWhile(node, env);
-        case 'DoWhileStatement':    return evalDoWhile(node, env);
-        case 'GivenStatement':      return evalGiven(node, env);
-        case 'ForInStatement':      return evalForIn(node, env);
+        case 'IfStatement':         return evalIf(node, env, evaluate);
+        case 'ForStatement':        return evalFor(node, env, evaluate);
+        case 'WhileStatement':      return evalWhile(node, env, evaluate);
+        case 'DoWhileStatement':    return evalDoWhile(node, env, evaluate);
+        case 'GivenStatement':      return evalGiven(node, env, evaluate);
+        case 'ForInStatement':      return evalForIn(node, env, evaluate);
         case 'BreakStatement':      return { isBreak: true };
         case 'SkipStatement':       return { isSkip: true };
-        case 'PasteStatement':      return evalPaste(node, env);
-        case 'CopyExpression':      return evalCopy(node, env);
-        case 'ClearStatement':      return evalClear(node, env);
-        case 'ExitStatement':       return evalExit(node, env);
-        case 'MathExpression':      return evalMath(node, env);
-        case 'UnaryExpression':     return evalUnary(node, env);
-        case 'LogicalExpression':   return evalLogical(node, env);
-        case 'ListLiteral':         return evalListLiteral(node, env);
-        case 'IndexAccess':         return evalIndexAccess(node, env);
-        case 'IndexAssign':         return evalIndexAssign(node, env);
-        case 'PropertyAssign':      return evalPropertyAssign(node, env);
-        case 'MethodCall':          return evalMethodCall(node, env);
-        case 'TableLiteral':        return evalTableLiteral(node, env);
+        case 'PasteStatement':      return evalPaste(node, env, evaluate);
+        case 'CopyExpression':      return evalCopy(node, env, evaluate);
+        case 'ClearStatement':      return evalClear(node, env, evaluate);
+        case 'ExitStatement':       return evalExit(node, env, evaluate);
+        case 'ThrowStatement':      return evalThrow(node, env, evaluate);
+        case 'TryStatement':        return evalTry(node, env, evaluate);
+        case 'MathExpression':      return evalMath(node, env, evaluate);
+        case 'UnaryExpression':     return evalUnary(node, env, evaluate);
+        case 'LogicalExpression':   return evalLogical(node, env, evaluate);
+        case 'ListLiteral':         return evalListLiteral(node, env, evaluate);
+        case 'IndexAccess':         return evalIndexAccess(node, env, evaluate);
+        case 'IndexAssign':         return evalIndexAssign(node, env, evaluate);
+        case 'PropertyAssign':      return evalPropertyAssign(node, env, evaluate);
+        case 'MethodCall':          return evalMethodCall(node, env, evaluate);
+        case 'TableLiteral':        return evalTableLiteral(node, env, evaluate);
         case 'KillStatement':       return evalKill(node, env);
         case 'FunctionDeclaration': return evalFunctionDeclaration(node, env);
-        case 'ReturnStatement':     return evalReturn(node, env);
-        case 'CallExpression':      return evalCall(node, env);
-        case 'HookStatement':       return evalHook(node, env);
-        case 'ImportStatement':     return evalImport(node, env);
+        case 'ReturnStatement':     return evalReturn(node, env, evaluate);
+        case 'CallExpression':      return evalCall(node, env, evaluate);
+        case 'HookStatement':       return evalHook(node, env, evaluate);
+        case 'ImportStatement':     return evalImport(node, env, evaluate);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }
 }
 
 module.exports = { evaluate };
-
-const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap, evalKill } = require('./variables');
-const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalPropertyAssign, evalMethodCall, evalTableLiteral } = require('./collections');
-const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn } = require('./control');
-const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
-const { evalMath, evalUnary, evalLogical } = require('./operations');
-const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');
-const { evalImport } = require('./packages');
