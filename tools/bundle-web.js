@@ -25,7 +25,7 @@ function readErrorFormatters() {
 
 // Generate self-contained bundle for browser
 const bundleCode = `/**
- * Kuroba (黒羽) — In-Browser Runtime Engine v1.0.5
+ * Kuroba — In-Browser Runtime Engine v1.0.6
  * Zero External Dependencies • Pure Vanilla JavaScript
  */
 (function(global) {
@@ -467,7 +467,7 @@ const bundleCode = `/**
 
     // Expose Kuroba API on global window
     global.Kuroba = {
-        version: '1.0.5',
+        version: '1.0.6',
         run: function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });

@@ -1,5 +1,5 @@
 /* ============================================================================
-   Kuroba (黒羽) — Interactive Playground Controller
+   Kuroba — Interactive Playground Controller
    ============================================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function clearTerminal() {
     terminalScreen.innerHTML = `
-      <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.5</div>
+      <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.6</div>
       <div class="term-line sys">Terminal output cleared. Ready for execution.</div>
       <div class="term-line sys">--------------------------------------------------------------------------------</div>
     `;

@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.5-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.6-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Website](https://img.shields.io/badge/website-live-success.svg?style=for-the-badge&logo=githubpages)](https://mryamitsu.github.io/Kuroba/)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
@@ -374,12 +374,12 @@ Kuroba/
 - [x] Built-in `Std.IO` (Filesystem & Persistence):
   - [x] Synchronous file operations: `fileCopy(path)`, `filePaste(path, content)`, `filePasteLn(path, content)`, `fileAppend(path, content)`, `fileExists(path)`, `fileKill(path)`
 
-### Phase 6: Exception Handling & Web Documentation `(v1.0.6)`
+### Phase 6: Exception Handling & Web Documentation `(Completed - v1.0.6)`
 
 - [x] Official "Kuroba" Web Presence, Documentation & Live Playground:
   - [x] Responsive, artisanal web documentation replacing repository markdown
-  - [x] Client-side zero-install in-browser AST code runner & virtual terminal
-  - [x] Strict 5-color palette, zero external npm dependencies
+  - [x] Client-side zero-install in-browser AST code runner & virtual terminal with multi-file namespace workspace (`main.krb` + custom `.krb` tabs)
+  - [x] Strict 5-color palette, bespoke engineering typography (`Space Grotesk`, `IBM Plex Sans`, `IBM Plex Mono`), zero external npm dependencies
 - [x] Exception throwing and handling (`throw`, `try / catch(ivar e) / finally / end`):
   - [x] Distinct vermilion / orange-red diagnostics (`#FF5500`) with line/col reporting
   - [x] Structured exception metadata tables (`exName`, `exLines`, `exCode`, `exContext`, `exTime`)
