@@ -82,9 +82,8 @@
         <p>Kuroba is fully self-contained with <strong>zero npm dependencies</strong>. A standard Node.js runtime (v16.0.0 or higher) is all that is required to execute scripts or run the interactive REPL shell.</p>
         
         <h3>Local Installation via Git</h3>
-        <pre><code class="language-kuroba">git clone https://github.com/MrYamiTsu/Kuroba.git
-cd Kuroba
-node index.js main.krb</code></pre>
+        <pre><code class="language-bash">git clone https://github.com/MrYamiTsu/Kuroba.git
+cd Kuroba</code></pre>
 
         <p>Kuroba source files use the conventional <code>.krb</code> extension. On Windows, you can also use the bundled convenience launcher <code>.\krb.cmd main.krb</code>.</p>
       </section>
@@ -95,7 +94,7 @@ node index.js main.krb</code></pre>
       <section id="cli">
         <h2>CLI &amp; Command-Line Arguments</h2>
         <p>Kuroba automatically parses and injects all trailing parameters into the global scope as an immutable <code>List&lt;String&gt;</code> accessible through <code>args</code>:</p>
-        <pre><code class="language-kuroba">node index.js script.krb --host 127.0.0.1 --port 8080 --verbose</code></pre>
+        <pre><code class="language-bash">node index.js script.krb --host 127.0.0.1 --port 8080 --verbose</code></pre>
 
         <h3>Processing Arguments in Kuroba</h3>
         <pre><code class="language-kuroba">pasteLn("Arguments received: " + args.count());
@@ -117,9 +116,9 @@ end</code></pre>
       <section id="repl">
         <h2>Interactive REPL Shell (`krb`)</h2>
         <p>Invoking <code>index.js</code> or the launcher shortcut <code>./krb.cmd</code> without arguments starts an interactive read-eval-print loop shell:</p>
-        <pre><code class="language-kuroba">node index.js
-~~ Or via shortcut:
-./krb.cmd</code></pre>
+        <pre><code class="language-bash">node index.js
+# Or via Windows shortcut:
+.\krb.cmd</code></pre>
 
         <h3>Shell Features</h3>
         <ul>
@@ -1163,13 +1162,13 @@ pasteLn(Math.sqrt(16));</code></pre>
 
         <h3>1. SyntaxError</h3>
         <p>Grammar violations during tokenization or AST parsing:</p>
-        <pre><code class="language-kuroba">[SyntaxError: Line 2, Col 1] Missing semicolon ';' at the end of statement.
+        <pre><code class="language-output">[SyntaxError: Line 2, Col 1] Missing semicolon ';' at the end of statement.
 [SyntaxError: Line 4, Col 12] Unclosed parenthesis. Missing closing ')' to match '(' at Line 4, Col 6.
 [SyntaxError: Line 10, Col 5] Return statements are only allowed inside functions.</code></pre>
 
         <h3>2. TypeError</h3>
         <p>Violations of runtime type compatibility or non-nullability contracts:</p>
-        <pre><code class="language-kuroba">[TypeError] Cannot assign type 'String' to variable 'count' of type 'Int'.
+        <pre><code class="language-output">[TypeError] Cannot assign type 'String' to variable 'count' of type 'Int'.
 [TypeError] Cannot reassign constant 'PORT'.
 [TypeError] Cannot assign NULL to non-nullable variable 'user' of type '(String)'.
 [TypeError] Cannot kill constant variable 'PI'.
@@ -1177,23 +1176,23 @@ pasteLn(Math.sqrt(16));</code></pre>
 
         <h3>3. ReferenceError</h3>
         <p>Referencing undeclared identifiers or out-of-scope hook contexts:</p>
-        <pre><code class="language-kuroba">[ReferenceError] Variable 'unknown' is not defined.
+        <pre><code class="language-output">[ReferenceError] Variable 'unknown' is not defined.
 [ReferenceError] Cannot call 'this()' outside of a hook interception.
 [ReferenceError] Cannot kill undefined variable 'temp'.</code></pre>
 
         <h3>4. MathError</h3>
         <p>Undefined mathematical calculations:</p>
-        <pre><code class="language-kuroba">[MathError] Division by zero is undefined.
+        <pre><code class="language-output">[MathError] Division by zero is undefined.
 [MathError] Modulo by zero is undefined.</code></pre>
 
         <h3>5. IndexError</h3>
         <p>Accessing out-of-bounds indices or non-integer collection lookups:</p>
-        <pre><code class="language-kuroba">[IndexError] Index 5 out of bounds for list of length 2.
+        <pre><code class="language-output">[IndexError] Index 5 out of bounds for list of length 2.
 [IndexError] List index must be an integer, got 'abc'.</code></pre>
 
         <h3>6. IOError</h3>
         <p>Filesystem access or permission failures in <code>Std.IO</code>:</p>
-        <pre><code class="language-kuroba">[IOError] File not found: 'missing_save.dat'.
+        <pre><code class="language-output">[IOError] File not found: 'missing_save.dat'.
 [IOError] Failed to write to file 'protected/root.dat': EACCES: permission denied.</code></pre>
       </section>
 
@@ -1220,10 +1219,14 @@ pasteLn(Math.sqrt(16));</code></pre>
         });
       });
 
-      // 2. Wrap all code blocks with Action Bar (Copy + Run in Playground)
+      // 2. Wrap all code blocks with Action Bar (Copy + optional Run in Playground)
       document.querySelectorAll('pre code').forEach((codeBlock) => {
         const pre = codeBlock.parentElement;
         const rawCode = codeBlock.textContent.trim();
+        const isBash = codeBlock.classList.contains('language-bash');
+        const isOutput = codeBlock.classList.contains('language-output');
+        const isRunnable = codeBlock.classList.contains('language-kuroba');
+        const langLabel = isBash ? 'terminal' : (isOutput ? 'output' : 'kuroba');
 
         // Create card container
         const card = document.createElement('div');
@@ -1235,7 +1238,7 @@ pasteLn(Math.sqrt(16));</code></pre>
 
         const title = document.createElement('div');
         title.className = 'doc-code-title';
-        title.innerHTML = '<span class="badge-dot"></span><span>kuroba</span>';
+        title.innerHTML = `<span class="badge-dot"></span><span>${langLabel}</span>`;
 
         const actions = document.createElement('div');
         actions.className = 'doc-code-actions';
@@ -1250,13 +1253,16 @@ pasteLn(Math.sqrt(16));</code></pre>
           });
         });
 
-        const runLink = document.createElement('a');
-        runLink.className = 'doc-btn-run';
-        runLink.textContent = 'Run in Playground ↗';
-        runLink.href = `playground.html?code=${encodeURIComponent(rawCode)}`;
-
         actions.appendChild(copyBtn);
-        actions.appendChild(runLink);
+
+        if (isRunnable) {
+          const runLink = document.createElement('a');
+          runLink.className = 'doc-btn-run';
+          runLink.textContent = 'Run in Playground ↗';
+          runLink.href = `playground.html?code=${encodeURIComponent(rawCode)}`;
+          actions.appendChild(runLink);
+        }
+
         header.appendChild(title);
         header.appendChild(actions);
 
