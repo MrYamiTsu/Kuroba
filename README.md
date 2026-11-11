@@ -209,7 +209,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Collection Iteration**        | `for (item in list)`<br/>`for (i, item in list)`<br/>`for (k, v in table)` | Unified iteration without variable declaration boilerplate. Seamlessly supports `List`, `Stack`, `Queue`, and `Table`.    |
 | **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                       |
 | **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                             |
-| **Pattern Match Fallback**      | `case ~ then`                                                              | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                            |
+| **Pattern Match Fallback**      | `case ~ then`                                                              | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                           |
 | **Exception Handling**          | `throw <expr>;`<br/>`try ... catch (ivar e) ... finally ... end`           | Uncaught throws exit with vermilion diagnostic `#FF5500`. Try/catch safely traps user throws and native runtime errors.   |
 | **Explicit Destruction**        | `kill variable;`                                                           | Explicit variable destruction from active scope with strict declaration checks and constant protection.                   |
 | **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                              | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                         |
@@ -283,11 +283,6 @@ Kuroba/
 │   └── js/playground.js  # Interactive IDE controller & samples
 ├── tools/            # Development & packaging utilities
 │   └── bundle-web.js     # Standalone browser bundle builder
-└── examples/         # Showcase Games & Demos
-    ├── deckbuilder.krb   # Roguelike Deckbuilder (Relic Hooks)
-    ├── casino.krb        # Full terminal casino (VIP Hook, Games)
-    ├── rpg.krb           # Tactical Boss Rush RPG (Relic Hooks, Classes)
-    └── dungeon.krb       # 2D ASCII Rogue-lite Crawler (Vampiric Blade)
 ```
 
 ---
@@ -387,18 +382,26 @@ Kuroba/
   - [x] Optional `then` keyword across `try`, `catch`, and `finally`
 - [x] Call stack depth limit with catchable `[RecursionError]` diagnostics
 
-### Phase 7: Object-Oriented Programming `(v1.0.7)`
+### Phase 7: Object-Oriented Programming & Language Ergonomics `(v1.0.7)`
 
 - [ ] Ergonomic Classes (designed as a clean, structured abstraction over `Table`):
   - [ ] Class definition `class Name ... end` with constructor and instance methods
   - [ ] Single inheritance `class Sub extends Super ... end` with `super(...)`
   - [ ] Instance reference (`this`)
+  - [ ] Encapsulation & Access Modifiers (`public`, `private`)
+  - [ ] Static class members (`static ivar`, `static function`)
+  - [ ] Class Method Interception (`hook ClassName.method(args) then ... end`)
   - [ ] Namespaces integration & class scoping
+- [ ] Type & Value Constructs:
+  - [ ] Runtime type checking operator (`is`, e.g., `if (enemy is Boss) then`)
+  - [ ] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
+  - [ ] Multi-variable single-line declarations with trailing value propagation (`ivar a, b = 1, 2;`, `ivar c, d = 4;` -> both `4`, `ivar e, f, g = 2, 5;` -> `g` takes `5`)
+  - [ ] Default parameter values in functions and constructors
 
-### Phase 8: Modular Ecosystem, Standard Extended & Tooling `(v1.0.8)`
+### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
 
-- [ ] Architecture of strict packages & libraries (`package Name { ... }`, `library Name;`)
-- [ ] Selective and aliased package imports (`import Package ~(LibA) alias ~;`)
+- [ ] Concurrency & Asynchronous Programming:
+  - [ ] Non-blocking async routines (`async` / `await`) and lightweight coroutines (`task` / `yield`)
 - [ ] Built-in `StdE` Package (Standard Extended):
   - [ ] `StdE.Json` (native parse and stringify of Tables to JSON)
   - [ ] `StdE.Path` (join, resolve, dirname, basename, extname)
@@ -407,21 +410,32 @@ Kuroba/
 - [ ] Built-in `Web` Package (Networking & HTTP):
   - [ ] HTTP client fetcher (`Web.fetch` for REST API queries)
   - [ ] Native HTTP web server (`Web.serve`, `Web.listen`)
-- [ ] Developer Tooling & CLI Ergonomics:
-  - [ ] Official code formatter (`krb fmt`)
-  - [ ] Built-in test runner (`krb test`)
-  - [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
 
-### Phase 9: Native 2D Game Engine (Package App) & Community Tour `(v2.0.0)`
+### Phase 9: Native 2D Game Engine (`App`), Developer Tooling & Tour `(v1.0.9)`
 
 - [ ] Built-in `App` Package (Native GUI & 2D Game Engine):
   - [ ] Native window creation with framerate and resolution control (`App.window`, `App.fps`)
   - [ ] 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style Raylib / SDL)
   - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
   - [ ] Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
+- [ ] Developer Tooling & CLI Ergonomics:
+  - [ ] Official code formatter (`krb fmt`)
+  - [ ] Built-in test runner (`krb test`)
+  - [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
+  - [ ] Official VS Code Language Server Protocol (`LSP`) with live diagnostics & autocomplete
 - [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
   - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
   - [ ] In-browser code challenges with instant automated grading test suites
+
+### Phase 10: Embedding SDK, Package Manager & Standalone Compiler `(v2.0.0)`
+
+- [ ] Kuroba Embeddable SDK (Lua-inspired Native Integration):
+  - [ ] Bidirectional Host API for embedding Kuroba into C# (Unity), Godot, Node.js, and Browser apps
+- [ ] Bytecode Virtual Machine & Standalone Compilation:
+  - [ ] Bytecode VM optimization pass for high-throughput execution
+  - [ ] Standalone executable builder (`krb build game.krb --out game.exe`) with zero runtime prerequisites
+- [ ] Official Package Manager (`kpm` / `krb install`):
+  - [ ] Project dependency manifest (`kuroba.json`) and community module registry (`krb publish`, `krb install`)
 
 ---
 
