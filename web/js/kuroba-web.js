@@ -1795,9 +1795,11 @@ function parse(tokens) {
     // =========================================================================
     // 4. EVALUATOR MODULES
     // =========================================================================
-    let currentCliArgs = [];
+    const getCwd = () => (typeof process !== 'undefined' && typeof process.cwd === 'function') ? process.cwd() : '/';
+
+let currentCliArgs = [];
 let currentProjectContext = {
-    baseDir: process.cwd(),
+    baseDir: getCwd(),
     entryFilePath: null
 };
 
@@ -1807,7 +1809,7 @@ function setCliArgs(cliArgs) {
 
 function setProjectContext(baseDir, entryFilePath = null) {
     currentProjectContext = {
-        baseDir: baseDir || process.cwd(),
+        baseDir: baseDir || getCwd(),
         entryFilePath: entryFilePath || null
     };
 }
