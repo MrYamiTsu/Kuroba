@@ -23,6 +23,38 @@ function readErrorFormatters() {
     return src.slice(idx).replace(/module\.exports\s*=\s*\{[^}]*\};?/g, '').trim();
 }
 
+function readAsyncEvaluator(relPath) {
+    let code = readSource(relPath);
+
+    code = code.replace(
+        /(\w+(?:\.\w+)*)\.map\((\w+)\s*=>\s*evaluate\(([^)]+)\)\)/g,
+        'await mapAsync($1, async ($2) => await evaluate($3))'
+    );
+
+    code = code.replace(
+        /\bfunction (evaluate|executeBlock|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is))\(/g,
+        'async function $1('
+    );
+
+    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall)\(/g, 'await $1(');
+    code = code.replace(/\b(caller\.fn|fnObj\.fn)\(/g, 'await $1(');
+
+    if (relPath.endsWith('evaluator/index.js')) {
+        code = code.replace(/return (eval[A-Z]\w*)\(/g, 'return await $1(');
+        code = code.replace(
+            /if \(!node \|\| !node\.type\) return node;/,
+            `if (!node || !node.type) return node;
+    if (activeRunAborted) throw new KurobaAbortError();
+    if (++evalOpCount % 2000 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+        if (activeRunAborted) throw new KurobaAbortError();
+    }`
+        );
+    }
+
+    return code;
+}
+
 // Generate self-contained bundle for browser
 const bundleCode = `/**
  * Kuroba — In-Browser Runtime Engine v1.0.6
@@ -55,6 +87,25 @@ const bundleCode = `/**
     let activePrintHandler = (txt, nl) => console.log(txt);
     let activeErrorHandler = (err) => { throw new Error(err); };
     let activeClearHandler = () => {};
+    let activeInputHandler = null;
+    let activeAbortHandler = null;
+    let activeRunAborted = false;
+    let evalOpCount = 0;
+
+    async function mapAsync(arr, fn) {
+        const out = [];
+        for (let i = 0; i < arr.length; i++) {
+            out.push(await fn(arr[i], i));
+        }
+        return out;
+    }
+
+    class KurobaAbortError extends Error {
+        constructor() {
+            super('[Stopped] Execution stopped by user.');
+            this.isKurobaAbort = true;
+        }
+    }
 
     let tryDepth = 0;
     function pushTryContext() { tryDepth++; }
@@ -139,10 +190,7 @@ const bundleCode = `/**
         log: (x) => Math.log(x),
         log10: (x) => Math.log10(x),
         exp: (x) => Math.exp(x),
-        sleep: (ms) => {
-            const end = performance.now() + Math.max(0, ms);
-            while (performance.now() < end) {}
-        },
+        sleep: (ms) => new Promise(resolve => setTimeout(resolve, Math.max(0, ms))),
         now: () => Date.now(),
         unix: () => Math.floor(Date.now() / 1000),
         perf: () => performance.now(),
@@ -235,65 +283,59 @@ const bundleCode = `/**
         .replace(/const\s*{\s*printErr\s*}\s*=\s*require\([^)]+\);?/, '')
         .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
 
-    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/operations.js'), 'utf-8')
-        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readAsyncEvaluator('../src/evaluator/operations.js')}
 
-    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/variables.js'), 'utf-8')
-        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readAsyncEvaluator('../src/evaluator/variables.js')}
 
-    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/collections.js'), 'utf-8')
-        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readAsyncEvaluator('../src/evaluator/collections.js')}
 
-    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/tables.js'), 'utf-8')
-        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readAsyncEvaluator('../src/evaluator/tables.js')}
 
-    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/control.js'), 'utf-8')
-        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readAsyncEvaluator('../src/evaluator/control.js')}
 
-    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/functions.js'), 'utf-8')
-        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readAsyncEvaluator('../src/evaluator/functions.js')}
 
-    // Web IO functions
-    function evalPaste(node, env) {
+    // Web IO functions (async for integrated terminal input)
+    async function evalPaste(node, env) {
         if (node.isEmpty) {
             if (node.newLine && activePrintHandler) activePrintHandler('', true);
             return null;
         }
-        let val = evaluate(node.expr, env);
+        let val = await evaluate(node.expr, env);
         let txt = formatKurobaValue(val);
         if (activePrintHandler) activePrintHandler(txt, node.newLine);
         return val;
     }
 
-    function evalCopy(node, env) {
-        let promptText = "Entrée Kuroba :";
+    async function evalCopy(node, env) {
+        let promptText = "";
         if (node.prompt !== null) {
-            let val = evaluate(node.prompt, env);
+            let val = await evaluate(node.prompt, env);
             promptText = formatKurobaValue(val);
         }
-        let result = prompt(promptText) || "";
+
+        if (activeInputHandler) {
+            return await activeInputHandler(promptText, !!node.oneKey);
+        }
+
+        let fallbackPrompt = promptText || "Entrée Kuroba :";
+        let result = (typeof prompt === 'function' ? prompt(fallbackPrompt) : "") || "";
         if (node.oneKey) return result.charAt(0);
         return result;
     }
 
-    function evalClear(node, env) {
-        if (node.cond !== null) {
-            let condVal = evaluate(node.cond, env);
+    async function evalClear(node, env) {
+        if (node.condition !== null) {
+            let condVal = await evaluate(node.condition, env);
             if (!isTruthy(condVal)) return null;
         }
         if (activeClearHandler) activeClearHandler();
         return null;
     }
 
-    function evalExit(node, env) {
-        if (node.cond !== null) {
-            let condVal = evaluate(node.cond, env);
+    async function evalExit(node, env) {
+        if (node.condition !== null) {
+            let condVal = await evaluate(node.condition, env);
             if (!isTruthy(condVal)) return null;
         }
         if (activePrintHandler) activePrintHandler("[Exit] Exécution interrompue par instruction exit.", true);
@@ -305,7 +347,7 @@ const bundleCode = `/**
     let activeWorkspaceFiles = {};
     let workspaceModuleCache = {};
 
-    function evaluateNamespaceBody(statements) {
+    async function evaluateNamespaceBody(statements) {
         const moduleScope = createScope();
         for (const [name, fn] of Object.entries(natives)) {
             moduleScope.values['__native_' + name] = {
@@ -316,7 +358,7 @@ const bundleCode = `/**
             };
         }
         for (const stmt of statements) {
-            evaluate(stmt, moduleScope);
+            await evaluate(stmt, moduleScope);
         }
         const tableFields = {};
         for (const [varName, varEntry] of Object.entries(moduleScope.values)) {
@@ -331,7 +373,7 @@ const bundleCode = `/**
         return { kind: 'Table', fields: tableFields };
     }
 
-    function discoverNamespaceModules(pkgName) {
+    async function discoverNamespaceModules(pkgName) {
         const discovered = {};
 
         if (pkgName === 'Std') {
@@ -344,7 +386,7 @@ const bundleCode = `/**
                         if (!moduleCache[cacheKey]) {
                             moduleCache[cacheKey] = {
                                 isRoot: !stmt.module,
-                                table: evaluateNamespaceBody(stmt.body)
+                                table: await evaluateNamespaceBody(stmt.body)
                             };
                         }
                         discovered[modName] = moduleCache[cacheKey];
@@ -363,7 +405,7 @@ const bundleCode = `/**
                     if (!workspaceModuleCache[cacheKey]) {
                         workspaceModuleCache[cacheKey] = {
                             isRoot: !stmt.module,
-                            table: evaluateNamespaceBody(stmt.body)
+                            table: await evaluateNamespaceBody(stmt.body)
                         };
                     }
                     discovered[modName] = workspaceModuleCache[cacheKey];
@@ -374,12 +416,12 @@ const bundleCode = `/**
         return discovered;
     }
 
-    function evalImport(node, env) {
+    async function evalImport(node, env) {
         if (node.package === 'Main') {
             printErr("[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.");
         }
 
-        const availableModules = discoverNamespaceModules(node.package);
+        const availableModules = await discoverNamespaceModules(node.package);
         if (Object.keys(availableModules).length === 0) {
             printErr("[ImportError] Unknown package or namespace '" + node.package + "'. Create a file with 'namespace " + node.package + " then ... end' or import 'Std'.");
         }
@@ -451,34 +493,41 @@ const bundleCode = `/**
         return null;
     }
 
-    function evalNamespace(node, env) {
+    async function evalNamespace(node, env) {
         let result = null;
         for (let stmt of node.body) {
-            result = evaluate(stmt, env);
+            result = await evaluate(stmt, env);
             if (result && (result.isReturn || result.isBreak || result.isSkip)) return result;
         }
         return result;
     }
 
     // Evaluator main loop
-    ${fs.readFileSync(path.join(__dirname, '../src/evaluator/index.js'), 'utf-8')
-        .replace(/const\s*[^;]+=\s*require\([^)]+\);?/g, '')
-        .replace(/module\.exports\s*=\s*{[^}]+};?/, '')}
+    ${readAsyncEvaluator('../src/evaluator/index.js')}
 
     // Expose Kuroba API on global window
     global.Kuroba = {
         version: '1.0.6',
-        run: function(sourceCode, options = {}) {
+        run: async function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });
             activeClearHandler = options.onClear || (() => {});
+            activeInputHandler = options.onInput || null;
+            activeAbortHandler = options.onAbort || null;
             activeWorkspaceFiles = options.files || {};
             workspaceModuleCache = {};
+            activeRunAborted = false;
+            evalOpCount = 0;
+            tryDepth = 0;
 
             const tokens = tokenize(sourceCode);
             const ast = parse(tokens);
             const globalScope = createScope();
-            return evaluate(ast, globalScope);
+            return await evaluate(ast, globalScope);
+        },
+        abort: function() {
+            activeRunAborted = true;
+            if (activeAbortHandler) activeAbortHandler();
         },
         tokenize: tokenize,
         parse: parse

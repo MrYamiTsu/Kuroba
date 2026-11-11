@@ -34,6 +34,25 @@
     let activePrintHandler = (txt, nl) => console.log(txt);
     let activeErrorHandler = (err) => { throw new Error(err); };
     let activeClearHandler = () => {};
+    let activeInputHandler = null;
+    let activeAbortHandler = null;
+    let activeRunAborted = false;
+    let evalOpCount = 0;
+
+    async function mapAsync(arr, fn) {
+        const out = [];
+        for (let i = 0; i < arr.length; i++) {
+            out.push(await fn(arr[i], i));
+        }
+        return out;
+    }
+
+    class KurobaAbortError extends Error {
+        constructor() {
+            super('[Stopped] Execution stopped by user.');
+            this.isKurobaAbort = true;
+        }
+    }
 
     let tryDepth = 0;
     function pushTryContext() { tryDepth++; }
@@ -1704,10 +1723,7 @@ function parse(tokens) {
         log: (x) => Math.log(x),
         log10: (x) => Math.log10(x),
         exp: (x) => Math.exp(x),
-        sleep: (ms) => {
-            const end = performance.now() + Math.max(0, ms);
-            while (performance.now() < end) {}
-        },
+        sleep: (ms) => new Promise(resolve => setTimeout(resolve, Math.max(0, ms))),
         now: () => Date.now(),
         unix: () => Math.floor(Date.now() / 1000),
         perf: () => performance.now(),
@@ -1931,9 +1947,13 @@ function formatKurobaValue(val, isInsideList = false) {
 
 
 
-function evalMath(node, env, evaluate) {
-    let left = evaluate(node.left, env);
-    let right = evaluate(node.right, env);
+const KNOWN_TYPES = new Set([
+    'Int', 'Float', 'String', 'Bool', 'List', 'Stack', 'Queue', 'Table', 'Function', 'Null'
+]);
+
+async function evalMath(node, env, evaluate) {
+    let left = await evaluate(node.left, env);
+    let right = await evaluate(node.right, env);
 
     switch (node.operator) {
         case '==': return isKurobaEqual(left, right);
@@ -1956,32 +1976,28 @@ function evalMath(node, env, evaluate) {
     }
 }
 
-function evalUnary(node, env, evaluate) {
-    let right = evaluate(node.right, env);
+async function evalUnary(node, env, evaluate) {
+    let right = await evaluate(node.right, env);
     if (node.operator === '!') return !isTruthy(right);
     if (node.operator === '-') return -right;
     printErr(`[RuntimeError] Unsupported unary operator '${node.operator}'.`);
 }
 
-function evalLogical(node, env, evaluate) {
-    let left = evaluate(node.left, env);
+async function evalLogical(node, env, evaluate) {
+    let left = await evaluate(node.left, env);
     if (node.operator === '&&') {
         if (!isTruthy(left)) return false;
-        return isTruthy(evaluate(node.right, env));
+        return isTruthy(await evaluate(node.right, env));
     }
     if (node.operator === '||') {
         if (isTruthy(left)) return true;
-        return isTruthy(evaluate(node.right, env));
+        return isTruthy(await evaluate(node.right, env));
     }
     printErr(`[RuntimeError] Unsupported logical operator '${node.operator}'.`);
 }
 
-const KNOWN_TYPES = new Set([
-    'Int', 'Float', 'String', 'Bool', 'List', 'Stack', 'Queue', 'Table', 'Function', 'Null'
-]);
-
-function evalIs(node, env, evaluate) {
-    let val = evaluate(node.left, env);
+async function evalIs(node, env, evaluate) {
+    let val = await evaluate(node.left, env);
     let spec = node.targetSpec;
 
     if (spec.kind === 'literal') {
@@ -2083,8 +2099,8 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
     return val;
 }
 
-function evalVarDeclar(node, env, evaluate) {
-    let rawVal = evaluate(node.value, env);
+async function evalVarDeclar(node, env, evaluate) {
+    let rawVal = await evaluate(node.value, env);
     let val = validateAndCast(rawVal, node.explType, node.isNullable !== false, node.typeInfo, node.name);
 
     env.values[node.name] = {
@@ -2097,13 +2113,13 @@ function evalVarDeclar(node, env, evaluate) {
     return val;
 }
 
-function evalVarAssign(node, env, evaluate) {
+async function evalVarAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Cannot reassign undeclared variable '${node.name}'.`);
     let target = scope.values[node.name];
     if (target.isConst) printErr(`[TypeError] Cannot reassign constant '${node.name}'.`);
 
-    let rawVal = evaluate(node.value, env);
+    let rawVal = await evaluate(node.value, env);
     let val = validateAndCast(rawVal, target.type, target.isNullable, target.typeInfo, node.name);
 
     let newType = getType(val);
@@ -2121,13 +2137,13 @@ function evalVariable(node, env) {
     printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
 }
 
-function evalVarRetype(node, env, evaluate) {
+async function evalVarRetype(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Cannot retype undeclared variable '${node.name}'.`);
     let target = scope.values[node.name];
     if (target.isConst) printErr(`[TypeError] Cannot retype constant '${node.name}'.`);
 
-    let rawVal = evaluate(node.value, env);
+    let rawVal = await evaluate(node.value, env);
     let val = validateAndCast(rawVal, node.targetType, node.isNullable, node.typeInfo, node.name);
 
     target.value = val;
@@ -2182,12 +2198,12 @@ function evalKill(node, env) {
 
 
 
-function evalListLiteral(node, env, evaluate) {
-    return node.elements.map(el => evaluate(el, env));
+async function evalListLiteral(node, env, evaluate) {
+    return await mapAsync(node.elements, async (el) => await await evaluate(el, env));
 }
 
-function evalIndexAccess(node, env, evaluate) {
-    let target = evaluate(node.target, env);
+async function evalIndexAccess(node, env, evaluate) {
+    let target = await evaluate(node.target, env);
 
     if (target && target.kind === 'Table') {
         if (!node.isDotAccess) {
@@ -2205,20 +2221,20 @@ function evalIndexAccess(node, env, evaluate) {
     }
 
     if (typeof target === 'string') {
-        let idx = evaluate(node.index, env);
+        let idx = await evaluate(node.index, env);
         if (!Number.isInteger(idx)) printErr(`[IndexError] String index must be an integer, got '${idx}'.`);
         if (idx < 0 || idx >= target.length) printErr(`[IndexError] Index ${idx} out of bounds for string of length ${target.length}.`);
         return target[idx];
     }
 
     if (!Array.isArray(target)) printErr(`[TypeError] Cannot index non-list value of type '${getType(target)}'.`);
-    let idx = evaluate(node.index, env);
+    let idx = await evaluate(node.index, env);
     if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
     if (idx < 0 || idx >= target.length) printErr(`[IndexError] Index ${idx} out of bounds for list of length ${target.length}.`);
     return target[idx];
 }
 
-function evalIndexAssign(node, env, evaluate) {
+async function evalIndexAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
 
@@ -2229,17 +2245,17 @@ function evalIndexAssign(node, env, evaluate) {
     }
 
     if (targetVar.value && targetVar.value.kind === 'Table') {
-        printErr(`[TypeError] Tables do not support bracket assignment. Use dot notation '${node.name}.${evaluate(node.index, env)} = ...' instead.`);
+        printErr(`[TypeError] Tables do not support bracket assignment. Use dot notation '${node.name}.${await evaluate(node.index, env)} = ...' instead.`);
     }
 
     let list = targetVar.value;
     if (!Array.isArray(list)) printErr(`[TypeError] Variable '${node.name}' is not a List.`);
 
-    let idx = evaluate(node.index, env);
+    let idx = await evaluate(node.index, env);
     if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
     if (idx < 0 || idx >= list.length) printErr(`[IndexError] Index ${idx} out of bounds for list '${node.name}' of length ${list.length}.`);
 
-    let newVal = evaluate(node.value, env);
+    let newVal = await evaluate(node.value, env);
     if (node.operator) {
         switch (node.operator) {
             case '+': newVal = list[idx] + newVal; break;
@@ -2269,8 +2285,8 @@ function evalIndexAssign(node, env, evaluate) {
     return newVal;
 }
 
-function evalMethodCall(node, env, evaluate) {
-    let target = evaluate(node.target, env);
+async function evalMethodCall(node, env, evaluate) {
+    let target = await evaluate(node.target, env);
     let targetType = getType(target);
 
     if (target && target.kind === 'Table') {
@@ -2279,10 +2295,10 @@ function evalMethodCall(node, env, evaluate) {
             let fnObj = target.fields[methodName].value;
             if (fnObj && fnObj.kind === 'Function') {
                 if (fnObj.isNative) {
-                    let evaluatedArgs = node.args.map(a => evaluate(a, env));
-                    return fnObj.fn(...evaluatedArgs);
+                    let evaluatedArgs = await mapAsync(node.args, async (a) => await await evaluate(a, env));
+                    return await fnObj.fn(...evaluatedArgs);
                 }
-                return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
+                return await evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
             printErr(`[TypeError] Field '${methodName}' on Table is not a callable function.`);
         }
@@ -2312,7 +2328,7 @@ function evalMethodCall(node, env, evaluate) {
                 printErr(`[TypeError] Method '.push()' expects at least 1 argument.`);
             }
 
-            let val = evaluate(node.args[0], env);
+            let val = await evaluate(node.args[0], env);
 
             if (tInfo && tInfo.elemType) {
                 if (val === null) {
@@ -2330,7 +2346,7 @@ function evalMethodCall(node, env, evaluate) {
                 items.push(val);
             } else {
                 if (node.args.length >= 2) {
-                    let pos = evaluate(node.args[1], env);
+                    let pos = await evaluate(node.args[1], env);
                     if (!Number.isInteger(pos)) printErr(`[IndexError] Position argument in '.push()' must be an integer, got '${pos}'.`);
                     if (pos < 0 || pos > items.length) printErr(`[IndexError] Position ${pos} out of bounds for list of length ${items.length}.`);
                     items.splice(pos, 0, val);
@@ -2355,7 +2371,7 @@ function evalMethodCall(node, env, evaluate) {
                     printErr(`[TypeError] Method '.pop()' on a List requires an index argument. (e.g. list.pop(0))`);
                 }
 
-                let pos = evaluate(node.args[0], env);
+                let pos = await evaluate(node.args[0], env);
                 if (!Number.isInteger(pos)) printErr(`[IndexError] Index argument in '.pop()' must be an integer, got '${pos}'.`);
                 if (pos < 0 || pos >= items.length) printErr(`[IndexError] Index ${pos} out of bounds for list of length ${items.length}.`);
 
@@ -2376,7 +2392,7 @@ function evalMethodCall(node, env, evaluate) {
                     printErr(`[TypeError] Method '.peek()' on a List requires an index argument. (e.g. list.peek(0))`);
                 }
 
-                let pos = evaluate(node.args[0], env);
+                let pos = await evaluate(node.args[0], env);
                 if (!Number.isInteger(pos)) printErr(`[IndexError] Index argument in '.peek()' must be an integer, got '${pos}'.`);
                 if (pos < 0 || pos >= items.length) printErr(`[IndexError] Index ${pos} out of bounds for list of length ${items.length}.`);
                 
@@ -2399,11 +2415,11 @@ function evalMethodCall(node, env, evaluate) {
 
 
 
-function evalTableLiteral(node, env, evaluate) {
+async function evalTableLiteral(node, env, evaluate) {
     let fields = {};
 
     for (let entry of node.entries) {
-        let rawVal = evaluate(entry.value, env);
+        let rawVal = await evaluate(entry.value, env);
         let val = rawVal;
         let type = getType(rawVal);
         let isNullable = true;
@@ -2429,7 +2445,7 @@ function evalTableLiteral(node, env, evaluate) {
     return { kind: 'Table', fields };
 }
 
-function evalPropertyAssign(node, env, evaluate) {
+async function evalPropertyAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
     if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
 
@@ -2458,7 +2474,7 @@ function evalPropertyAssign(node, env, evaluate) {
     }
     
     let key = path[path.length - 1];
-    let newVal = evaluate(node.value, env);
+    let newVal = await evaluate(node.value, env);
 
     if (node.operator) {
         let currVal = (key in table.fields) ? table.fields[key].value : 0;
@@ -2521,50 +2537,50 @@ function evalPropertyAssign(node, env, evaluate) {
 
 
 
-function executeBlock(statements, parentEnv, evaluate) {
+async function executeBlock(statements, parentEnv, evaluate) {
     let blockEnv = createScope(parentEnv);
     for (let stmt of statements) {
-        let res = evaluate(stmt, blockEnv);
+        let res = await evaluate(stmt, blockEnv);
         if (res && (res.isBreak || res.isSkip || res.isReturn)) return res;
     }
     return null;
 }
 
-function evalIf(node, env, evaluate) {
-    if (isTruthy(evaluate(node.condition, env))) {
-        return executeBlock(node.thenBranch, env, evaluate);
+async function evalIf(node, env, evaluate) {
+    if (isTruthy(await evaluate(node.condition, env))) {
+        return await executeBlock(node.thenBranch, env, evaluate);
     }
     if (node.elifBranches && node.elifBranches.length > 0) {
         for (let elif of node.elifBranches) {
-            if (isTruthy(evaluate(elif.condition, env))) {
-                return executeBlock(elif.body, env, evaluate);
+            if (isTruthy(await evaluate(elif.condition, env))) {
+                return await executeBlock(elif.body, env, evaluate);
             }
         }
     }
     if (node.elseBranch) {
-        return executeBlock(node.elseBranch, env, evaluate);
+        return await executeBlock(node.elseBranch, env, evaluate);
     }
 }
 
-function evalFor(node, env, evaluate) {
+async function evalFor(node, env, evaluate) {
     let forEnv = createScope(env);
-    if (node.init) evaluate(node.init, forEnv);
+    if (node.init) await evaluate(node.init, forEnv);
 
     while (true) {
-        if (node.condition && !isTruthy(evaluate(node.condition, forEnv))) break;
-        let res = executeBlock(node.body, forEnv, evaluate);
+        if (node.condition && !isTruthy(await evaluate(node.condition, forEnv))) break;
+        let res = await executeBlock(node.body, forEnv, evaluate);
         
         if (res && res.isBreak) break;
 
-        if (node.update) evaluate(node.update, forEnv);
+        if (node.update) await evaluate(node.update, forEnv);
 
         if (res && res.isReturn) return res;
     }
 }
 
-function evalWhile(node, env, evaluate) {
-    while (isTruthy(evaluate(node.condition, env))) {
-        let res = executeBlock(node.body, env, evaluate);
+async function evalWhile(node, env, evaluate) {
+    while (isTruthy(await evaluate(node.condition, env))) {
+        let res = await executeBlock(node.body, env, evaluate);
 
         if (res && res.isBreak) break;
 
@@ -2572,18 +2588,18 @@ function evalWhile(node, env, evaluate) {
     }
 }
 
-function evalDoWhile(node, env, evaluate) {
+async function evalDoWhile(node, env, evaluate) {
     do {
-        let res = executeBlock(node.body, env, evaluate);
+        let res = await executeBlock(node.body, env, evaluate);
 
         if (res && res.isBreak) break;
 
         if (res && res.isReturn) return res;
-    } while (isTruthy(evaluate(node.condition, env)));
+    } while (isTruthy(await evaluate(node.condition, env)));
 }
 
-function evalGiven(node, env, evaluate) {
-    let val = evaluate(node.target || node.expr, env);
+async function evalGiven(node, env, evaluate) {
+    let val = await evaluate(node.target || node.expr, env);
     let matchedIndex = -1;
     let defaultIndex = -1;
 
@@ -2593,23 +2609,23 @@ function evalGiven(node, env, evaluate) {
         if (c.isDefault) {
             defaultIndex = i;
         } else if (matchedIndex === -1) {
-            let caseVal = evaluate(c.value !== undefined ? c.value : c.condition, env);
+            let caseVal = await evaluate(c.value !== undefined ? c.value : c.condition, env);
             if (caseVal === val) matchedIndex = i;
         }
     }
 
     if (matchedIndex !== -1) {
-        let res = executeBlock(node.cases[matchedIndex].body, env, evaluate);
+        let res = await executeBlock(node.cases[matchedIndex].body, env, evaluate);
         if ((!res || !res.isBreak) && defaultIndex !== -1) {
-            executeBlock(node.cases[defaultIndex].body, env, evaluate);
+            await executeBlock(node.cases[defaultIndex].body, env, evaluate);
         }
     } else if (defaultIndex !== -1) {
-        executeBlock(node.cases[defaultIndex].body, env, evaluate);
+        await executeBlock(node.cases[defaultIndex].body, env, evaluate);
     }
 }
 
-function evalForIn(node, env, evaluate) {
-    let collection = evaluate(node.iterable, env);
+async function evalForIn(node, env, evaluate) {
+    let collection = await evaluate(node.iterable, env);
     if (collection === null || collection === undefined) {
         printErr(`[TypeError: Line ${node.line}] Cannot iterate over '${collection}'.`);
     }
@@ -2651,7 +2667,7 @@ function evalForIn(node, env, evaluate) {
             type: getType(val)
         };
 
-        let res = executeBlock(node.body, forEnv, evaluate);
+        let res = await executeBlock(node.body, forEnv, evaluate);
 
         if (res && res.isBreak) break;
 
@@ -2659,8 +2675,8 @@ function evalForIn(node, env, evaluate) {
     }
 }
 
-function evalThrow(node, env, evaluate) {
-    let rawVal = evaluate(node.value, env);
+async function evalThrow(node, env, evaluate) {
+    let rawVal = await evaluate(node.value, env);
     let formattedMsg = formatExceptionMessage(rawVal, node.line, node.col, formatKurobaValue(rawVal));
     if (isInsideTry()) {
         throw new KurobaUserException(rawVal, formattedMsg);
@@ -2668,7 +2684,7 @@ function evalThrow(node, env, evaluate) {
     printException(formattedMsg);
 }
 
-function evalTry(node, env, evaluate) {
+async function evalTry(node, env, evaluate) {
     let tryEnv = createScope(env);
     let caughtValue = null;
     let hasError = false;
@@ -2677,7 +2693,7 @@ function evalTry(node, env, evaluate) {
 
     pushTryContext();
     try {
-        blockResult = executeBlock(node.tryBlock, tryEnv, evaluate);
+        blockResult = await executeBlock(node.tryBlock, tryEnv, evaluate);
     } catch (err) {
         hasError = true;
         if (err && err.isKurobaUserException) {
@@ -2703,12 +2719,12 @@ function evalTry(node, env, evaluate) {
                 isNullable: true
             };
         }
-        blockResult = executeBlock(node.catchBlock, catchEnv, evaluate);
+        blockResult = await executeBlock(node.catchBlock, catchEnv, evaluate);
     }
 
     if (node.finallyBlock) {
         let finallyEnv = createScope(env);
-        let finRes = executeBlock(node.finallyBlock, finallyEnv, evaluate);
+        let finRes = await executeBlock(node.finallyBlock, finallyEnv, evaluate);
         if (finRes && (finRes.isReturn || finRes.isBreak || finRes.isSkip)) {
             blockResult = finRes;
         }
@@ -2747,20 +2763,20 @@ function evalFunctionDeclaration(node, env) {
     return funcObj;
 }
 
-function evalReturn(node, env, evaluate) {
+async function evalReturn(node, env, evaluate) {
     let value = null;
     if (node.value !== null && node.value !== undefined) {
-        value = evaluate(node.value, env);
+        value = await evaluate(node.value, env);
     }
     return { isReturn: true, value };
 }
 
-function evalCall(node, env, evaluate) {
+async function evalCall(node, env, evaluate) {
     if (callDepth >= MAX_CALL_DEPTH) {
         printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded.`);
     }
 
-    let caller = evaluate(node.caller, env);
+    let caller = await evaluate(node.caller, env);
 
     if (!caller || caller.kind !== 'Function') {
         let typeName = getType(caller);
@@ -2768,8 +2784,8 @@ function evalCall(node, env, evaluate) {
     }
 
     if (caller.isNative) {
-        let evaluatedArgs = node.args.map(a => evaluate(a, env));
-        return caller.fn(...evaluatedArgs);
+        let evaluatedArgs = await mapAsync(node.args, async (a) => await await evaluate(a, env));
+        return await caller.fn(...evaluatedArgs);
     }
 
     let minArgs = 0;
@@ -2802,12 +2818,12 @@ function evalCall(node, env, evaluate) {
             let param = caller.params[i];
             let argVal;
             if (i < node.args.length) {
-                argVal = evaluate(node.args[i], env);
+                argVal = await evaluate(node.args[i], env);
             } else if (param.defaultClosure) {
                 let defaultEnv = { values: fnEnv.values, parent: param.defaultClosure };
-                argVal = evaluate(param.defaultValue, defaultEnv);
+                argVal = await evaluate(param.defaultValue, defaultEnv);
             } else {
-                argVal = evaluate(param.defaultValue, fnEnv);
+                argVal = await evaluate(param.defaultValue, fnEnv);
             }
 
             if (param.typeInfo) {
@@ -2831,7 +2847,7 @@ function evalCall(node, env, evaluate) {
         }
 
         for (let stmt of caller.body) {
-            let res = evaluate(stmt, fnEnv);
+            let res = await evaluate(stmt, fnEnv);
             if (res && res.isReturn) {
                 return res.value;
             }
@@ -2843,8 +2859,8 @@ function evalCall(node, env, evaluate) {
     }
 }
 
-function evalHook(node, env, evaluate) {
-    let origFunc = evaluate(node.target, env);
+async function evalHook(node, env, evaluate) {
+    let origFunc = await evaluate(node.target, env);
 
     if (!origFunc || origFunc.kind !== 'Function') {
         let typeName = getType(origFunc);
@@ -2888,8 +2904,8 @@ function evalHook(node, env, evaluate) {
 
         scope.values[node.target.name].value = hookFunc;
     } else if (node.target.type === 'IndexAccess') {
-        let table = evaluate(node.target.target, env);
-        let key = String(evaluate(node.target.index, env));
+        let table = await evaluate(node.target.target, env);
+        let key = String(await evaluate(node.target.index, env));
 
         if (!table || table.kind !== 'Table') {
             printErr(`[TypeError: Line ${node.line}] Cannot hook into non-Table target.`);
@@ -2907,41 +2923,47 @@ function evalHook(node, env, evaluate) {
 
 
 
-    // Web IO functions
-    function evalPaste(node, env) {
+    // Web IO functions (async for integrated terminal input)
+    async function evalPaste(node, env) {
         if (node.isEmpty) {
             if (node.newLine && activePrintHandler) activePrintHandler('', true);
             return null;
         }
-        let val = evaluate(node.expr, env);
+        let val = await evaluate(node.expr, env);
         let txt = formatKurobaValue(val);
         if (activePrintHandler) activePrintHandler(txt, node.newLine);
         return val;
     }
 
-    function evalCopy(node, env) {
-        let promptText = "Entrée Kuroba :";
+    async function evalCopy(node, env) {
+        let promptText = "";
         if (node.prompt !== null) {
-            let val = evaluate(node.prompt, env);
+            let val = await evaluate(node.prompt, env);
             promptText = formatKurobaValue(val);
         }
-        let result = prompt(promptText) || "";
+
+        if (activeInputHandler) {
+            return await activeInputHandler(promptText, !!node.oneKey);
+        }
+
+        let fallbackPrompt = promptText || "Entrée Kuroba :";
+        let result = (typeof prompt === 'function' ? prompt(fallbackPrompt) : "") || "";
         if (node.oneKey) return result.charAt(0);
         return result;
     }
 
-    function evalClear(node, env) {
-        if (node.cond !== null) {
-            let condVal = evaluate(node.cond, env);
+    async function evalClear(node, env) {
+        if (node.condition !== null) {
+            let condVal = await evaluate(node.condition, env);
             if (!isTruthy(condVal)) return null;
         }
         if (activeClearHandler) activeClearHandler();
         return null;
     }
 
-    function evalExit(node, env) {
-        if (node.cond !== null) {
-            let condVal = evaluate(node.cond, env);
+    async function evalExit(node, env) {
+        if (node.condition !== null) {
+            let condVal = await evaluate(node.condition, env);
             if (!isTruthy(condVal)) return null;
         }
         if (activePrintHandler) activePrintHandler("[Exit] Exécution interrompue par instruction exit.", true);
@@ -2953,7 +2975,7 @@ function evalHook(node, env, evaluate) {
     let activeWorkspaceFiles = {};
     let workspaceModuleCache = {};
 
-    function evaluateNamespaceBody(statements) {
+    async function evaluateNamespaceBody(statements) {
         const moduleScope = createScope();
         for (const [name, fn] of Object.entries(natives)) {
             moduleScope.values['__native_' + name] = {
@@ -2964,7 +2986,7 @@ function evalHook(node, env, evaluate) {
             };
         }
         for (const stmt of statements) {
-            evaluate(stmt, moduleScope);
+            await evaluate(stmt, moduleScope);
         }
         const tableFields = {};
         for (const [varName, varEntry] of Object.entries(moduleScope.values)) {
@@ -2979,7 +3001,7 @@ function evalHook(node, env, evaluate) {
         return { kind: 'Table', fields: tableFields };
     }
 
-    function discoverNamespaceModules(pkgName) {
+    async function discoverNamespaceModules(pkgName) {
         const discovered = {};
 
         if (pkgName === 'Std') {
@@ -2992,7 +3014,7 @@ function evalHook(node, env, evaluate) {
                         if (!moduleCache[cacheKey]) {
                             moduleCache[cacheKey] = {
                                 isRoot: !stmt.module,
-                                table: evaluateNamespaceBody(stmt.body)
+                                table: await evaluateNamespaceBody(stmt.body)
                             };
                         }
                         discovered[modName] = moduleCache[cacheKey];
@@ -3011,7 +3033,7 @@ function evalHook(node, env, evaluate) {
                     if (!workspaceModuleCache[cacheKey]) {
                         workspaceModuleCache[cacheKey] = {
                             isRoot: !stmt.module,
-                            table: evaluateNamespaceBody(stmt.body)
+                            table: await evaluateNamespaceBody(stmt.body)
                         };
                     }
                     discovered[modName] = workspaceModuleCache[cacheKey];
@@ -3022,12 +3044,12 @@ function evalHook(node, env, evaluate) {
         return discovered;
     }
 
-    function evalImport(node, env) {
+    async function evalImport(node, env) {
         if (node.package === 'Main') {
             printErr("[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.");
         }
 
-        const availableModules = discoverNamespaceModules(node.package);
+        const availableModules = await discoverNamespaceModules(node.package);
         if (Object.keys(availableModules).length === 0) {
             printErr("[ImportError] Unknown package or namespace '" + node.package + "'. Create a file with 'namespace " + node.package + " then ... end' or import 'Std'.");
         }
@@ -3099,10 +3121,10 @@ function evalHook(node, env, evaluate) {
         return null;
     }
 
-    function evalNamespace(node, env) {
+    async function evalNamespace(node, env) {
         let result = null;
         for (let stmt of node.body) {
-            result = evaluate(stmt, env);
+            result = await evaluate(stmt, env);
             if (result && (result.isReturn || result.isBreak || result.isSkip)) return result;
         }
         return result;
@@ -3120,28 +3142,33 @@ function evalHook(node, env, evaluate) {
 
 
 
-function evaluate(node, env = createScope()) {
+async function evaluate(node, env = createScope()) {
     if (!node || !node.type) return node;
+    if (activeRunAborted) throw new KurobaAbortError();
+    if (++evalOpCount % 2000 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+        if (activeRunAborted) throw new KurobaAbortError();
+    }
 
     switch (node.type) {
         case 'Program':
-            for (let stmt of node.body) evaluate(stmt, env);
+            for (let stmt of node.body) await evaluate(stmt, env);
             return;
         case 'NamespaceStatement':
             for (const stmt of node.body) {
-                let res = evaluate(stmt, env);
+                let res = await evaluate(stmt, env);
                 if (res && (res.isReturn || res.isBreak || res.isSkip)) return res;
             }
             return null;
         case 'InterpolatedString': 
             let res = '';
             for (let part of node.parts) {
-                let v = evaluate(part, env);
+                let v = await evaluate(part, env);
                 res += (v === null ? 'null' : String(v));
             }
             return res;
         case 'Literal':             return node.value;
-        case 'VarDeclar':           return evalVarDeclar(node, env, evaluate);
+        case 'VarDeclar':           return await evalVarDeclar(node, env, evaluate);
         case 'MultiVarDeclar': {
             let lastVal = null;
             for (let decl of node.declarations) {
@@ -3149,40 +3176,40 @@ function evaluate(node, env = createScope()) {
             }
             return lastVal;
         }
-        case 'VarAssign':           return evalVarAssign(node, env, evaluate);
-        case 'Variable':            return evalVariable(node, env);
-        case 'VarRetype':           return evalVarRetype(node, env, evaluate);
-        case 'SwapStatement':       return evalSwap(node, env);
-        case 'IfStatement':         return evalIf(node, env, evaluate);
-        case 'ForStatement':        return evalFor(node, env, evaluate);
-        case 'WhileStatement':      return evalWhile(node, env, evaluate);
-        case 'DoWhileStatement':    return evalDoWhile(node, env, evaluate);
-        case 'GivenStatement':      return evalGiven(node, env, evaluate);
-        case 'ForInStatement':      return evalForIn(node, env, evaluate);
+        case 'VarAssign':           return await evalVarAssign(node, env, evaluate);
+        case 'Variable':            return await evalVariable(node, env);
+        case 'VarRetype':           return await evalVarRetype(node, env, evaluate);
+        case 'SwapStatement':       return await evalSwap(node, env);
+        case 'IfStatement':         return await evalIf(node, env, evaluate);
+        case 'ForStatement':        return await evalFor(node, env, evaluate);
+        case 'WhileStatement':      return await evalWhile(node, env, evaluate);
+        case 'DoWhileStatement':    return await evalDoWhile(node, env, evaluate);
+        case 'GivenStatement':      return await evalGiven(node, env, evaluate);
+        case 'ForInStatement':      return await evalForIn(node, env, evaluate);
         case 'BreakStatement':      return { isBreak: true };
         case 'SkipStatement':       return { isSkip: true };
-        case 'PasteStatement':      return evalPaste(node, env, evaluate);
-        case 'CopyExpression':      return evalCopy(node, env, evaluate);
-        case 'ClearStatement':      return evalClear(node, env, evaluate);
-        case 'ExitStatement':       return evalExit(node, env, evaluate);
-        case 'ThrowStatement':      return evalThrow(node, env, evaluate);
-        case 'TryStatement':        return evalTry(node, env, evaluate);
-        case 'MathExpression':      return evalMath(node, env, evaluate);
-        case 'UnaryExpression':     return evalUnary(node, env, evaluate);
-        case 'LogicalExpression':   return evalLogical(node, env, evaluate);
-        case 'IsExpression':        return evalIs(node, env, evaluate);
-        case 'ListLiteral':         return evalListLiteral(node, env, evaluate);
-        case 'IndexAccess':         return evalIndexAccess(node, env, evaluate);
-        case 'IndexAssign':         return evalIndexAssign(node, env, evaluate);
-        case 'PropertyAssign':      return evalPropertyAssign(node, env, evaluate);
-        case 'MethodCall':          return evalMethodCall(node, env, evaluate);
-        case 'TableLiteral':        return evalTableLiteral(node, env, evaluate);
-        case 'KillStatement':       return evalKill(node, env);
-        case 'FunctionDeclaration': return evalFunctionDeclaration(node, env);
-        case 'ReturnStatement':     return evalReturn(node, env, evaluate);
-        case 'CallExpression':      return evalCall(node, env, evaluate);
-        case 'HookStatement':       return evalHook(node, env, evaluate);
-        case 'ImportStatement':     return evalImport(node, env, evaluate);
+        case 'PasteStatement':      return await evalPaste(node, env, evaluate);
+        case 'CopyExpression':      return await evalCopy(node, env, evaluate);
+        case 'ClearStatement':      return await evalClear(node, env, evaluate);
+        case 'ExitStatement':       return await evalExit(node, env, evaluate);
+        case 'ThrowStatement':      return await evalThrow(node, env, evaluate);
+        case 'TryStatement':        return await evalTry(node, env, evaluate);
+        case 'MathExpression':      return await evalMath(node, env, evaluate);
+        case 'UnaryExpression':     return await evalUnary(node, env, evaluate);
+        case 'LogicalExpression':   return await evalLogical(node, env, evaluate);
+        case 'IsExpression':        return await evalIs(node, env, evaluate);
+        case 'ListLiteral':         return await evalListLiteral(node, env, evaluate);
+        case 'IndexAccess':         return await evalIndexAccess(node, env, evaluate);
+        case 'IndexAssign':         return await evalIndexAssign(node, env, evaluate);
+        case 'PropertyAssign':      return await evalPropertyAssign(node, env, evaluate);
+        case 'MethodCall':          return await evalMethodCall(node, env, evaluate);
+        case 'TableLiteral':        return await evalTableLiteral(node, env, evaluate);
+        case 'KillStatement':       return await evalKill(node, env);
+        case 'FunctionDeclaration': return await evalFunctionDeclaration(node, env);
+        case 'ReturnStatement':     return await evalReturn(node, env, evaluate);
+        case 'CallExpression':      return await evalCall(node, env, evaluate);
+        case 'HookStatement':       return await evalHook(node, env, evaluate);
+        case 'ImportStatement':     return await evalImport(node, env, evaluate);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }
@@ -3193,17 +3220,26 @@ function evaluate(node, env = createScope()) {
     // Expose Kuroba API on global window
     global.Kuroba = {
         version: '1.0.6',
-        run: function(sourceCode, options = {}) {
+        run: async function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });
             activeClearHandler = options.onClear || (() => {});
+            activeInputHandler = options.onInput || null;
+            activeAbortHandler = options.onAbort || null;
             activeWorkspaceFiles = options.files || {};
             workspaceModuleCache = {};
+            activeRunAborted = false;
+            evalOpCount = 0;
+            tryDepth = 0;
 
             const tokens = tokenize(sourceCode);
             const ast = parse(tokens);
             const globalScope = createScope();
-            return evaluate(ast, globalScope);
+            return await evaluate(ast, globalScope);
+        },
+        abort: function() {
+            activeRunAborted = true;
+            if (activeAbortHandler) activeAbortHandler();
         },
         tokenize: tokenize,
         parse: parse

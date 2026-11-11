@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kuroba — Modern Deterministic Programming Language</title>
+  <title>Kuroba — Lightweight Interpreted Programming Language</title>
   <link rel="icon" type="image/png" href="assets/kuroba.png">
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,18 +38,18 @@
       <div class="hero-content">
         <div class="hero-badges">
           <span class="arch-badge"><span class="badge-dot"></span>Zero Dependencies</span>
-          <span class="arch-badge"><span class="badge-dot"></span>Deterministic AST</span>
+          <span class="arch-badge"><span class="badge-dot"></span>Pure Node.js</span>
           <span class="arch-badge"><span class="badge-dot"></span>Hybrid Typing</span>
         </div>
 
-        <h1 class="hero-title">Deterministic, Expressive &amp; Self-Contained.</h1>
+        <h1 class="hero-title">Write scripts, tools, and games with zero dependencies.</h1>
         <p class="hero-lead">
-          Kuroba is an interpreted programming language built from scratch in vanilla Node.js with zero third-party dependencies. Powered by a strict recursive-descent AST interpreter, hybrid type inference with explicit coercion, and atomic variable swapping, Kuroba delivers full predictability without runtime bloat.
+          Kuroba is an interpreted language built from scratch in Node.js with no external packages or build step. It combines readable <code>then ... end</code> blocks, optional type enforcement, atomic variable swaps, and built-in function hooks.
         </p>
 
         <div class="hero-actions">
           <a href="playground.html" class="btn-primary">Open Live Playground ▶</a>
-          <a href="docs.html" class="btn-secondary">Technical Specification</a>
+          <a href="docs.html" class="btn-secondary">Read Documentation</a>
         </div>
 
         <div class="quick-install-box">
@@ -87,41 +87,41 @@
        Section : Core Engineering Principles
        ======================================================================== -->
   <section class="pillars-section">
-    <div class="section-label">ARCHITECTURE &amp; PRINCIPLES</div>
-    <h2 class="section-heading">Engineered for clarity, speed, and determinism.</h2>
+    <div class="section-label">CORE DESIGN</div>
+    <h2 class="section-heading">Practical features, clear syntax.</h2>
 
     <div class="pillars-grid">
       <div class="pillar-card">
         <h3>1. Zero External Dependencies</h3>
-        <p>No Babel, no TypeScript runtime, and no sprawling <code>node_modules</code>. The entire pipeline (Lexer, Parser, AST Evaluator, Scope Machine, and Standard Library) is contained within the repository. The complete codebase can be audited in a single sitting.</p>
+        <p>No <code>node_modules</code>, no transpilers, and no build tools. The lexer, parser, evaluator, and standard library live in plain JavaScript files you can read directly.</p>
         <pre><code>package.json:
-"dependencies": {} ~~ Exactly 0 packages</code></pre>
+"dependencies": {} ~~ 0 packages</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>2. Hybrid Typing &amp; Strict Non-Nullability</h3>
-        <p>Natural type inference by default (<code>ivar x = 10;</code>), instant explicit coercion (<code>ivar~Int n = "42";</code>), and strict non-nullability contracts (<code>ivar~(String) u = "...";</code>) that categorically reject <code>NULL</code> at runtime.</p>
+        <h3>2. Hybrid Typing &amp; Non-Nullability</h3>
+        <p>Skip type annotations while prototyping (<code>ivar x = 10;</code>), or enforce coercion (<code>ivar~Int n = "42";</code>) and non-null contracts (<code>ivar~(String) u = "...";</code>) when values need guarantees.</p>
         <pre><code>ivar~Int count = "50";    ~~ Coerced to Int 50
 ivar~(String) id = NULL;  ~~ [TypeError] Rejected</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>3. Native Atomic Swap (<code>&lt;-&gt;</code>)</h3>
-        <p>Eliminates temporary variables. Kuroba validates type compatibility, guards immutable constants, and performs an atomic in-memory variable permutation in a single operation.</p>
+        <h3>3. Native Variable Swap (<code>&lt;-&gt;</code>)</h3>
+        <p>Swap two variables in place without declaring a temporary variable. Type compatibility and <code>iconst</code> immutability are verified automatically at runtime.</p>
         <pre><code>ivar a = 1; ivar b = 2;
 a &lt;-&gt; b; ~~ a is now 2, b is now 1</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>4. Synchronous, Predictable I/O</h3>
-        <p>Console I/O and disk persistence (<code>Std.IO</code>) without asynchronous promise clutter or event loop stalls. Features blocking line input (<code>copy</code>), raw single-key capture (<code>copyKey</code>), and direct file read/write operations.</p>
+        <h3>4. Synchronous I/O</h3>
+        <p>Read terminal lines (<code>copy</code>), capture single keypresses (<code>copyKey</code>), and read or write files (<code>Std.IO</code>) synchronously—ideal for CLI tools and terminal games without async boilerplate.</p>
         <pre><code>IO.filePaste("save.dat", data);
 ivar content = IO.fileCopy("save.dat");</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>5. Native Function Interception (Hooks)</h3>
-        <p>Lexical monkey-patching that preserves the caller interface. Intercept any target function to inject logging, caching, or data validation with transparent delegation via <code>this(...)</code>.</p>
+        <h3>5. Function Hooks</h3>
+        <p>Intercept any existing function with <code>hook</code> and call the original implementation via <code>this(...)</code>. Built for logging, runtime patching, or game modifiers without altering source functions.</p>
         <pre><code>hook compute(ivar x) then
     pasteLn("Compute called with: " + x);
     return this(x);
@@ -129,8 +129,8 @@ end</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>6. Pure Symbol-Based Discovery</h3>
-        <p>Physical file names on disk are irrelevant. Kuroba indexes module libraries strictly by their declared AST symbols (<code>namespace Pkg ~Module then</code>), ensuring modular reusability without path coupling.</p>
+        <h3>6. Symbol-Based Modules</h3>
+        <p>Organize code with <code>namespace Pkg ~Module</code> blocks independent of physical file names. Import full packages or expose specific modules directly into scope with <code>alias ~</code>.</p>
         <pre><code>import Std ~(Math, Time, String, IO) alias ~;
 namespace Main then ... end</code></pre>
       </div>
@@ -142,7 +142,7 @@ namespace Main then ... end</code></pre>
        ======================================================================== -->
   <section class="syntax-table-section">
     <div class="section-label">SYNTAX AT A GLANCE</div>
-    <h2 class="section-heading">Clean grammar without noise.</h2>
+    <h2 class="section-heading">Core Syntax</h2>
 
     <table class="kuroba-table">
       <thead>
@@ -156,42 +156,42 @@ namespace Main then ... end</code></pre>
         <tr>
           <td><strong>Console Output</strong></td>
           <td><code>paste(x);</code> / <code>pasteLn(x);</code></td>
-          <td>Direct stdout print without newline (<code>paste</code>) or with trailing newline (<code>pasteLn</code>).</td>
+          <td>Prints to stdout without a newline (<code>paste</code>) or with a trailing newline (<code>pasteLn</code>).</td>
         </tr>
         <tr>
           <td><strong>Console Input</strong></td>
           <td><code>copy("Prompt: ");</code> / <code>copyKey();</code></td>
-          <td>Synchronous blocking line input or instant raw single-character keypress capture.</td>
+          <td>Blocking line input or instant single-character keypress capture in raw terminal mode.</td>
         </tr>
         <tr>
           <td><strong>Variables &amp; Constants</strong></td>
           <td><code>ivar x = 10;</code> / <code>iconst MAX = 100;</code></td>
-          <td>Type-inferred variables and read-only constants protected against reassignment.</td>
+          <td>Type-inferred variables (with multi-var propagation) and read-only constants.</td>
         </tr>
         <tr>
           <td><strong>String Interpolation</strong></td>
           <td><code>~"Score: {x}/{max}"</code></td>
-          <td>Evaluates embedded Kuroba expressions directly inside the string via raven tilde (<code>~</code>).</td>
+          <td>Evaluates embedded Kuroba expressions directly inside strings using the <code>~</code> prefix.</td>
         </tr>
         <tr>
           <td><strong>Pattern Matching</strong></td>
           <td><code>given x then case 1 then ... break; case ~ then ... end</code></td>
-          <td>Value-based pattern matching with a raven tilde fallback branch (<code>case ~ then</code>).</td>
+          <td>Value-based branching with explicit <code>break;</code> and a default fallback branch (<code>case ~ then</code>).</td>
         </tr>
         <tr>
           <td><strong>Typed Collections</strong></td>
           <td><code>List&lt;T&gt;</code>, <code>Stack&lt;T&gt;</code>, <code>Queue&lt;T&gt;</code>, <code>Table</code></td>
-          <td>Heap data structures with native methods (<code>.push()</code>, <code>.pop()</code>, <code>.count()</code>).</td>
+          <td>Built-in collections with <code>.push()</code>, <code>.pop()</code>, <code>.peek()</code>, <code>.count()</code>, and dot-access fields.</td>
         </tr>
         <tr>
           <td><strong>Memory Lifecycle</strong></td>
           <td><code>kill variable;</code></td>
-          <td>Explicit variable destruction from memory and active lexical scope.</td>
+          <td>Removes a variable from memory and its active lexical scope.</td>
         </tr>
         <tr>
           <td><strong>Disk Persistence</strong></td>
           <td><code>IO.fileCopy()</code>, <code>IO.filePaste()</code></td>
-          <td>Synchronous filesystem read, write, append, existence, and deletion via <code>Std.IO</code>.</td>
+          <td>Synchronous file read, write, append, existence check, and deletion via <code>Std.IO</code>.</td>
         </tr>
       </tbody>
     </table>

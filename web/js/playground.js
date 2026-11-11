@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const gutter = document.getElementById('ide-gutter');
   const terminalScreen = document.getElementById('terminal-screen');
   const btnRun = document.getElementById('btn-execute');
+  const btnStop = document.getElementById('btn-stop');
   const btnClearEditor = document.getElementById('btn-clear-editor');
   const btnClearTerm = document.getElementById('btn-clear-term');
   const timingBadge = document.getElementById('timing-badge');
@@ -267,9 +268,41 @@ document.addEventListener('DOMContentLoaded', () => {
   editor.addEventListener('keyup', updateCursorPosition);
 
   // ==========================================================================
-  // Virtual Terminal Output
+  // Virtual Terminal Output & Integrated Interactive Input
   // ==========================================================================
-  function printTerminal(text, type = 'out') {
+  let pendingOutLine = null;
+  let cancelActiveInput = null;
+  let isRunning = false;
+
+  function setRunningState(running) {
+    isRunning = running;
+    if (btnRun) {
+      btnRun.disabled = running;
+      btnRun.textContent = running ? 'Running...' : 'Run main.krb ▶';
+    }
+    if (btnStop) {
+      btnStop.style.display = running ? 'inline-flex' : 'none';
+    }
+  }
+
+  function printTerminal(text, type = 'out', newLine = true) {
+    if (type === 'out') {
+      if (!pendingOutLine) {
+        pendingOutLine = document.createElement('div');
+        pendingOutLine.className = 'term-line out';
+        terminalScreen.appendChild(pendingOutLine);
+      }
+      if (text) {
+        pendingOutLine.appendChild(document.createTextNode(text));
+      }
+      if (newLine) {
+        pendingOutLine = null;
+      }
+      terminalScreen.scrollTop = terminalScreen.scrollHeight;
+      return;
+    }
+
+    pendingOutLine = null;
     const line = document.createElement('div');
     line.className = `term-line ${type}`;
     line.textContent = text;
@@ -278,6 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function clearTerminal() {
+    if (cancelActiveInput) cancelActiveInput(true);
+    pendingOutLine = null;
     terminalScreen.innerHTML = `
       <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.6</div>
       <div class="term-line sys">Terminal output cleared. Ready for execution.</div>
@@ -286,10 +321,149 @@ document.addEventListener('DOMContentLoaded', () => {
     timingBadge.style.display = 'none';
   }
 
+  function requestTerminalInput(promptText, isOneKey) {
+    return new Promise((resolve, reject) => {
+      let row = pendingOutLine;
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'term-line out term-input-row';
+        terminalScreen.appendChild(row);
+      } else {
+        row.classList.add('term-input-row');
+      }
+      pendingOutLine = null;
+
+      if (promptText) {
+        const promptSpan = document.createElement('span');
+        promptSpan.className = 'term-input-prompt';
+        promptSpan.textContent = promptText;
+        row.appendChild(promptSpan);
+      }
+
+      if (isOneKey) {
+        const badge = document.createElement('span');
+        badge.className = 'term-key-wait';
+        badge.setAttribute('tabindex', '0');
+        badge.innerHTML = '<span class="term-key-cursor"></span>';
+        row.appendChild(badge);
+        terminalScreen.scrollTop = terminalScreen.scrollHeight;
+        badge.focus();
+
+        const cleanup = () => {
+          document.removeEventListener('keydown', onKeyDown, true);
+          terminalScreen.removeEventListener('click', focusKeyWait);
+          cancelActiveInput = null;
+        };
+
+        const focusKeyWait = () => badge.focus();
+        const onKeyDown = (e) => {
+          if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (window.Kuroba && typeof window.Kuroba.abort === 'function') {
+              window.Kuroba.abort();
+            }
+            return;
+          }
+          if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+
+          let charVal = null;
+          if (e.key === 'Enter') charVal = '\n';
+          else if (e.key === 'Tab') charVal = '\t';
+          else if (e.key.length === 1) charVal = e.key;
+          else return;
+
+          e.preventDefault();
+          e.stopPropagation();
+          badge.remove();
+          cleanup();
+          resolve(charVal);
+        };
+
+        cancelActiveInput = (aborted) => {
+          badge.remove();
+          cleanup();
+          if (aborted) reject(new Error('[Stopped] Execution stopped by user.'));
+        };
+
+        document.addEventListener('keydown', onKeyDown, true);
+        terminalScreen.addEventListener('click', focusKeyWait);
+        return;
+      }
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'term-input-field';
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      row.appendChild(input);
+      terminalScreen.scrollTop = terminalScreen.scrollHeight;
+      input.focus();
+
+      const focusInput = () => input.focus();
+      const cleanup = () => {
+        input.removeEventListener('keydown', onInputKey);
+        terminalScreen.removeEventListener('click', focusInput);
+        cancelActiveInput = null;
+      };
+
+      const onInputKey = (e) => {
+        if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+          e.preventDefault();
+          if (window.Kuroba && typeof window.Kuroba.abort === 'function') {
+            window.Kuroba.abort();
+          }
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = input.value;
+          const echo = document.createElement('span');
+          echo.className = 'term-input-echo';
+          echo.textContent = val;
+          input.replaceWith(echo);
+          cleanup();
+          resolve(val);
+        }
+      };
+
+      cancelActiveInput = (aborted) => {
+        const echo = document.createElement('span');
+        echo.className = 'term-input-echo';
+        echo.textContent = input.value;
+        input.replaceWith(echo);
+        cleanup();
+        if (aborted) reject(new Error('[Stopped] Execution stopped by user.'));
+      };
+
+      input.addEventListener('keydown', onInputKey);
+      terminalScreen.addEventListener('click', focusInput);
+    });
+  }
+
+  function formatElapsed(ms) {
+    if (ms < 1000) return `${ms.toFixed(1)} ms`;
+    const totalSec = ms / 1000;
+    if (totalSec < 60) return `${totalSec.toFixed(2)} s`;
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    if (mins < 60) return `${mins}m ${secs.toFixed(1)}s`;
+    const hours = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    return `${hours}h ${String(remMins).padStart(2, '0')}m ${String(Math.floor(secs)).padStart(2, '0')}s`;
+  }
+
   // ==========================================================================
   // Execution Engine Call (Always executes main.krb with workspace files)
   // ==========================================================================
-  function executeScript() {
+  async function executeScript() {
+    if (isRunning) {
+      if (window.Kuroba && typeof window.Kuroba.abort === 'function') {
+        window.Kuroba.abort();
+      }
+      return;
+    }
+
     workspaceFiles[activeFile] = editor.value;
     saveWorkspace();
 
@@ -304,16 +478,23 @@ document.addEventListener('DOMContentLoaded', () => {
     printTerminal(`[${timeStr}] kuroba@runtime:~$ run ${ENTRY_FILE}`, "sys");
     const t0 = performance.now();
     let hasEncounteredError = false;
+    setRunningState(true);
 
     try {
       if (typeof window.Kuroba === 'undefined' || typeof window.Kuroba.run !== 'function') {
         throw new Error("Kuroba Web Engine is not loaded or initializing...");
       }
 
-      window.Kuroba.run(code, {
+      await window.Kuroba.run(code, {
         files: workspaceFiles,
         onPrint: (txt, newLine) => {
-          printTerminal(txt, 'out');
+          printTerminal(txt, 'out', newLine);
+        },
+        onInput: (promptText, isOneKey) => {
+          return requestTerminalInput(promptText, isOneKey);
+        },
+        onAbort: () => {
+          if (cancelActiveInput) cancelActiveInput(true);
         },
         onError: (err, isException) => {
           hasEncounteredError = true;
@@ -324,20 +505,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      const t1 = performance.now();
-      const elapsed = (t1 - t0).toFixed(1);
-      timingBadge.textContent = `• ${elapsed} ms`;
+      const elapsed = formatElapsed(performance.now() - t0);
+      timingBadge.textContent = `• ${elapsed}`;
       timingBadge.style.display = 'inline';
-      printTerminal(`[Process exited successfully in ${elapsed} ms]`, "ok");
+      printTerminal(`[Process exited successfully in ${elapsed}]`, "ok");
 
     } catch (e) {
-      const t1 = performance.now();
-      const elapsed = (t1 - t0).toFixed(1);
-      timingBadge.textContent = `• ${elapsed} ms`;
+      const elapsed = formatElapsed(performance.now() - t0);
+      timingBadge.textContent = `• ${elapsed}`;
       timingBadge.style.display = 'inline';
-      if (!hasEncounteredError) {
+      if (e && e.isKurobaAbort) {
+        printTerminal('[Execution stopped by user]', 'sys');
+      } else if (!hasEncounteredError) {
         printTerminal(e.message || String(e), 'err');
       }
+    } finally {
+      setRunningState(false);
     }
   }
 
@@ -346,6 +529,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   if (btnAddFile) {
     btnAddFile.addEventListener('click', createNewFile);
+  }
+
+  if (btnStop) {
+    btnStop.addEventListener('click', () => {
+      if (window.Kuroba && typeof window.Kuroba.abort === 'function') {
+        window.Kuroba.abort();
+      }
+    });
   }
 
   btnClearEditor.addEventListener('click', () => {
