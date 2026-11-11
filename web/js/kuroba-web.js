@@ -3046,29 +3046,32 @@ async function evalHook(node, env, evaluate) {
     const moduleCache = {};
     let activeWorkspaceFiles = {};
     let workspaceModuleCache = {};
+    let activeWorkspaceImports = new Set();
 
-    async function evaluateNamespaceBody(statements) {
-        const moduleScope = createScope();
+    async function evaluateNamespaceBody(statements, topImports = []) {
+        const fileScope = createScope();
         for (const [name, fn] of Object.entries(natives)) {
-            moduleScope.values['__native_' + name] = {
+            fileScope.values['__native_' + name] = {
                 value: { kind: 'Function', isNative: true, fn },
                 type: 'Function',
                 isConst: true,
                 isNullable: false
             };
         }
+        for (const imp of topImports) {
+            await evaluate(imp, fileScope);
+        }
+        const moduleScope = createScope(fileScope);
         for (const stmt of statements) {
             await evaluate(stmt, moduleScope);
         }
         const tableFields = {};
         for (const [varName, varEntry] of Object.entries(moduleScope.values)) {
-            if (!varName.startsWith('__native_')) {
-                tableFields[varName] = {
-                    value: varEntry.value,
-                    type: varEntry.type,
-                    isNullable: varEntry.isNullable
-                };
-            }
+            tableFields[varName] = {
+                value: varEntry.value,
+                type: varEntry.type,
+                isNullable: varEntry.isNullable
+            };
         }
         return { kind: 'Table', fields: tableFields };
     }
@@ -3079,6 +3082,7 @@ async function evalHook(node, env, evaluate) {
         if (pkgName === 'Std') {
             for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
                 const ast = parse(tokenize(source));
+                const topImports = ast.body.filter(s => s.type === 'ImportStatement');
                 for (const stmt of ast.body) {
                     if (stmt.type === 'NamespaceStatement' && stmt.namespace === pkgName) {
                         const modName = stmt.module || pkgName;
@@ -3086,7 +3090,7 @@ async function evalHook(node, env, evaluate) {
                         if (!moduleCache[cacheKey]) {
                             moduleCache[cacheKey] = {
                                 isRoot: !stmt.module,
-                                table: await evaluateNamespaceBody(stmt.body)
+                                table: await evaluateNamespaceBody(stmt.body, topImports)
                             };
                         }
                         discovered[modName] = moduleCache[cacheKey];
@@ -3098,15 +3102,25 @@ async function evalHook(node, env, evaluate) {
         for (const [fileName, source] of Object.entries(activeWorkspaceFiles)) {
             if (fileName === 'main.krb' || !source || !source.trim()) continue;
             const ast = parse(tokenize(source));
+            const topImports = ast.body.filter(s => s.type === 'ImportStatement');
             for (const stmt of ast.body) {
                 if (stmt.type === 'NamespaceStatement' && stmt.namespace === pkgName) {
                     const modName = stmt.module || pkgName;
                     const cacheKey = pkgName + ':' + modName + ':' + (stmt.module ? 'sub' : 'root');
                     if (!workspaceModuleCache[cacheKey]) {
-                        workspaceModuleCache[cacheKey] = {
-                            isRoot: !stmt.module,
-                            table: await evaluateNamespaceBody(stmt.body)
-                        };
+                        if (activeWorkspaceImports.has(cacheKey)) {
+                            const modLabel = stmt.module ? (pkgName + '~' + stmt.module) : pkgName;
+                            printErr("[ImportError] Circular import detected for namespace '" + modLabel + "'.");
+                        }
+                        activeWorkspaceImports.add(cacheKey);
+                        try {
+                            workspaceModuleCache[cacheKey] = {
+                                isRoot: !stmt.module,
+                                table: await evaluateNamespaceBody(stmt.body, topImports)
+                            };
+                        } finally {
+                            activeWorkspaceImports.delete(cacheKey);
+                        }
                     }
                     discovered[modName] = workspaceModuleCache[cacheKey];
                 }
@@ -3165,10 +3179,15 @@ async function evalHook(node, env, evaluate) {
         }
 
         const targetName = node.alias || node.package;
-        const pkgTable = {
-            kind: 'Table',
-            fields: {}
-        };
+        if (!env.values[targetName]) {
+            env.values[targetName] = {
+                value: { kind: 'Table', fields: {} },
+                type: 'Table',
+                isConst: true,
+                isNullable: false
+            };
+        }
+        const pkgTable = env.values[targetName].value;
         for (const [modName, entry] of Object.entries(modulesToBind)) {
             if (entry.isRoot) {
                 for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
@@ -3184,12 +3203,6 @@ async function evalHook(node, env, evaluate) {
                 };
             }
         }
-        env.values[targetName] = {
-            value: pkgTable,
-            type: 'Table',
-            isConst: true,
-            isNullable: false
-        };
         return null;
     }
 
@@ -3299,6 +3312,7 @@ async function evaluate(node, env = createScope()) {
             activeAbortHandler = options.onAbort || null;
             activeWorkspaceFiles = options.files || {};
             workspaceModuleCache = {};
+            activeWorkspaceImports.clear();
             activeRunAborted = false;
             evalOpCount = 0;
             tryDepth = 0;

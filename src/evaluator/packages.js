@@ -9,11 +9,11 @@ const { natives } = require('../runtime/natives');
 const moduleCache = {};
 const activeImports = new Set();
 
-function evaluateNamespaceBody(statements, evaluate) {
-    const moduleScope = createScope();
+function evaluateNamespaceBody(statements, evaluate, topImports = []) {
+    const fileScope = createScope();
 
     for (const [name, fn] of Object.entries(natives)) {
-        moduleScope.values[`__native_${name}`] = {
+        fileScope.values[`__native_${name}`] = {
             value: { kind: 'Function', isNative: true, fn },
             type: 'Function',
             isConst: true,
@@ -21,19 +21,22 @@ function evaluateNamespaceBody(statements, evaluate) {
         };
     }
 
+    for (const imp of topImports) {
+        evaluate(imp, fileScope);
+    }
+
+    const moduleScope = createScope(fileScope);
     for (const stmt of statements) {
         evaluate(stmt, moduleScope);
     }
 
     const tableFields = {};
     for (const [varName, varEntry] of Object.entries(moduleScope.values)) {
-        if (!varName.startsWith('__native_')) {
-            tableFields[varName] = {
-                value: varEntry.value,
-                type: varEntry.type,
-                isNullable: varEntry.isNullable
-            };
-        }
+        tableFields[varName] = {
+            value: varEntry.value,
+            type: varEntry.type,
+            isNullable: varEntry.isNullable
+        };
     }
 
     return {
@@ -65,11 +68,13 @@ function discoverNamespaceModules(pkgName, dirPath, evaluate, entryFilePath = nu
     const files = collectKrbFiles(dirPath, entryFilePath);
     const resolvedDir = path.resolve(dirPath);
 
-    for (const filePath of files) {
+for (const filePath of files) {
         const source = fs.readFileSync(filePath, 'utf-8');
         if (!source.trim()) continue;
-
+        
         const ast = parse(tokenize(source));
+        const topImports = ast.body.filter(s => s.type === 'ImportStatement');
+
         for (const stmt of ast.body) {
             if (stmt.type === 'NamespaceStatement' && stmt.namespace === pkgName) {
                 const modName = stmt.module || pkgName;
@@ -85,7 +90,7 @@ function discoverNamespaceModules(pkgName, dirPath, evaluate, entryFilePath = nu
                     try {
                         moduleCache[cacheKey] = {
                             isRoot: !stmt.module,
-                            table: evaluateNamespaceBody(stmt.body, evaluate)
+                            table: evaluateNamespaceBody(stmt.body, evaluate, topImports)
                         };
                     } finally {
                         activeImports.delete(cacheKey);
