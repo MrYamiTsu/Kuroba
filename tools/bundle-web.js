@@ -32,7 +32,7 @@ function readAsyncEvaluator(relPath) {
     );
 
     code = code.replace(
-        /\bfunction (evaluate|executeBlock|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is))\(/g,
+        /\bfunction (evaluate|executeBlock|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MemberAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is))\(/g,
         'async function $1('
     );
 

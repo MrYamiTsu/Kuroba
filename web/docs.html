@@ -67,7 +67,7 @@
         <a href="#std-time" class="docs-item-link">Std.Time (Timers &amp; Chronometry)</a>
         <a href="#std-string" class="docs-item-link">Std.String (Text Processing)</a>
         <a href="#std-io" class="docs-item-link">Std.IO (Filesystem Persistence)</a>
-        <a href="#errors" class="docs-item-link">Error Diagnostics (All 6 Classes)</a>
+        <a href="#errors" class="docs-item-link">Error Diagnostics (All 7 Classes)</a>
       </div>
     </aside>
 
@@ -679,6 +679,18 @@ pasteLn(clients.count());  ~~ 2</code></pre>
 hero.hp -= 15;                 ~~ In-place update
 hero.level = 5;                ~~ Dynamically creates field 'level'
 pasteLn(hero.missingProp);     ~~ NULL (safe access)</code></pre>
+
+        <h3>5. Nested Member &amp; Index Mutations</h3>
+        <p>Lists and Tables can be arbitrarily nested and mutated in place across mixed <code>[index]</code> and <code>.property</code> chains, including compound operators, increment/decrement, field retyping (<code>~Type</code>), and root <code>iconst</code> protection:</p>
+        <pre><code class="language-kuroba">ivar grid = [[".", "."], [".", "."]];
+grid[1][0] = "#";              ~~ Matrix 2D cell assignment
+
+ivar enemies = [{ hp: 30 }, { hp: 50 }];
+enemies[1].hp -= 10;           ~~ Mutate Table inside List -> 40
+enemies[0].hp++;               ~~ Increment nested property -> 31
+
+ivar player = { bag: ["Sword", "Potion"] };
+player.bag[0] = "Bow";         ~~ Mutate List inside Table</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -728,16 +740,17 @@ ivar invoice = processPayment(250, 15);</code></pre>
            ==================================================================== -->
       <section id="namespaces">
         <h2>Namespaces &amp; Module Discovery</h2>
-        <p>Kuroba resolves modules purely from declared AST symbols, independent of physical file names on disk:</p>
+        <p>Kuroba resolves modules purely from declared AST symbols across your project, recursively scanning <code>.krb</code> subdirectories from the script directory in CLI (or virtual workspace tabs in the Web Playground), independent of physical file names on disk:</p>
 
         <h3>Hierarchy: <code>Namespace &rarr; Module Slice (~Module) &rarr; Members</code></h3>
         <ul>
           <li><strong><code>Main</code> Namespace:</strong> Single entry point for applications. Strictly indivisible (cannot have <code>~Module</code>) and cannot be imported by other files.</li>
-          <li><strong>Library Namespaces:</strong> Declare reusable modules using <code>namespace Lib ~Slice then ... end</code>.</li>
-          <li><strong>Symbol Discovery:</strong> Kuroba indexes files by declared symbols. Renaming <code>math.krb</code> to <code>algorithms.krb</code> does not break any imports.</li>
+          <li><strong>Direct Namespaces:</strong> Declare a self-contained namespace using <code>namespace Utils then ... end</code> and access its exports directly via <code>Utils.helper()</code>.</li>
+          <li><strong>Modular Slices:</strong> Split larger packages across multiple files or subfolders with <code>namespace Game ~Combat then ... end</code>, merging into <code>Game.Combat</code>.</li>
+          <li><strong>Symbol Discovery &amp; Circular Guard:</strong> Kuroba indexes files by declared symbols (ignoring <code>node_modules</code>, <code>.git</code>, and the entry script) and raises an <code>[ImportError]</code> on circular dependencies.</li>
         </ul>
 
-        <h3>Import Variations</h3>
+        <h3>Import Variations &amp; Custom Project Files</h3>
         <pre><code class="language-kuroba">~~ 1. Entire namespace
 import Std;
 pasteLn(Std.Math.PI);
@@ -750,9 +763,16 @@ pasteLn(S.Math.PI);
 import Std alias ~;
 pasteLn(Math.PI);
 
-~~ 4. Selective module slices into root scope
+~~ 4. Selective module slices (preserves built-in Std.Sys)
 import Std ~(Math, Time, String, IO) alias ~;
-pasteLn(Math.sqrt(16));</code></pre>
+pasteLn(Math.sqrt(16));
+
+~~ 5. Importing your own project files (e.g. utils.krb &amp; sub/combat.krb)
+~~ utils.krb:      namespace Utils then function dbl(ivar n) then return n * 2; end end
+~~ sub/combat.krb: namespace Game ~Combat then import Utils; function crit(ivar d) then return Utils.dbl(d); end end
+import Utils;
+import Game;
+pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -1173,7 +1193,7 @@ pasteLn(Math.sqrt(16));</code></pre>
            Section : Error Diagnostics
            ==================================================================== -->
       <section id="errors">
-        <h2>Error Diagnostics (All 6 Classes)</h2>
+        <h2>Error Diagnostics (All 7 Classes)</h2>
         <p>Kuroba provides exact line, column, and contextual diagnostics for rapid debugging:</p>
 
         <h3>1. SyntaxError</h3>
@@ -1210,6 +1230,12 @@ pasteLn(Math.sqrt(16));</code></pre>
         <p>Filesystem access or permission failures in <code>Std.IO</code>:</p>
         <pre><code class="language-output">[IOError] File not found: 'missing_save.dat'.
 [IOError] Failed to write to file 'protected/root.dat': EACCES: permission denied.</code></pre>
+
+        <h3>7. ImportError</h3>
+        <p>Module resolution errors, forbidden <code>Main</code> imports, or circular dependencies:</p>
+        <pre><code class="language-output">[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.
+[ImportError] Circular import detected for namespace 'A'.
+[ImportError] Unknown package or namespace 'MissingPkg'. Create a '.krb' file with 'namespace MissingPkg then ... end' or import 'Std'.</code></pre>
       </section>
 
     </main>

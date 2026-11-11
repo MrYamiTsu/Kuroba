@@ -206,6 +206,8 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                          | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration.             |
 | **Dynamic Retyping**            | `score~String = "A";`                                                      | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable.                                  |
 | **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                         | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                  |
+| **Nested Mutations**            | `grid[y][x] = "#";`<br/>`enemies[i].hp -= 10;`<br/>`player.bag[0] = "Bow";` | Arbitrary mixed `[...]` and `.prop` assignment chains with compound operators, retyping, and `iconst` root protection.    |
+| **Recursive Project Imports**   | `namespace Utils`<br/>`namespace Game ~Combat`<br/>`import Game;`          | Symbol-based recursive `.krb` discovery across project subfolders (CLI & Web) with circular import detection.           |
 | **Collection Iteration**        | `for (ivar item in list)`<br/>`for (ivar i, item in list)`<br/>`for (ivar k, v in table)` | Unified indexed and key-value iteration across `List`, `Stack`, `Queue`, and `Table`. |
 | **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                       |
 | **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                             |
@@ -397,6 +399,8 @@ Kuroba/
   - [ ] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
   - [x] Multi-variable single-line declarations with trailing value propagation (`ivar a, b = 1, 2;`, `ivar c, d = 4;` -> both `4`, `ivar e, f, g = 2, 5;` -> `g` takes `5`)
   - [x] Default parameter values in functions
+  - [x] Arbitrary nested member and index assignments (`grid[y][x] = "#";`, `enemies[i].hp -= 10;`, `player.bag[0] = "Bow";`) with `iconst` root immutability protection
+  - [x] Recursive multi-file project imports in CLI (`namespace Utils`, `namespace Game ~Combat`, subfolder `.krb` discovery, and `[ImportError]` circular import guards)
 
 ### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
 

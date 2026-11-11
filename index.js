@@ -1,9 +1,10 @@
 const fs = require('fs');
+const path = require('path');
 const config = require('./config.json');
 const { tokenize } = require('./src/lexer');
 const { parse } = require('./src/parser');
 const { evaluate } = require('./src/evaluator');
-const { setCliArgs } = require('./src/evaluator/scope');
+const { setCliArgs, setProjectContext } = require('./src/evaluator/scope');
 const { printErr } = require('./src/errors');
 
 const arg = process.argv[2];
@@ -39,6 +40,7 @@ Aliases:
 let filename = arg;
 if (!filename || arg === '-i' || arg === '--repl') {
     setCliArgs([]);
+    setProjectContext(process.cwd(), null);
     const { startRepl } = require('./src/repl');
     startRepl();
     return;
@@ -52,6 +54,9 @@ if (!isValidExtension) {
 if (!fs.existsSync(filename)) {
     printErr(`[CLIError] File not found: '${filename}'`);
 }
+
+const resolvedFilename = path.resolve(filename);
+setProjectContext(path.dirname(resolvedFilename), resolvedFilename);
 
 const scriptArgs = process.argv.slice(3);
 setCliArgs(scriptArgs);

@@ -1,7 +1,22 @@
 let currentCliArgs = [];
+let currentProjectContext = {
+    baseDir: process.cwd(),
+    entryFilePath: null
+};
 
 function setCliArgs(cliArgs) {
     currentCliArgs = Array.isArray(cliArgs) ? [...cliArgs] : [];
+}
+
+function setProjectContext(baseDir, entryFilePath = null) {
+    currentProjectContext = {
+        baseDir: baseDir || process.cwd(),
+        entryFilePath: entryFilePath || null
+    };
+}
+
+function getProjectContext() {
+    return currentProjectContext;
 }
 
 function initGlobalScope(env, cliArgs = currentCliArgs) {
@@ -62,4 +77,4 @@ function findScope(name, env) {
     return null;
 }
 
-module.exports = { createScope, findScope, setCliArgs, initGlobalScope };
+module.exports = { createScope, findScope, setCliArgs, setProjectContext, getProjectContext, initGlobalScope };

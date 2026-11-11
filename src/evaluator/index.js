@@ -1,8 +1,8 @@
 const { printErr } = require('../errors');
 const { createScope } = require('./scope');
 const { evalVarDeclar, evalVarAssign, evalVariable, evalVarRetype, evalSwap, evalKill } = require('./variables');
-const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall } = require('./collections');
-const { evalTableLiteral, evalPropertyAssign } = require('./tables');
+const { evalListLiteral, evalIndexAccess, evalMemberAssign, evalMethodCall } = require('./collections');
+const { evalTableLiteral } = require('./tables');
 const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow, evalTry } = require('./control');
 const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical, evalIs } = require('./operations');
@@ -62,8 +62,7 @@ function evaluate(node, env = createScope()) {
         case 'IsExpression':        return evalIs(node, env, evaluate);
         case 'ListLiteral':         return evalListLiteral(node, env, evaluate);
         case 'IndexAccess':         return evalIndexAccess(node, env, evaluate);
-        case 'IndexAssign':         return evalIndexAssign(node, env, evaluate);
-        case 'PropertyAssign':      return evalPropertyAssign(node, env, evaluate);
+        case 'MemberAssign':        return evalMemberAssign(node, env, evaluate);
         case 'MethodCall':          return evalMethodCall(node, env, evaluate);
         case 'TableLiteral':        return evalTableLiteral(node, env, evaluate);
         case 'KillStatement':       return evalKill(node, env);

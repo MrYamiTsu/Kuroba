@@ -1608,58 +1608,7 @@ class ParserStatements extends ParserControl {
             let startToken = this.previous();
             let value = this.parseLogicOr();
             stmt = { type: 'ThrowStatement', value, line: startToken.line, col: startToken.col };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'LBRACKET') {
-            let varName = this.advance().value;
-            this.advance();
-            let index = this.parseLogicOr();
-            this.consume('RBRACKET', "Expected ']' after list index.");
-
-            let typeInfo = this.match('TILDE') ? this.parseType() : null;
-            let rhs = this.parseAssignSuffix(`list index '${varName}[...]'`);
-            stmt = { type: 'IndexAssign', name: varName, index, value: rhs.value, operator: rhs.operator, typeInfo };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'DOT' && this.isPropertyAssignAhead()) {
-            let varName = this.advance().value;
-
-            let path = [];
-            while (this.match('DOT')) {
-                path.push(this.consume('IDENTIFIER', "Expected property name after '.'").value);
-            }
-
-            let fullPropStr = varName + '.' + path.join('.');
-            let typeInfo = this.match('TILDE') ? this.parseType() : null;
-            let rhs = this.parseAssignSuffix(`property '${fullPropStr}'`);
-
-            stmt = { 
-                type: 'PropertyAssign', 
-                name: varName, 
-                path, 
-                property: path[path.length - 1], 
-                value: rhs.value, 
-                operator: rhs.operator, 
-                typeInfo 
-            };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(this.tokens[this.cursor + 1].type)) {
-            let varName = this.advance().value;
-            let rhs = this.parseAssignSuffix(`variable '${varName}'`);
-            stmt = {
-                type: 'VarAssign',
-                name: varName,
-                value: rhs.operator
-                    ? { type: 'MathExpression', operator: rhs.operator, left: { type: 'Variable', name: varName }, right: rhs.value }
-                    : rhs.value
-            };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'TILDE') {
-            let varName = this.advance().value;
-            this.advance();
-
-            let typeInfo = this.parseType();
-            let targetType = typeInfo.baseType;
-            let isNullable = typeInfo.isNullable;
-
-            this.consume('ASSIGN', `Missing '=' assignment operator after '${varName}~${targetType}'.`);
-            let value = this.parseLogicOr();
-            stmt = { type: 'VarRetype', name: varName, targetType, isNullable, value, typeInfo };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'SWAP') {
+                } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'SWAP') {
             let leftVar = this.advance().value;
             this.advance();
             let rightVar = this.consume('IDENTIFIER', "Expected variable name after '<->' swap operator.").value;
@@ -1669,7 +1618,45 @@ class ParserStatements extends ParserControl {
         } else if (this.match('SKIP')) {
             stmt = { type: 'SkipStatement' };
         } else {
-            stmt = this.parseLogicOr();
+            let expr = this.parseLogicOr();
+            const nextToken = this.peek();
+            const isAssignOp = nextToken && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(nextToken.type);
+            
+            if (expr.type === 'Variable' && (this.check('TILDE') || isAssignOp)) {
+                if (this.match('TILDE')) {
+                    let typeInfo = this.parseType();
+                    let targetType = typeInfo.baseType;
+                    let isNullable = typeInfo.isNullable;
+
+                    this.consume('ASSIGN', `Missing '=' assignment operator after '${expr.name}~${targetType}'.`);
+                    let value = this.parseLogicOr();
+                    stmt = { type: 'VarRetype', name: expr.name, targetType, isNullable, value, typeInfo };
+                } else {
+                    let rhs = this.parseAssignSuffix(`variable '${expr.name}'`);
+                    stmt = {
+                        type: 'VarAssign',
+                        name: expr.name,
+                        value: rhs.operator
+                            ? { type: 'MathExpression', operator: rhs.operator, left: { type: 'Variable', name: expr.name }, right: rhs.value }
+                            : rhs.value
+                    };
+                }
+            } else if (expr.type === 'IndexAccess' && (this.check('TILDE') || isAssignOp)) {
+                let typeInfo = this.match('TILDE') ? this.parseType() : null;
+                let desc = expr.isDotAccess ? `property '${expr.index}'` : 'list index';
+                let rhs = this.parseAssignSuffix(desc);
+                stmt = {
+                    type: 'MemberAssign',
+                    target: expr.target,
+                    index: expr.index,
+                    isDotAccess: expr.isDotAccess,
+                    value: rhs.value,
+                    operator: rhs.operator,
+                    typeInfo
+                };
+            } else {
+                stmt = expr;
+            }
         }
 
         this.consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");
@@ -1809,9 +1796,24 @@ function parse(tokens) {
     // 4. EVALUATOR MODULES
     // =========================================================================
     let currentCliArgs = [];
+let currentProjectContext = {
+    baseDir: process.cwd(),
+    entryFilePath: null
+};
 
 function setCliArgs(cliArgs) {
     currentCliArgs = Array.isArray(cliArgs) ? [...cliArgs] : [];
+}
+
+function setProjectContext(baseDir, entryFilePath = null) {
+    currentProjectContext = {
+        baseDir: baseDir || process.cwd(),
+        entryFilePath: entryFilePath || null
+    };
+}
+
+function getProjectContext() {
+    return currentProjectContext;
 }
 
 function initGlobalScope(env, cliArgs = currentCliArgs) {
@@ -1871,7 +1873,6 @@ function findScope(name, env) {
     }
     return null;
 }
-
 
 
 
@@ -2234,54 +2235,127 @@ async function evalIndexAccess(node, env, evaluate) {
     return target[idx];
 }
 
-async function evalIndexAssign(node, env, evaluate) {
-    let scope = findScope(node.name, env);
-    if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+function applyCompoundOp(currVal, rhsVal, operator) {
+    switch (operator) {
+        case '+': return currVal + rhsVal;
+        case '-': return currVal - rhsVal;
+        case '*': return currVal * rhsVal;
+        case '/':
+            if (rhsVal === 0) printErr("[MathError] Division by zero is undefined.");
+            return currVal / rhsVal;
+        case '%':
+            if (rhsVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+            return currVal % rhsVal;
+        default:
+            return rhsVal;
+    }
+}
 
-    let targetVar = scope.values[node.name];
-    if (targetVar.isConst) {
-        let typeName = targetVar.type || 'collection';
-        printErr(`[TypeError] Cannot modify elements of constant ${typeName} '${node.name}'.`);
+async function evalMemberAssign(node, env, evaluate) {
+    let root = node.target;
+    while (root && root.type === 'IndexAccess') {
+        root = root.target;
     }
 
-    if (targetVar.value && targetVar.value.kind === 'Table') {
-        printErr(`[TypeError] Tables do not support bracket assignment. Use dot notation '${node.name}.${await evaluate(node.index, env)} = ...' instead.`);
+    let rootVarEntry = null;
+    if (root && root.type === 'Variable') {
+        let scope = findScope(root.name, env);
+        if (!scope) printErr(`[ReferenceError] Variable '${root.name}' is not defined.`);
+        rootVarEntry = scope.values[root.name];
+        if (rootVarEntry.isConst) {
+            printErr(`[TypeError] Cannot modify constant '${root.name}'.`);
+        }
     }
 
-    let list = targetVar.value;
-    if (!Array.isArray(list)) printErr(`[TypeError] Variable '${node.name}' is not a List.`);
+    let container = await evaluate(node.target, env);
+
+    if (node.isDotAccess) {
+        if (!container || container.kind !== 'Table') {
+            printErr(`[TypeError] Cannot set property '${node.index}' on non-Table value of type '${getType(container)}'.`);
+        }
+
+        let key = node.index;
+        let newVal = await evaluate(node.value, env);
+        if (node.operator) {
+            let currVal = (key in container.fields) ? container.fields[key].value : 0;
+            newVal = applyCompoundOp(currVal, newVal, node.operator);
+        }
+
+        if (node.typeInfo) {
+            let targetType = node.typeInfo.baseType;
+            let isNullable = node.typeInfo.isNullable;
+            if (!isNullable && newVal === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`);
+            }
+            if (newVal !== null) {
+                newVal = castToType(newVal, targetType);
+            }
+            container.fields[key] = { value: newVal, type: targetType, isNullable };
+            return newVal;
+        }
+
+        if (key in container.fields) {
+            let field = container.fields[key];
+            if (!field.isNullable && newVal === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`);
+            }
+            if (newVal !== null) {
+                let actualType = getType(newVal);
+                if (field.type !== actualType) {
+                    printErr(`[TypeError] Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`);
+                }
+            }
+            field.value = newVal;
+            return newVal;
+        }
+
+        container.fields[key] = {
+            value: newVal,
+            type: getType(newVal),
+            isNullable: true
+        };
+        return newVal;
+    }
+
+    if (container && container.kind === 'Table') {
+        printErr(`[TypeError] Tables do not support bracket assignment. Use dot notation 'table.${await evaluate(node.index, env)} = ...' instead.`);
+    }
+
+    if (!Array.isArray(container)) {
+        printErr(`[TypeError] Cannot index non-list value of type '${getType(container)}'.`);
+    }
 
     let idx = await evaluate(node.index, env);
     if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
-    if (idx < 0 || idx >= list.length) printErr(`[IndexError] Index ${idx} out of bounds for list '${node.name}' of length ${list.length}.`);
+    if (idx < 0 || idx >= container.length) {
+        printErr(`[IndexError] Index ${idx} out of bounds for list of length ${container.length}.`);
+    }
 
     let newVal = await evaluate(node.value, env);
     if (node.operator) {
-        switch (node.operator) {
-            case '+': newVal = list[idx] + newVal; break;
-            case '-': newVal = list[idx] - newVal; break;
-            case '*': newVal = list[idx] * newVal; break;
-            case '/':
-                if (newVal === 0) printErr("[MathError] Division by zero is undefined.");
-                newVal = list[idx] / newVal;
-                break;
-            case '%':
-                if (newVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
-                newVal = list[idx] % newVal;
-                break;
-        }
+        newVal = applyCompoundOp(container[idx], newVal, node.operator);
     }
 
-    let tInfo = targetVar.typeInfo;
-    if (tInfo && tInfo.elemType) {
+    let listTypeInfo = (node.target.type === 'Variable') ? rootVarEntry?.typeInfo : null;
+    if (listTypeInfo && listTypeInfo.elemType) {
         if (newVal === null) {
-            if (!tInfo.isElemNullable) printErr(`[TypeError] Cannot assign NULL to non-nullable element of list '${node.name}'.`);
+            if (!listTypeInfo.isElemNullable) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable element of list '${node.target.name}'.`);
+            }
         } else {
-            newVal = castToType(newVal, tInfo.elemType);
+            newVal = castToType(newVal, listTypeInfo.elemType);
+        }
+    } else if (node.typeInfo) {
+        let targetType = node.typeInfo.baseType;
+        if (!node.typeInfo.isNullable && newVal === null) {
+            printErr(`[TypeError] Cannot assign NULL to non-nullable element of type '(${targetType})'.`);
+        }
+        if (newVal !== null) {
+            newVal = castToType(newVal, targetType);
         }
     }
 
-    list[idx] = newVal;
+    container[idx] = newVal;
     return newVal;
 }
 
@@ -2406,8 +2480,6 @@ async function evalMethodCall(node, env, evaluate) {
             printErr(`[TypeError] Unknown method '.${method}()' on type '${targetType}'. Supported methods are 'push', 'pop', 'peek' and 'count'.`);
     }
 }
-
-
 
 
 
@@ -3200,8 +3272,7 @@ async function evaluate(node, env = createScope()) {
         case 'IsExpression':        return await evalIs(node, env, evaluate);
         case 'ListLiteral':         return await evalListLiteral(node, env, evaluate);
         case 'IndexAccess':         return await evalIndexAccess(node, env, evaluate);
-        case 'IndexAssign':         return await evalIndexAssign(node, env, evaluate);
-        case 'PropertyAssign':      return await evalPropertyAssign(node, env, evaluate);
+        case 'MemberAssign':        return await evalMemberAssign(node, env, evaluate);
         case 'MethodCall':          return await evalMethodCall(node, env, evaluate);
         case 'TableLiteral':        return await evalTableLiteral(node, env, evaluate);
         case 'KillStatement':       return await evalKill(node, env);

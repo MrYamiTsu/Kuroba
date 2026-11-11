@@ -190,58 +190,7 @@ class ParserStatements extends ParserControl {
             let startToken = this.previous();
             let value = this.parseLogicOr();
             stmt = { type: 'ThrowStatement', value, line: startToken.line, col: startToken.col };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'LBRACKET') {
-            let varName = this.advance().value;
-            this.advance();
-            let index = this.parseLogicOr();
-            this.consume('RBRACKET', "Expected ']' after list index.");
-
-            let typeInfo = this.match('TILDE') ? this.parseType() : null;
-            let rhs = this.parseAssignSuffix(`list index '${varName}[...]'`);
-            stmt = { type: 'IndexAssign', name: varName, index, value: rhs.value, operator: rhs.operator, typeInfo };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'DOT' && this.isPropertyAssignAhead()) {
-            let varName = this.advance().value;
-
-            let path = [];
-            while (this.match('DOT')) {
-                path.push(this.consume('IDENTIFIER', "Expected property name after '.'").value);
-            }
-
-            let fullPropStr = varName + '.' + path.join('.');
-            let typeInfo = this.match('TILDE') ? this.parseType() : null;
-            let rhs = this.parseAssignSuffix(`property '${fullPropStr}'`);
-
-            stmt = { 
-                type: 'PropertyAssign', 
-                name: varName, 
-                path, 
-                property: path[path.length - 1], 
-                value: rhs.value, 
-                operator: rhs.operator, 
-                typeInfo 
-            };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(this.tokens[this.cursor + 1].type)) {
-            let varName = this.advance().value;
-            let rhs = this.parseAssignSuffix(`variable '${varName}'`);
-            stmt = {
-                type: 'VarAssign',
-                name: varName,
-                value: rhs.operator
-                    ? { type: 'MathExpression', operator: rhs.operator, left: { type: 'Variable', name: varName }, right: rhs.value }
-                    : rhs.value
-            };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'TILDE') {
-            let varName = this.advance().value;
-            this.advance();
-
-            let typeInfo = this.parseType();
-            let targetType = typeInfo.baseType;
-            let isNullable = typeInfo.isNullable;
-
-            this.consume('ASSIGN', `Missing '=' assignment operator after '${varName}~${targetType}'.`);
-            let value = this.parseLogicOr();
-            stmt = { type: 'VarRetype', name: varName, targetType, isNullable, value, typeInfo };
-        } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'SWAP') {
+                } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'SWAP') {
             let leftVar = this.advance().value;
             this.advance();
             let rightVar = this.consume('IDENTIFIER', "Expected variable name after '<->' swap operator.").value;
@@ -251,7 +200,45 @@ class ParserStatements extends ParserControl {
         } else if (this.match('SKIP')) {
             stmt = { type: 'SkipStatement' };
         } else {
-            stmt = this.parseLogicOr();
+            let expr = this.parseLogicOr();
+            const nextToken = this.peek();
+            const isAssignOp = nextToken && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(nextToken.type);
+            
+            if (expr.type === 'Variable' && (this.check('TILDE') || isAssignOp)) {
+                if (this.match('TILDE')) {
+                    let typeInfo = this.parseType();
+                    let targetType = typeInfo.baseType;
+                    let isNullable = typeInfo.isNullable;
+
+                    this.consume('ASSIGN', `Missing '=' assignment operator after '${expr.name}~${targetType}'.`);
+                    let value = this.parseLogicOr();
+                    stmt = { type: 'VarRetype', name: expr.name, targetType, isNullable, value, typeInfo };
+                } else {
+                    let rhs = this.parseAssignSuffix(`variable '${expr.name}'`);
+                    stmt = {
+                        type: 'VarAssign',
+                        name: expr.name,
+                        value: rhs.operator
+                            ? { type: 'MathExpression', operator: rhs.operator, left: { type: 'Variable', name: expr.name }, right: rhs.value }
+                            : rhs.value
+                    };
+                }
+            } else if (expr.type === 'IndexAccess' && (this.check('TILDE') || isAssignOp)) {
+                let typeInfo = this.match('TILDE') ? this.parseType() : null;
+                let desc = expr.isDotAccess ? `property '${expr.index}'` : 'list index';
+                let rhs = this.parseAssignSuffix(desc);
+                stmt = {
+                    type: 'MemberAssign',
+                    target: expr.target,
+                    index: expr.index,
+                    isDotAccess: expr.isDotAccess,
+                    value: rhs.value,
+                    operator: rhs.operator,
+                    typeInfo
+                };
+            } else {
+                stmt = expr;
+            }
         }
 
         this.consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");
