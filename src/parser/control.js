@@ -56,6 +56,7 @@ class ParserControl extends ParserExpressions {
         }
 
         if (isForIn) {
+            this.consume('IVAR', "Expected 'ivar' before variable name in for-in loop.");
             let firstVar = this.consume('IDENTIFIER', "Expected variable name in for-in loop.").value;
             let indexVar = null;
             let itemVar = firstVar;

@@ -206,7 +206,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                          | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration.             |
 | **Dynamic Retyping**            | `score~String = "A";`                                                      | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable.                                  |
 | **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                         | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                  |
-| **Collection Iteration**        | `for (item in list)`<br/>`for (i, item in list)`<br/>`for (k, v in table)` | Unified iteration without variable declaration boilerplate. Seamlessly supports `List`, `Stack`, `Queue`, and `Table`.    |
+| **Collection Iteration**        | `for (ivar item in list)`<br/>`for (ivar i, item in list)`<br/>`for (ivar k, v in table)` | Unified indexed and key-value iteration across `List`, `Stack`, `Queue`, and `Table`. |
 | **Skip Statement**              | `skip;`                                                                    | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                       |
 | **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                           | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                             |
 | **Pattern Match Fallback**      | `case ~ then`                                                              | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                           |
@@ -331,7 +331,7 @@ Kuroba/
 - [x] Dynamic Arrays / Tables (`[1, 2, 3]`) with indexing (`arr[0]`), generic typing (`List<Type>`), and compound operators
 - [x] Stacks (LIFO) and Queues (FIFO) collections (`Stack<Type>`, `Queue<Type>`) with `.push()`, `.pop()`, `.peek()`, and `.count()`
 - [x] Dictionaries / Key-Value Tables (`Table`, `{ key: value }`) with field-level typing (`key~Type`), dynamic addition, and field retyping (`table.key~Type = ...`)
-- [x] Collection iteration (`for (item in list)` and `for (i, item in list)`) across `List`, `Stack`, `Queue`, and `Table`
+- [x] Collection iteration (`for (ivar item in list)` and `for (ivar i, item in list)`) across `List`, `Stack`, `Queue`, and `Table`
 
 ### Phase 4: Functions, Metaprogramming & Developer Ergonomics `(Completed - v1.0.4)`
 
@@ -395,7 +395,7 @@ Kuroba/
 - [ ] Type & Value Constructs:
   - [ ] Runtime type checking operator (`is`, e.g., `if (enemy is Boss) then`)
   - [ ] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
-  - [ ] Multi-variable single-line declarations with trailing value propagation (`ivar a, b = 1, 2;`, `ivar c, d = 4;` -> both `4`, `ivar e, f, g = 2, 5;` -> `g` takes `5`)
+  - [x] Multi-variable single-line declarations with trailing value propagation (`ivar a, b = 1, 2;`, `ivar c, d = 4;` -> both `4`, `ivar e, f, g = 2, 5;` -> `g` takes `5`)
   - [x] Default parameter values in functions
 
 ### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
@@ -426,6 +426,8 @@ Kuroba/
 - [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
   - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
   - [ ] In-browser code challenges with instant automated grading test suites
+- [ ] Website & Documentation Internationalization (`i18n`):
+  - [ ] Multi-language localization across Home, Docs, and Playground (English, French, Spanish, etc.) with dynamic language switcher
 
 ### Phase 10: Embedding SDK, Package Manager & Standalone Compiler `(v2.0.0)`
 

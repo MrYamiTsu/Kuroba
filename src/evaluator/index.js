@@ -31,6 +31,13 @@ function evaluate(node, env = createScope()) {
             return res;
         case 'Literal':             return node.value;
         case 'VarDeclar':           return evalVarDeclar(node, env, evaluate);
+        case 'MultiVarDeclar': {
+            let lastVal = null;
+            for (let decl of node.declarations) {
+                lastVal = evalVarDeclar(decl, env, evaluate);
+            }
+            return lastVal;
+        }
         case 'VarAssign':           return evalVarAssign(node, env, evaluate);
         case 'Variable':            return evalVariable(node, env);
         case 'VarRetype':           return evalVarRetype(node, env, evaluate);

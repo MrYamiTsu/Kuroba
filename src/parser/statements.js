@@ -15,11 +15,34 @@ class ParserStatements extends ParserControl {
             isNullable = typeInfo.isNullable;
         }
 
-        let varName = this.consume('IDENTIFIER', "Expected variable name in declaration.").value;
-        this.consume('ASSIGN', `Missing '=' assignment operator after variable name '${varName}'.`);
-        let value = this.parseLogicOr();
+        let names = [];
+        while (true) {
+            names.push(this.consume('IDENTIFIER', "Expected variable name in declaration.").value);
+            if (!this.match('COMMA')) break;
+        }
 
-        return { type: 'VarDeclar', name: varName, explType, isNullable, value, isConst, typeInfo };
+        this.consume('ASSIGN', `Missing '=' assignment operator after variable name '${names[names.length - 1]}'.`);
+
+        let values = [];
+        while (true) {
+            values.push(this.parseLogicOr());
+            if (!this.match('COMMA')) break;
+        }
+
+        if (values.length > names.length) {
+            printErr(`[SyntaxError: ${this.formatLocation(this.peek() || this.previous())}] Too many values in declaration: expected at most ${names.length}, got ${values.length}.`);
+        }
+
+        if (names.length === 1) {
+            return { type: 'VarDeclar', name: names[0], explType, isNullable, value: values[0], isConst, typeInfo };
+        }
+
+        let declarations = names.map((varName, i) => {
+            let valueExpr = (i < values.length) ? values[i] : values[values.length - 1];
+            return { type: 'VarDeclar', name: varName, explType, isNullable, value: valueExpr, isConst, typeInfo };
+        });
+
+        return { type: 'MultiVarDeclar', declarations };
     }
 
     parseAssignSuffix(targetDesc) {
