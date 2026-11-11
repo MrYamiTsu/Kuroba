@@ -232,12 +232,28 @@ class ParserExpressions extends ParserTypes {
     parseComparaison() {
         let left = this.parseAdd();
 
-        while (this.match('LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL')) {
-            let op = this.previous().value;
-            let right = this.parseAdd();
-            left = { type: 'MathExpression', operator: op, left, right };
-        }
+        while (this.match('LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL', 'IS')) {
+            let opToken = this.previous();
 
+            if (opToken.type === 'IS') {
+                let targetSpec = null;
+
+                if (this.match('NULL')) {
+                    targetSpec = { kind: 'literal', value: null, label: 'NULL' };
+                } else if (this.match('BOOL')) {
+                    let bVal = this.previous().value;
+                    targetSpec = { kind: 'literal', value: bVal, label: bVal ? 'TRUE' : 'FALSE' };
+                } else {
+                    targetSpec = { kind: 'type', typeInfo: this.parseType() };
+                }
+
+                left = { type: 'IsExpression', left, targetSpec };
+            } else {
+                let right = this.parseAdd();
+                left = { type: 'MathExpression', operator: opToken.value, left, right };
+            }
+        }
+        
         return left;
     }
 

@@ -1,5 +1,10 @@
 const { printErr } = require('../errors');
-const { isKurobaEqual, isTruthy } = require('./types');
+const { isKurobaEqual, isTruthy, getType } = require('./types');
+const { findScope } = require('./scope');
+
+const KNOWN_TYPES = new Set([
+    'Int', 'Float', 'String', 'Bool', 'List', 'Stack', 'Queue', 'Table', 'Function', 'Null'
+]);
 
 function evalMath(node, env, evaluate) {
     let left = evaluate(node.left, env);
@@ -46,5 +51,52 @@ function evalLogical(node, env, evaluate) {
     printErr(`[RuntimeError] Unsupported logical operator '${node.operator}'.`);
 }
 
-module.exports = { evalMath, evalUnary, evalLogical };
+function evalIs(node, env, evaluate) {
+    let val = evaluate(node.left, env);
+    let spec = node.targetSpec;
 
+    if (spec.kind === 'literal') {
+        return val === spec.value;
+    }
+
+    let { baseType, elemType, isElemNullable } = spec.typeInfo;
+
+    if (!KNOWN_TYPES.has(baseType)) {
+        printErr(`[TypeError] Unknown type '${baseType}' in 'is' check.`);
+    }
+
+    if (elemType && !KNOWN_TYPES.has(elemType)) {
+        printErr(`[TypeError] Unknown element type '${elemType}' in 'is' check.`);
+    }
+
+    if (getType(val) !== baseType) {
+        return false;
+    }
+
+    if (!elemType) {
+        return true;
+    }
+
+    if (node.left.type === 'Variable') {
+        let scope = findScope(node.left.name, env);
+        let varEntry = scope && scope.values[node.left.name];
+        if (varEntry && varEntry.typeInfo && varEntry.typeInfo.elemType) {
+            if (varEntry.typeInfo.elemType !== elemType) {
+                return false;
+            }
+            if (!isElemNullable && varEntry.typeInfo.isElemNullable) {
+                let items = Array.isArray(val) ? val : val.items;
+                return items.every(el => el !== null);
+            }
+            return true;
+        }
+    }
+
+    let items = Array.isArray(val) ? val : val.items;
+    return items.every(el => {
+        if (el === null) return isElemNullable;
+        return getType(el) === elemType;
+    });
+}
+
+module.exports = { evalMath, evalUnary, evalLogical, evalIs };

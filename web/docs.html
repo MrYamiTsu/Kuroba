@@ -263,6 +263,14 @@ user = NULL; ~~ [TypeError] Cannot assign NULL to non-nullable variable 'user'.<
         <pre><code class="language-kuroba">ivar score = 100;           ~~ Inferred as Int
 score~String = "Top Score"; ~~ Retyped to String in-place
 score~Float = 99.5;         ~~ Retyped to Float in-place</code></pre>
+
+        <h3>Runtime Type Checking (<code>is</code>)</h3>
+        <p>The <code>is</code> operator evaluates to a strict boolean verifying whether a value matches a native type (<code>Int</code>, <code>Float</code>, <code>String</code>, <code>Bool</code>, <code>List</code>, <code>Stack</code>, <code>Queue</code>, <code>Table</code>, <code>Function</code>), a strict literal (<code>NULL</code>, <code>TRUE</code>, <code>FALSE</code>), or a typed generic collection (<code>List&lt;Int&gt;</code>, <code>List&lt;(Int)&gt;</code>, <code>Stack&lt;String&gt;</code>). Unknown types raise an immediate <code>[TypeError]</code>:</p>
+        <pre><code class="language-kuroba">ivar items = [10, 20, 30];
+pasteLn(items is List);      ~~ TRUE
+pasteLn(items is List&lt;Int&gt;); ~~ TRUE
+pasteLn(1 is TRUE);          ~~ FALSE (strict boolean identity)
+pasteLn(!(5 is String));     ~~ TRUE</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -314,8 +322,8 @@ score~Float = 99.5;         ~~ Retyped to Float in-place</code></pre>
             <tr>
               <td><strong>5</strong></td>
               <td>Relational</td>
-              <td><code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code></td>
-              <td>Numeric and comparative order checks</td>
+              <td><code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>is</code></td>
+              <td>Numeric/comparative order and runtime type checks</td>
               <td>Left-to-right</td>
             </tr>
             <tr>

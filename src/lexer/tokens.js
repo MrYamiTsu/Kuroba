@@ -38,7 +38,8 @@ const KEYWORDS = {
   namespace: { type: "NAMESPACE", value: "namespace" },
   try: { type: "TRY", value: "try" },
   catch: { type: "CATCH", value: "catch" },
-  finally: { type: "FINALLY", value: "finally" }
+  finally: { type: "FINALLY", value: "finally" },
+  is: { type: "IS", value: "is" }
 };
 
 const SYMBOLS = {

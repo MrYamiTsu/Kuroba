@@ -31,7 +31,7 @@ function castToType(val, targetType) {
         }
         return (targetType === 'Int') ? Math.trunc(numb) : numb;
     }
-    if (targetType === 'Bool' || targetType === 'Boolean') {
+    if (targetType === 'Bool') {
         if (val === 0 || val === 'FALSE' || val === false) return false;
         if (val === 1 || val === 'TRUE' || val === true) return true;
         return Boolean(val);

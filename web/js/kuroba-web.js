@@ -182,7 +182,8 @@ const KEYWORDS = {
   namespace: { type: "NAMESPACE", value: "namespace" },
   try: { type: "TRY", value: "try" },
   catch: { type: "CATCH", value: "catch" },
-  finally: { type: "FINALLY", value: "finally" }
+  finally: { type: "FINALLY", value: "finally" },
+  is: { type: "IS", value: "is" }
 };
 
 const SYMBOLS = {
@@ -929,12 +930,28 @@ class ParserExpressions extends ParserTypes {
     parseComparaison() {
         let left = this.parseAdd();
 
-        while (this.match('LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL')) {
-            let op = this.previous().value;
-            let right = this.parseAdd();
-            left = { type: 'MathExpression', operator: op, left, right };
-        }
+        while (this.match('LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL', 'IS')) {
+            let opToken = this.previous();
 
+            if (opToken.type === 'IS') {
+                let targetSpec = null;
+
+                if (this.match('NULL')) {
+                    targetSpec = { kind: 'literal', value: null, label: 'NULL' };
+                } else if (this.match('BOOL')) {
+                    let bVal = this.previous().value;
+                    targetSpec = { kind: 'literal', value: bVal, label: bVal ? 'TRUE' : 'FALSE' };
+                } else {
+                    targetSpec = { kind: 'type', typeInfo: this.parseType() };
+                }
+
+                left = { type: 'IsExpression', left, targetSpec };
+            } else {
+                let right = this.parseAdd();
+                left = { type: 'MathExpression', operator: opToken.value, left, right };
+            }
+        }
+        
         return left;
     }
 
@@ -1875,7 +1892,7 @@ function castToType(val, targetType) {
         }
         return (targetType === 'Int') ? Math.trunc(numb) : numb;
     }
-    if (targetType === 'Bool' || targetType === 'Boolean') {
+    if (targetType === 'Bool') {
         if (val === 0 || val === 'FALSE' || val === false) return false;
         if (val === 1 || val === 'TRUE' || val === true) return true;
         return Boolean(val);
@@ -1911,6 +1928,7 @@ function formatKurobaValue(val, isInsideList = false) {
 
 
     
+
 
 
 function evalMath(node, env, evaluate) {
@@ -1958,7 +1976,57 @@ function evalLogical(node, env, evaluate) {
     printErr(`[RuntimeError] Unsupported logical operator '${node.operator}'.`);
 }
 
+const KNOWN_TYPES = new Set([
+    'Int', 'Float', 'String', 'Bool', 'List', 'Stack', 'Queue', 'Table', 'Function', 'Null'
+]);
 
+function evalIs(node, env, evaluate) {
+    let val = evaluate(node.left, env);
+    let spec = node.targetSpec;
+
+    if (spec.kind === 'literal') {
+        return val === spec.value;
+    }
+
+    let { baseType, elemType, isElemNullable } = spec.typeInfo;
+
+    if (!KNOWN_TYPES.has(baseType)) {
+        printErr(`[TypeError] Unknown type '${baseType}' in 'is' check.`);
+    }
+
+    if (elemType && !KNOWN_TYPES.has(elemType)) {
+        printErr(`[TypeError] Unknown element type '${elemType}' in 'is' check.`);
+    }
+
+    if (getType(val) !== baseType) {
+        return false;
+    }
+
+    if (!elemType) {
+        return true;
+    }
+
+    if (node.left.type === 'Variable') {
+        let scope = findScope(node.left.name, env);
+        let varEntry = scope && scope.values[node.left.name];
+        if (varEntry && varEntry.typeInfo && varEntry.typeInfo.elemType) {
+            if (varEntry.typeInfo.elemType !== elemType) {
+                return false;
+            }
+            if (!isElemNullable && varEntry.typeInfo.isElemNullable) {
+                let items = Array.isArray(val) ? val : val.items;
+                return items.every(el => el !== null);
+            }
+            return true;
+        }
+    }
+
+    let items = Array.isArray(val) ? val : val.items;
+    return items.every(el => {
+        if (el === null) return isElemNullable;
+        return getType(el) === elemType;
+    });
+}
 
 
 
@@ -3102,6 +3170,7 @@ function evaluate(node, env = createScope()) {
         case 'MathExpression':      return evalMath(node, env, evaluate);
         case 'UnaryExpression':     return evalUnary(node, env, evaluate);
         case 'LogicalExpression':   return evalLogical(node, env, evaluate);
+        case 'IsExpression':        return evalIs(node, env, evaluate);
         case 'ListLiteral':         return evalListLiteral(node, env, evaluate);
         case 'IndexAccess':         return evalIndexAccess(node, env, evaluate);
         case 'IndexAssign':         return evalIndexAssign(node, env, evaluate);

@@ -393,7 +393,7 @@ Kuroba/
   - [ ] Class Method Interception (`hook ClassName.method(args) then ... end`)
   - [ ] Namespaces integration & class scoping
 - [ ] Type & Value Constructs:
-  - [ ] Runtime type checking operator (`is`, e.g., `if (enemy is Boss) then`)
+  - [x] Runtime type checking operator (`is`, e.g., `if (x is Int) then`, `is NULL`, `is TRUE`, `is List<Int>`; `class` support pending)
   - [ ] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
   - [x] Multi-variable single-line declarations with trailing value propagation (`ivar a, b = 1, 2;`, `ivar c, d = 4;` -> both `4`, `ivar e, f, g = 2, 5;` -> `g` takes `5`)
   - [x] Default parameter values in functions

@@ -5,7 +5,7 @@ const { evalListLiteral, evalIndexAccess, evalIndexAssign, evalMethodCall } = re
 const { evalTableLiteral, evalPropertyAssign } = require('./tables');
 const { evalIf, evalFor, evalWhile, evalDoWhile, evalGiven, evalForIn, evalThrow, evalTry } = require('./control');
 const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
-const { evalMath, evalUnary, evalLogical } = require('./operations');
+const { evalMath, evalUnary, evalLogical, evalIs } = require('./operations');
 const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');
 const { evalImport } = require('./packages');
 
@@ -59,6 +59,7 @@ function evaluate(node, env = createScope()) {
         case 'MathExpression':      return evalMath(node, env, evaluate);
         case 'UnaryExpression':     return evalUnary(node, env, evaluate);
         case 'LogicalExpression':   return evalLogical(node, env, evaluate);
+        case 'IsExpression':        return evalIs(node, env, evaluate);
         case 'ListLiteral':         return evalListLiteral(node, env, evaluate);
         case 'IndexAccess':         return evalIndexAccess(node, env, evaluate);
         case 'IndexAssign':         return evalIndexAssign(node, env, evaluate);
