@@ -229,6 +229,36 @@ class ParserControl extends ParserExpressions {
         };
     }
 
+    parseParameterList() {
+        let params = [];
+
+        if (!this.check('RPAREN')) {
+            while (true) {
+                this.consume('IVAR', "Expected 'ivar' before parameter name.");
+
+                let typeInfo = null;
+                if (this.match('TILDE')) {
+                    typeInfo = this.parseType();
+                }
+
+                let paramName = this.consume('IDENTIFIER', "Expected parameter name.").value;
+                let hasDefault = false;
+                let defaultValue = null;
+
+                if (this.match('ASSIGN')) {
+                    hasDefault = true;
+                    defaultValue = this.parseLogicOr();
+                }
+
+                params.push({ name: paramName, typeInfo, hasDefault, defaultValue });
+
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        return params;
+    }
+
     parseHookStatement() {
         let startToken = this.previous();
         
@@ -242,23 +272,7 @@ class ParserControl extends ParserExpressions {
         }
 
         this.consume('LPAREN', "Expected '(' after hook target.");
-        let params = [];
-
-        if (!this.check('RPAREN')) {
-            while (true) {
-                this.consume('IVAR', "Expected 'ivar' before parameter name.");
-
-                let typeInfo = null;
-                if (this.match('TILDE')) {
-                    typeInfo = this.parseType();
-                }
-
-                let paramName = this.consume('IDENTIFIER', "Expected parameter name.").value;
-                params.push({ name: paramName, typeInfo });
-
-                if (!this.match('COMMA')) break;
-            }
-        }
+        let params = this.parseParameterList();
 
         this.consume('RPAREN', "Expected ')' after hook parameters.");
         this.consume('THEN', "Expected 'then' after hook header.");
@@ -294,23 +308,7 @@ class ParserControl extends ParserExpressions {
         }
 
         this.consume('LPAREN', "Expected '(' after function name or '~'.");
-        let params = [];
-
-        if (!this.check('RPAREN')) {
-            while (true) {
-                this.consume('IVAR', "Expected 'ivar' before parameter name.");
-
-                let typeInfo = null;
-                if (this.match('TILDE')) {
-                    typeInfo = this.parseType();
-                }
-
-                let paramName = this.consume('IDENTIFIER', "Expected parameter name.").value;
-                params.push({ name: paramName, typeInfo });
-
-                if (!this.match('COMMA')) break;
-            }
-        }
+        let params = this.parseParameterList();
 
         this.consume('RPAREN', "Expected ')' after function parameters.");
         this.consume('THEN', "Expected 'then' after function header.");

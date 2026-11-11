@@ -672,12 +672,13 @@ pasteLn(hero.missingProp);     ~~ NULL (safe access)</code></pre>
       <section id="functions">
         <h2>Functions &amp; Native Hooks</h2>
         
-        <h3>Named Functions &amp; Signatures</h3>
-        <p>Named functions declare parameters prefixed by <code>ivar</code> with optional type coercion (<code>ivar~Int x</code>) and non-nullability constraints (<code>ivar~(String) name</code>):</p>
-        <pre><code class="language-kuroba">function calculateDamage(ivar base, ivar~Int multiplier) then
+        <h3>Named Functions, Signatures &amp; Default Parameters</h3>
+        <p>Named functions declare parameters prefixed by <code>ivar</code> with optional type coercion (<code>ivar~Int x</code>), non-nullability constraints (<code>ivar~(String) name</code>), and default values (<code>= expr</code>) evaluated cleanly per call when omitted:</p>
+        <pre><code class="language-kuroba">function calculateDamage(ivar base, ivar~Int multiplier = 1) then
     return base * multiplier;
 end
 
+pasteLn(calculateDamage(25));    ~~ 25 (uses default multiplier = 1)
 pasteLn(calculateDamage(25, 2)); ~~ 50</code></pre>
 
         <h3>Anonymous Lambdas (<code>function ~</code>) &amp; Closures</h3>

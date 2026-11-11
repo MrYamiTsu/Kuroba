@@ -51,9 +51,21 @@ function evalCall(node, env, evaluate) {
         return caller.fn(...evaluatedArgs);
     }
 
-    if (node.args.length !== caller.params.length) {
+    let minArgs = 0;
+    for (let i = 0; i < caller.params.length; i++) {
+        if (!caller.params[i].hasDefault) {
+            minArgs = i + 1;
+        }
+    }
+    let maxArgs = caller.params.length;
+
+    if (node.args.length < minArgs || node.args.length > maxArgs) {
         let funcName = caller.name || '~';
-        printErr(`[TypeError] Function '${funcName}' expects ${caller.params.length} arguments, got ${node.args.length}.`);
+        if (minArgs === maxArgs) {
+            printErr(`[TypeError] Function '${funcName}' expects ${maxArgs} arguments, got ${node.args.length}.`);
+        } else {
+            printErr(`[TypeError] Function '${funcName}' expects between ${minArgs} and ${maxArgs} arguments, got ${node.args.length}.`);
+        }
     }
 
     if (callDepth >= MAX_CALL_DEPTH) {
@@ -67,7 +79,15 @@ function evalCall(node, env, evaluate) {
 
         for (let i = 0; i < caller.params.length; i++) {
             let param = caller.params[i];
-            let argVal = evaluate(node.args[i], env);
+            let argVal;
+            if (i < node.args.length) {
+                argVal = evaluate(node.args[i], env);
+            } else if (param.defaultClosure) {
+                let defaultEnv = { values: fnEnv.values, parent: param.defaultClosure };
+                argVal = evaluate(param.defaultValue, defaultEnv);
+            } else {
+                argVal = evaluate(param.defaultValue, fnEnv);
+            }
 
             if (param.typeInfo) {
                 let baseType = param.typeInfo.baseType;
@@ -118,10 +138,23 @@ function evalHook(node, env, evaluate) {
         isConst: true,
         isNullable: false
     };
+    let hookParams = node.params.map((p, i) => {
+        let origParam = origFunc.params && origFunc.params[i];
+        if (!p.hasDefault && origParam && origParam.hasDefault) {
+            return {
+                ...p,
+                hasDefault: true,
+                defaultValue: origParam.defaultValue,
+                defaultClosure: origParam.defaultClosure || origFunc.closure
+            };
+        }
+        return p;
+    });
+
     let hookFunc = {
         kind: 'Function',
         name: origFunc.name,
-        params: node.params,
+        params: hookParams,
         body: node.body,
         closure: hookClosure
     };

@@ -396,7 +396,7 @@ Kuroba/
   - [ ] Runtime type checking operator (`is`, e.g., `if (enemy is Boss) then`)
   - [ ] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
   - [ ] Multi-variable single-line declarations with trailing value propagation (`ivar a, b = 1, 2;`, `ivar c, d = 4;` -> both `4`, `ivar e, f, g = 2, 5;` -> `g` takes `5`)
-  - [ ] Default parameter values in functions and constructors
+  - [x] Default parameter values in functions
 
 ### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
 
