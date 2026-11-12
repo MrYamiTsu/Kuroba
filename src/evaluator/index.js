@@ -8,6 +8,7 @@ const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical, evalIs } = require('./operations');
 const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');
 const { evalImport } = require('./packages');
+const { evalClassDeclaration } = require('./classes');
 
 function evaluate(node, env = createScope()) {
     if (!node || !node.type) return node;
@@ -71,6 +72,7 @@ function evaluate(node, env = createScope()) {
         case 'CallExpression':      return evalCall(node, env, evaluate);
         case 'HookStatement':       return evalHook(node, env, evaluate);
         case 'ImportStatement':     return evalImport(node, env, evaluate);
+        case 'ClassDeclaration':    return evalClassDeclaration(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }

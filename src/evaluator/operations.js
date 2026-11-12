@@ -62,19 +62,21 @@ function evalIs(node, env, evaluate) {
     let { baseType, elemType, isElemNullable } = spec.typeInfo;
 
     if (!KNOWN_TYPES.has(baseType)) {
+        let scope = findScope(baseType, env);
+        let classEntry = scope && scope.values[baseType];
+        if (classEntry && classEntry.value && classEntry.value.kind === 'Class') {
+            return !!(val && val.kind === 'Table' && val.className === baseType);
+        }
+        
         printErr(`[TypeError] Unknown type '${baseType}' in 'is' check.`);
     }
 
-    if (elemType && !KNOWN_TYPES.has(elemType)) {
-        printErr(`[TypeError] Unknown element type '${elemType}' in 'is' check.`);
+    if (val && val.isInstance && baseType === 'Table') {
+        return true;
     }
 
     if (getType(val) !== baseType) {
         return false;
-    }
-
-    if (!elemType) {
-        return true;
     }
 
     if (node.left.type === 'Variable') {

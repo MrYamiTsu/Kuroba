@@ -40,6 +40,11 @@ function evalCall(node, env, evaluate) {
     }
 
     let caller = evaluate(node.caller, env);
+    
+    if (caller && caller.kind === 'Class') {
+        const { instantiateClass } = require('./classes');
+        return instantiateClass(caller, node.args, env, evaluate);
+    }
 
     if (!caller || caller.kind !== 'Function') {
         let typeName = getType(caller);

@@ -2,6 +2,7 @@ const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
 const { findScope } = require('./scope');
 const { evalCall } = require('./functions');
+const { checkPrivateAccess, instantiateClass } = require('./classes');
 
 function evalListLiteral(node, env, evaluate) {
     return node.elements.map(el => evaluate(el, env));
@@ -14,10 +15,15 @@ function evalIndexAccess(node, env, evaluate) {
         if (!node.isDotAccess) {
             printErr("[TypeError] Tables do not support bracket indexing. Use dot notation 'table.property' instead.");
         }
+
         let key = node.index;
+
+        checkPrivateAccess(target, key, env, false);
+
         if (key in target.fields) {
             return target.fields[key].value;
         }
+        
         return null;
     }
 
@@ -65,8 +71,9 @@ function evalMemberAssign(node, env, evaluate) {
     if (root && root.type === 'Variable') {
         let scope = findScope(root.name, env);
         if (!scope) printErr(`[ReferenceError] Variable '${root.name}' is not defined.`);
+        
         rootVarEntry = scope.values[root.name];
-        if (rootVarEntry.isConst) {
+        if (rootVarEntry.isConst && root.name !== 'this') {
             printErr(`[TypeError] Cannot modify constant '${root.name}'.`);
         }
     }
@@ -78,8 +85,11 @@ function evalMemberAssign(node, env, evaluate) {
             printErr(`[TypeError] Cannot set property '${node.index}' on non-Table value of type '${getType(container)}'.`);
         }
 
+        checkPrivateAccess(container, node.index, env, false);
+
         let key = node.index;
         let newVal = evaluate(node.value, env);
+
         if (node.operator) {
             let currVal = (key in container.fields) ? container.fields[key].value : 0;
             newVal = applyCompoundOp(currVal, newVal, node.operator);
@@ -169,8 +179,15 @@ function evalMethodCall(node, env, evaluate) {
 
     if (target && target.kind === 'Table') {
         let methodName = node.method;
+
+        checkPrivateAccess(target, methodName, env, true);
+
         if (methodName in target.fields) {
             let fnObj = target.fields[methodName].value;
+            if (fnObj && fnObj.kind === 'Class') {
+                return instantiateClass(fnObj, node.args, env, evaluate);
+            }
+
             if (fnObj && fnObj.kind === 'Function') {
                 if (fnObj.isNative) {
                     let evaluatedArgs = node.args.map(a => evaluate(a, env));
@@ -178,9 +195,12 @@ function evalMethodCall(node, env, evaluate) {
                 }
                 return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
+
             printErr(`[TypeError] Field '${methodName}' on Table is not a callable function.`);
         }
-        printErr(`[ReferenceError] Method or field '${methodName}' does not exist on Table.`);
+
+        let targetDesc = target.isInstance ? `class '${target.className}'` : 'Table';
+        printErr(`[ReferenceError] Method or field '${methodName}' does not exist on ${targetDesc}.`);
     }
 
     let isList = Array.isArray(target);

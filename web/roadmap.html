@@ -96,21 +96,21 @@
         </div>
         <div class="roadmap-card-body">
           <ul class="roadmap-items">
-            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Runtime type checking operator <code>is</code> (<code>Int</code>, <code>String</code>, <code>Bool</code>, <code>NULL</code>, <code>List&lt;Int&gt;</code>; <code>class</code> support pending)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Runtime type checking operator <code>is</code> (primitives, Nullable, Typed Collections, Tables, and Classes)</span></li>
             <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Multi-variable declarations with trailing propagation (<code>ivar a, b = 1, 2;</code>, <code>ivar c, d = 4;</code>)</span></li>
             <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Default parameter values in functions (<code>function f(ivar a, ivar b = 1)</code>)</span></li>
             <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Arbitrary nested member &amp; index assignments (<code>grid[y][x] = "#";</code>, <code>enemies[i].hp -= 10;</code>)</span></li>
             <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Recursive multi-file CLI imports &amp; top-level circular import detection</span></li>
-            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Class definition <code>class Name ... end</code> with constructor &amp; instance methods</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Class definition <code>class Name ... end</code> with C#-style constructor &amp; default parameterless constructor</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Instance reference (<code>this</code>) &amp; encapsulation access modifiers (<code>public</code>, <code>private</code>)</span></li>
             <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Single inheritance <code>class Sub extends Super ... end</code> with <code>super(...)</code></span></li>
-            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Instance reference (<code>this</code>) &amp; access modifiers (<code>public</code>, <code>private</code>)</span></li>
             <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Static class members (<code>static ivar</code>, <code>static function</code>)</span></li>
             <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Class method interception (<code>hook ClassName.method(args) then ... end</code>)</span></li>
             <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Namespaces integration &amp; class scoping</span></li>
             <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Native enumerations (<code>enum State then IDLE, RUNNING, PAUSED end</code>)</span></li>
           </ul>
           <div class="roadmap-subnote">
-            <strong>Next up:</strong> Designing and implementing Kuroba Classes as a structured, clean abstraction built over <code>Table</code>.
+            <strong>Next up:</strong> Single inheritance (<code>class Sub extends Super ... end</code>) and <code>super(...)</code> constructor chaining.
           </div>
         </div>
       </article>

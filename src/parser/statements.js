@@ -67,6 +67,7 @@ class ParserStatements extends ParserControl {
         if (this.match('FUNCTION')) return this.parseFunctionDeclaration(false);
         if (this.match('HOOK'))     return this.parseHookStatement();
         if (this.match('TRY'))      return this.parseTryStatement();
+        if (this.match('CLASS'))    return this.parseClassDeclaration();
         
         if (this.match('IVAR', 'ICONST')) {
             stmt = this.parseVarDeclaration();
@@ -243,6 +244,53 @@ class ParserStatements extends ParserControl {
 
         this.consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");
         return stmt;
+    }
+
+    parseClassDeclaration() {
+        let startToken = this.previous();
+        let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
+        this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
+
+        let fields = [];
+        let methods = [];
+
+        while (!this.check('END') && !this.isAtEnd()) {
+            let access = 'public';
+            if (this.match('PUBLIC')) {
+                access = 'public';
+            } else if (this.match('PRIVATE')) {
+                access = 'private';
+            }
+
+            if (this.match('IVAR', 'ICONST')) {
+                let decl = this.parseVarDeclaration();
+                if (decl.type === 'MultiVarDeclar') {
+                    for (let d of decl.declarations) {
+                        fields.push({ ...d, access });
+                    }
+                } else {
+                    fields.push({ ...decl, access });
+                }
+                this.consume('SEMICOLON', "Missing semicolon ';' after field declaration in class.");
+            } else if (this.match('FUNCTION')) {
+                let method = this.parseFunctionDeclaration(false);
+                methods.push({ ...method, access });
+            } else {
+                let tok = this.peek();
+                printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside class '${className}'. Expected field or method declaration.`);
+            }
+        }
+
+        this.consume('END', `Expected 'end' to close class '${className}' block.`);
+
+        return {
+            type: 'ClassDeclaration',
+            name: className,
+            fields,
+            methods,
+            line: startToken.line,
+            col: startToken.col
+        };
     }
 
     parseProgram() {

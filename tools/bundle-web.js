@@ -32,11 +32,11 @@ function readAsyncEvaluator(relPath) {
     );
 
     code = code.replace(
-        /\bfunction (evaluate|executeBlock|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MemberAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is))\(/g,
+        /\bfunction (evaluate|executeBlock|instantiateClass|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MemberAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is|ClassDeclaration))\(/g,
         'async function $1('
     );
 
-    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall)\(/g, 'await $1(');
+    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall|instantiateClass)\(/g, 'await $1(');
     code = code.replace(/\b(caller\.fn|fnObj\.fn)\(/g, 'await $1(');
 
     if (relPath.endsWith('evaluator/index.js')) {
@@ -286,6 +286,8 @@ const bundleCode = `/**
     ${readAsyncEvaluator('../src/evaluator/operations.js')}
 
     ${readAsyncEvaluator('../src/evaluator/variables.js')}
+
+    ${readAsyncEvaluator('../src/evaluator/classes.js')}
 
     ${readAsyncEvaluator('../src/evaluator/collections.js')}
 

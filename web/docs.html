@@ -64,6 +64,7 @@
         <a href="#io-primitives" class="docs-item-link">Console I/O (<code>paste</code>, <code>copyKey</code>)</a>
         <a href="#collections" class="docs-item-link">Typed Collections (List, Stack, Queue, Table)</a>
         <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
+        <a href="#classes" class="docs-item-link">Classes &amp; OOP Foundations</a>
       </div>
 
       <div class="docs-group" data-group="stdlib">
@@ -84,11 +85,11 @@
       <div class="docs-track-bar" id="docs-track-bar">
         <div class="docs-track-pills" role="tablist" aria-label="Documentation chapters">
           <button class="docs-track-pill active" data-track="setup">Setup &amp; CLI (3)</button>
-          <button class="docs-track-pill" data-track="core">Language Core (8)</button>
+          <button class="docs-track-pill" data-track="core">Language Core (9)</button>
           <button class="docs-track-pill" data-track="stdlib">Namespaces &amp; Stdlib (5)</button>
           <button class="docs-track-pill" data-track="errors">Diagnostics (1)</button>
         </div>
-        <button id="btn-docs-view-mode" class="docs-roadmap-shortcut" type="button" title="Toggle between single-chapter focus view and full-page scroll">Show All (17)</button>
+        <button id="btn-docs-view-mode" class="docs-roadmap-shortcut" type="button" title="Toggle between single-chapter focus view and full-page scroll">Show All (18)</button>
       </div>
 
       <div id="docs-chapter-indicator" class="docs-chapter-indicator" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;"></div>
@@ -755,6 +756,96 @@ ivar invoice = processPayment(250, 15);</code></pre>
       </section>
 
       <!-- ====================================================================
+           Section : Classes & Object-Oriented Programming
+           ==================================================================== -->
+      <section id="classes">
+        <h2>Classes &amp; Object-Oriented Programming</h2>
+        <p>Kuroba provides declarative, ergonomic Object-Oriented Programming (OOP) structured cleanly over its underlying <code>Table</code> collection model. Classes support C#-style constructors, auto-bound instance methods via <code>this</code>, field declarations with visibility access modifiers (<code>public</code>, <code>private</code>), automatic parameterless default constructors, and runtime type checking using <code>is</code>.</p>
+
+        <h3>1. Class Declaration &amp; Fields</h3>
+        <p>A class is declared with <code>class Name then ... end</code>. Inside the class body, you can declare instance fields using <code>ivar</code> or <code>iconst</code>, optionally prefixed with an access modifier:</p>
+        <ul>
+          <li><strong><code>public</code> (Default):</strong> Accessible and mutable from both inside and outside the instance. If no access modifier is specified, fields and methods are automatically public.</li>
+          <li><strong><code>private</code>:</strong> Encapsulated member strictly restricted to the class's own methods and constructor. External reads or writes trigger a descriptive <code>[TypeError]</code>.</li>
+        </ul>
+
+        <h3>2. Constructors &amp; Direct Instantiation</h3>
+        <p>Constructors adopt a familiar C#-style syntax: a function whose identifier exactly matches the class name:</p>
+        <ul>
+          <li><strong>C#-Style Constructor:</strong> <code>function Player(ivar name, ivar hp) then ... end</code>. Invoked directly as a callable: <code>ivar hero = Player("Kenji", 100);</code> (no <code>new</code> keyword required).</li>
+          <li><strong>Automatic Default Constructor:</strong> If no explicit constructor function is defined, Kuroba provides an automatic parameterless constructor (e.g. <code>ivar pt = Point();</code>) initializing all fields to their declared initial values.</li>
+        </ul>
+
+        <h3>3. Instance Methods &amp; The <code>this</code> Reference</h3>
+        <p>Methods declared within a class body automatically receive a reference to the active instance via <code>this</code>. You can inspect and mutate instance fields through <code>this.fieldName</code> or call internal methods with <code>this.methodName()</code>.</p>
+        <p><em>Safety note:</em> While instance properties are fully mutable via <code>this.x = val;</code>, reassigning the root reference itself (<code>this = other;</code>) is strictly forbidden and guarded as an immutable binding.</p>
+
+        <h3>4. Complete Example: Encapsulated Hero Class</h3>
+        <pre><code class="language-kuroba">class Hero then
+    ~~ Public fields (default visibility)
+    ivar name = "Hero";
+    ivar maxHp = 100;
+    ivar hp = 100;
+
+    ~~ Private fields (accessible only inside Hero methods)
+    private ivar _energy = 50;
+
+    ~~ C#-style constructor
+    function Hero(ivar heroName, ivar heroHp) then
+        this.name = heroName;
+        this.maxHp = heroHp;
+        this.hp = heroHp;
+    end
+
+    ~~ Public method
+    function attack(ivar targetName, ivar damage) then
+        if (this._energy &lt; 10) then
+            pasteLn(~"[{this.name}] Not enough energy to attack!");
+            return FALSE;
+        end
+        this._energy -= 10;
+        pasteLn(~"[{this.name}] Attacks {targetName} for {damage} dmg! (Energy left: {this._energy})");
+        return TRUE;
+    end
+
+    ~~ Public getter for private state
+    function getEnergy() then
+        return this._energy;
+    end
+end
+
+~~ Instantiation without 'new'
+ivar hero = Hero("Kenji", 120);
+hero.attack("Goblin", 25);
+pasteLn(~"Hero energy: {hero.getEnergy()}");
+
+~~ Private access guard check
+try
+    paste(hero._energy); ~~ Throws [TypeError] Cannot access private member
+catch (ivar err) then
+    pasteLn(~"Intercepted private violation: {err.exName}");
+end</code></pre>
+
+        <h3>5. Type Checking with the <code>is</code> Operator</h3>
+        <p>Kuroba's <code>is</code> operator seamlessly validates class instances at runtime:</p>
+        <ul>
+          <li><code>hero is Hero</code> &rarr; <code>TRUE</code></li>
+          <li><code>hero is Table</code> &rarr; <code>TRUE</code> (every class instance is fundamentally a structured Table)</li>
+          <li><code>hero is String</code> &rarr; <code>FALSE</code></li>
+        </ul>
+
+        <pre><code class="language-kuroba">class Point then
+    ivar x = 0;
+    ivar y = 0;
+end
+
+ivar p = Point();
+pasteLn(p is Point); ~~ TRUE
+pasteLn(p is Table); ~~ TRUE
+pasteLn(p is List);  ~~ FALSE</code></pre>
+      </section>
+
+      <!-- ====================================================================
            Section : Namespaces & Symbol Discovery
            ==================================================================== -->
       <section id="namespaces">
@@ -1338,6 +1429,7 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
         'io-primitives': 'core',
         collections: 'core',
         functions: 'core',
+        classes: 'core',
         namespaces: 'stdlib',
         'std-math': 'stdlib',
         'std-time': 'stdlib',
@@ -1516,6 +1608,7 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
+        'class', 'public', 'private',
         'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 

@@ -202,7 +202,10 @@ const KEYWORDS = {
   try: { type: "TRY", value: "try" },
   catch: { type: "CATCH", value: "catch" },
   finally: { type: "FINALLY", value: "finally" },
-  is: { type: "IS", value: "is" }
+  is: { type: "IS", value: "is" },
+  class: { type: "CLASS", value: "class" },
+  public: { type: "PUBLIC", value: "public" },
+  private: { type: "PRIVATE", value: "private" }
 };
 
 const SYMBOLS = {
@@ -1485,6 +1488,7 @@ class ParserStatements extends ParserControl {
         if (this.match('FUNCTION')) return this.parseFunctionDeclaration(false);
         if (this.match('HOOK'))     return this.parseHookStatement();
         if (this.match('TRY'))      return this.parseTryStatement();
+        if (this.match('CLASS'))    return this.parseClassDeclaration();
         
         if (this.match('IVAR', 'ICONST')) {
             stmt = this.parseVarDeclaration();
@@ -1661,6 +1665,53 @@ class ParserStatements extends ParserControl {
 
         this.consume('SEMICOLON', "Missing semicolon ';' at the end of statement.");
         return stmt;
+    }
+
+    parseClassDeclaration() {
+        let startToken = this.previous();
+        let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
+        this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
+
+        let fields = [];
+        let methods = [];
+
+        while (!this.check('END') && !this.isAtEnd()) {
+            let access = 'public';
+            if (this.match('PUBLIC')) {
+                access = 'public';
+            } else if (this.match('PRIVATE')) {
+                access = 'private';
+            }
+
+            if (this.match('IVAR', 'ICONST')) {
+                let decl = this.parseVarDeclaration();
+                if (decl.type === 'MultiVarDeclar') {
+                    for (let d of decl.declarations) {
+                        fields.push({ ...d, access });
+                    }
+                } else {
+                    fields.push({ ...decl, access });
+                }
+                this.consume('SEMICOLON', "Missing semicolon ';' after field declaration in class.");
+            } else if (this.match('FUNCTION')) {
+                let method = this.parseFunctionDeclaration(false);
+                methods.push({ ...method, access });
+            } else {
+                let tok = this.peek();
+                printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside class '${className}'. Expected field or method declaration.`);
+            }
+        }
+
+        this.consume('END', `Expected 'end' to close class '${className}' block.`);
+
+        return {
+            type: 'ClassDeclaration',
+            name: className,
+            fields,
+            methods,
+            line: startToken.line,
+            col: startToken.col
+        };
     }
 
     parseProgram() {
@@ -2010,19 +2061,21 @@ async function evalIs(node, env, evaluate) {
     let { baseType, elemType, isElemNullable } = spec.typeInfo;
 
     if (!KNOWN_TYPES.has(baseType)) {
+        let scope = findScope(baseType, env);
+        let classEntry = scope && scope.values[baseType];
+        if (classEntry && classEntry.value && classEntry.value.kind === 'Class') {
+            return !!(val && val.kind === 'Table' && val.className === baseType);
+        }
+        
         printErr(`[TypeError] Unknown type '${baseType}' in 'is' check.`);
     }
 
-    if (elemType && !KNOWN_TYPES.has(elemType)) {
-        printErr(`[TypeError] Unknown element type '${elemType}' in 'is' check.`);
+    if (val && val.isInstance && baseType === 'Table') {
+        return true;
     }
 
     if (getType(val) !== baseType) {
         return false;
-    }
-
-    if (!elemType) {
-        return true;
     }
 
     if (node.left.type === 'Variable') {
@@ -2201,6 +2254,165 @@ function evalKill(node, env) {
 
 
 
+async function evalClassDeclaration(node, env) {
+    const classObj = {
+        kind: 'Class',
+        name: node.name,
+        fields: node.fields,
+        methods: {},
+        constructor: null,
+        privateMembers: new Set()
+    };
+
+    for (const f of node.fields) {
+        if (f.access === 'private') {
+            classObj.privateMembers.add(f.name);
+        }
+    }
+
+    for (const m of node.methods) {
+        if (m.access === 'private') {
+            classObj.privateMembers.add(m.name);
+        }
+        if (m.name === node.name) {
+            classObj.constructor = m;
+        } else {
+            classObj.methods[m.name] = m;
+        }
+    }
+
+    env.values[node.name] = {
+        value: classObj,
+        type: 'Class',
+        isConst: true,
+        isNullable: false
+    };
+
+    return classObj;
+}
+
+async function instantiateClass(classObj, rawArgs, env, evaluate) {
+    const instance = {
+        kind: 'Table',
+        className: classObj.name,
+        isInstance: true,
+        classRef: classObj,
+        fields: {},
+        privateMembers: classObj.privateMembers
+    };
+
+    const initEnv = createScope(env);
+    initEnv.values['this'] = {
+        value: instance,
+        type: 'Table',
+        isConst: true,
+        isNullable: false
+    };
+
+    for (const field of classObj.fields) {
+        let val = null;
+        if (field.value !== undefined && field.value !== null) {
+            val = await evaluate(field.value, initEnv);
+        }
+
+        let fieldType = field.explType || getType(val);
+        if (field.typeInfo && field.typeInfo.baseType) {
+            fieldType = field.typeInfo.baseType;
+            if (!field.typeInfo.isNullable && val === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}' of type '(${fieldType})'.`);
+            }
+            if (val !== null) {
+                val = castToType(val, fieldType);
+            }
+        } else if (!field.isNullable && val === null) {
+            printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}'.`);
+        }
+
+        instance.fields[field.name] = {
+            value: val,
+            type: fieldType,
+            isNullable: field.isNullable !== false,
+            isConst: !!field.isConst
+        };
+    }
+
+    for (const [methodName, methodAst] of Object.entries(classObj.methods)) {
+        const methodClosure = createScope(env);
+        methodClosure.values['this'] = {
+            value: instance,
+            type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+
+        const fnObj = {
+            kind: 'Function',
+            name: methodAst.name,
+            params: methodAst.params,
+            body: methodAst.body,
+            closure: methodClosure,
+            boundInstance: instance
+        };
+
+        instance.fields[methodName] = {
+            value: fnObj,
+            type: 'Function',
+            isNullable: false,
+            isConst: true
+        };
+    }
+
+    if (classObj.constructor) {
+        const ctorAst = classObj.constructor;
+        const ctorClosure = createScope(env);
+        ctorClosure.values['this'] = {
+            value: instance,
+            type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+
+        const ctorFn = {
+            kind: 'Function',
+            name: ctorAst.name,
+            params: ctorAst.params,
+            body: ctorAst.body,
+            closure: ctorClosure,
+            boundInstance: instance
+        };
+
+        await evalCall({ caller: { type: 'Literal', value: ctorFn }, args: rawArgs }, env, evaluate);
+    } else if (rawArgs.length > 0) {
+        printErr(`[TypeError] Class '${classObj.name}' has no constructor that takes ${rawArgs.length} arguments.`);
+    }
+
+    return instance;
+}
+
+function checkPrivateAccess(target, memberName, env, isMethod = false) {
+    if (!target || !target.isInstance || !target.privateMembers || !target.privateMembers.has(memberName)) {
+        return;
+    }
+
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+
+    if (callerThis === target || (callerThis && callerThis.className === target.className)) {
+        return;
+    }
+
+    const kind = isMethod ? 'method' : 'member';
+    printErr(`[TypeError] Cannot access private ${kind} '${memberName}' of class '${target.className}'.`);
+}
+
+
+
+    
+
+
+
+
+
 async function evalListLiteral(node, env, evaluate) {
     return await mapAsync(node.elements, async (el) => await await evaluate(el, env));
 }
@@ -2212,10 +2424,15 @@ async function evalIndexAccess(node, env, evaluate) {
         if (!node.isDotAccess) {
             printErr("[TypeError] Tables do not support bracket indexing. Use dot notation 'table.property' instead.");
         }
+
         let key = node.index;
+
+        checkPrivateAccess(target, key, env, false);
+
         if (key in target.fields) {
             return target.fields[key].value;
         }
+        
         return null;
     }
 
@@ -2263,8 +2480,9 @@ async function evalMemberAssign(node, env, evaluate) {
     if (root && root.type === 'Variable') {
         let scope = findScope(root.name, env);
         if (!scope) printErr(`[ReferenceError] Variable '${root.name}' is not defined.`);
+        
         rootVarEntry = scope.values[root.name];
-        if (rootVarEntry.isConst) {
+        if (rootVarEntry.isConst && root.name !== 'this') {
             printErr(`[TypeError] Cannot modify constant '${root.name}'.`);
         }
     }
@@ -2276,8 +2494,11 @@ async function evalMemberAssign(node, env, evaluate) {
             printErr(`[TypeError] Cannot set property '${node.index}' on non-Table value of type '${getType(container)}'.`);
         }
 
+        checkPrivateAccess(container, node.index, env, false);
+
         let key = node.index;
         let newVal = await evaluate(node.value, env);
+
         if (node.operator) {
             let currVal = (key in container.fields) ? container.fields[key].value : 0;
             newVal = applyCompoundOp(currVal, newVal, node.operator);
@@ -2367,8 +2588,15 @@ async function evalMethodCall(node, env, evaluate) {
 
     if (target && target.kind === 'Table') {
         let methodName = node.method;
+
+        checkPrivateAccess(target, methodName, env, true);
+
         if (methodName in target.fields) {
             let fnObj = target.fields[methodName].value;
+            if (fnObj && fnObj.kind === 'Class') {
+                return await instantiateClass(fnObj, node.args, env, evaluate);
+            }
+
             if (fnObj && fnObj.kind === 'Function') {
                 if (fnObj.isNative) {
                     let evaluatedArgs = await mapAsync(node.args, async (a) => await await evaluate(a, env));
@@ -2376,9 +2604,12 @@ async function evalMethodCall(node, env, evaluate) {
                 }
                 return await evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
+
             printErr(`[TypeError] Field '${methodName}' on Table is not a callable function.`);
         }
-        printErr(`[ReferenceError] Method or field '${methodName}' does not exist on Table.`);
+
+        let targetDesc = target.isInstance ? `class '${target.className}'` : 'Table';
+        printErr(`[ReferenceError] Method or field '${methodName}' does not exist on ${targetDesc}.`);
     }
 
     let isList = Array.isArray(target);
@@ -2851,6 +3082,11 @@ async function evalCall(node, env, evaluate) {
     }
 
     let caller = await evaluate(node.caller, env);
+    
+    if (caller && caller.kind === 'Class') {
+        
+        return await instantiateClass(caller, node.args, env, evaluate);
+    }
 
     if (!caller || caller.kind !== 'Function') {
         let typeName = getType(caller);
@@ -3229,6 +3465,7 @@ async function evalHook(node, env, evaluate) {
 
 
 
+
 async function evaluate(node, env = createScope()) {
     if (!node || !node.type) return node;
     if (activeRunAborted) throw new KurobaAbortError();
@@ -3296,6 +3533,7 @@ async function evaluate(node, env = createScope()) {
         case 'CallExpression':      return await evalCall(node, env, evaluate);
         case 'HookStatement':       return await evalHook(node, env, evaluate);
         case 'ImportStatement':     return await evalImport(node, env, evaluate);
+        case 'ClassDeclaration':    return await evalClassDeclaration(node, env);
         default:
             printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
     }

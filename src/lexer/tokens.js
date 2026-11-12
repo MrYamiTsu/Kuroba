@@ -39,7 +39,10 @@ const KEYWORDS = {
   try: { type: "TRY", value: "try" },
   catch: { type: "CATCH", value: "catch" },
   finally: { type: "FINALLY", value: "finally" },
-  is: { type: "IS", value: "is" }
+  is: { type: "IS", value: "is" },
+  class: { type: "CLASS", value: "class" },
+  public: { type: "PUBLIC", value: "public" },
+  private: { type: "PRIVATE", value: "private" }
 };
 
 const SYMBOLS = {

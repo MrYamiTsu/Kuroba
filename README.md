@@ -86,6 +86,22 @@ Update a variable's type and nullability dynamically with `var~Type = val;` or `
 
 </td>
 </tr>
+<tr>
+<td width="50%">
+
+### Declarative Classes &amp; OOP
+
+Clean abstraction over `Table` with C#-style constructors, auto-bound `this`, and strict encapsulation (`public`, `private`).
+
+</td>
+<td width="50%">
+
+### Runtime Type Inspection (`is`)
+
+Polymorphic type validation (`val is Type`, `val is NULL`, `hero is Player`, `hero is Table`) with zero external boilerplate.
+
+</td>
+</tr>
 </table>
 
 ---
@@ -387,15 +403,15 @@ Kuroba/
 ### Phase 7: Object-Oriented Programming & Language Ergonomics `(v1.0.7)`
 
 - [ ] Ergonomic Classes (designed as a clean, structured abstraction over `Table`):
-  - [ ] Class definition `class Name ... end` with constructor and instance methods
+  - [x] Class definition `class Name ... end` with constructor and instance methods
   - [ ] Single inheritance `class Sub extends Super ... end` with `super(...)`
-  - [ ] Instance reference (`this`)
-  - [ ] Encapsulation & Access Modifiers (`public`, `private`)
+  - [x] Instance reference (`this`)
+  - [x] Encapsulation & Access Modifiers (`public`, `private`)
   - [ ] Static class members (`static ivar`, `static function`)
   - [ ] Class Method Interception (`hook ClassName.method(args) then ... end`)
   - [ ] Namespaces integration & class scoping
 - [ ] Type & Value Constructs:
-  - [x] Runtime type checking operator (`is`, e.g., `if (x is Int) then`, `is NULL`, `is TRUE`, `is List<Int>`; `class` support pending)
+  - [x] Runtime type checking operator (`is`, e.g., `if (x is Int) then`, `is NULL`, `is TRUE`, `is List<Int>`, `is Player`, `is Table`)
   - [ ] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
   - [x] Multi-variable single-line declarations with trailing value propagation (`ivar a, b = 1, 2;`, `ivar c, d = 4;` -> both `4`, `ivar e, f, g = 2, 5;` -> `g` takes `5`)
   - [x] Default parameter values in functions
