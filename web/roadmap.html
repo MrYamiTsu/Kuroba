@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roadmap — Kuroba</title>
+  <link rel="icon" type="image/png" href="assets/kuroba.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Header / Navigation Bar
+       ======================================================================== -->
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
+      <span class="brand-name">Kuroba</span>
+      <span class="version-badge">v1.0.6</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="docs.html" class="nav-link">Documentation</a>
+      <a href="playground.html" class="nav-link">Playground ▶</a>
+      <a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer" class="nav-link">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main class="roadmap-container">
+    <div class="roadmap-hero">
+      <div class="section-label">DEVELOPMENT TIMELINE</div>
+      <h1>Kuroba Language Roadmap</h1>
+      <p class="roadmap-hero-lead">
+        Track every shipped milestone from <strong>v1.0.0</strong> through the active <strong>v1.0.7</strong> cycle (Object-Oriented Classes &amp; Language Ergonomics) and upcoming releases toward <strong>v2.0.0</strong>.
+      </p>
+    </div>
+
+    <!-- Live Progress Summary Card -->
+    <section class="roadmap-overview-card" aria-label="Roadmap Progress">
+      <div class="roadmap-stats-row">
+        <div class="roadmap-stat-group">
+          <div class="roadmap-stat-item">
+            <span id="stat-progress-pct" class="roadmap-stat-value moss">0%</span>
+            <span class="roadmap-stat-label">Overall Progress</span>
+          </div>
+          <div class="roadmap-stat-item">
+            <span id="stat-done-count" class="roadmap-stat-value">0</span>
+            <span class="roadmap-stat-label">Shipped Features</span>
+          </div>
+          <div class="roadmap-stat-item">
+            <span id="stat-todo-count" class="roadmap-stat-value sand">0</span>
+            <span class="roadmap-stat-label">Upcoming Tasks</span>
+          </div>
+          <div class="roadmap-stat-item">
+            <span class="roadmap-stat-value">v1.0.7</span>
+            <span class="roadmap-stat-label">Active Milestone</span>
+          </div>
+        </div>
+      </div>
+      <div class="roadmap-progress-track">
+        <div id="roadmap-progress-fill" class="roadmap-progress-fill" style="width: 0%;"></div>
+      </div>
+    </section>
+
+    <!-- Filter Controls -->
+    <div class="roadmap-controls">
+      <div class="roadmap-filters" role="group" aria-label="Filter roadmap phases">
+        <button class="roadmap-filter-btn active" data-filter="all">All Phases</button>
+        <button class="roadmap-filter-btn" data-filter="active">Active (v1.0.7)</button>
+        <button class="roadmap-filter-btn" data-filter="planned">Planned (v1.0.8–v2.0.0)</button>
+        <button class="roadmap-filter-btn" data-filter="completed">Completed (v1.0.0–v1.0.6)</button>
+      </div>
+      <button id="btn-toggle-completed" class="roadmap-toggle-completed">Expand All Phases</button>
+    </div>
+
+    <!-- Active & Upcoming Section -->
+    <div class="roadmap-group-title" data-group="upcoming">Active &amp; Upcoming Milestones</div>
+    <div class="roadmap-list" data-group="upcoming">
+
+      <!-- Phase 7 (Active) -->
+      <article class="roadmap-card is-active" data-status="active">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.7</span>
+            <span class="roadmap-card-title">Phase 7: Object-Oriented Programming &amp; Language Ergonomics</span>
+            <span class="roadmap-status-badge active">In Progress</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Runtime type checking operator <code>is</code> (<code>Int</code>, <code>String</code>, <code>Bool</code>, <code>NULL</code>, <code>List&lt;Int&gt;</code>; <code>class</code> support pending)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Multi-variable declarations with trailing propagation (<code>ivar a, b = 1, 2;</code>, <code>ivar c, d = 4;</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Default parameter values in functions (<code>function f(ivar a, ivar b = 1)</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Arbitrary nested member &amp; index assignments (<code>grid[y][x] = "#";</code>, <code>enemies[i].hp -= 10;</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Recursive multi-file CLI imports &amp; top-level circular import detection</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Class definition <code>class Name ... end</code> with constructor &amp; instance methods</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Single inheritance <code>class Sub extends Super ... end</code> with <code>super(...)</code></span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Instance reference (<code>this</code>) &amp; access modifiers (<code>public</code>, <code>private</code>)</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Static class members (<code>static ivar</code>, <code>static function</code>)</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Class method interception (<code>hook ClassName.method(args) then ... end</code>)</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Namespaces integration &amp; class scoping</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Native enumerations (<code>enum State then IDLE, RUNNING, PAUSED end</code>)</span></li>
+          </ul>
+          <div class="roadmap-subnote">
+            <strong>Next up:</strong> Designing and implementing Kuroba Classes as a structured, clean abstraction built over <code>Table</code>.
+          </div>
+        </div>
+      </article>
+
+      <!-- Phase 8 -->
+      <article class="roadmap-card" data-status="planned">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.8</span>
+            <span class="roadmap-card-title">Phase 8: Asynchronism, Modular Ecosystem &amp; Web</span>
+            <span class="roadmap-status-badge planned">Planned</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Non-blocking async routines (<code>async</code> / <code>await</code>) and lightweight coroutines (<code>task</code> / <code>yield</code>)</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span><code>StdE.Json</code> — native parse &amp; stringify of Tables to JSON</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span><code>StdE.Path</code> — <code>join</code>, <code>resolve</code>, <code>dirname</code>, <code>basename</code>, <code>extname</code></span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span><code>StdE.Process</code> — spawning child processes, command execution &amp; pipes</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span><code>StdE.Term</code> — ANSI colors/styles, terminal dimensions &amp; cursor positioning</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span><code>Web</code> package — HTTP client fetcher (<code>Web.fetch</code>) &amp; server (<code>Web.serve</code>, <code>Web.listen</code>)</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Phase 9 -->
+      <article class="roadmap-card" data-status="planned">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.9</span>
+            <span class="roadmap-card-title">Phase 9: Native 2D Game Engine (<code>App</code>), Tooling &amp; Tour</span>
+            <span class="roadmap-status-badge planned">Planned</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Native window creation with framerate &amp; resolution control (<code>App.window</code>, <code>App.fps</code>)</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>2D Canvas rendering (shapes, colors, sprites, text) with game loop hooks (<code>App.onUpdate</code>, <code>App.onDraw</code>)</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Real-time keyboard &amp; mouse input (<code>App.isKeyDown</code>, <code>App.mousePos</code>)</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>CLI developer tooling: <code>krb fmt</code>, <code>krb test</code>, <code>--debug</code> stepper &amp; VS Code LSP</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Interactive Learning Manual (<em>"Tour of Kuroba"</em>) with in-browser challenges</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Website &amp; Docs Internationalization (<code>i18n</code>) with live language switcher (EN / FR / ES)</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Phase 10 -->
+      <article class="roadmap-card" data-status="planned">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v2.0.0</span>
+            <span class="roadmap-card-title">Phase 10: Embedding SDK, Package Manager &amp; Compiler</span>
+            <span class="roadmap-status-badge planned">Planned</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Kuroba Embeddable Host SDK for C# (Unity), Godot, Node.js, and Browser apps</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Bytecode Virtual Machine optimization pass for high-throughput execution</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Standalone executable builder (<code>krb build game.krb --out game.exe</code>)</span></li>
+            <li class="roadmap-item todo"><span class="roadmap-check">•</span><span>Official Package Manager (<code>kpm</code>, <code>kuroba.json</code>, <code>krb publish</code>, <code>krb install</code>)</span></li>
+          </ul>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- Completed Section -->
+    <div class="roadmap-group-title" data-group="completed">Shipped Releases (v1.0.0 – v1.0.6)</div>
+    <div class="roadmap-list" data-group="completed">
+
+      <!-- Phase 6 -->
+      <article class="roadmap-card collapsed" data-status="completed">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.6</span>
+            <span class="roadmap-card-title">Phase 6: Exception Handling &amp; Web Documentation</span>
+            <span class="roadmap-status-badge completed">Completed</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Official Website, Documentation &amp; in-browser AST Playground (<code>main.krb</code> + custom modules)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Exception handling with <code>throw</code> and <code>try / catch (ivar e) / finally / end</code></span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Structured exception metadata tables (<code>exName</code>, <code>exLines</code>, <code>exCode</code>, <code>exContext</code>, <code>exTime</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Trapping native runtime failures into structured tables &amp; catchable <code>[RecursionError]</code></span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Async Playground terminal with inline <code>copy()</code> / <code>copyKey()</code>, Stop button &amp; non-blocking <code>sleep()</code></span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Phase 5 -->
+      <article class="roadmap-card collapsed" data-status="completed">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.5</span>
+            <span class="roadmap-card-title">Phase 5: The Vital Standard Library &amp; Namespaces</span>
+            <span class="roadmap-status-badge completed">Completed</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Namespaces (<code>Main</code>, <code>Package ~Module</code>), symbol discovery &amp; selective imports (<code>alias ~</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><code>Std.Math</code> (random, arithmetic, clamping, trig, constants <code>PI</code>, <code>TAU</code>, <code>E</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><code>Std.Time</code> (<code>sleep</code>, <code>now</code>, <code>perf</code>, <code>clock</code>, <code>stopwatch</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><code>Std.String</code> &amp; raven string interpolation (<code>~"Hello {name}"</code>, <code>str[i]</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><code>Std.IO</code> synchronous file operations (<code>fileCopy</code>, <code>filePaste</code>, <code>fileExists</code>, <code>fileKill</code>)</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Phase 4 -->
+      <article class="roadmap-card collapsed" data-status="completed">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.4</span>
+            <span class="roadmap-card-title">Phase 4: Functions, Metaprogramming &amp; CLI Ergonomics</span>
+            <span class="roadmap-status-badge completed">Completed</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Variable lifecycle &amp; explicit scope destruction (<code>kill variable;</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>First-class functions &amp; anonymous lambdas (<code>function ~</code>) with closures</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Function interception hooks (<code>hook target(...) then ... this(...) end</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Interactive REPL shell (<code>krb</code>) &amp; CLI arguments (<code>args</code>, <code>Std.Sys.args</code>)</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Phase 3 -->
+      <article class="roadmap-card collapsed" data-status="completed">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.3</span>
+            <span class="roadmap-card-title">Phase 3: Data Structures &amp; Collections</span>
+            <span class="roadmap-status-badge completed">Completed</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Strict lexical block scoping &amp; multi-line comments (<code>~~{{ ... }}</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Generic <code>List&lt;T&gt;</code>, <code>Stack&lt;T&gt;</code> (LIFO) &amp; <code>Queue&lt;T&gt;</code> (FIFO) with <code>push/pop/peek/count</code></span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Associative <code>Table</code> dictionaries with field typing &amp; dynamic field retyping</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Unified collection iteration (<code>for (ivar item in col)</code> &amp; <code>for (ivar i, v in col)</code>)</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Phase 2 -->
+      <article class="roadmap-card collapsed" data-status="completed">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.2</span>
+            <span class="roadmap-card-title">Phase 2: Iteration &amp; Interactive Console</span>
+            <span class="roadmap-status-badge completed">Completed</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><code>paste</code> / <code>pasteLn</code>, <code>exit(cond)</code>, <code>clear(cond)</code></span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Compound operators (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code>, <code>++</code>, <code>--</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Loops: <code>for</code>, <code>while</code>, <code>do-while</code> with <code>break;</code> and <code>skip;</code></span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Blocking prompt <code>copy(...)</code> &amp; raw single-keypress capture <code>copyKey()</code></span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Phase 1 -->
+      <article class="roadmap-card collapsed" data-status="completed">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.1</span>
+            <span class="roadmap-card-title">Phase 1: Fundamental Operators &amp; Types</span>
+            <span class="roadmap-status-badge completed">Completed</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Atomic variable swap operator (<code>a &lt;-&gt; b;</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Distinct <code>Int</code> / <code>Float</code> types, <code>NULL</code>, and strict non-nullability (<code>~(Type)</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Comparisons (<code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>), modulo (<code>%</code>) &amp; dynamic transtyping (<code>v~Type = ...</code>)</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Core Engine -->
+      <article class="roadmap-card collapsed" data-status="completed">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.0</span>
+            <span class="roadmap-card-title">Core Engine Foundation</span>
+            <span class="roadmap-status-badge completed">Completed</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="roadmap-card-count"></span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+        <div class="roadmap-card-body">
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Recursive descent parser &amp; arithmetic engine with <code>ivar</code> / <code>iconst</code></span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Feather comments (<code>~~</code>), booleans (<code>TRUE</code>/<code>FALSE</code>) &amp; short-circuit logic (<code>&amp;&amp;</code>, <code>||</code>, <code>!</code>)</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span>Conditionals (<code>if / elif / else / end</code>) &amp; pattern matching (<code>given / case ... case ~ then</code>)</span></li>
+          </ul>
+        </div>
+      </article>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-row">
+            <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
+            <span class="footer-brand-name">Kuroba</span>
+            <span class="version-badge">v1.0.6</span>
+          </div>
+          <p class="footer-tagline">
+            A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Language</div>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="docs.html">Documentation</a></li>
+            <li><a href="playground.html">Web Playground</a></li>
+            <li><a href="docs.html#std-math">Standard Library</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Project</div>
+          <ul class="footer-links">
+            <li><a href="about.html">About Kuroba</a></li>
+            <li><a href="roadmap.html">Roadmap</a></li>
+            <li><a href="about.html#architecture">Architecture</a></li>
+            <li><a href="docs.html#errors">Error Diagnostics</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Community</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer">GitHub Repository ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/issues" target="_blank" rel="noopener noreferrer">Report an Issue ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/releases" target="_blank" rel="noopener noreferrer">Releases ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License ↗</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
+        <span class="footer-bottom-meta">Pure JS AST Engine • Zero npm Dependencies</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const cards = Array.from(document.querySelectorAll('.roadmap-card'));
+      const filterBtns = document.querySelectorAll('.roadmap-filter-btn');
+      const toggleCompletedBtn = document.getElementById('btn-toggle-completed');
+      const groupNodes = {
+        upcoming: document.querySelectorAll('[data-group="upcoming"]'),
+        completed: document.querySelectorAll('[data-group="completed"]')
+      };
+
+      // 1. Compute live progress and per-card item counters
+      let totalDone = 0;
+      let totalItems = 0;
+
+      cards.forEach(card => {
+        const items = card.querySelectorAll('.roadmap-item');
+        const done = card.querySelectorAll('.roadmap-item.done').length;
+        const countEl = card.querySelector('.roadmap-card-count');
+        totalDone += done;
+        totalItems += items.length;
+        if (countEl) countEl.textContent = `${done}/${items.length}`;
+
+        card.querySelector('.roadmap-card-header').addEventListener('click', () => {
+          card.classList.toggle('collapsed');
+        });
+      });
+
+      const pct = totalItems > 0 ? Math.round((totalDone / totalItems) * 100) : 0;
+      document.getElementById('stat-progress-pct').textContent = `${pct}%`;
+      document.getElementById('stat-done-count').textContent = String(totalDone);
+      document.getElementById('stat-todo-count').textContent = String(totalItems - totalDone);
+      document.getElementById('roadmap-progress-fill').style.width = `${pct}%`;
+
+      // 2. Filter buttons
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const filter = btn.dataset.filter;
+          filterBtns.forEach(b => b.classList.toggle('active', b === btn));
+
+          cards.forEach(card => {
+            const visible = filter === 'all' || card.dataset.status === filter;
+            card.style.display = visible ? '' : 'none';
+            if (visible && filter === 'completed') {
+              card.classList.remove('collapsed');
+            }
+          });
+
+          const showUpcoming = filter === 'all' || filter === 'active' || filter === 'planned';
+          const showCompleted = filter === 'all' || filter === 'completed';
+          groupNodes.upcoming.forEach(el => { el.style.display = showUpcoming ? '' : 'none'; });
+          groupNodes.completed.forEach(el => { el.style.display = showCompleted ? '' : 'none'; });
+        });
+      });
+
+      // 3. Expand / collapse completed toggle
+      let allExpanded = false;
+      toggleCompletedBtn.addEventListener('click', () => {
+        allExpanded = !allExpanded;
+        cards.forEach(card => {
+          if (allExpanded) {
+            card.classList.remove('collapsed');
+          } else if (card.dataset.status === 'completed') {
+            card.classList.add('collapsed');
+          }
+        });
+        toggleCompletedBtn.textContent = allExpanded ? 'Collapse Completed' : 'Expand All Phases';
+      });
+    });
+  </script>
+</body>
+</html>

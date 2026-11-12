@@ -201,8 +201,55 @@ namespace Main then ... end</code></pre>
        Footer
        ======================================================================== -->
   <footer class="site-footer">
-    <p>Kuroba (KRB) • Version 1.0.6 • Pure JavaScript AST Engine • Zero Dependencies • MIT Licensed</p>
-    <p style="margin-top: 0.5rem;"><a href="docs.html">Documentation</a> • <a href="playground.html">Web Playground</a> • <a href="https://github.com/MrYamiTsu/Kuroba">GitHub Repository</a></p>
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-row">
+            <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
+            <span class="footer-brand-name">Kuroba</span>
+            <span class="version-badge">v1.0.6</span>
+          </div>
+          <p class="footer-tagline">
+            A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Language</div>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="docs.html">Documentation</a></li>
+            <li><a href="playground.html">Web Playground</a></li>
+            <li><a href="docs.html#std-math">Standard Library</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Project</div>
+          <ul class="footer-links">
+            <li><a href="about.html">About Kuroba</a></li>
+            <li><a href="roadmap.html">Roadmap</a></li>
+            <li><a href="about.html#architecture">Architecture</a></li>
+            <li><a href="docs.html#errors">Error Diagnostics</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Community</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer">GitHub Repository ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/issues" target="_blank" rel="noopener noreferrer">Report an Issue ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/releases" target="_blank" rel="noopener noreferrer">Releases ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License ↗</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
+        <span class="footer-bottom-meta">Pure JS AST Engine • Zero npm Dependencies</span>
+      </div>
+    </div>
   </footer>
 
   <!-- Interactive Hero Typewriter Snippet Script -->
@@ -352,7 +399,7 @@ pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'TRUE', 'FALSE', 'NULL'
+        'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 
       function escHtml(str) {

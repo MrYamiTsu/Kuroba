@@ -36,43 +36,62 @@
   <div class="docs-layout">
     
     <!-- Sidebar Navigation -->
-    <aside class="docs-sidebar">
-      <div class="docs-search">
-        <input type="text" id="docs-search-input" placeholder="Search documentation..." />
+    <aside class="docs-sidebar" id="docs-sidebar">
+      <div class="docs-sidebar-top">
+        <div class="docs-search">
+          <input type="text" id="docs-search-input" placeholder="Search docs (press / to focus)..." />
+        </div>
+        <button id="btn-docs-mobile-menu" class="docs-mobile-menu-btn" type="button" aria-expanded="false">
+          <span>Browse Chapters (17)</span>
+          <span class="docs-mobile-chevron">▾</span>
+        </button>
       </div>
 
-      <div class="docs-group">
-        <div class="docs-group-label">Architecture &amp; Setup</div>
+      <div class="docs-group" data-group="setup">
+        <div class="docs-group-label"><span>Architecture &amp; Setup</span><span class="docs-group-toggle">▾</span></div>
         <a href="#quickstart" class="docs-item-link">Quickstart &amp; Installation</a>
-        <a href="#cli" class="docs-item-link">CLI &amp; Arguments (`args`)</a>
-        <a href="#repl" class="docs-item-link">Interactive REPL Shell (`krb`)</a>
+        <a href="#cli" class="docs-item-link">CLI &amp; Arguments (<code>args</code>)</a>
+        <a href="#repl" class="docs-item-link">Interactive REPL Shell (<code>krb</code>)</a>
       </div>
 
-      <div class="docs-group">
-        <div class="docs-group-label">Language Core</div>
-        <a href="#variables" class="docs-item-link">Variables, Constants &amp; `kill`</a>
+      <div class="docs-group" data-group="core">
+        <div class="docs-group-label"><span>Language Core</span><span class="docs-group-toggle">▾</span></div>
+        <a href="#variables" class="docs-item-link">Variables, Constants &amp; <code>kill</code></a>
         <a href="#types" class="docs-item-link">Type System &amp; Non-Nullability</a>
         <a href="#operators" class="docs-item-link">Operators &amp; Precedence Table</a>
         <a href="#control" class="docs-item-link">Control Flow &amp; Pattern Match</a>
-        <a href="#exceptions" class="docs-item-link">Exceptions (`throw`, `try / catch`)</a>
-        <a href="#io-primitives" class="docs-item-link">Console I/O (`paste`, `copyKey`)</a>
+        <a href="#exceptions" class="docs-item-link">Exceptions (<code>throw</code>, <code>try / catch</code>)</a>
+        <a href="#io-primitives" class="docs-item-link">Console I/O (<code>paste</code>, <code>copyKey</code>)</a>
         <a href="#collections" class="docs-item-link">Typed Collections (List, Stack, Queue, Table)</a>
         <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
       </div>
 
-      <div class="docs-group">
-        <div class="docs-group-label">Namespaces &amp; Standard Library</div>
+      <div class="docs-group" data-group="stdlib">
+        <div class="docs-group-label"><span>Namespaces &amp; Standard Library</span><span class="docs-group-toggle">▾</span></div>
         <a href="#namespaces" class="docs-item-link">Namespaces &amp; Symbol Discovery</a>
         <a href="#std-math" class="docs-item-link">Std.Math (Constants &amp; Algorithms)</a>
         <a href="#std-time" class="docs-item-link">Std.Time (Timers &amp; Chronometry)</a>
         <a href="#std-string" class="docs-item-link">Std.String (Text Processing)</a>
         <a href="#std-io" class="docs-item-link">Std.IO (Filesystem Persistence)</a>
-        <a href="#errors" class="docs-item-link">Error Diagnostics (All 7 Classes)</a>
+        <a href="#errors" class="docs-item-link">Error Diagnostics (All 8 Classes)</a>
       </div>
     </aside>
 
     <!-- Main Documentation Articles -->
     <main class="docs-article-body">
+
+      <!-- Chapter Track Switcher -->
+      <div class="docs-track-bar" id="docs-track-bar">
+        <div class="docs-track-pills" role="tablist" aria-label="Documentation chapters">
+          <button class="docs-track-pill active" data-track="setup">Setup &amp; CLI (3)</button>
+          <button class="docs-track-pill" data-track="core">Language Core (8)</button>
+          <button class="docs-track-pill" data-track="stdlib">Namespaces &amp; Stdlib (5)</button>
+          <button class="docs-track-pill" data-track="errors">Diagnostics (1)</button>
+        </div>
+        <button id="btn-docs-view-mode" class="docs-roadmap-shortcut" type="button" title="Toggle between single-chapter focus view and full-page scroll">Show All (17)</button>
+      </div>
+
+      <div id="docs-chapter-indicator" class="docs-chapter-indicator" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;"></div>
 
       <!-- ====================================================================
            Section : Quickstart & Installation
@@ -114,7 +133,7 @@ end</code></pre>
            Section : Interactive REPL Shell
            ==================================================================== -->
       <section id="repl">
-        <h2>Interactive REPL Shell (`krb`)</h2>
+        <h2>Interactive REPL Shell (<code>krb</code>)</h2>
         <p>Invoking <code>index.js</code> or the launcher shortcut <code>./krb.cmd</code> without arguments starts an interactive read-eval-print loop shell:</p>
         <pre><code class="language-bash">node index.js
 # Or via Windows shortcut:
@@ -368,12 +387,12 @@ pasteLn(!(5 is String));     ~~ TRUE</code></pre>
         <p>Exchanges the values of two variables in-place without a temporary holder. It validates type compatibility, guards constants, and prevents transferring <code>NULL</code> into a non-nullable variable:</p>
         <pre><code class="language-kuroba">ivar a = 10;
 ivar b = 99;
-a <-> b;
+a &lt;-&gt; b;
 pasteLn(a); ~~ 99
 pasteLn(b); ~~ 10</code></pre>
 
         <h3>String Interpolation (<code>~"..."</code>)</h3>
-        <p>The raven tilde prefix allows embedded Kuroba expressions between curly braces:</p>
+        <p>The tilde prefix allows embedded Kuroba expressions between curly braces:</p>
         <pre><code class="language-kuroba">ivar hero = "Kenji";
 ivar hp = 85;
 pasteLn(~"Hero: {hero} | Health: {hp}/100 | Boosted: {hp + 15}");</code></pre>
@@ -419,14 +438,14 @@ end</code></pre>
 
         <h3>Loops: <code>for</code>, <code>while</code>, <code>do-while</code></h3>
         <pre><code class="language-kuroba">~~ 1. Standard 3-clause for loop (break; and skip; supported)
-for (ivar i = 0; i < 5; i++) then
+for (ivar i = 0; i &lt; 5; i++) then
     if (i == 2) then skip; end
     pasteLn(i);
 end
 
 ~~ 2. While loop
 ivar count = 0;
-while (count < 3) then
+while (count &lt; 3) then
     pasteLn(count);
     count++;
 end
@@ -436,22 +455,22 @@ ivar n = 0;
 do
     pasteLn(n);
     n++;
-while (n < 3);</code></pre>
+while (n &lt; 3);</code></pre>
 
         <h3>Collection Iteration (<code>for ... in</code>)</h3>
-        <pre><code class="language-kuroba">ivar~List<String> fruits = ["apple", "banana", "cherry"];
+        <pre><code class="language-kuroba">ivar~List&lt;String&gt; fruits = ["apple", "banana", "cherry"];
 for (ivar fruit in fruits) then
     pasteLn(fruit);
 end
 
 ivar~Table hero = { name: "Kenji", class: "Shinobi" };
 for (ivar key, val in hero) then
-    pasteLn(key + " => " + val);
+    pasteLn(key + " =&gt; " + val);
 end</code></pre>
 
         <h3>Inline Guards &amp; Termination (<code>exit</code>)</h3>
         <pre><code class="language-kuroba">exit();          ~~ Exits immediately with code 0
-exit(score < 0); ~~ Inline guard clause: exits only if condition evaluates to true</code></pre>
+exit(score &lt; 0); ~~ Inline guard clause: exits only if condition evaluates to true</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -615,8 +634,8 @@ clear(round > 1);   ~~ Clears screen only if condition is true</code></pre>
 
         <h3>1. Lists (<code>List&lt;T&gt;</code>)</h3>
         <p>Dynamic 0-indexed arrays supporting generic typing, nullability contracts, and methods:</p>
-        <pre><code class="language-kuroba">ivar~List<Int> numbers = [10, 30];
-numbers.push(20, 1);      ~~ Inserts 20 at index 1 -> [10, 20, 30]
+        <pre><code class="language-kuroba">ivar~List&lt;Int&gt; numbers = [10, 30];
+numbers.push(20, 1);      ~~ Inserts 20 at index 1 -&gt; [10, 20, 30]
 pasteLn(numbers.peek(1)); ~~ 20 (inspects element at index 1)
 pasteLn(numbers.pop(0));  ~~ 10 (removes and returns element at index 0)
 pasteLn(numbers.count()); ~~ 2</code></pre>
@@ -654,14 +673,14 @@ pasteLn(numbers.count()); ~~ 2</code></pre>
         </table>
 
         <h3>2. Stacks (<code>Stack&lt;T&gt;</code> — LIFO)</h3>
-        <pre><code class="language-kuroba">ivar~Stack<Int> stack = [10, 20];
+        <pre><code class="language-kuroba">ivar~Stack&lt;Int&gt; stack = [10, 20];
 stack.push(30);         ~~ Pushes to top: [10, 20, 30]
 pasteLn(stack.peek());  ~~ 30 (inspects top without removing)
 pasteLn(stack.pop());   ~~ 30 (removes and returns top)
 pasteLn(stack.count()); ~~ 2</code></pre>
 
         <h3>3. Queues (<code>Queue&lt;T&gt;</code> — FIFO)</h3>
-        <pre><code class="language-kuroba">ivar~Queue<String> clients = ["Alice", "Bob"];
+        <pre><code class="language-kuroba">ivar~Queue&lt;String&gt; clients = ["Alice", "Bob"];
 clients.push("Charlie");   ~~ Adds to back
 pasteLn(clients.peek());   ~~ "Alice" (inspects front without removing)
 pasteLn(clients.pop());    ~~ "Alice" (removes and returns front)
@@ -1193,7 +1212,7 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
            Section : Error Diagnostics
            ==================================================================== -->
       <section id="errors">
-        <h2>Error Diagnostics (All 7 Classes)</h2>
+        <h2>Error Diagnostics (All 8 Classes)</h2>
         <p>Kuroba provides exact line, column, and contextual diagnostics for rapid debugging:</p>
 
         <h3>1. SyntaxError</h3>
@@ -1236,6 +1255,10 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
         <pre><code class="language-output">[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.
 [ImportError] Circular import detected for namespace 'A'.
 [ImportError] Unknown package or namespace 'MissingPkg'. Create a '.krb' file with 'namespace MissingPkg then ... end' or import 'Std'.</code></pre>
+
+        <h3>8. RecursionError</h3>
+        <p>Triggered when nested function calls exceed Kuroba's safe call-stack limit (512 frames). Can be trapped cleanly with <code>try / catch</code>:</p>
+        <pre><code class="language-output">[RecursionError] Maximum recursion depth (512) exceeded in function 'infiniteLoop'.</code></pre>
       </section>
 
     </main>
@@ -1243,25 +1266,339 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
 
   <!-- Footer -->
   <footer class="site-footer">
-    <p>Kuroba (KRB) • Technical Documentation v1.0.6 • Pure JavaScript AST Engine • MIT Licensed</p>
-    <p style="margin-top: 0.5rem;"><a href="index.html">Home</a> • <a href="playground.html">Web Playground</a> • <a href="https://github.com/MrYamiTsu/Kuroba">GitHub Repository</a></p>
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-row">
+            <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
+            <span class="footer-brand-name">Kuroba</span>
+            <span class="version-badge">v1.0.6</span>
+          </div>
+          <p class="footer-tagline">
+            A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Language</div>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="docs.html">Documentation</a></li>
+            <li><a href="playground.html">Web Playground</a></li>
+            <li><a href="docs.html#std-math">Standard Library</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Project</div>
+          <ul class="footer-links">
+            <li><a href="about.html">About Kuroba</a></li>
+            <li><a href="roadmap.html">Roadmap</a></li>
+            <li><a href="about.html#architecture">Architecture</a></li>
+            <li><a href="docs.html#errors">Error Diagnostics</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Community</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer">GitHub Repository ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/issues" target="_blank" rel="noopener noreferrer">Report an Issue ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/releases" target="_blank" rel="noopener noreferrer">Releases ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License ↗</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
+        <span class="footer-bottom-meta">Pure JS AST Engine • Zero npm Dependencies</span>
+      </div>
+    </div>
   </footer>
 
-  <!-- Documentation Enhancements: Code Actions, Copy Buttons, Playground Link, ScrollSpy -->
+  <!-- Documentation Enhancements: Chapter Tracks, Search, Copy/Run Actions, Pager, ScrollSpy -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Live Filter Search
       const searchInput = document.getElementById('docs-search-input');
-      const navLinks = document.querySelectorAll('.docs-item-link');
-      
-      searchInput.addEventListener('input', (e) => {
-        const q = e.target.value.toLowerCase();
+      const navLinks = Array.from(document.querySelectorAll('.docs-item-link'));
+      const groups = Array.from(document.querySelectorAll('.docs-group'));
+      const sections = Array.from(document.querySelectorAll('main.docs-article-body section'));
+      const trackPills = Array.from(document.querySelectorAll('.docs-track-pill'));
+
+      const SECTION_TRACKS = {
+        quickstart: 'setup',
+        cli: 'setup',
+        repl: 'setup',
+        variables: 'core',
+        types: 'core',
+        operators: 'core',
+        control: 'core',
+        exceptions: 'core',
+        'io-primitives': 'core',
+        collections: 'core',
+        functions: 'core',
+        namespaces: 'stdlib',
+        'std-math': 'stdlib',
+        'std-time': 'stdlib',
+        'std-string': 'stdlib',
+        'std-io': 'stdlib',
+        errors: 'errors'
+      };
+
+      const TRACK_LABELS = {
+        setup: 'Setup & CLI',
+        core: 'Language Core',
+        stdlib: 'Namespaces & Stdlib',
+        errors: 'Error Diagnostics'
+      };
+
+      const viewModeBtn = document.getElementById('btn-docs-view-mode');
+      const chapterIndicator = document.getElementById('docs-chapter-indicator');
+      const sectionById = {};
+      sections.forEach((sec, idx) => {
+        const id = sec.getAttribute('id');
+        sectionById[id] = sec;
+        sec.dataset.track = SECTION_TRACKS[id] || 'core';
+        sec.dataset.index = String(idx + 1);
+      });
+
+      let viewMode = 'single'; // 'single' (Focus page by page) | 'all' (Full scroll)
+      let currentSectionId = (sections[0] && sections[0].getAttribute('id')) || 'quickstart';
+
+      function updateViewModeUI() {
+        if (!viewModeBtn) return;
+        viewModeBtn.textContent = viewMode === 'all' ? 'Focus Mode (1 Page)' : `Show All (${sections.length})`;
+      }
+
+      function showSection(id, scrollTop = true, updateHash = true) {
+        const sec = sectionById[id] || sections[0];
+        if (!sec) return;
+        const resolvedId = sec.getAttribute('id');
+        currentSectionId = resolvedId;
+        viewMode = 'single';
+        updateViewModeUI();
+
+        sections.forEach(s => {
+          s.classList.toggle('docs-section-hidden', s !== sec);
+        });
+
+        const track = sec.dataset.track || 'core';
+        trackPills.forEach(pill => pill.classList.toggle('active', pill.dataset.track === track));
+
         navLinks.forEach(link => {
-          link.style.display = link.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+          const isMatch = link.getAttribute('href') === `#${resolvedId}`;
+          link.classList.toggle('active', isMatch);
+          if (isMatch) {
+            const parentGroup = link.closest('.docs-group');
+            if (parentGroup) parentGroup.classList.remove('collapsed');
+          }
+        });
+
+        if (chapterIndicator) {
+          chapterIndicator.textContent = `${TRACK_LABELS[track] || track}  •  Chapter ${sec.dataset.index} of ${sections.length}`;
+          chapterIndicator.style.display = 'block';
+        }
+
+        if (updateHash && window.location.hash !== `#${resolvedId}`) {
+          history.replaceState(null, '', `#${resolvedId}`);
+        }
+
+        if (scrollTop) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+
+      function showAllSections() {
+        viewMode = 'all';
+        updateViewModeUI();
+        sections.forEach(s => s.classList.remove('docs-section-hidden'));
+        trackPills.forEach(pill => pill.classList.remove('active'));
+        if (chapterIndicator) {
+          chapterIndicator.textContent = `Full Reference Mode  •  All ${sections.length} Chapters`;
+          chapterIndicator.style.display = 'block';
+        }
+      }
+
+      if (viewModeBtn) {
+        viewModeBtn.addEventListener('click', () => {
+          if (viewMode === 'single') {
+            showAllSections();
+          } else {
+            showSection(currentSectionId, true, true);
+          }
+        });
+      }
+
+      trackPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          if (searchInput.value) searchInput.value = '';
+          filterSidebar('');
+          const firstInTrack = sections.find(s => s.dataset.track === pill.dataset.track);
+          if (firstInTrack) {
+            showSection(firstInTrack.getAttribute('id'), true, true);
+          }
         });
       });
 
-      // 2. Wrap all code blocks with Action Bar (Copy + optional Run in Playground)
+      const sidebar = document.getElementById('docs-sidebar');
+      const mobileMenuBtn = document.getElementById('btn-docs-mobile-menu');
+
+      function setMobileSidebarOpen(open) {
+        if (!sidebar || !mobileMenuBtn) return;
+        sidebar.classList.toggle('mobile-open', open);
+        mobileMenuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+          setMobileSidebarOpen(!sidebar.classList.contains('mobile-open'));
+        });
+      }
+
+      // Collapsible sidebar groups
+      groups.forEach(group => {
+        const label = group.querySelector('.docs-group-label');
+        if (!label) return;
+        label.addEventListener('click', () => {
+          group.classList.toggle('collapsed');
+        });
+      });
+
+      // Clicking a sidebar link switches cleanly to that chapter without scroll bloat
+      navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = (link.getAttribute('href') || '').replace('#', '');
+          if (sectionById[targetId]) {
+            setMobileSidebarOpen(false);
+            showSection(targetId, true, true);
+          }
+        });
+      });
+
+      // 1. Live Filter Search across link labels + section headings/content
+      function filterSidebar(rawQuery) {
+        const q = rawQuery.trim().toLowerCase();
+        if (q) setMobileSidebarOpen(true);
+        groups.forEach(group => {
+          let visibleCount = 0;
+          const links = group.querySelectorAll('.docs-item-link');
+          links.forEach(link => {
+            const targetId = (link.getAttribute('href') || '').replace('#', '');
+            const sec = sectionById[targetId];
+            const hay = (link.textContent + ' ' + (sec ? sec.textContent : '')).toLowerCase();
+            const match = !q || hay.includes(q);
+            link.style.display = match ? 'block' : 'none';
+            if (match) visibleCount++;
+          });
+          group.style.display = visibleCount > 0 ? '' : 'none';
+          if (q && visibleCount > 0) group.classList.remove('collapsed');
+        });
+      }
+
+      searchInput.addEventListener('input', (e) => {
+        filterSidebar(e.target.value);
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && document.activeElement !== searchInput && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+          e.preventDefault();
+          searchInput.focus();
+        } else if (e.key === 'Escape' && document.activeElement === searchInput) {
+          searchInput.value = '';
+          filterSidebar('');
+          searchInput.blur();
+        }
+      });
+
+      const FLOW_KEYWORDS = new Set([
+        'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
+        'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
+        'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
+        'is', 'TRUE', 'FALSE', 'NULL'
+      ]);
+
+      function escHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function highlightKuroba(code) {
+        let html = '';
+        let i = 0;
+
+        while (i < code.length) {
+          if (code[i] === '~' && code[i + 1] === '~') {
+            if (code[i + 2] === '{' && code[i + 3] === '{') {
+              let end = code.indexOf('}}', i + 4);
+              end = (end === -1) ? code.length : end + 2;
+              html += `<span style="color:#8E8299;">${escHtml(code.slice(i, end))}</span>`;
+              i = end;
+              continue;
+            }
+            let end = code.indexOf('\n', i);
+            if (end === -1) end = code.length;
+            html += `<span style="color:#8E8299;">${escHtml(code.slice(i, end))}</span>`;
+            i = end;
+            continue;
+          }
+
+          if ((code[i] === '~' && code[i + 1] === '"') || code[i] === '"') {
+            let start = i;
+            i += (code[i] === '~') ? 2 : 1;
+            while (i < code.length && code[i] !== '"') {
+              if (code[i] === '\\' && i + 1 < code.length) i += 2;
+              else i++;
+            }
+            if (i < code.length) i++;
+            html += `<span style="color:#E6D3B3;">${escHtml(code.slice(start, i))}</span>`;
+            continue;
+          }
+
+          if (code.slice(i, i + 3) === '<->') {
+            html += `<span style="color:#B3A18B;">&lt;-&gt;</span>`;
+            i += 3;
+            continue;
+          }
+
+          if (/[a-zA-Z_]/.test(code[i])) {
+            let start = i;
+            while (i < code.length && /[a-zA-Z0-9_]/.test(code[i])) i++;
+            let word = code.slice(start, i);
+
+            if (word === 'ivar' || word === 'iconst') {
+              if (code[i] === '~') {
+                let tEnd = i + 1;
+                if (code[tEnd] === '(') {
+                  while (tEnd < code.length && code[tEnd] !== ')') tEnd++;
+                  if (tEnd < code.length) tEnd++;
+                } else {
+                  while (tEnd < code.length && /[a-zA-Z0-9_<>]/.test(code[tEnd])) tEnd++;
+                }
+                word = code.slice(start, tEnd);
+                i = tEnd;
+              }
+              html += `<span style="color:#B3A18B;">${escHtml(word)}</span>`;
+              continue;
+            }
+
+            if (FLOW_KEYWORDS.has(word)) {
+              html += `<span style="color:#5AB53C;">${escHtml(word)}</span>`;
+              continue;
+            }
+
+            html += escHtml(word);
+            continue;
+          }
+
+          html += escHtml(code[i]);
+          i++;
+        }
+
+        return html;
+      }
+
+      // 2. Wrap all code blocks with Action Bar (Copy + optional Run in Playground) & Syntax Highlighting
       document.querySelectorAll('pre code').forEach((codeBlock) => {
         const pre = codeBlock.parentElement;
         const rawCode = codeBlock.textContent.trim();
@@ -1270,11 +1607,13 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
         const isRunnable = codeBlock.classList.contains('language-kuroba');
         const langLabel = isBash ? 'terminal' : (isOutput ? 'output' : 'kuroba');
 
-        // Create card container
+        if (isRunnable) {
+          codeBlock.innerHTML = highlightKuroba(rawCode);
+        }
+
         const card = document.createElement('div');
         card.className = 'doc-code-card';
 
-        // Header
         const header = document.createElement('div');
         header.className = 'doc-code-header';
 
@@ -1308,16 +1647,70 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
         header.appendChild(title);
         header.appendChild(actions);
 
-        // Replace pre with card containing header + pre
         pre.parentNode.insertBefore(card, pre);
         card.appendChild(header);
         pre.classList.add('doc-code-pre');
         card.appendChild(pre);
       });
 
-      // 3. ScrollSpy: Highlight active section in sidebar during scroll
-      const sections = document.querySelectorAll('main.docs-article-body section');
+      // 3. Chapter Prev / Next Pager + Back to Top at the bottom of each section
+      function getSectionTitle(sec) {
+        const h = sec.querySelector('h1, h2');
+        return h ? h.textContent.trim() : sec.getAttribute('id');
+      }
+
+      sections.forEach((sec, idx) => {
+        const pager = document.createElement('div');
+        pager.className = 'docs-pager';
+
+        const prevSec = idx > 0 ? sections[idx - 1] : null;
+        const nextSec = idx < sections.length - 1 ? sections[idx + 1] : null;
+
+        if (prevSec) {
+          const prevBtn = document.createElement('a');
+          prevBtn.className = 'docs-pager-btn';
+          prevBtn.href = `#${prevSec.getAttribute('id')}`;
+          prevBtn.textContent = `← ${getSectionTitle(prevSec)}`;
+          prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(prevSec.getAttribute('id'), true, true);
+          });
+          pager.appendChild(prevBtn);
+        } else {
+          pager.appendChild(document.createElement('span'));
+        }
+
+        const topBtn = document.createElement('button');
+        topBtn.className = 'docs-pager-top';
+        topBtn.type = 'button';
+        topBtn.textContent = '↑ Top';
+        topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+        pager.appendChild(topBtn);
+
+        if (nextSec) {
+          const nextBtn = document.createElement('a');
+          nextBtn.className = 'docs-pager-btn';
+          nextBtn.href = `#${nextSec.getAttribute('id')}`;
+          nextBtn.textContent = `${getSectionTitle(nextSec)} →`;
+          nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(nextSec.getAttribute('id'), true, true);
+          });
+          pager.appendChild(nextBtn);
+        } else {
+          const playLink = document.createElement('a');
+          playLink.className = 'docs-pager-btn';
+          playLink.href = 'playground.html';
+          playLink.textContent = 'Try Live Playground ▶';
+          pager.appendChild(playLink);
+        }
+
+        sec.appendChild(pager);
+      });
+
+      // 4. ScrollSpy (active only in Full Reference Mode)
       const observer = new IntersectionObserver((entries) => {
+        if (viewMode !== 'all') return;
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const id = entry.target.getAttribute('id');
@@ -1329,6 +1722,17 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
       }, { rootMargin: '-20% 0px -70% 0px' });
 
       sections.forEach(sec => observer.observe(sec));
+
+      // 5. Initialize in Single-Chapter Focus Mode (no giant scroll wall)
+      const initialHash = (window.location.hash || '').replace('#', '');
+      showSection(sectionById[initialHash] ? initialHash : 'quickstart', false, false);
+
+      window.addEventListener('hashchange', () => {
+        const targetId = (window.location.hash || '').replace('#', '');
+        if (sectionById[targetId]) {
+          showSection(targetId, true, false);
+        }
+      });
     });
   </script>
 </body>

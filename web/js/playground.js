@@ -310,13 +310,16 @@ document.addEventListener('DOMContentLoaded', () => {
     terminalScreen.scrollTop = terminalScreen.scrollHeight;
   }
 
-  function clearTerminal() {
-    if (cancelActiveInput) cancelActiveInput(true);
+  function clearTerminal(silent = false) {
+    if (!silent && cancelActiveInput) cancelActiveInput(true);
     pendingOutLine = null;
+    if (silent) {
+      terminalScreen.innerHTML = '';
+      return;
+    }
     terminalScreen.innerHTML = `
       <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.6</div>
       <div class="term-line sys">Terminal output cleared. Ready for execution.</div>
-      <div class="term-line sys">--------------------------------------------------------------------------------</div>
     `;
     timingBadge.style.display = 'none';
   }
@@ -501,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
           printTerminal(err, isException ? 'exc' : 'err');
         },
         onClear: () => {
-          clearTerminal();
+          clearTerminal(true);
         }
       });
 
@@ -548,7 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editor.focus();
   });
 
-  btnClearTerm.addEventListener('click', clearTerminal);
+  btnClearTerm.addEventListener('click', () => clearTerminal(false));
   btnRun.addEventListener('click', executeScript);
 
   editor.addEventListener('keydown', (e) => {
@@ -556,11 +559,69 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.ctrlKey && e.key === 'Enter') {
       e.preventDefault();
       executeScript();
+      return;
     }
     // Ctrl + L to Clear Terminal
     if (e.ctrlKey && e.key.toLowerCase() === 'l') {
       e.preventDefault();
-      clearTerminal();
+      clearTerminal(false);
+      return;
+    }
+    // Ctrl + / to Toggle Line Comment (~~)
+    if (e.ctrlKey && e.key === '/') {
+      e.preventDefault();
+      const val = editor.value;
+      const start = editor.selectionStart;
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      let lineEnd = val.indexOf('\n', start);
+      if (lineEnd === -1) lineEnd = val.length;
+      const line = val.slice(lineStart, lineEnd);
+      const indentMatch = line.match(/^(\s*)/);
+      const indent = indentMatch ? indentMatch[1] : '';
+      const rest = line.slice(indent.length);
+
+      let newLine;
+      let delta;
+      if (rest.startsWith('~~ ')) {
+        newLine = indent + rest.slice(3);
+        delta = -3;
+      } else if (rest.startsWith('~~')) {
+        newLine = indent + rest.slice(2);
+        delta = -2;
+      } else {
+        newLine = indent + '~~ ' + rest;
+        delta = 3;
+      }
+
+      editor.value = val.slice(0, lineStart) + newLine + val.slice(lineEnd);
+      const nextPos = Math.max(lineStart, start + delta);
+      editor.selectionStart = editor.selectionEnd = nextPos;
+      updateGutter();
+      updateCursorPosition();
+      saveWorkspace();
+      return;
+    }
+    // Smart Enter Auto-Indentation
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = editor.value;
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      const currentLine = val.slice(lineStart, start);
+      const indentMatch = currentLine.match(/^(\s*)/);
+      let indent = indentMatch ? indentMatch[1] : '';
+      const trimmed = currentLine.trim();
+      if (trimmed.endsWith('then') || trimmed.endsWith('{') || trimmed.endsWith('[')) {
+        indent += '    ';
+      }
+      const insertText = '\n' + indent;
+      editor.value = val.slice(0, start) + insertText + val.slice(end);
+      editor.selectionStart = editor.selectionEnd = start + insertText.length;
+      updateGutter();
+      updateCursorPosition();
+      saveWorkspace();
+      return;
     }
     // Tab key inserts 4 spaces
     if (e.key === 'Tab') {
@@ -584,12 +645,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const codeParam = urlParams.get('code');
 
   if (codeParam) {
-    try {
-      workspaceFiles[ENTRY_FILE] = decodeURIComponent(codeParam);
-    } catch (e) {
-      workspaceFiles[ENTRY_FILE] = codeParam;
-    }
+    // URLSearchParams.get() already performs URI decoding once
+    workspaceFiles[ENTRY_FILE] = codeParam;
     activeFile = ENTRY_FILE;
+    saveWorkspace();
+  } else if (!workspaceFiles[ENTRY_FILE] || !workspaceFiles[ENTRY_FILE].trim()) {
+    workspaceFiles[ENTRY_FILE] = [
+      '~~ Welcome to the Kuroba Web Playground!',
+      'import Std ~(Math) alias ~;',
+      '',
+      'ivar hero = "Kenji";',
+      'ivar roll = Math.random(1, 20);',
+      '',
+      'pasteLn(~"Hello {hero}! You rolled a D20: {roll}");'
+    ].join('\n');
+    saveWorkspace();
   }
 
   editor.value = workspaceFiles[activeFile] || '';

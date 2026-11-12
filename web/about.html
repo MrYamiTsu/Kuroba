@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — Kuroba</title>
+  <link rel="icon" type="image/png" href="assets/kuroba.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Header / Navigation Bar
+       ======================================================================== -->
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
+      <span class="brand-name">Kuroba</span>
+      <span class="version-badge">v1.0.6</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="docs.html" class="nav-link">Documentation</a>
+      <a href="playground.html" class="nav-link">Playground ▶</a>
+      <a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer" class="nav-link">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main class="about-container">
+    <section class="about-hero">
+      <div class="section-label">ABOUT KUROBA</div>
+      <h1>A readable language engine built from scratch.</h1>
+      <p>
+        <strong>Kuroba</strong> (literally <em>"Black Feather"</em>, abbreviated <strong>KRB</strong>) is an interpreted programming language created by <strong>MrYamiTsu</strong> in vanilla JavaScript and Node.js. It started with one clear goal: build an expressive, understandable language runtime with zero external dependencies that lets you write scripts, CLI utilities, and interactive text games comfortably.
+      </p>
+    </section>
+
+    <section class="about-grid">
+      <article class="about-card">
+        <h3>Zero Black Boxes</h3>
+        <p>
+          Kuroba ships with <code>"dependencies": {}</code> in <code>package.json</code>. Every single part of the interpreter — from raw keyboard capture (<code>copyKey()</code>) and string interpolation (<code>~"..."</code>) to multi-file module discovery and the browser runtime bundle — is transparent, readable JavaScript.
+        </p>
+      </article>
+
+      <article class="about-card">
+        <h3>Safety Without Ceremony</h3>
+        <p>
+          Infer variables rapidly with <code>ivar</code>, or lock critical invariants with strict non-nullability (<code>~(Type)</code>), runtime checks (<code>is</code>), constants (<code>iconst</code>), atomic swaps (<code>&lt;-&gt;</code>), and structured exception tables (<code>try / catch</code>).
+        </p>
+      </article>
+
+      <article class="about-card">
+        <h3>Built for Both CLI &amp; Web</h3>
+        <p>
+          The same lexer, recursive-descent parser, and evaluator run natively in Node.js (<code>krb</code> / <code>node index.js</code>) and inside your browser via <code>kuroba-web.js</code> with an asynchronous virtual terminal supporting interactive prompts and multi-file projects.
+        </p>
+      </article>
+
+      <article class="about-card">
+        <h3>Practical Metaprogramming</h3>
+        <p>
+          Native function hooks (<code>hook fn(...) then ... this(...) end</code>), first-class closures, and symbol-driven namespaces allow clean modularity and instrumentation without complicated boilerplate.
+        </p>
+      </article>
+    </section>
+
+    <section id="architecture">
+      <div class="section-label">ENGINE PIPELINE</div>
+      <h2 class="section-heading" style="margin-bottom: 0.75rem;">How Kuroba executes your code</h2>
+      <p style="color: var(--text-secondary); max-width: 720px; font-size: 0.96rem;">
+        Every <code>.krb</code> source file flows cleanly through a modular 3-stage pipeline in <code>src/</code>, backed by zero-dependency runtime natives in <code>src/runtime/</code> and Kuroba-written standard library modules in <code>lib/std/</code>:
+      </p>
+
+      <div class="about-pipeline">
+        <div class="about-stage">
+          <div class="about-stage-num">Stage 01</div>
+          <h4>Modular Lexer</h4>
+          <p>Tokenizes <code>~~</code> comments, interpolated strings (<code>~"{expr}"</code>), operators, types, and line/column metadata for diagnostics.</p>
+        </div>
+        <div class="about-stage">
+          <div class="about-stage-num">Stage 02</div>
+          <h4>Recursive Descent AST Parser</h4>
+          <p>Builds a clean AST covering expressions, control structures, typed collections, nested member assignments, namespaces, and hooks.</p>
+        </div>
+        <div class="about-stage">
+          <div class="about-stage-num">Stage 03</div>
+          <h4>Scoped AST Evaluator</h4>
+          <p>Executes lexical block frames, validates nullability and casts at runtime, resolves multi-file imports recursively, and traps errors cleanly.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-cta-box">
+      <div>
+        <h3>Open Source under MIT License</h3>
+        <p>Follow upcoming milestones like OOP Classes (<code>v1.0.7</code>), Async/Web APIs (<code>v1.0.8</code>), and the <code>App</code> 2D engine (<code>v1.0.9</code>).</p>
+      </div>
+      <div class="about-cta-actions">
+        <a href="roadmap.html" class="btn-secondary">View Roadmap</a>
+        <a href="docs.html" class="btn-secondary">Read Docs</a>
+        <a href="playground.html" class="btn-primary">Open Playground ▶</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-row">
+            <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
+            <span class="footer-brand-name">Kuroba</span>
+            <span class="version-badge">v1.0.6</span>
+          </div>
+          <p class="footer-tagline">
+            A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Language</div>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="docs.html">Documentation</a></li>
+            <li><a href="playground.html">Web Playground</a></li>
+            <li><a href="docs.html#std-math">Standard Library</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Project</div>
+          <ul class="footer-links">
+            <li><a href="about.html">About Kuroba</a></li>
+            <li><a href="roadmap.html">Roadmap</a></li>
+            <li><a href="about.html#architecture">Architecture</a></li>
+            <li><a href="docs.html#errors">Error Diagnostics</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Community</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer">GitHub Repository ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/issues" target="_blank" rel="noopener noreferrer">Report an Issue ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/releases" target="_blank" rel="noopener noreferrer">Releases ↗</a></li>
+            <li><a href="https://github.com/MrYamiTsu/Kuroba/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License ↗</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
+        <span class="footer-bottom-meta">Pure JS AST Engine • Zero npm Dependencies</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
