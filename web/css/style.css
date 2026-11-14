@@ -11,37 +11,40 @@
    ============================================================================ */
 
 :root {
-  /* 5 Official Palette Colors */
-  --sand: #B3A18B;
-  --plum-dark: #181424;
-  --moss-green: #3D7A29;
-  --plum-mid: #1D182B;
-  --forest-deep: #083305;
+  /* 5 Official Palette Colors (Calibrated for high readability on low-brightness displays) */
+  --sand: #C9B8A3;
+  --plum-dark: #1F1A2E;
+  --moss-green: #488F31;
+  --plum-mid: #27203A;
+  --forest-deep: #0D3E09;
 
   /* Surfaces & Backgrounds */
   --bg-body: var(--plum-dark);
   --bg-surface: var(--plum-mid);
-  --bg-surface-raised: #241D35;
+  --bg-surface-raised: #31284A;
   --bg-code: var(--forest-deep);
-  --bg-code-header: #052203;
+  --bg-code-header: #0A3207;
+
+  /* Cards & Modals */
+  --plum-card: #251F37;
 
   /* Borders */
-  --border-subtle: #2B233D;
-  --border-strong: #3F3359;
+  --border-subtle: #3D3358;
+  --border-strong: #57487C;
   --border-moss: var(--moss-green);
-  --border-code: #144011;
+  --border-code: #1E5C19;
 
   /* Typography & Colors */
-  --text-primary: #F4EFEA;
-  --text-secondary: #CFC6B8;
-  --text-muted: #8E8299;
+  --text-primary: #FAF6F2;
+  --text-secondary: #DDD4C7;
+  --text-muted: #A396B3;
   --text-sand: var(--sand);
-  --text-moss: #5AB53C;
+  --text-moss: #68CD46;
 
   /* Actions */
   --action-btn: var(--moss-green);
-  --action-hover: #488F31;
-  --action-active: #2F601F;
+  --action-hover: #54A33A;
+  --action-active: #387525;
 
   /* Fonts */
   --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -1189,7 +1192,7 @@ nav.main-nav {
 
 .ide-file-tab:hover {
   color: var(--text-primary);
-  background: #1D182B;
+  background: var(--plum-mid);
 }
 
 .ide-file-tab.active {
@@ -1262,7 +1265,7 @@ nav.main-nav {
 
 .ide-add-file-btn:hover {
   border-color: var(--moss-green);
-  background: #1D182B;
+  background: var(--plum-mid);
   color: var(--text-primary);
 }
 
@@ -1361,15 +1364,15 @@ nav.main-nav {
 }
 
 .term-line.sys {
-  color: #8E8299;
+  color: var(--text-muted);
 }
 
 .term-line.out {
-  color: #F4EFEA;
+  color: var(--text-primary);
 }
 
 .term-line.ok {
-  color: #5AB53C;
+  color: var(--text-moss);
   font-weight: 600;
 }
 
@@ -1931,6 +1934,59 @@ nav.main-nav {
 
 .roadmap-subnote strong {
   color: var(--text-sand);
+}
+
+/* ============================================================================
+   Update Log / Changelog Enhancements (updates.html)
+   ============================================================================ */
+.log-release-date {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.log-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.75rem 0 0.9rem;
+}
+
+.log-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.18rem 0.55rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.log-tag.feat {
+  background: rgba(90, 181, 60, 0.18);
+  color: #8CD86E;
+  border: 1px solid rgba(90, 181, 60, 0.45);
+}
+
+.log-tag.fix {
+  background: rgba(220, 90, 90, 0.16);
+  color: #FF8F87;
+  border: 1px solid rgba(220, 90, 90, 0.4);
+}
+
+.log-tag.perf {
+  background: rgba(210, 153, 34, 0.16);
+  color: #F0C35B;
+  border: 1px solid rgba(210, 153, 34, 0.35);
+}
+
+.log-tag.syntax {
+  background: rgba(120, 170, 255, 0.15);
+  color: #89C7FF;
+  border: 1px solid rgba(120, 170, 255, 0.35);
 }
 
 /* ============================================================================

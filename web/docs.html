@@ -19,14 +19,13 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.6</span>
+      <span class="version-badge">v1.0.7</span>
     </a>
 
     <nav class="main-nav">
       <a href="index.html" class="nav-link">Home</a>
       <a href="docs.html" class="nav-link active">Documentation</a>
       <a href="playground.html" class="nav-link">Playground ▶</a>
-      <a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer" class="nav-link">GitHub ↗</a>
     </nav>
   </header>
 
@@ -1384,7 +1383,7 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
           <div class="footer-col-title">Project</div>
           <ul class="footer-links">
             <li><a href="about.html">About Kuroba</a></li>
-            <li><a href="roadmap.html">Roadmap</a></li>
+            <li><a href="updates.html">Update Log</a></li>
             <li><a href="about.html#architecture">Architecture</a></li>
             <li><a href="docs.html#errors">Error Diagnostics</a></li>
           </ul>
@@ -1625,13 +1624,13 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
             if (code[i + 2] === '{' && code[i + 3] === '{') {
               let end = code.indexOf('}}', i + 4);
               end = (end === -1) ? code.length : end + 2;
-              html += `<span style="color:#8E8299;">${escHtml(code.slice(i, end))}</span>`;
+              html += `<span style="color:#A396B3;">${escHtml(code.slice(i, end))}</span>`;
               i = end;
               continue;
             }
             let end = code.indexOf('\n', i);
             if (end === -1) end = code.length;
-            html += `<span style="color:#8E8299;">${escHtml(code.slice(i, end))}</span>`;
+            html += `<span style="color:#A396B3;">${escHtml(code.slice(i, end))}</span>`;
             i = end;
             continue;
           }
@@ -1649,7 +1648,7 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
           }
 
           if (code.slice(i, i + 3) === '<->') {
-            html += `<span style="color:#B3A18B;">&lt;-&gt;</span>`;
+            html += `<span style="color:#C9B8A3;">&lt;-&gt;</span>`;
             i += 3;
             continue;
           }
@@ -1671,12 +1670,12 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
                 word = code.slice(start, tEnd);
                 i = tEnd;
               }
-              html += `<span style="color:#B3A18B;">${escHtml(word)}</span>`;
+              html += `<span style="color:#C9B8A3;">${escHtml(word)}</span>`;
               continue;
             }
 
             if (FLOW_KEYWORDS.has(word)) {
-              html += `<span style="color:#5AB53C;">${escHtml(word)}</span>`;
+              html += `<span style="color:#68CD46; font-weight:600;">${escHtml(word)}</span>`;
               continue;
             }
 

@@ -19,14 +19,13 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.6</span>
+      <span class="version-badge">v1.0.7</span>
     </a>
 
     <nav class="main-nav">
       <a href="index.html" class="nav-link active">Home</a>
       <a href="docs.html" class="nav-link">Documentation</a>
-      <a href="playground.html" class="nav-link cta-btn">Playground ▶</a>
-      <a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer" class="nav-link">GitHub ↗</a>
+      <a href="playground.html" class="nav-link">Playground ▶</a>
     </nav>
   </header>
 
@@ -39,12 +38,12 @@
         <div class="hero-badges">
           <span class="arch-badge"><span class="badge-dot"></span>Zero Dependencies</span>
           <span class="arch-badge"><span class="badge-dot"></span>Pure Node.js</span>
-          <span class="arch-badge"><span class="badge-dot"></span>Hybrid Typing</span>
+          <span class="arch-badge"><span class="badge-dot"></span>OOP &amp; Functional</span>
         </div>
 
         <h1 class="hero-title">Write scripts, tools, and games with zero dependencies.</h1>
         <p class="hero-lead">
-          Kuroba is an interpreted language built from scratch in Node.js with no external packages or build step. It combines readable <code>then ... end</code> blocks, optional type enforcement, atomic variable swaps, and built-in function hooks.
+          Kuroba is an interpreted language built from scratch in Node.js with no external packages or build steps. It combines readable <code>then ... end</code> blocks, object-oriented classes with C#-style constructors, optional type enforcement, atomic swaps, and native function hooks.
         </p>
 
         <div class="hero-actions">
@@ -65,7 +64,7 @@
             <button id="btn-hero-prev" class="hero-nav-btn" title="Previous snippet" aria-label="Previous snippet">&lsaquo;</button>
             <button id="btn-hero-next" class="hero-nav-btn" title="Next snippet" aria-label="Next snippet">&rsaquo;</button>
             <div class="hero-code-title-wrap">
-              <span id="hero-code-index" class="hero-code-index">01/12</span>
+              <span id="hero-code-index" class="hero-code-index">01/13</span>
               <span id="hero-code-title" class="hero-code-title">Hello, Kuroba!</span>
             </div>
           </div>
@@ -134,6 +133,16 @@ end</code></pre>
         <pre><code>import Std ~(Math, Time, String, IO) alias ~;
 namespace Main then ... end</code></pre>
       </div>
+
+      <div class="pillar-card">
+        <h3>7. Classes &amp; Encapsulation</h3>
+        <p>Declarative OOP structured over Tables. C#-style constructors without <code>new</code>, automatic default constructors, <code>public</code> / <code>private</code> visibility guards, and the runtime <code>is</code> operator.</p>
+        <pre><code>class Hero then
+    public ivar name = "Kenji";
+    private ivar hp = 100;
+end
+ivar h = Hero(); ~~ h is Hero -&gt; TRUE</code></pre>
+      </div>
     </div>
   </section>
 
@@ -184,6 +193,21 @@ namespace Main then ... end</code></pre>
           <td>Built-in collections with <code>.push()</code>, <code>.pop()</code>, <code>.peek()</code>, <code>.count()</code>, and dot-access fields.</td>
         </tr>
         <tr>
+          <td><strong>Classes &amp; OOP</strong></td>
+          <td><code>class Name then ... end</code></td>
+          <td>C#-style constructors, <code>public</code>/<code>private</code> fields, <code>this</code> method binding, and no <code>new</code> keyword required.</td>
+        </tr>
+        <tr>
+          <td><strong>Type Verification</strong></td>
+          <td><code>val is Type</code></td>
+          <td>Runtime type checking across primitives, nullables, collections, and classes (e.g. <code>p is Player</code>).</td>
+        </tr>
+        <tr>
+          <td><strong>Exception Handling</strong></td>
+          <td><code>try ... catch (ivar e) ... finally ... end</code></td>
+          <td>Structured exception safety with rich error metadata tables (<code>exName</code>, <code>exContext</code>).</td>
+        </tr>
+        <tr>
           <td><strong>Memory Lifecycle</strong></td>
           <td><code>kill variable;</code></td>
           <td>Removes a variable from memory and its active lexical scope.</td>
@@ -207,7 +231,7 @@ namespace Main then ... end</code></pre>
           <div class="footer-brand-row">
             <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
             <span class="footer-brand-name">Kuroba</span>
-            <span class="version-badge">v1.0.6</span>
+            <span class="version-badge">v1.0.7</span>
           </div>
           <p class="footer-tagline">
             A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
@@ -228,7 +252,7 @@ namespace Main then ... end</code></pre>
           <div class="footer-col-title">Project</div>
           <ul class="footer-links">
             <li><a href="about.html">About Kuroba</a></li>
-            <li><a href="roadmap.html">Roadmap</a></li>
+            <li><a href="updates.html">Update Log</a></li>
             <li><a href="about.html#architecture">Architecture</a></li>
             <li><a href="docs.html#errors">Error Diagnostics</a></li>
           </ul>
@@ -337,6 +361,29 @@ pasteLn(~"{hero.name} HP: {hero.hp}");`,
           output: 'Kenji HP: 85'
         },
         {
+          title: 'Classes & OOP',
+          raw: `~~ Classes with C#-style constructors
+class Player then
+    public ivar name = "Hero";
+    private ivar hp = 100;
+
+    function Player(ivar name, ivar hp) then
+        this.name = name;
+        this.hp = hp;
+    end
+
+    function takeDamage(ivar dmg) then
+        this.hp -= dmg;
+        pasteLn(~"{this.name} took {dmg} dmg! (HP: {this.hp})");
+    end
+end
+
+ivar p = Player("John", 80);
+p.takeDamage(25);
+pasteLn(~"Is Player? {p is Player}");`,
+          output: 'John took 25 dmg! (HP: 55)\nIs Player? true'
+        },
+        {
           title: 'Closures & Lambdas',
           raw: `~~ First-class anonymous functions (~)
 function makeMultiplier(ivar factor) then
@@ -414,7 +461,7 @@ pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
           if (code[i] === '~' && code[i + 1] === '~') {
             let end = code.indexOf('\n', i);
             if (end === -1) end = code.length;
-            html += `<span style="color:#8E8299;">${escHtml(code.slice(i, end))}</span>`;
+            html += `<span style="color:#A396B3;">${escHtml(code.slice(i, end))}</span>`;
             i = end;
             continue;
           }
@@ -429,7 +476,7 @@ pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
           }
 
           if (code.slice(i, i + 3) === '<->') {
-            html += `<span style="color:#B3A18B;">&lt;-&gt;</span>`;
+            html += `<span style="color:#C9B8A3;">&lt;-&gt;</span>`;
             i += 3;
             continue;
           }
@@ -451,12 +498,12 @@ pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
                 word = code.slice(start, tEnd);
                 i = tEnd;
               }
-              html += `<span style="color:#B3A18B;">${escHtml(word)}</span>`;
+              html += `<span style="color:#C9B8A3;">${escHtml(word)}</span>`;
               continue;
             }
 
             if (FLOW_KEYWORDS.has(word)) {
-              html += `<span style="color:#5AB53C;">${escHtml(word)}</span>`;
+              html += `<span style="color:#68CD46; font-weight:600;">${escHtml(word)}</span>`;
               continue;
             }
 

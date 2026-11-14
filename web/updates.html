@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Log — Kuroba</title>
+  <link rel="icon" type="image/png" href="assets/kuroba.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Header / Navigation Bar
+       ======================================================================== -->
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
+      <span class="brand-name">Kuroba</span>
+      <span class="version-badge">v1.0.7</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="docs.html" class="nav-link">Documentation</a>
+      <a href="playground.html" class="nav-link">Playground ▶</a>
+    </nav>
+  </header>
+
+  <main class="roadmap-container">
+    <div class="roadmap-hero">
+      <div class="section-label">RELEASE TIMELINE &amp; ENGINE LOG</div>
+      <h1>Kuroba Update Log</h1>
+      <p class="roadmap-hero-lead">
+        Chronological release history and engine changelog. Every syntax addition, runtime enhancement, and bug fix documented directly from the codebase.
+      </p>
+    </div>
+
+    <!-- Live Release Summary Card -->
+    <section class="roadmap-overview-card" aria-label="Release Statistics">
+      <div class="roadmap-stats-row">
+        <div class="roadmap-stat-group">
+          <div class="roadmap-stat-item">
+            <span class="roadmap-stat-value moss">v1.0.7</span>
+            <span class="roadmap-stat-label">Current Version</span>
+          </div>
+          <div class="roadmap-stat-item">
+            <span class="roadmap-stat-value">8 Releases</span>
+            <span class="roadmap-stat-label">Shipped Cycles</span>
+          </div>
+          <div class="roadmap-stat-item">
+            <span class="roadmap-stat-value sand">Zero Deps</span>
+            <span class="roadmap-stat-label">Self-Contained Engine</span>
+          </div>
+          <div class="roadmap-stat-item">
+            <span class="roadmap-stat-value">Web + CLI</span>
+            <span class="roadmap-stat-label">Dual Runtime Target</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter Controls -->
+    <div class="roadmap-controls">
+      <div class="roadmap-filters" role="group" aria-label="Filter update releases">
+        <button class="roadmap-filter-btn active" data-filter="all">All Releases</button>
+        <button class="roadmap-filter-btn" data-filter="v107">v1.0.7 (Latest)</button>
+        <button class="roadmap-filter-btn" data-filter="v106">v1.0.6</button>
+        <button class="roadmap-filter-btn" data-filter="v105">v1.0.5</button>
+        <button class="roadmap-filter-btn" data-filter="legacy">v1.0.0 – v1.0.4</button>
+      </div>
+      <button id="btn-toggle-completed" class="roadmap-toggle-completed">Expand All Logs</button>
+    </div>
+
+    <!-- Release Cards List (Newest to Oldest) -->
+    <div class="roadmap-list">
+
+      <!-- ====================================================================
+           v1.0.7 : Object-Oriented Classes & Ergonomics (Latest)
+           ==================================================================== -->
+      <article class="roadmap-card is-active" data-version="v107">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.7</span>
+            <span class="roadmap-card-title">Object-Oriented Programming, Encapsulation &amp; Language Ergonomics</span>
+            <span class="roadmap-status-badge active">LATEST RELEASE</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">November 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag feat">★ Classes &amp; OOP</span>
+            <span class="log-tag syntax">C#-Style Constructors</span>
+            <span class="log-tag feat">public / private</span>
+            <span class="log-tag feat">is Operator</span>
+            <span class="log-tag syntax">Multi-Var Declarations</span>
+            <span class="log-tag syntax">Default Params</span>
+            <span class="log-tag fix">Nested Member Assignments</span>
+            <span class="log-tag fix">Browser CWD Guard</span>
+          </div>
+
+          <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
+            A landmark release introducing Kuroba's declarative Object-Oriented model layered cleanly on top of structured Tables. Developers gain first-class classes without verbose boilerplate: direct C#-style constructors without a <code>new</code> keyword, field encapsulation, method binding via <code>this</code>, and runtime type verification with <code>is</code>.
+          </p>
+
+          <ul class="roadmap-items">
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Class Declarations:</strong> <code>class Name then ... end</code> with public and private fields.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>C#-Style Constructors:</strong> Function matching class name invoked directly (e.g. <code>ivar hero = Hero("Kenji", 100);</code>).</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Parameterless Default Constructor:</strong> Automatic zero-argument constructor fallback when no custom constructor is declared.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Member Encapsulation:</strong> <code>private ivar</code> fields restricted to the class's own methods; external reads/writes throw <code>[TypeError]</code>.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Instance Reference <code>this</code>:</strong> Dynamic binding for field/method access with root immutability guard.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Type Operator <code>is</code>:</strong> Full runtime verification across primitives, nullable types, collections, and classes (<code>hero is Hero</code>, <code>hero is Table</code>).</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Trailing Multi-Var Propagation:</strong> <code>ivar a, b = 1, 2;</code> and <code>ivar c, d = 4;</code> (both receive 4).</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Default Parameter Values:</strong> <code>function f(ivar a, ivar b = 10)</code> evaluated fresh per call.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Deep Nested Assignments:</strong> Arbitrarily nested assignment paths supported (<code>game.players[0].inventory[1].qty += 5;</code>).</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Recursive Module Imports:</strong> Multi-file CLI imports with circular dependency cycle guards.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Browser Engine Guard:</strong> Rebundled <code>kuroba-web.js</code> with safe browser environment detection.</span>
+            </li>
+          </ul>
+
+          <pre><code class="language-kuroba" data-title="classes_demo.krb">class Character then
+    public ivar name = "Warrior";
+    private ivar _energy = 100;
+
+    function Character(ivar name, ivar energy) then
+        this.name = name;
+        this._energy = energy;
+    end
+
+    function useSkill(ivar cost) then
+        if (this._energy &lt; cost) then
+            pasteLn(~"[{this.name}] Not enough energy!");
+            return FALSE;
+        end
+        this._energy -= cost;
+        pasteLn(~"[{this.name}] Cast skill! Energy left: {this._energy}");
+        return TRUE;
+    end
+end
+
+ivar hero = Character("Kenji", 80);
+hero.useSkill(25);
+pasteLn(hero is Character); ~~ TRUE
+pasteLn(hero is Table);     ~~ TRUE</code></pre>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           v1.0.6 : Structured Exceptions & Unified Patterns
+           ==================================================================== -->
+      <article class="roadmap-card" data-version="v106">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.6</span>
+            <span class="roadmap-card-title">Structured Exceptions, Recursion Guard &amp; Web Playground</span>
+            <span class="roadmap-status-badge completed">SHIPPED</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">November 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag feat">try / catch / finally</span>
+            <span class="log-tag feat">throw</span>
+            <span class="log-tag fix">512 Recursion Guard</span>
+            <span class="log-tag syntax">Unified given / case</span>
+            <span class="log-tag feat">Web IDE &amp; Playground</span>
+          </div>
+
+          <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
+            Introduced mission-critical resilience with structured exception handling, a 512-frame call stack guard against runaway infinite loops, unified pattern matching semantics, and the official interactive in-browser playground.
+          </p>
+
+          <ul class="roadmap-items">
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Structured Exception Handling:</strong> <code>try</code>, <code>catch (ivar err)</code>, <code>finally</code>, and <code>end</code> block scoping.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Rich Exception Tables:</strong> <code>throw</code> emits tables with <code>exName</code>, <code>exCode</code>, <code>exContext</code>, <code>exTime</code>, and <code>exLines</code>.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Infinite Recursion Guard:</strong> Hard limit of 512 recursive call frames throwing descriptive <code>[RecursionError]</code>.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Unified Pattern Matching:</strong> <code>given</code> statement supporting both <code>case &lt;val&gt; then</code> and fallback <code>case ~ then</code>.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Official Web IDE:</strong> Multi-file tabs, virtual terminal, smart auto-indentation, and URL code sharing.</span>
+            </li>
+          </ul>
+
+          <pre><code class="language-kuroba" data-title="exceptions_demo.krb">import Std ~(Time) alias ~;
+
+ivar balance = 50;
+ivar amount = 120;
+
+try
+    if (balance &lt; amount) then
+        throw {
+            exName: "InsufficientFunds",
+            exCode: 402,
+            exContext: "Checkout",
+            exTime: Time.now()
+        };
+    end
+catch (ivar err) then
+    pasteLn(~"Caught error: {err.exName} (Code {err.exCode})");
+finally
+    pasteLn("Audit complete.");
+end</code></pre>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           v1.0.5 : Standard Library & Modular Namespaces
+           ==================================================================== -->
+      <article class="roadmap-card" data-version="v105">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.5</span>
+            <span class="roadmap-card-title">Standard Library Modules, Namespaces &amp; String Interpolation</span>
+            <span class="roadmap-status-badge completed">SHIPPED</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">November 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag feat">Std.Math</span>
+            <span class="log-tag feat">Std.Time</span>
+            <span class="log-tag feat">Std.String</span>
+            <span class="log-tag feat">Std.IO</span>
+            <span class="log-tag syntax">namespace Main / Std</span>
+            <span class="log-tag syntax">String Interpolation ~"..."</span>
+            <span class="log-tag feat">String Indexing</span>
+          </div>
+
+          <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
+            Standardized Kuroba's modular library ecosystem with four built-in modules, full string manipulation capabilities, string interpolation syntax, and symbol discovery.
+          </p>
+
+          <ul class="roadmap-items">
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Std.Math Module:</strong> Constants <code>PI</code>, <code>TAU</code>, <code>E</code> and functions <code>random</code>, <code>sqrt</code>, <code>sin</code>, <code>clamp</code>, <code>dist</code>, etc.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Std.Time Module:</strong> High-resolution timers, <code>sleep(ms)</code>, timestamps, and clock benchmarks.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Std.String Module:</strong> Transformation primitives: <code>split</code>, <code>join</code>, <code>trim</code>, <code>upper</code>, <code>lower</code>, <code>replace</code>.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Std.IO Module:</strong> Synchronous file operations: <code>fileCopy</code>, <code>filePaste</code>, <code>filePasteLn</code>, <code>fileExists</code>, <code>fileKill</code>.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>String Interpolation:</strong> <code>~"Value is {val + 1}"</code> with expression evaluation inside curly braces.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>String Subscripts &amp; Count:</strong> Zero-indexed read access (<code>str[i]</code>) and <code>str.count()</code> method.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Modular Namespaces:</strong> <code>namespace Std ~Module then ... end</code> and <code>import Std ~(Math) alias ~;</code>.</span>
+            </li>
+          </ul>
+
+          <pre><code class="language-kuroba" data-title="stdlib_demo.krb">import Std ~(Math, Time) alias ~;
+
+ivar roll = Math.random(1, 20);
+ivar hero = "Kenji";
+pasteLn(~"Adventurer {hero} rolled a {roll} on the D20!");</code></pre>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           v1.0.4 : Interactive REPL & Table Dot Notation
+           ==================================================================== -->
+      <article class="roadmap-card collapsed" data-version="legacy">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.4</span>
+            <span class="roadmap-card-title">Interactive REPL Shell &amp; Strict Table Dot-Notation</span>
+            <span class="roadmap-status-badge completed">SHIPPED</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">November 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag feat">REPL Shell (krb)</span>
+            <span class="log-tag feat">table.prop</span>
+            <span class="log-tag syntax">CLI Args</span>
+          </div>
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Interactive REPL:</strong> Run <code>krb</code> with zero arguments for an interactive readline shell.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>CLI Arguments:</strong> Accessed via <code>args</code> list and <code>Std.Sys.args</code>.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Table Dot-Notation:</strong> Enforced <code>table.field</code> notation over ambiguous bracket indexing.</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           v1.0.3 : Memory Management & Higher-Order Hooks
+           ==================================================================== -->
+      <article class="roadmap-card collapsed" data-version="legacy">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.3</span>
+            <span class="roadmap-card-title">Explicit Memory Control, First-Class Functions &amp; Interceptor Hooks</span>
+            <span class="roadmap-status-badge completed">SHIPPED</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">November 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag feat">kill Statement</span>
+            <span class="log-tag syntax">function ~(...)</span>
+            <span class="log-tag feat">hook Statement</span>
+            <span class="log-tag syntax">Multi-File Imports</span>
+          </div>
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Memory Deallocation:</strong> <code>kill variable;</code> removes identifiers and frees resources immediately.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>First-Class Functions:</strong> Passing and returning functions, plus anonymous lambdas (<code>function ~(x) then return x * 2; end;</code>).</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Native Hooks:</strong> Dynamic function interception using <code>hook name(...) then return this(...); end</code>.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Collections Engine:</strong> Native <code>List</code>, <code>Stack</code> (LIFO), <code>Queue</code> (FIFO), and <code>Table</code> (Key-Value map).</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           v1.0.2 : Console I/O, Loops & Compound Operators
+           ==================================================================== -->
+      <article class="roadmap-card collapsed" data-version="legacy">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.2</span>
+            <span class="roadmap-card-title">Console I/O Primitives, Control Flow &amp; Compound Operators</span>
+            <span class="roadmap-status-badge completed">SHIPPED</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">November 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag feat">paste / pasteLn</span>
+            <span class="log-tag feat">copy / copyKey</span>
+            <span class="log-tag syntax">for / while / do</span>
+            <span class="log-tag syntax">+= -= *= /= %=</span>
+          </div>
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Console Output:</strong> <code>paste(val)</code> and <code>pasteLn(val)</code>.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Keyboard Input:</strong> Line input with <code>copy(prompt)</code> and raw single-keypress capture with <code>copyKey()</code>.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Structured Loops:</strong> <code>for (ivar i in list)</code>, <code>while (cond)</code>, <code>do ... while (cond)</code> with <code>break;</code> and <code>skip;</code>.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Compound Operators:</strong> <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code>, <code>++</code>, <code>--</code>.</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           v1.0.1 : Types, Safety & Swap Operator
+           ==================================================================== -->
+      <article class="roadmap-card collapsed" data-version="legacy">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.1</span>
+            <span class="roadmap-card-title">Fundamental Data Types, Transtyping &amp; Swap Operator</span>
+            <span class="roadmap-status-badge completed">SHIPPED</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">October 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag syntax">&lt;-&gt; Swap</span>
+            <span class="log-tag feat">Strict Non-Nullability</span>
+            <span class="log-tag syntax">Dynamic Transtyping</span>
+          </div>
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Atomic Swap Operator:</strong> <code>a &lt;-&gt; b;</code> for instant variable value exchange without temporary variables.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Strict Types:</strong> Distinct <code>Int</code> and <code>Float</code> representation, <code>NULL</code>, and non-nullable declarations <code>~(Type)</code>.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Transtyping:</strong> Explicit runtime coercion via <code>v~Type = newValue;</code>.</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           v1.0.0 : Core Engine Foundation
+           ==================================================================== -->
+      <article class="roadmap-card collapsed" data-version="legacy">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.0</span>
+            <span class="roadmap-card-title">Core Engine Foundation &amp; Grammar Genesis</span>
+            <span class="roadmap-status-badge completed">SHIPPED</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">October 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag feat">Recursive Descent Parser</span>
+            <span class="log-tag syntax">ivar / iconst</span>
+            <span class="log-tag syntax">then ... end</span>
+            <span class="log-tag syntax">Feather Comments ~~</span>
+          </div>
+          <ul class="roadmap-items">
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Zero-Dependency AST Engine:</strong> Handcrafted lexer, recursive descent parser, and AST evaluator in pure JavaScript.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Variables:</strong> Inferred variables with <code>ivar</code> and immutable constants with <code>iconst</code>.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Block Delimiters:</strong> Explicit readable block scope with <code>then ... end</code>.</span></li>
+            <li class="roadmap-item done"><span class="roadmap-check">✓</span><span><strong>Raven Comments:</strong> Single-line <code>~~ ...</code> and multi-line block comments <code>~~{{ ... }}</code>.</span></li>
+          </ul>
+        </div>
+      </article>
+
+    </div>
+  </main>
+
+  <!-- ========================================================================
+       Footer
+       ======================================================================== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-col brand-col">
+        <div class="footer-brand">
+          <img src="assets/kuroba.png" alt="Kuroba Logo" class="footer-logo">
+          <span class="brand-name">Kuroba</span>
+        </div>
+        <p class="footer-tagline">
+          The raven-feather programming language. Zero-dependency interpreted runtime for high-performance terminal games, embedded logic, and interactive systems.
+        </p>
+        <div class="footer-version">Active Core: v1.0.7 (OOP Edition)</div>
+      </div>
+
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="docs.html">Documentation</a></li>
+          <li><a href="playground.html">Playground</a></li>
+          <li><a href="updates.html">Update Log</a></li>
+          <li><a href="about.html">About Kuroba</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Ecosystem</h4>
+        <ul>
+          <li><a href="https://github.com/MrYamiTsu/Kuroba" target="_blank" rel="noopener noreferrer">GitHub Repository ↗</a></li>
+          <li><a href="https://github.com/MrYamiTsu/Kuroba/releases" target="_blank" rel="noopener noreferrer">Releases &amp; Tags ↗</a></li>
+          <li><a href="https://github.com/MrYamiTsu/Kuroba/issues" target="_blank" rel="noopener noreferrer">Issue Tracker ↗</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>Designed &amp; Architected by MrYamiTsu &bull; Kuroba Open Source Project</span>
+      <span class="footer-mono">Pure Node.js &bull; Zero External Dependencies</span>
+    </div>
+  </footer>
+
+  <!-- ========================================================================
+       Interactivity Script (Syntax Highlighting, Code Cards, Filters & Accordion)
+       ======================================================================== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Unified Kuroba Syntax Highlighting
+      const FLOW_KEYWORDS = new Set([
+        'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
+        'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
+        'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
+        'class', 'public', 'private',
+        'is', 'TRUE', 'FALSE', 'NULL'
+      ]);
+
+      function escHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function highlightKuroba(code) {
+        let html = '';
+        let i = 0;
+
+        while (i < code.length) {
+          if (code[i] === '~' && code[i + 1] === '~') {
+            if (code[i + 2] === '{' && code[i + 3] === '{') {
+              let end = code.indexOf('}}', i + 4);
+              end = (end === -1) ? code.length : end + 2;
+              html += `<span style="color:#A396B3;">${escHtml(code.slice(i, end))}</span>`;
+              i = end;
+              continue;
+            }
+            let end = code.indexOf('\n', i);
+            if (end === -1) end = code.length;
+            html += `<span style="color:#A396B3;">${escHtml(code.slice(i, end))}</span>`;
+            i = end;
+            continue;
+          }
+
+          if ((code[i] === '~' && code[i + 1] === '"') || code[i] === '"') {
+            let start = i;
+            i += (code[i] === '~') ? 2 : 1;
+            while (i < code.length && code[i] !== '"') {
+              if (code[i] === '\\' && i + 1 < code.length) i += 2;
+              else i++;
+            }
+            if (i < code.length) i++;
+            html += `<span style="color:#E6D3B3;">${escHtml(code.slice(start, i))}</span>`;
+            continue;
+          }
+
+          if (code.slice(i, i + 3) === '<->') {
+            html += `<span style="color:#C9B8A3;">&lt;-&gt;</span>`;
+            i += 3;
+            continue;
+          }
+
+          if (/[a-zA-Z_]/.test(code[i])) {
+            let start = i;
+            while (i < code.length && /[a-zA-Z0-9_]/.test(code[i])) i++;
+            let word = code.slice(start, i);
+
+            if (word === 'ivar' || word === 'iconst') {
+              if (code[i] === '~') {
+                let tEnd = i + 1;
+                if (code[tEnd] === '(') {
+                  while (tEnd < code.length && code[tEnd] !== ')') tEnd++;
+                  if (tEnd < code.length) tEnd++;
+                } else {
+                  while (tEnd < code.length && /[a-zA-Z0-9_<>]/.test(code[tEnd])) tEnd++;
+                }
+                word = code.slice(start, tEnd);
+                i = tEnd;
+              }
+              html += `<span style="color:#C9B8A3;">${escHtml(word)}</span>`;
+              continue;
+            }
+
+            if (FLOW_KEYWORDS.has(word)) {
+              html += `<span style="color:#68CD46; font-weight:600;">${escHtml(word)}</span>`;
+              continue;
+            }
+
+            html += escHtml(word);
+            continue;
+          }
+
+          html += escHtml(code[i]);
+          i++;
+        }
+
+        return html;
+      }
+
+      // 2. Wrap all code blocks into harmonious .doc-code-card containers
+      document.querySelectorAll('pre code').forEach((codeBlock) => {
+        const rawCode = codeBlock.textContent.trim();
+        const pre = codeBlock.parentElement;
+        const customTitle = codeBlock.dataset.title || 'kuroba';
+
+        codeBlock.innerHTML = highlightKuroba(rawCode);
+
+        const card = document.createElement('div');
+        card.className = 'doc-code-card';
+        card.style.margin = '1rem 0 0.5rem';
+
+        const header = document.createElement('div');
+        header.className = 'doc-code-header';
+
+        const title = document.createElement('div');
+        title.className = 'doc-code-title';
+        title.innerHTML = `<span class="badge-dot"></span><span>${customTitle}</span>`;
+
+        const actions = document.createElement('div');
+        actions.className = 'doc-code-actions';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'doc-btn-copy';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(rawCode).then(() => {
+            copyBtn.textContent = '✓ Copied';
+            setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1800);
+          });
+        });
+
+        const runLink = document.createElement('a');
+        runLink.className = 'doc-btn-run';
+        runLink.textContent = 'Run in Playground ▶';
+        runLink.href = `playground.html?code=${encodeURIComponent(rawCode)}`;
+
+        actions.appendChild(copyBtn);
+        actions.appendChild(runLink);
+
+        header.appendChild(title);
+        header.appendChild(actions);
+
+        pre.classList.add('doc-code-pre');
+        pre.parentNode.insertBefore(card, pre);
+        card.appendChild(header);
+        card.appendChild(pre);
+      });
+
+      // 3. Card Header Click Toggle (Accordion)
+      const cards = Array.from(document.querySelectorAll('.roadmap-card'));
+      const filterBtns = document.querySelectorAll('.roadmap-filter-btn');
+      const toggleAllBtn = document.getElementById('btn-toggle-completed');
+
+      // Card Header Click Toggle (Accordion)
+      cards.forEach(card => {
+        const header = card.querySelector('.roadmap-card-header');
+        header.addEventListener('click', () => {
+          card.classList.toggle('collapsed');
+        });
+      });
+
+      // Filter Buttons
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.dataset.filter;
+
+          cards.forEach(card => {
+            const v = card.dataset.version;
+            if (filter === 'all') {
+              card.style.display = 'block';
+            } else if (filter === 'v107' && v === 'v107') {
+              card.style.display = 'block';
+            } else if (filter === 'v106' && v === 'v106') {
+              card.style.display = 'block';
+            } else if (filter === 'v105' && v === 'v105') {
+              card.style.display = 'block';
+            } else if (filter === 'legacy' && v === 'legacy') {
+              card.style.display = 'block';
+            } else {
+              card.style.display = 'none';
+            }
+          });
+        });
+      });
+
+      // Toggle Expand/Collapse All
+      let allExpanded = false;
+      toggleAllBtn.addEventListener('click', () => {
+        allExpanded = !allExpanded;
+        cards.forEach(card => {
+          if (allExpanded) {
+            card.classList.remove('collapsed');
+          } else {
+            // Keep latest open by default
+            if (card.dataset.version !== 'v107') {
+              card.classList.add('collapsed');
+            }
+          }
+        });
+        toggleAllBtn.textContent = allExpanded ? 'Collapse Older Logs' : 'Expand All Logs';
+      });
+    });
+  </script>
+</body>
+</html>

@@ -645,10 +645,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const codeParam = urlParams.get('code');
 
   if (codeParam) {
-    // URLSearchParams.get() already performs URI decoding once
-    workspaceFiles[ENTRY_FILE] = codeParam;
     activeFile = ENTRY_FILE;
+    workspaceFiles[ENTRY_FILE] = codeParam;
+    editor.value = codeParam;
     saveWorkspace();
+
+    // Automatically execute snippet passed via URL (?code=...) once engine is ready
+    setTimeout(() => {
+      executeScript();
+    }, 150);
   } else if (!workspaceFiles[ENTRY_FILE] || !workspaceFiles[ENTRY_FILE].trim()) {
     workspaceFiles[ENTRY_FILE] = [
       '~~ Welcome to the Kuroba Web Playground!',
