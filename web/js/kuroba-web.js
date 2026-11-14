@@ -205,7 +205,9 @@ const KEYWORDS = {
   is: { type: "IS", value: "is" },
   class: { type: "CLASS", value: "class" },
   public: { type: "PUBLIC", value: "public" },
-  private: { type: "PRIVATE", value: "private" }
+  private: { type: "PRIVATE", value: "private" },
+  from: { type: "FROM", value: "from" },
+  base: { type: "BASE", value: "base" }
 };
 
 const SYMBOLS = {
@@ -223,7 +225,7 @@ const SYMBOLS = {
   ",": "COMMA",
   ".": "DOT",
   "{": "LBRACE",
-  "}": "RBRACE"
+  "}": "RBRACE",
 };
 
 const isDigit = (c) => c >= "0" && c <= "9";
@@ -793,6 +795,9 @@ class ParserExpressions extends ParserTypes {
         }
         else if (this.match('THIS')) {
             expr = { type: 'Variable', name: 'this' };
+        }
+        else if (this.match('BASE')) {
+            expr = { type: 'Variable', name: 'base' };
         }
         else if (this.match('IDENTIFIER')) {
             expr = { type: 'Variable', name: this.previous().value };
@@ -1670,6 +1675,12 @@ class ParserStatements extends ParserControl {
     parseClassDeclaration() {
         let startToken = this.previous();
         let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
+        
+        let superClass = null;
+        if (this.match('FROM')) {
+            superClass = this.consume('IDENTIFIER', `Expected superclass name after 'from' in class '${className}'.`).value;
+        }
+
         this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
         let fields = [];
@@ -1707,6 +1718,7 @@ class ParserStatements extends ParserControl {
         return {
             type: 'ClassDeclaration',
             name: className,
+            superClass,
             fields,
             methods,
             line: startToken.line,
@@ -2064,7 +2076,16 @@ async function evalIs(node, env, evaluate) {
         let scope = findScope(baseType, env);
         let classEntry = scope && scope.values[baseType];
         if (classEntry && classEntry.value && classEntry.value.kind === 'Class') {
-            return !!(val && val.kind === 'Table' && val.className === baseType);
+            if (!val || val.kind !== 'Table' || !val.isInstance) return false;
+
+            let curr = val.classRef;
+
+            while (curr) {
+                if (curr.name === baseType) return true;
+                curr = curr.superClass;
+            }
+            
+            return false;
         }
         
         printErr(`[TypeError] Unknown type '${baseType}' in 'is' check.`);
@@ -2255,9 +2276,20 @@ function evalKill(node, env) {
 
 
 async function evalClassDeclaration(node, env) {
+    let superClassObj = null;
+    if (node.superClass) {
+        const scope = findScope(node.superClass, env);
+        const entry = scope && scope.values[node.superClass];
+        if (!entry || !entry.value || entry.value.kind !== 'Class') {
+            printErr(`[ReferenceError] Cannot inherit from undefined class '${node.superClass}'.`);
+        }
+        superClassObj = entry.value;
+    }
+
     const classObj = {
         kind: 'Class',
         name: node.name,
+        superClass: superClassObj,
         fields: node.fields,
         methods: {},
         constructor: null,
@@ -2291,75 +2323,205 @@ async function evalClassDeclaration(node, env) {
     return classObj;
 }
 
+function getHierarchy(classObj) {
+    const chain = [];
+    let curr = classObj;
+    while (curr) {
+        chain.unshift(curr);
+        curr = curr.superClass;
+    }
+    return chain;
+}
+
+function createBaseBinding(instance, currentClass, env, evaluate) {
+    const superClass = currentClass.superClass;
+    if (!superClass) return null;
+
+    const baseFn = async (rawArgs, callEnv, evalFn) => {
+        const activeEval = evalFn || evaluate;
+        const activeEnv = callEnv || env;
+        if (superClass.constructor) {
+            const ctorAst = superClass.constructor;
+            const ctorClosure = createScope(env);
+            ctorClosure.values['this'] = {
+                value: instance,
+                type: 'Table',
+                isConst: true,
+                isNullable: false
+            };
+            if (superClass.superClass) {
+                ctorClosure.values['base'] = {
+                    value: createBaseBinding(instance, superClass, env, activeEval),
+                    type: 'Base',
+                    isConst: true,
+                    isNullable: false
+                };
+            }
+            const ctorObj = {
+                kind: 'Function',
+                name: ctorAst.name,
+                params: ctorAst.params,
+                body: ctorAst.body,
+                closure: ctorClosure,
+                boundInstance: instance,
+                declaringClass: superClass.name
+            };
+            return await evalCall({ caller: { type: 'Literal', value: ctorObj }, args: rawArgs }, activeEnv, activeEval);
+        } else if (rawArgs.length > 0) {
+            printErr(`[TypeError] Superclass '${superClass.name}' has no constructor that takes ${rawArgs.length} arguments.`);
+        }
+    };
+
+    const baseObj = {
+        kind: 'Base',
+        isBase: true,
+        fn: baseFn,
+        superClass,
+        instance,
+        fields: {}
+    };
+
+    const superChain = getHierarchy(superClass);
+    for (const ancestor of superChain) {
+        for (const [mName, mAst] of Object.entries(ancestor.methods)) {
+            const mClosure = createScope(env);
+            mClosure.values['this'] = {
+                value: instance,
+                type: 'Table',
+                isConst: true,
+                isNullable: false
+            };
+            if (ancestor.superClass) {
+                mClosure.values['base'] = {
+                    value: createBaseBinding(instance, ancestor, env, evaluate),
+                    type: 'Base',
+                    isConst: true,
+                    isNullable: false
+                };
+            }
+            const methodFn = {
+                kind: 'Function',
+                name: mAst.name,
+                params: mAst.params,
+                body: mAst.body,
+                closure: mClosure,
+                boundInstance: instance,
+                declaringClass: ancestor.name
+            };
+            baseObj.fields[mName] = {
+                value: methodFn,
+                type: 'Function',
+                isNullable: false,
+                isConst: true
+            };
+        }
+    }
+
+    return baseObj;
+}
+
 async function instantiateClass(classObj, rawArgs, env, evaluate) {
+    const chain = getHierarchy(classObj);
+    const privateMembers = new Set();
+    const privateOwners = new Map();
+
+    for (const c of chain) {
+        for (const pm of c.privateMembers) {
+            privateMembers.add(pm);
+            privateOwners.set(pm, c.name);
+        }
+    }
+
     const instance = {
         kind: 'Table',
         className: classObj.name,
         isInstance: true,
         classRef: classObj,
         fields: {},
-        privateMembers: classObj.privateMembers
+        privateMembers,
+        privateOwners
     };
 
-    const initEnv = createScope(env);
-    initEnv.values['this'] = {
-        value: instance,
-        type: 'Table',
-        isConst: true,
-        isNullable: false
-    };
-
-    for (const field of classObj.fields) {
-        let val = null;
-        if (field.value !== undefined && field.value !== null) {
-            val = await evaluate(field.value, initEnv);
-        }
-
-        let fieldType = field.explType || getType(val);
-        if (field.typeInfo && field.typeInfo.baseType) {
-            fieldType = field.typeInfo.baseType;
-            if (!field.typeInfo.isNullable && val === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}' of type '(${fieldType})'.`);
-            }
-            if (val !== null) {
-                val = castToType(val, fieldType);
-            }
-        } else if (!field.isNullable && val === null) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}'.`);
-        }
-
-        instance.fields[field.name] = {
-            value: val,
-            type: fieldType,
-            isNullable: field.isNullable !== false,
-            isConst: !!field.isConst
-        };
-    }
-
-    for (const [methodName, methodAst] of Object.entries(classObj.methods)) {
-        const methodClosure = createScope(env);
-        methodClosure.values['this'] = {
+    for (const c of chain) {
+        const initEnv = createScope(env);
+        initEnv.values['this'] = {
             value: instance,
             type: 'Table',
             isConst: true,
             isNullable: false
         };
+        if (c.superClass) {
+            initEnv.values['base'] = {
+                value: createBaseBinding(instance, c, env, evaluate),
+                type: 'Base',
+                isConst: true,
+                isNullable: false
+            };
+        }
 
-        const fnObj = {
-            kind: 'Function',
-            name: methodAst.name,
-            params: methodAst.params,
-            body: methodAst.body,
-            closure: methodClosure,
-            boundInstance: instance
-        };
+        for (const field of c.fields) {
+            let val = null;
+            if (field.value !== undefined && field.value !== null) {
+                val = await evaluate(field.value, initEnv);
+            }
 
-        instance.fields[methodName] = {
-            value: fnObj,
-            type: 'Function',
-            isNullable: false,
-            isConst: true
-        };
+            let fieldType = field.explType || getType(val);
+            if (field.typeInfo && field.typeInfo.baseType) {
+                fieldType = field.typeInfo.baseType;
+                if (!field.typeInfo.isNullable && val === null) {
+                    printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}' of type '(${fieldType})'.`);
+                }
+                if (val !== null) {
+                    val = castToType(val, fieldType);
+                }
+            } else if (!field.isNullable && val === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}'.`);
+            }
+
+            instance.fields[field.name] = {
+                value: val,
+                type: fieldType,
+                isNullable: field.isNullable !== false,
+                isConst: !!field.isConst
+            };
+        }
+    }
+
+    for (const c of chain) {
+        for (const [methodName, methodAst] of Object.entries(c.methods)) {
+            const methodClosure = createScope(env);
+            methodClosure.values['this'] = {
+                value: instance,
+                type: 'Table',
+                isConst: true,
+                isNullable: false
+            };
+            if (c.superClass) {
+                methodClosure.values['base'] = {
+                    value: createBaseBinding(instance, c, env, evaluate),
+                    type: 'Base',
+                    isConst: true,
+                    isNullable: false
+                };
+            }
+
+            const fnObj = {
+                kind: 'Function',
+                name: methodAst.name,
+                params: methodAst.params,
+                body: methodAst.body,
+                closure: methodClosure,
+                boundInstance: instance,
+                declaringClass: c.name
+            };
+
+            instance.fields[methodName] = {
+                value: fnObj,
+                type: 'Function',
+                isNullable: false,
+                isConst: true
+            };
+        }
     }
 
     if (classObj.constructor) {
@@ -2371,6 +2533,14 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
             isConst: true,
             isNullable: false
         };
+        if (classObj.superClass) {
+            ctorClosure.values['base'] = {
+                value: createBaseBinding(instance, classObj, env, evaluate),
+                type: 'Base',
+                isConst: true,
+                isNullable: false
+            };
+        }
 
         const ctorFn = {
             kind: 'Function',
@@ -2378,7 +2548,8 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
             params: ctorAst.params,
             body: ctorAst.body,
             closure: ctorClosure,
-            boundInstance: instance
+            boundInstance: instance,
+            declaringClass: classObj.name
         };
 
         await evalCall({ caller: { type: 'Literal', value: ctorFn }, args: rawArgs }, env, evaluate);
@@ -2397,12 +2568,20 @@ function checkPrivateAccess(target, memberName, env, isMethod = false) {
     const activeThis = findScope('this', env);
     const callerThis = activeThis ? activeThis.values['this'].value : null;
 
-    if (callerThis === target || (callerThis && callerThis.className === target.className)) {
-        return;
+    if (!callerThis || callerThis !== target) {
+        const kind = isMethod ? 'method' : 'member';
+        printErr(`[TypeError] Cannot access private ${kind} '${memberName}' of class '${target.className}'.`);
     }
 
-    const kind = isMethod ? 'method' : 'member';
-    printErr(`[TypeError] Cannot access private ${kind} '${memberName}' of class '${target.className}'.`);
+    if (target.privateOwners && target.privateOwners.has(memberName)) {
+        const ownerClass = target.privateOwners.get(memberName);
+        const activeFnScope = findScope('__currentFunction', env);
+        const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
+        if (currentFn && currentFn.declaringClass && currentFn.declaringClass !== ownerClass) {
+            const kind = isMethod ? 'method' : 'member';
+            printErr(`[TypeError] Cannot access private ${kind} '${memberName}' of parent class '${ownerClass}'.`);
+        }
+    }
 }
 
 
@@ -2420,7 +2599,7 @@ async function evalListLiteral(node, env, evaluate) {
 async function evalIndexAccess(node, env, evaluate) {
     let target = await evaluate(node.target, env);
 
-    if (target && target.kind === 'Table') {
+    if (target && (target.kind === 'Table' || target.isBase)) {
         if (!node.isDotAccess) {
             printErr("[TypeError] Tables do not support bracket indexing. Use dot notation 'table.property' instead.");
         }
@@ -2586,7 +2765,7 @@ async function evalMethodCall(node, env, evaluate) {
     let target = await evaluate(node.target, env);
     let targetType = getType(target);
 
-    if (target && target.kind === 'Table') {
+    if (target && (target.kind === 'Table' || target.isBase)) {
         let methodName = node.method;
 
         checkPrivateAccess(target, methodName, env, true);
@@ -3088,6 +3267,10 @@ async function evalCall(node, env, evaluate) {
         return await instantiateClass(caller, node.args, env, evaluate);
     }
 
+    if (caller && caller.isBase) {
+        return await caller.fn(node.args, env, evaluate);
+    }
+    
     if (!caller || caller.kind !== 'Function') {
         let typeName = getType(caller);
         printErr(`[TypeError] Cannot call non-function value of type '${typeName}'.`);

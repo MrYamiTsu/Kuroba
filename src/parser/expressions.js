@@ -74,6 +74,9 @@ class ParserExpressions extends ParserTypes {
         else if (this.match('THIS')) {
             expr = { type: 'Variable', name: 'this' };
         }
+        else if (this.match('BASE')) {
+            expr = { type: 'Variable', name: 'base' };
+        }
         else if (this.match('IDENTIFIER')) {
             expr = { type: 'Variable', name: this.previous().value };
         }

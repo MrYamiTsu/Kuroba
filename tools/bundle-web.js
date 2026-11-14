@@ -38,6 +38,7 @@ function readAsyncEvaluator(relPath) {
 
     code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall|instantiateClass)\(/g, 'await $1(');
     code = code.replace(/\b(caller\.fn|fnObj\.fn)\(/g, 'await $1(');
+    code = code.replace(/\bconst baseFn = \(([^)]*)\) => \{/g, 'const baseFn = async ($1) => {');
 
     if (relPath.endsWith('evaluator/index.js')) {
         code = code.replace(/return (eval[A-Z]\w*)\(/g, 'return await $1(');

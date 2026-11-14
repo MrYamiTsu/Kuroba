@@ -42,7 +42,9 @@ const KEYWORDS = {
   is: { type: "IS", value: "is" },
   class: { type: "CLASS", value: "class" },
   public: { type: "PUBLIC", value: "public" },
-  private: { type: "PRIVATE", value: "private" }
+  private: { type: "PRIVATE", value: "private" },
+  from: { type: "FROM", value: "from" },
+  base: { type: "BASE", value: "base" }
 };
 
 const SYMBOLS = {
@@ -60,7 +62,7 @@ const SYMBOLS = {
   ",": "COMMA",
   ".": "DOT",
   "{": "LBRACE",
-  "}": "RBRACE"
+  "}": "RBRACE",
 };
 
 const isDigit = (c) => c >= "0" && c <= "9";

@@ -65,7 +65,16 @@ function evalIs(node, env, evaluate) {
         let scope = findScope(baseType, env);
         let classEntry = scope && scope.values[baseType];
         if (classEntry && classEntry.value && classEntry.value.kind === 'Class') {
-            return !!(val && val.kind === 'Table' && val.className === baseType);
+            if (!val || val.kind !== 'Table' || !val.isInstance) return false;
+
+            let curr = val.classRef;
+
+            while (curr) {
+                if (curr.name === baseType) return true;
+                curr = curr.superClass;
+            }
+            
+            return false;
         }
         
         printErr(`[TypeError] Unknown type '${baseType}' in 'is' check.`);

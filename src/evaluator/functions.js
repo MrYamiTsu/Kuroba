@@ -46,6 +46,10 @@ function evalCall(node, env, evaluate) {
         return instantiateClass(caller, node.args, env, evaluate);
     }
 
+    if (caller && caller.isBase) {
+        return caller.fn(node.args, env, evaluate);
+    }
+    
     if (!caller || caller.kind !== 'Function') {
         let typeName = getType(caller);
         printErr(`[TypeError] Cannot call non-function value of type '${typeName}'.`);

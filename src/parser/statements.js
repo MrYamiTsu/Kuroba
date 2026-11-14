@@ -249,6 +249,12 @@ class ParserStatements extends ParserControl {
     parseClassDeclaration() {
         let startToken = this.previous();
         let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
+        
+        let superClass = null;
+        if (this.match('FROM')) {
+            superClass = this.consume('IDENTIFIER', `Expected superclass name after 'from' in class '${className}'.`).value;
+        }
+
         this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
         let fields = [];
@@ -286,6 +292,7 @@ class ParserStatements extends ParserControl {
         return {
             type: 'ClassDeclaration',
             name: className,
+            superClass,
             fields,
             methods,
             line: startToken.line,

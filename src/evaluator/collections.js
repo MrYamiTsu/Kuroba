@@ -11,7 +11,7 @@ function evalListLiteral(node, env, evaluate) {
 function evalIndexAccess(node, env, evaluate) {
     let target = evaluate(node.target, env);
 
-    if (target && target.kind === 'Table') {
+    if (target && (target.kind === 'Table' || target.isBase)) {
         if (!node.isDotAccess) {
             printErr("[TypeError] Tables do not support bracket indexing. Use dot notation 'table.property' instead.");
         }
@@ -177,7 +177,7 @@ function evalMethodCall(node, env, evaluate) {
     let target = evaluate(node.target, env);
     let targetType = getType(target);
 
-    if (target && target.kind === 'Table') {
+    if (target && (target.kind === 'Table' || target.isBase)) {
         let methodName = node.method;
 
         checkPrivateAccess(target, methodName, env, true);
