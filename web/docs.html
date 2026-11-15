@@ -738,7 +738,7 @@ ivar triple = createMultiplier(3);
 pasteLn(triple(10)); ~~ 30</code></pre>
 
         <h3>Native Function Interception (Hooks)</h3>
-        <p>The <code>hook</code> statement intercepts existing function calls (or Table methods) to inject telemetry, caching, or data validation without altering the caller interface. Inside the hook body, <strong><code>this(...)</code></strong> invokes the original function:</p>
+        <p>The <code>hook</code> statement intercepts existing function calls (or Table methods) to inject telemetry, caching, or data validation without altering the caller interface. Inside the hook body, <strong><code>orig(...)</code></strong> invokes the original function:</p>
         <pre><code class="language-kuroba">function processPayment(ivar amount, ivar fee) then
     return amount + fee;
 end
@@ -746,7 +746,7 @@ end
 ~~ Interception hook
 hook processPayment(ivar amount, ivar fee) then
     pasteLn(~"[AUDIT] Processing payment: {amount}$ (Fee: {fee}$)");
-    ivar total = this(amount, fee);
+    ivar total = orig(amount, fee);
     pasteLn(~"[AUDIT] Validation approved: Total = {total}$");
     return total;
 end
@@ -842,6 +842,85 @@ ivar p = Point();
 pasteLn(p is Point); ~~ TRUE
 pasteLn(p is Table); ~~ TRUE
 pasteLn(p is List);  ~~ FALSE</code></pre>
+
+        <h3>6. Single Inheritance (<code>from</code>) &amp; <code>base</code> Delegation</h3>
+        <p>Classes can inherit from a parent class using the intuitive <code>from</code> keyword. Child classes automatically inherit all public fields and methods from the ancestor chain, while keeping their own specialized behavior:</p>
+        <ul>
+          <li><strong>Inheritance Syntax:</strong> <code>class Child from Parent then ... end</code> establishes an object-oriented subtyping hierarchy.</li>
+          <li><strong>Parent Constructor Invocation (<code>base(...)</code>):</strong> Child constructors invoke the parent constructor using <code>base(args...)</code>, initializing inherited fields with the provided values.</li>
+          <li><strong>Method Overriding &amp; Delegation (<code>base.method(...)</code>):</strong> A child class can override any inherited method. To invoke the parent class's original implementation, call <code>base.methodName(...)</code>.</li>
+          <li><strong>Polymorphic Type Checking:</strong> The <code>is</code> operator traverses the entire ancestor hierarchy: an instance evaluates to <code>TRUE</code> for its own class, any parent class in the chain, and <code>Table</code>.</li>
+        </ul>
+
+        <pre><code class="language-kuroba">class Entity then
+    ivar name = "Entity";
+    ivar hp = 100;
+
+    function Entity(ivar n, ivar h) then
+        this.name = n;
+        this.hp = h;
+    end
+
+    function takeDamage(ivar dmg) then
+        this.hp -= dmg;
+        pasteLn(~"[{this.name}] took {dmg} damage. HP left: {this.hp}");
+    end
+end
+
+class Player from Entity then
+    ivar mana = 50;
+
+    function Player(ivar n, ivar h, ivar m) then
+        base(n, h); ~~ Invoke parent Entity constructor
+        this.mana = m;
+    end
+
+    function takeDamage(ivar dmg) then
+        base.takeDamage(dmg); ~~ Delegate to parent Entity implementation
+        pasteLn("Shield absorbed the impact shockwave!");
+    end
+end
+
+ivar hero = Player("Kenji", 200, 75);
+hero.takeDamage(40);
+
+pasteLn(hero is Player); ~~ TRUE
+pasteLn(hero is Entity); ~~ TRUE (polymorphism with parent class)
+pasteLn(hero is Table);  ~~ TRUE</code></pre>
+
+        <h3>7. Class Method Interception (<code>hook ClassName.method</code>)</h3>
+        <p>Kuroba extends its metaprogramming system to classes: you can intercept any public method directly at the class level via <code>hook ClassName.methodName(args...)</code>. Inside the hook body:</p>
+        <ul>
+          <li><strong><code>this</code>:</strong> Always refers to the target class instance being invoked (e.g. <code>this.name</code>, <code>this.hp</code>).</li>
+          <li><strong><code>orig(...)</code>:</strong> Exclusively invokes the original, non-intercepted method implementation on that instance.</li>
+          <li><strong>Encapsulation Guard (Unhookable Privates):</strong> Methods declared as <code>private</code> are strictly protected against external interception; attempting to hook a private method raises a <code>[TypeError]</code>.</li>
+        </ul>
+
+        <pre><code class="language-kuroba">class Fighter then
+    ivar name = "Kenji";
+    ivar hp = 100;
+
+    function Fighter(ivar n, ivar h) then
+        this.name = n;
+        this.hp = h;
+    end
+
+    function takeDamage(ivar dmg) then
+        this.hp -= dmg;
+        return this.hp;
+    end
+end
+
+~~ Intercept Fighter.takeDamage for telemetry &amp; shielding
+hook Fighter.takeDamage(ivar dmg) then
+    pasteLn(~"[SHIELD] {this.name} intercepts {dmg} incoming damage!");
+    ivar remaining = orig(dmg); ~~ Run original method on this instance
+    pasteLn(~"[STATUS] Remaining HP: {remaining}");
+    return remaining;
+end
+
+ivar f = Fighter("Kenji", 150);
+f.takeDamage(45);</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -1607,7 +1686,7 @@ pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'class', 'public', 'private',
+        'class', 'public', 'private', 'from', 'base', 'orig',
         'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 

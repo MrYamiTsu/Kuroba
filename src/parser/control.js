@@ -266,10 +266,17 @@ class ParserControl extends ParserExpressions {
         let varName = this.consume('IDENTIFIER', "Expected function name or table after 'hook'.").value;
         let target = { type: 'Variable', name: varName };
 
-        while (this.match('LBRACKET')) {
-            let index = this.parseLogicOr();
-            this.consume('RBRACKET', "Expected ']' after index in hook target.");
-            target = { type: 'IndexAccess', target, index };
+        while (true) {
+            if (this.match('LBRACKET')) {
+                let index = this.parseLogicOr();
+                this.consume('RBRACKET', "Expected ']' after index in hook target.");
+                target = { type: 'IndexAccess', target, index };
+            } else if (this.match('DOT')) {
+                let memberName = this.consume('IDENTIFIER', "Expected property or method name after '.' in hook target.").value;
+                target = { type: 'IndexAccess', target, index: memberName, isDotAccess: true };
+            } else {
+                break;
+            }
         }
 
         this.consume('LPAREN', "Expected '(' after hook target.");

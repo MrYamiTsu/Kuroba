@@ -21,7 +21,8 @@ function evalClassDeclaration(node, env) {
         fields: node.fields,
         methods: {},
         constructor: null,
-        privateMembers: new Set()
+        privateMembers: new Set(),
+        instances: new Set()
     };
 
     for (const f of node.fields) {
@@ -112,30 +113,7 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
     const superChain = getHierarchy(superClass);
     for (const ancestor of superChain) {
         for (const [mName, mAst] of Object.entries(ancestor.methods)) {
-            const mClosure = createScope(env);
-            mClosure.values['this'] = {
-                value: instance,
-                type: 'Table',
-                isConst: true,
-                isNullable: false
-            };
-            if (ancestor.superClass) {
-                mClosure.values['base'] = {
-                    value: createBaseBinding(instance, ancestor, env, evaluate),
-                    type: 'Base',
-                    isConst: true,
-                    isNullable: false
-                };
-            }
-            const methodFn = {
-                kind: 'Function',
-                name: mAst.name,
-                params: mAst.params,
-                body: mAst.body,
-                closure: mClosure,
-                boundInstance: instance,
-                declaringClass: ancestor.name
-            };
+            const methodFn = buildBoundMethod(mAst, instance, ancestor, env, evaluate);
             baseObj.fields[mName] = {
                 value: methodFn,
                 type: 'Function',
@@ -146,6 +124,113 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
     }
 
     return baseObj;
+}
+
+function buildBoundMethod(methodAst, instance, declaringClassObj, env, evaluate) {
+    if (methodAst.isHook) {
+        const origBoundFn = buildBoundMethod(methodAst.origMethodAst, instance, declaringClassObj, env, evaluate);
+        const hookClosure = createScope(env);
+        hookClosure.values['this'] = {
+            value: instance,
+            type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+        hookClosure.values['orig'] = {
+            value: origBoundFn,
+            type: 'Function',
+            isConst: true,
+            isNullable: false
+        };
+        if (declaringClassObj.superClass) {
+            hookClosure.values['base'] = {
+                value: createBaseBinding(instance, declaringClassObj, env, evaluate),
+                type: 'Base',
+                isConst: true,
+                isNullable: false
+            };
+        }
+
+        return {
+            kind: 'Function',
+            name: methodAst.name,
+            params: methodAst.params,
+            body: methodAst.body,
+            closure: hookClosure,
+            boundInstance: instance,
+            declaringClass: declaringClassObj.name
+        };
+    }
+
+    const methodClosure = createScope(env);
+    methodClosure.values['this'] = {
+        value: instance,
+        type: 'Table',
+        isConst: true,
+        isNullable: false
+    };
+    if (declaringClassObj.superClass) {
+        methodClosure.values['base'] = {
+            value: createBaseBinding(instance, declaringClassObj, env, evaluate),
+            type: 'Base',
+            isConst: true,
+            isNullable: false
+        };
+    }
+
+    return {
+        kind: 'Function',
+        name: methodAst.name,
+        params: methodAst.params,
+        body: methodAst.body,
+        closure: methodClosure,
+        boundInstance: instance,
+        declaringClass: declaringClassObj.name
+    };
+}
+
+function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
+    let targetClass = classObj;
+    let origMethodAst = null;
+
+    let curr = classObj;
+    while (curr) {
+        if (curr.methods && curr.methods[methodName]) {
+            targetClass = curr;
+            origMethodAst = curr.methods[methodName];
+            break;
+        }
+        curr = curr.superClass;
+    }
+
+    if (!origMethodAst) {
+        printErr(`[ReferenceError: Line ${hookNode.line}] Method '${methodName}' does not exist on class '${classObj.name}'.`);
+    }
+
+    if (origMethodAst.access === 'private' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName))) {
+        printErr(`[TypeError: Line ${hookNode.line}] Cannot hook private method '${methodName}' of class '${targetClass.name}'.`);
+    }
+
+    const hookMethodAst = {
+        name: methodName,
+        params: hookNode.params,
+        body: hookNode.body,
+        access: origMethodAst.access || 'public',
+        isHook: true,
+        origMethodAst: origMethodAst
+    };
+
+    classObj.methods[methodName] = hookMethodAst;
+
+    for (const inst of classObj.instances) {
+        const boundHook = buildBoundMethod(hookMethodAst, inst, classObj, env, evaluate);
+        inst.fields[methodName] = {
+            value: boundHook,
+            type: 'Function',
+            isNullable: false,
+            isConst: true
+        };
+    }
 }
 
 function instantiateClass(classObj, rawArgs, env, evaluate) {
@@ -169,6 +254,8 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
         privateMembers,
         privateOwners
     };
+
+    classObj.instances.add(instance);
 
     for (const c of chain) {
         const initEnv = createScope(env);
@@ -217,32 +304,7 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
 
     for (const c of chain) {
         for (const [methodName, methodAst] of Object.entries(c.methods)) {
-            const methodClosure = createScope(env);
-            methodClosure.values['this'] = {
-                value: instance,
-                type: 'Table',
-                isConst: true,
-                isNullable: false
-            };
-            if (c.superClass) {
-                methodClosure.values['base'] = {
-                    value: createBaseBinding(instance, c, env, evaluate),
-                    type: 'Base',
-                    isConst: true,
-                    isNullable: false
-                };
-            }
-
-            const fnObj = {
-                kind: 'Function',
-                name: methodAst.name,
-                params: methodAst.params,
-                body: methodAst.body,
-                closure: methodClosure,
-                boundInstance: instance,
-                declaringClass: c.name
-            };
-
+            const fnObj = buildBoundMethod(methodAst, instance, c, env, evaluate);
             instance.fields[methodName] = {
                 value: fnObj,
                 type: 'Function',
@@ -312,4 +374,4 @@ function checkPrivateAccess(target, memberName, env, isMethod = false) {
     }
 }
 
-module.exports = { evalClassDeclaration, instantiateClass, checkPrivateAccess };
+module.exports = { evalClassDeclaration, instantiateClass, checkPrivateAccess, hookClassMethod };

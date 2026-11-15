@@ -97,6 +97,8 @@
           <div class="log-tag-list">
             <span class="log-tag feat">★ Classes &amp; OOP</span>
             <span class="log-tag syntax">C#-Style Constructors</span>
+            <span class="log-tag feat">Inheritance (from)</span>
+            <span class="log-tag feat">base(...) Chaining</span>
             <span class="log-tag feat">public / private</span>
             <span class="log-tag feat">is Operator</span>
             <span class="log-tag syntax">Multi-Var Declarations</span>
@@ -132,7 +134,15 @@
             </li>
             <li class="roadmap-item done">
               <span class="roadmap-check">✓</span>
-              <span><strong>Type Operator <code>is</code>:</strong> Full runtime verification across primitives, nullable types, collections, and classes (<code>hero is Hero</code>, <code>hero is Table</code>).</span>
+              <span><strong>Single Inheritance (<code>from</code>):</strong> Subtyping hierarchy <code>class Child from Parent then ... end</code> with recursive ancestor propagation.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Base Delegation (<code>base</code>):</strong> Explicit constructor chaining <code>base(args...)</code> and parent method delegation <code>base.method(...)</code>.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Type Operator <code>is</code>:</strong> Full runtime verification across primitives, nullable types, collections, and polymorphic inheritance hierarchies (<code>hero is Player</code>, <code>hero is Entity</code>, <code>hero is Table</code>).</span>
             </li>
             <li class="roadmap-item done">
               <span class="roadmap-check">✓</span>

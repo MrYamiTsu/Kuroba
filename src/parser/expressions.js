@@ -71,6 +71,9 @@ class ParserExpressions extends ParserTypes {
         else if (this.match('FUNCTION')) {
             expr = this.parseFunctionDeclaration(true);
         }
+        else if (this.match('ORIG')) {
+            expr = { type: 'Variable', name: 'orig' };
+        }
         else if (this.match('THIS')) {
             expr = { type: 'Variable', name: 'this' };
         }

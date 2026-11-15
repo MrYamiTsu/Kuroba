@@ -33,6 +33,7 @@ const KEYWORDS = {
   return: { type: "RETURN", value: "return" },
   hook: { type: "HOOK", value: "hook" },
   this: { type: "THIS", value: "this" },
+  orig: { type: "ORIG", value: "orig" },
   import: { type: "IMPORT", value: "import" },
   alias: { type: "ALIAS", value: "alias" },
   namespace: { type: "NAMESPACE", value: "namespace" },

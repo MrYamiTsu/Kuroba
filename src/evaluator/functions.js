@@ -132,65 +132,105 @@ function evalCall(node, env, evaluate) {
 }
 
 function evalHook(node, env, evaluate) {
-    let origFunc = evaluate(node.target, env);
-
-    if (!origFunc || origFunc.kind !== 'Function') {
-        let typeName = getType(origFunc);
-        printErr(`[TypeError: Line ${node.line}] Cannot hook non-function target of type '${typeName}'.`);
-    }
-
-    let hookClosure = createScope(env);
-    
-    hookClosure.values['this'] = {
-        value: origFunc,
-        type: 'Function',
-        isConst: true,
-        isNullable: false
-    };
-    let hookParams = node.params.map((p, i) => {
-        let origParam = origFunc.params && origFunc.params[i];
-        if (!p.hasDefault && origParam && origParam.hasDefault) {
-            return {
-                ...p,
-                hasDefault: true,
-                defaultValue: origParam.defaultValue,
-                defaultClosure: origParam.defaultClosure || origFunc.closure
-            };
-        }
-        return p;
-    });
-
-    let hookFunc = {
-        kind: 'Function',
-        name: origFunc.name,
-        params: hookParams,
-        body: node.body,
-        closure: hookClosure
+    let hookParamsBuilder = (origFunc) => {
+        return node.params.map((p, i) => {
+            let origParam = origFunc && origFunc.params && origFunc.params[i];
+            if (!p.hasDefault && origParam && origParam.hasDefault) {
+                return {
+                    ...p,
+                    hasDefault: true,
+                    defaultValue: origParam.defaultValue,
+                    defaultClosure: origParam.defaultClosure || origFunc.closure
+                };
+            }
+            return p;
+        });
     };
 
     if (node.target.type === 'Variable') {
+        let origFunc = evaluate(node.target, env);
+        if (!origFunc || origFunc.kind !== 'Function') {
+            let typeName = getType(origFunc);
+            printErr(`[TypeError: Line ${node.line}] Cannot hook non-function target of type '${typeName}'.`);
+        }
+
+        let hookClosure = createScope(env);
+        hookClosure.values['orig'] = {
+            value: origFunc,
+            type: 'Function',
+            isConst: true,
+            isNullable: false
+        };
+
+        let hookFunc = {
+            kind: 'Function',
+            name: origFunc.name,
+            params: hookParamsBuilder(origFunc),
+            body: node.body,
+            closure: hookClosure
+        };
+
         let scope = findScope(node.target.name, env);
         if (!scope) {
             printErr(`[ReferenceError: Line ${node.line}] Variable '${node.target.name}' not found.`);
         }
-
         scope.values[node.target.name].value = hookFunc;
-    } else if (node.target.type === 'IndexAccess') {
-        let table = evaluate(node.target.target, env);
-        let key = String(evaluate(node.target.index, env));
-
-        if (!table || table.kind !== 'Table') {
-            printErr(`[TypeError: Line ${node.line}] Cannot hook into non-Table target.`);
-        }
-
-        if (key in table.fields) {
-            table.fields[key].value = hookFunc;
-        } else {
-            table.fields[key] = { value: hookFunc, type: 'Function', isNullable: true };
-        }
+        return hookFunc;
     }
 
-    return hookFunc;
+    if (node.target.type === 'IndexAccess') {
+        let container = evaluate(node.target.target, env);
+        let key = (typeof node.target.index === 'string' && node.target.isDotAccess)
+            ? node.target.index
+            : String(evaluate(node.target.index, env));
+
+        if (container && container.kind === 'Class') {
+            const { hookClassMethod } = require('./classes');
+            hookClassMethod(container, key, node, env, evaluate);
+            return null;
+        }
+
+        if (container && container.kind === 'Table') {
+            if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
+                printErr(`[TypeError: Line ${node.line}] Cannot hook private method '${key}' of class '${container.className}'.`);
+            }
+
+            let origFunc = container.fields[key] ? container.fields[key].value : null;
+            if (!origFunc || origFunc.kind !== 'Function') {
+                printErr(`[TypeError: Line ${node.line}] Cannot hook non-function member '${key}' on Table.`);
+            }
+
+            let hookClosure = createScope(env);
+            hookClosure.values['this'] = {
+                value: container,
+                type: 'Table',
+                isConst: true,
+                isNullable: false
+            };
+            hookClosure.values['orig'] = {
+                value: origFunc,
+                type: 'Function',
+                isConst: true,
+                isNullable: false
+            };
+
+            let hookFunc = {
+                kind: 'Function',
+                name: origFunc.name,
+                params: hookParamsBuilder(origFunc),
+                body: node.body,
+                closure: hookClosure,
+                boundInstance: container
+            };
+
+            container.fields[key].value = hookFunc;
+            return hookFunc;
+        }
+
+        printErr(`[TypeError: Line ${node.line}] Target for hook must be a function, Table method, or Class method.`);
+    }
+
+    printErr(`[SyntaxError: Line ${node.line}] Invalid target expression for hook.`);
 }
 
 module.exports = { evalFunctionDeclaration, evalReturn, evalCall, evalHook };

@@ -196,6 +196,7 @@ const KEYWORDS = {
   return: { type: "RETURN", value: "return" },
   hook: { type: "HOOK", value: "hook" },
   this: { type: "THIS", value: "this" },
+  orig: { type: "ORIG", value: "orig" },
   import: { type: "IMPORT", value: "import" },
   alias: { type: "ALIAS", value: "alias" },
   namespace: { type: "NAMESPACE", value: "namespace" },
@@ -793,6 +794,9 @@ class ParserExpressions extends ParserTypes {
         else if (this.match('FUNCTION')) {
             expr = this.parseFunctionDeclaration(true);
         }
+        else if (this.match('ORIG')) {
+            expr = { type: 'Variable', name: 'orig' };
+        }
         else if (this.match('THIS')) {
             expr = { type: 'Variable', name: 'this' };
         }
@@ -1303,10 +1307,17 @@ class ParserControl extends ParserExpressions {
         let varName = this.consume('IDENTIFIER', "Expected function name or table after 'hook'.").value;
         let target = { type: 'Variable', name: varName };
 
-        while (this.match('LBRACKET')) {
-            let index = this.parseLogicOr();
-            this.consume('RBRACKET', "Expected ']' after index in hook target.");
-            target = { type: 'IndexAccess', target, index };
+        while (true) {
+            if (this.match('LBRACKET')) {
+                let index = this.parseLogicOr();
+                this.consume('RBRACKET', "Expected ']' after index in hook target.");
+                target = { type: 'IndexAccess', target, index };
+            } else if (this.match('DOT')) {
+                let memberName = this.consume('IDENTIFIER', "Expected property or method name after '.' in hook target.").value;
+                target = { type: 'IndexAccess', target, index: memberName, isDotAccess: true };
+            } else {
+                break;
+            }
         }
 
         this.consume('LPAREN', "Expected '(' after hook target.");
@@ -2293,7 +2304,8 @@ async function evalClassDeclaration(node, env) {
         fields: node.fields,
         methods: {},
         constructor: null,
-        privateMembers: new Set()
+        privateMembers: new Set(),
+        instances: new Set()
     };
 
     for (const f of node.fields) {
@@ -2384,30 +2396,7 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
     const superChain = getHierarchy(superClass);
     for (const ancestor of superChain) {
         for (const [mName, mAst] of Object.entries(ancestor.methods)) {
-            const mClosure = createScope(env);
-            mClosure.values['this'] = {
-                value: instance,
-                type: 'Table',
-                isConst: true,
-                isNullable: false
-            };
-            if (ancestor.superClass) {
-                mClosure.values['base'] = {
-                    value: createBaseBinding(instance, ancestor, env, evaluate),
-                    type: 'Base',
-                    isConst: true,
-                    isNullable: false
-                };
-            }
-            const methodFn = {
-                kind: 'Function',
-                name: mAst.name,
-                params: mAst.params,
-                body: mAst.body,
-                closure: mClosure,
-                boundInstance: instance,
-                declaringClass: ancestor.name
-            };
+            const methodFn = buildBoundMethod(mAst, instance, ancestor, env, evaluate);
             baseObj.fields[mName] = {
                 value: methodFn,
                 type: 'Function',
@@ -2418,6 +2407,113 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
     }
 
     return baseObj;
+}
+
+function buildBoundMethod(methodAst, instance, declaringClassObj, env, evaluate) {
+    if (methodAst.isHook) {
+        const origBoundFn = buildBoundMethod(methodAst.origMethodAst, instance, declaringClassObj, env, evaluate);
+        const hookClosure = createScope(env);
+        hookClosure.values['this'] = {
+            value: instance,
+            type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+        hookClosure.values['orig'] = {
+            value: origBoundFn,
+            type: 'Function',
+            isConst: true,
+            isNullable: false
+        };
+        if (declaringClassObj.superClass) {
+            hookClosure.values['base'] = {
+                value: createBaseBinding(instance, declaringClassObj, env, evaluate),
+                type: 'Base',
+                isConst: true,
+                isNullable: false
+            };
+        }
+
+        return {
+            kind: 'Function',
+            name: methodAst.name,
+            params: methodAst.params,
+            body: methodAst.body,
+            closure: hookClosure,
+            boundInstance: instance,
+            declaringClass: declaringClassObj.name
+        };
+    }
+
+    const methodClosure = createScope(env);
+    methodClosure.values['this'] = {
+        value: instance,
+        type: 'Table',
+        isConst: true,
+        isNullable: false
+    };
+    if (declaringClassObj.superClass) {
+        methodClosure.values['base'] = {
+            value: createBaseBinding(instance, declaringClassObj, env, evaluate),
+            type: 'Base',
+            isConst: true,
+            isNullable: false
+        };
+    }
+
+    return {
+        kind: 'Function',
+        name: methodAst.name,
+        params: methodAst.params,
+        body: methodAst.body,
+        closure: methodClosure,
+        boundInstance: instance,
+        declaringClass: declaringClassObj.name
+    };
+}
+
+function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
+    let targetClass = classObj;
+    let origMethodAst = null;
+
+    let curr = classObj;
+    while (curr) {
+        if (curr.methods && curr.methods[methodName]) {
+            targetClass = curr;
+            origMethodAst = curr.methods[methodName];
+            break;
+        }
+        curr = curr.superClass;
+    }
+
+    if (!origMethodAst) {
+        printErr(`[ReferenceError: Line ${hookNode.line}] Method '${methodName}' does not exist on class '${classObj.name}'.`);
+    }
+
+    if (origMethodAst.access === 'private' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName))) {
+        printErr(`[TypeError: Line ${hookNode.line}] Cannot hook private method '${methodName}' of class '${targetClass.name}'.`);
+    }
+
+    const hookMethodAst = {
+        name: methodName,
+        params: hookNode.params,
+        body: hookNode.body,
+        access: origMethodAst.access || 'public',
+        isHook: true,
+        origMethodAst: origMethodAst
+    };
+
+    classObj.methods[methodName] = hookMethodAst;
+
+    for (const inst of classObj.instances) {
+        const boundHook = buildBoundMethod(hookMethodAst, inst, classObj, env, evaluate);
+        inst.fields[methodName] = {
+            value: boundHook,
+            type: 'Function',
+            isNullable: false,
+            isConst: true
+        };
+    }
 }
 
 async function instantiateClass(classObj, rawArgs, env, evaluate) {
@@ -2441,6 +2537,8 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
         privateMembers,
         privateOwners
     };
+
+    classObj.instances.add(instance);
 
     for (const c of chain) {
         const initEnv = createScope(env);
@@ -2489,32 +2587,7 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
 
     for (const c of chain) {
         for (const [methodName, methodAst] of Object.entries(c.methods)) {
-            const methodClosure = createScope(env);
-            methodClosure.values['this'] = {
-                value: instance,
-                type: 'Table',
-                isConst: true,
-                isNullable: false
-            };
-            if (c.superClass) {
-                methodClosure.values['base'] = {
-                    value: createBaseBinding(instance, c, env, evaluate),
-                    type: 'Base',
-                    isConst: true,
-                    isNullable: false
-                };
-            }
-
-            const fnObj = {
-                kind: 'Function',
-                name: methodAst.name,
-                params: methodAst.params,
-                body: methodAst.body,
-                closure: methodClosure,
-                boundInstance: instance,
-                declaringClass: c.name
-            };
-
+            const fnObj = buildBoundMethod(methodAst, instance, c, env, evaluate);
             instance.fields[methodName] = {
                 value: fnObj,
                 type: 'Function',
@@ -3353,65 +3426,105 @@ async function evalCall(node, env, evaluate) {
 }
 
 async function evalHook(node, env, evaluate) {
-    let origFunc = await evaluate(node.target, env);
-
-    if (!origFunc || origFunc.kind !== 'Function') {
-        let typeName = getType(origFunc);
-        printErr(`[TypeError: Line ${node.line}] Cannot hook non-function target of type '${typeName}'.`);
-    }
-
-    let hookClosure = createScope(env);
-    
-    hookClosure.values['this'] = {
-        value: origFunc,
-        type: 'Function',
-        isConst: true,
-        isNullable: false
-    };
-    let hookParams = node.params.map((p, i) => {
-        let origParam = origFunc.params && origFunc.params[i];
-        if (!p.hasDefault && origParam && origParam.hasDefault) {
-            return {
-                ...p,
-                hasDefault: true,
-                defaultValue: origParam.defaultValue,
-                defaultClosure: origParam.defaultClosure || origFunc.closure
-            };
-        }
-        return p;
-    });
-
-    let hookFunc = {
-        kind: 'Function',
-        name: origFunc.name,
-        params: hookParams,
-        body: node.body,
-        closure: hookClosure
+    let hookParamsBuilder = (origFunc) => {
+        return node.params.map((p, i) => {
+            let origParam = origFunc && origFunc.params && origFunc.params[i];
+            if (!p.hasDefault && origParam && origParam.hasDefault) {
+                return {
+                    ...p,
+                    hasDefault: true,
+                    defaultValue: origParam.defaultValue,
+                    defaultClosure: origParam.defaultClosure || origFunc.closure
+                };
+            }
+            return p;
+        });
     };
 
     if (node.target.type === 'Variable') {
+        let origFunc = await evaluate(node.target, env);
+        if (!origFunc || origFunc.kind !== 'Function') {
+            let typeName = getType(origFunc);
+            printErr(`[TypeError: Line ${node.line}] Cannot hook non-function target of type '${typeName}'.`);
+        }
+
+        let hookClosure = createScope(env);
+        hookClosure.values['orig'] = {
+            value: origFunc,
+            type: 'Function',
+            isConst: true,
+            isNullable: false
+        };
+
+        let hookFunc = {
+            kind: 'Function',
+            name: origFunc.name,
+            params: hookParamsBuilder(origFunc),
+            body: node.body,
+            closure: hookClosure
+        };
+
         let scope = findScope(node.target.name, env);
         if (!scope) {
             printErr(`[ReferenceError: Line ${node.line}] Variable '${node.target.name}' not found.`);
         }
-
         scope.values[node.target.name].value = hookFunc;
-    } else if (node.target.type === 'IndexAccess') {
-        let table = await evaluate(node.target.target, env);
-        let key = String(await evaluate(node.target.index, env));
-
-        if (!table || table.kind !== 'Table') {
-            printErr(`[TypeError: Line ${node.line}] Cannot hook into non-Table target.`);
-        }
-
-        if (key in table.fields) {
-            table.fields[key].value = hookFunc;
-        } else {
-            table.fields[key] = { value: hookFunc, type: 'Function', isNullable: true };
-        }
+        return hookFunc;
     }
 
-    return hookFunc;
+    if (node.target.type === 'IndexAccess') {
+        let container = await evaluate(node.target.target, env);
+        let key = (typeof node.target.index === 'string' && node.target.isDotAccess)
+            ? node.target.index
+            : String(await evaluate(node.target.index, env));
+
+        if (container && container.kind === 'Class') {
+            
+            hookClassMethod(container, key, node, env, evaluate);
+            return null;
+        }
+
+        if (container && container.kind === 'Table') {
+            if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
+                printErr(`[TypeError: Line ${node.line}] Cannot hook private method '${key}' of class '${container.className}'.`);
+            }
+
+            let origFunc = container.fields[key] ? container.fields[key].value : null;
+            if (!origFunc || origFunc.kind !== 'Function') {
+                printErr(`[TypeError: Line ${node.line}] Cannot hook non-function member '${key}' on Table.`);
+            }
+
+            let hookClosure = createScope(env);
+            hookClosure.values['this'] = {
+                value: container,
+                type: 'Table',
+                isConst: true,
+                isNullable: false
+            };
+            hookClosure.values['orig'] = {
+                value: origFunc,
+                type: 'Function',
+                isConst: true,
+                isNullable: false
+            };
+
+            let hookFunc = {
+                kind: 'Function',
+                name: origFunc.name,
+                params: hookParamsBuilder(origFunc),
+                body: node.body,
+                closure: hookClosure,
+                boundInstance: container
+            };
+
+            container.fields[key].value = hookFunc;
+            return hookFunc;
+        }
+
+        printErr(`[TypeError: Line ${node.line}] Target for hook must be a function, Table method, or Class method.`);
+    }
+
+    printErr(`[SyntaxError: Line ${node.line}] Invalid target expression for hook.`);
 }
 
 

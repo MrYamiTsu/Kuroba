@@ -230,8 +230,9 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Pattern Match Fallback**      | `case ~ then`                                                                             | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                           |
 | **Exception Handling**          | `throw <expr>;`<br/>`try ... catch (ivar e) ... finally ... end`                          | Uncaught throws exit with vermilion diagnostic `#FF5500`. Try/catch safely traps user throws and native runtime errors.   |
 | **Explicit Destruction**        | `kill variable;`                                                                          | Explicit variable destruction from active scope with strict declaration checks and constant protection.                   |
+| **Classes & Inheritance**       | `class Hero from Entity`<br/>`base(n, h);`<br/>`base.method();`                           | Ergonomic class model over Table with C#-style constructors, auto-bound `this`, encapsulation, and `from` / `base` inheritance. |
 | **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                                             | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                         |
-| **Native Interception (Hooks)** | `hook f(x) then ... end`                                                                  | Transparent native monkey-patching with original function delegation via `this(...)`.                                     |
+| **Native Interception (Hooks)** | `hook f(x) then ... end`<br/>`hook Class.m(x) then ... end`                               | Transparent native monkey-patching with original function delegation via `orig(...)`. `this` strictly refers to the class instance. |
 | **Interactive Key Capture**     | `copyKey()`                                                                               | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.            |
 | **Native CLI Arguments**        | `args`                                                                                    | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                 |
 
@@ -406,11 +407,11 @@ Kuroba/
 
 - [ ] Ergonomic Classes (designed as a clean, structured abstraction over `Table`):
   - [x] Class definition `class Name ... end` with constructor and instance methods
-  - [ ] Single inheritance `class Sub extends Super ... end` with `super(...)`
+  - [x] Single inheritance `class Sub from Super ... end` with `base(...)` and `base.method(...)`
   - [x] Instance reference (`this`)
   - [x] Encapsulation & Access Modifiers (`public`, `private`)
   - [ ] Static class members (`static ivar`, `static function`)
-  - [ ] Class Method Interception (`hook ClassName.method(args) then ... end`)
+  - [x] Class Method Interception (`hook ClassName.method(args) then ... end`)
   - [ ] Namespaces integration & class scoping
 - [ ] Type & Value Constructs:
   - [x] Runtime type checking operator (`is`, e.g., `if (x is Int) then`, `is NULL`, `is TRUE`, `is List<Int>`, `is Player`, `is Table`)
