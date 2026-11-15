@@ -259,28 +259,88 @@ class ParserStatements extends ParserControl {
 
         let fields = [];
         let methods = [];
+        let sharedFields = [];
+        let sharedMethods = [];
 
         while (!this.check('END') && !this.isAtEnd()) {
+            let isShared = false;
             let access = 'public';
-            if (this.match('PUBLIC')) {
-                access = 'public';
+
+            if (this.match('SHARED')) {
+                if (this.match('THEN')) {
+                    while (!this.check('END') && !this.isAtEnd()) {
+                        let innerAccess = 'public';
+                        if (this.match('PRIVATE')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').`);
+                            }
+                            innerAccess = 'private';
+                        } else if (this.match('PUBLIC')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').`);
+                            }
+                            innerAccess = 'public';
+                        }
+
+                        if (this.match('IVAR', 'ICONST')) {
+                            let decl = this.parseVarDeclaration();
+                            if (decl.type === 'MultiVarDeclar') {
+                                for (let d of decl.declarations) {
+                                    sharedFields.push({ ...d, access: innerAccess, isShared: true });
+                                }
+                            } else {
+                                sharedFields.push({ ...decl, access: innerAccess, isShared: true });
+                            }
+                            this.consume('SEMICOLON', "Missing semicolon ';' after shared field declaration.");
+                        } else if (this.match('FUNCTION')) {
+                            let method = this.parseFunctionDeclaration(false);
+                            sharedMethods.push({ ...method, access: innerAccess, isShared: true });
+                        } else {
+                            let tok = this.peek();
+                            printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside 'shared' block of class '${className}'.`);
+                        }
+                    }
+                    this.consume('END', "Expected 'end' to close 'shared' block.");
+                    continue;
+                } else {
+                    isShared = true;
+                    if (this.match('PRIVATE')) {
+                        access = 'private';
+                    } else if (this.match('PUBLIC')) {
+                        access = 'public';
+                    }
+                }
             } else if (this.match('PRIVATE')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').`);
+                }
                 access = 'private';
+            } else if (this.match('PUBLIC')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').`);
+                }
+                access = 'public';
             }
 
             if (this.match('IVAR', 'ICONST')) {
                 let decl = this.parseVarDeclaration();
+                const targetFields = isShared ? sharedFields : fields;
                 if (decl.type === 'MultiVarDeclar') {
                     for (let d of decl.declarations) {
-                        fields.push({ ...d, access });
+                        targetFields.push({ ...d, access, isShared });
                     }
                 } else {
-                    fields.push({ ...decl, access });
+                    targetFields.push({ ...decl, access, isShared });
                 }
                 this.consume('SEMICOLON', "Missing semicolon ';' after field declaration in class.");
             } else if (this.match('FUNCTION')) {
                 let method = this.parseFunctionDeclaration(false);
-                methods.push({ ...method, access });
+                const targetMethods = isShared ? sharedMethods : methods;
+                targetMethods.push({ ...method, access, isShared });
             } else {
                 let tok = this.peek();
                 printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside class '${className}'. Expected field or method declaration.`);
@@ -295,6 +355,8 @@ class ParserStatements extends ParserControl {
             superClass,
             fields,
             methods,
+            sharedFields,
+            sharedMethods,
             line: startToken.line,
             col: startToken.col
         };

@@ -2,7 +2,7 @@ const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
 const { findScope } = require('./scope');
 const { evalCall } = require('./functions');
-const { checkPrivateAccess, instantiateClass } = require('./classes');
+const { checkPrivateAccess, checkPrivateSharedAccess, instantiateClass } = require('./classes');
 
 function evalListLiteral(node, env, evaluate) {
     return node.elements.map(el => evaluate(el, env));
@@ -10,6 +10,24 @@ function evalListLiteral(node, env, evaluate) {
 
 function evalIndexAccess(node, env, evaluate) {
     let target = evaluate(node.target, env);
+
+    if (target && target.kind === 'Class') {
+        let key = node.index;
+        checkPrivateSharedAccess(target, key, env, false);
+
+        let curr = target;
+        while (curr) {
+            if (curr.sharedFields && key in curr.sharedFields) {
+                return curr.sharedFields[key].value;
+            }
+            if (curr.sharedMethods && key in curr.sharedMethods) {
+                return curr.sharedMethods[key];
+            }
+            curr = curr.superClass;
+        }
+
+        printErr(`[ReferenceError] Shared member '${key}' does not exist on class '${target.name}'.`);
+    }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
         if (!node.isDotAccess) {
@@ -73,12 +91,44 @@ function evalMemberAssign(node, env, evaluate) {
         if (!scope) printErr(`[ReferenceError] Variable '${root.name}' is not defined.`);
         
         rootVarEntry = scope.values[root.name];
-        if (rootVarEntry.isConst && root.name !== 'this') {
+        if (rootVarEntry.isConst && root.name !== 'this' && rootVarEntry.type !== 'Class') {
             printErr(`[TypeError] Cannot modify constant '${root.name}'.`);
         }
     }
 
     let container = evaluate(node.target, env);
+
+    if (container && container.kind === 'Class') {
+        let key = node.index;
+        checkPrivateSharedAccess(container, key, env, false);
+
+        let curr = container;
+        let fieldEntry = null;
+        while (curr) {
+            if (curr.sharedFields && key in curr.sharedFields) {
+                fieldEntry = curr.sharedFields[key];
+                break;
+            }
+            curr = curr.superClass;
+        }
+
+        if (!fieldEntry) {
+            printErr(`[ReferenceError] Shared variable '${key}' does not exist on class '${container.name}'.`);
+        }
+
+        if (fieldEntry.isConst) {
+            printErr(`[TypeError] Cannot modify constant shared member '${key}' on class '${container.name}'.`);
+        }
+
+        let currVal = fieldEntry.value;
+        let rhsVal = evaluate(node.value, env);
+        let finalVal = applyCompoundOp(currVal, rhsVal, node.operator);
+        if (fieldEntry.type && rhsVal !== null) {
+            finalVal = castToType(finalVal, fieldEntry.type);
+        }
+        fieldEntry.value = finalVal;
+        return finalVal;
+    }
 
     if (node.isDotAccess) {
         if (!container || container.kind !== 'Table') {
@@ -176,6 +226,22 @@ function evalMemberAssign(node, env, evaluate) {
 function evalMethodCall(node, env, evaluate) {
     let target = evaluate(node.target, env);
     let targetType = getType(target);
+
+    if (target && target.kind === 'Class') {
+        let methodName = node.method;
+        checkPrivateSharedAccess(target, methodName, env, true);
+
+        let curr = target;
+        while (curr) {
+            if (curr.sharedMethods && methodName in curr.sharedMethods) {
+                let fnObj = curr.sharedMethods[methodName];
+                return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
+            }
+            curr = curr.superClass;
+        }
+
+        printErr(`[ReferenceError] Shared method '${methodName}' does not exist on class '${target.name}'.`);
+    }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
         let methodName = node.method;

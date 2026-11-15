@@ -20,8 +20,11 @@ function evalClassDeclaration(node, env) {
         superClass: superClassObj,
         fields: node.fields,
         methods: {},
+        sharedFields: {},
+        sharedMethods: {},
         constructor: null,
         privateMembers: new Set(),
+        privateSharedMembers: new Set(),
         instances: new Set()
     };
 
@@ -39,6 +42,63 @@ function evalClassDeclaration(node, env) {
             classObj.constructor = m;
         } else {
             classObj.methods[m.name] = m;
+        }
+    }
+
+    if (node.sharedFields) {
+        const sharedEnv = createScope(env);
+        for (const f of node.sharedFields) {
+            if (f.access === 'private') {
+                classObj.privateSharedMembers.add(f.name);
+            }
+            let val = null;
+            if (f.value !== undefined && f.value !== null) {
+                const { evaluate } = require('./index');
+                val = evaluate(f.value, sharedEnv);
+            }
+            let fieldType = f.explType || getType(val);
+            if (f.typeInfo && f.typeInfo.baseType) {
+                fieldType = f.typeInfo.baseType;
+                if (!f.typeInfo.isNullable && val === null) {
+                    printErr(`[TypeError] Cannot assign NULL to non-nullable shared field '${f.name}'.`);
+                }
+                if (val !== null) {
+                    val = castToType(val, fieldType);
+                }
+            } else if (!f.isNullable && val === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable shared field '${f.name}'.`);
+            }
+            classObj.sharedFields[f.name] = {
+                value: val,
+                type: fieldType,
+                isNullable: f.isNullable !== false,
+                isConst: !!f.isConst,
+                access: f.access
+            };
+        }
+    }
+
+    if (node.sharedMethods) {
+        for (const m of node.sharedMethods) {
+            if (m.access === 'private') {
+                classObj.privateSharedMembers.add(m.name);
+            }
+            const methodClosure = createScope(env);
+            methodClosure.values['__declaringClass'] = {
+                value: node.name,
+                type: 'String',
+                isConst: true,
+                isNullable: false
+            };
+            classObj.sharedMethods[m.name] = {
+                kind: 'Function',
+                name: m.name,
+                params: m.params,
+                body: m.body,
+                closure: methodClosure,
+                isShared: true,
+                declaringClass: node.name
+            };
         }
     }
 
@@ -166,6 +226,12 @@ function buildBoundMethod(methodAst, instance, declaringClassObj, env, evaluate)
     methodClosure.values['this'] = {
         value: instance,
         type: 'Table',
+        isConst: true,
+        isNullable: false
+    };
+    methodClosure.values['__declaringClass'] = {
+        value: declaringClassObj.name,
+        type: 'String',
         isConst: true,
         isNullable: false
     };
@@ -374,4 +440,30 @@ function checkPrivateAccess(target, memberName, env, isMethod = false) {
     }
 }
 
-module.exports = { evalClassDeclaration, instantiateClass, checkPrivateAccess, hookClassMethod };
+function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false) {
+    if (!targetClass || targetClass.kind !== 'Class') return;
+    if (!targetClass.privateSharedMembers || !targetClass.privateSharedMembers.has(memberName)) return;
+
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+    if (callerThis && (callerThis.className === targetClass.name || (callerThis.classRef && callerThis.classRef.name === targetClass.name))) {
+        return;
+    }
+
+    const declaringScope = findScope('__declaringClass', env);
+    const declaringClass = declaringScope ? declaringScope.values['__declaringClass'].value : null;
+    if (declaringClass === targetClass.name) {
+        return;
+    }
+
+    const kind = isMethod ? 'method' : 'member';
+    printErr(`[TypeError] Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`);
+}
+
+module.exports = { 
+    evalClassDeclaration, 
+    instantiateClass, 
+    checkPrivateAccess, 
+    checkPrivateSharedAccess, 
+    hookClassMethod 
+};

@@ -208,7 +208,8 @@ const KEYWORDS = {
   public: { type: "PUBLIC", value: "public" },
   private: { type: "PRIVATE", value: "private" },
   from: { type: "FROM", value: "from" },
-  base: { type: "BASE", value: "base" }
+  base: { type: "BASE", value: "base" },
+  shared: { type: "SHARED", value: "shared" }
 };
 
 const SYMBOLS = {
@@ -1696,28 +1697,88 @@ class ParserStatements extends ParserControl {
 
         let fields = [];
         let methods = [];
+        let sharedFields = [];
+        let sharedMethods = [];
 
         while (!this.check('END') && !this.isAtEnd()) {
+            let isShared = false;
             let access = 'public';
-            if (this.match('PUBLIC')) {
-                access = 'public';
+
+            if (this.match('SHARED')) {
+                if (this.match('THEN')) {
+                    while (!this.check('END') && !this.isAtEnd()) {
+                        let innerAccess = 'public';
+                        if (this.match('PRIVATE')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').`);
+                            }
+                            innerAccess = 'private';
+                        } else if (this.match('PUBLIC')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').`);
+                            }
+                            innerAccess = 'public';
+                        }
+
+                        if (this.match('IVAR', 'ICONST')) {
+                            let decl = this.parseVarDeclaration();
+                            if (decl.type === 'MultiVarDeclar') {
+                                for (let d of decl.declarations) {
+                                    sharedFields.push({ ...d, access: innerAccess, isShared: true });
+                                }
+                            } else {
+                                sharedFields.push({ ...decl, access: innerAccess, isShared: true });
+                            }
+                            this.consume('SEMICOLON', "Missing semicolon ';' after shared field declaration.");
+                        } else if (this.match('FUNCTION')) {
+                            let method = this.parseFunctionDeclaration(false);
+                            sharedMethods.push({ ...method, access: innerAccess, isShared: true });
+                        } else {
+                            let tok = this.peek();
+                            printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside 'shared' block of class '${className}'.`);
+                        }
+                    }
+                    this.consume('END', "Expected 'end' to close 'shared' block.");
+                    continue;
+                } else {
+                    isShared = true;
+                    if (this.match('PRIVATE')) {
+                        access = 'private';
+                    } else if (this.match('PUBLIC')) {
+                        access = 'public';
+                    }
+                }
             } else if (this.match('PRIVATE')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').`);
+                }
                 access = 'private';
+            } else if (this.match('PUBLIC')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').`);
+                }
+                access = 'public';
             }
 
             if (this.match('IVAR', 'ICONST')) {
                 let decl = this.parseVarDeclaration();
+                const targetFields = isShared ? sharedFields : fields;
                 if (decl.type === 'MultiVarDeclar') {
                     for (let d of decl.declarations) {
-                        fields.push({ ...d, access });
+                        targetFields.push({ ...d, access, isShared });
                     }
                 } else {
-                    fields.push({ ...decl, access });
+                    targetFields.push({ ...decl, access, isShared });
                 }
                 this.consume('SEMICOLON', "Missing semicolon ';' after field declaration in class.");
             } else if (this.match('FUNCTION')) {
                 let method = this.parseFunctionDeclaration(false);
-                methods.push({ ...method, access });
+                const targetMethods = isShared ? sharedMethods : methods;
+                targetMethods.push({ ...method, access, isShared });
             } else {
                 let tok = this.peek();
                 printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside class '${className}'. Expected field or method declaration.`);
@@ -1732,6 +1793,8 @@ class ParserStatements extends ParserControl {
             superClass,
             fields,
             methods,
+            sharedFields,
+            sharedMethods,
             line: startToken.line,
             col: startToken.col
         };
@@ -2303,8 +2366,11 @@ async function evalClassDeclaration(node, env) {
         superClass: superClassObj,
         fields: node.fields,
         methods: {},
+        sharedFields: {},
+        sharedMethods: {},
         constructor: null,
         privateMembers: new Set(),
+        privateSharedMembers: new Set(),
         instances: new Set()
     };
 
@@ -2322,6 +2388,63 @@ async function evalClassDeclaration(node, env) {
             classObj.constructor = m;
         } else {
             classObj.methods[m.name] = m;
+        }
+    }
+
+    if (node.sharedFields) {
+        const sharedEnv = createScope(env);
+        for (const f of node.sharedFields) {
+            if (f.access === 'private') {
+                classObj.privateSharedMembers.add(f.name);
+            }
+            let val = null;
+            if (f.value !== undefined && f.value !== null) {
+                
+                val = await evaluate(f.value, sharedEnv);
+            }
+            let fieldType = f.explType || getType(val);
+            if (f.typeInfo && f.typeInfo.baseType) {
+                fieldType = f.typeInfo.baseType;
+                if (!f.typeInfo.isNullable && val === null) {
+                    printErr(`[TypeError] Cannot assign NULL to non-nullable shared field '${f.name}'.`);
+                }
+                if (val !== null) {
+                    val = castToType(val, fieldType);
+                }
+            } else if (!f.isNullable && val === null) {
+                printErr(`[TypeError] Cannot assign NULL to non-nullable shared field '${f.name}'.`);
+            }
+            classObj.sharedFields[f.name] = {
+                value: val,
+                type: fieldType,
+                isNullable: f.isNullable !== false,
+                isConst: !!f.isConst,
+                access: f.access
+            };
+        }
+    }
+
+    if (node.sharedMethods) {
+        for (const m of node.sharedMethods) {
+            if (m.access === 'private') {
+                classObj.privateSharedMembers.add(m.name);
+            }
+            const methodClosure = createScope(env);
+            methodClosure.values['__declaringClass'] = {
+                value: node.name,
+                type: 'String',
+                isConst: true,
+                isNullable: false
+            };
+            classObj.sharedMethods[m.name] = {
+                kind: 'Function',
+                name: m.name,
+                params: m.params,
+                body: m.body,
+                closure: methodClosure,
+                isShared: true,
+                declaringClass: node.name
+            };
         }
     }
 
@@ -2449,6 +2572,12 @@ function buildBoundMethod(methodAst, instance, declaringClassObj, env, evaluate)
     methodClosure.values['this'] = {
         value: instance,
         type: 'Table',
+        isConst: true,
+        isNullable: false
+    };
+    methodClosure.values['__declaringClass'] = {
+        value: declaringClassObj.name,
+        type: 'String',
         isConst: true,
         isNullable: false
     };
@@ -2657,6 +2786,26 @@ function checkPrivateAccess(target, memberName, env, isMethod = false) {
     }
 }
 
+function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false) {
+    if (!targetClass || targetClass.kind !== 'Class') return;
+    if (!targetClass.privateSharedMembers || !targetClass.privateSharedMembers.has(memberName)) return;
+
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+    if (callerThis && (callerThis.className === targetClass.name || (callerThis.classRef && callerThis.classRef.name === targetClass.name))) {
+        return;
+    }
+
+    const declaringScope = findScope('__declaringClass', env);
+    const declaringClass = declaringScope ? declaringScope.values['__declaringClass'].value : null;
+    if (declaringClass === targetClass.name) {
+        return;
+    }
+
+    const kind = isMethod ? 'method' : 'member';
+    printErr(`[TypeError] Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`);
+}
+
 
 
     
@@ -2671,6 +2820,24 @@ async function evalListLiteral(node, env, evaluate) {
 
 async function evalIndexAccess(node, env, evaluate) {
     let target = await evaluate(node.target, env);
+
+    if (target && target.kind === 'Class') {
+        let key = node.index;
+        checkPrivateSharedAccess(target, key, env, false);
+
+        let curr = target;
+        while (curr) {
+            if (curr.sharedFields && key in curr.sharedFields) {
+                return curr.sharedFields[key].value;
+            }
+            if (curr.sharedMethods && key in curr.sharedMethods) {
+                return curr.sharedMethods[key];
+            }
+            curr = curr.superClass;
+        }
+
+        printErr(`[ReferenceError] Shared member '${key}' does not exist on class '${target.name}'.`);
+    }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
         if (!node.isDotAccess) {
@@ -2734,12 +2901,44 @@ async function evalMemberAssign(node, env, evaluate) {
         if (!scope) printErr(`[ReferenceError] Variable '${root.name}' is not defined.`);
         
         rootVarEntry = scope.values[root.name];
-        if (rootVarEntry.isConst && root.name !== 'this') {
+        if (rootVarEntry.isConst && root.name !== 'this' && rootVarEntry.type !== 'Class') {
             printErr(`[TypeError] Cannot modify constant '${root.name}'.`);
         }
     }
 
     let container = await evaluate(node.target, env);
+
+    if (container && container.kind === 'Class') {
+        let key = node.index;
+        checkPrivateSharedAccess(container, key, env, false);
+
+        let curr = container;
+        let fieldEntry = null;
+        while (curr) {
+            if (curr.sharedFields && key in curr.sharedFields) {
+                fieldEntry = curr.sharedFields[key];
+                break;
+            }
+            curr = curr.superClass;
+        }
+
+        if (!fieldEntry) {
+            printErr(`[ReferenceError] Shared variable '${key}' does not exist on class '${container.name}'.`);
+        }
+
+        if (fieldEntry.isConst) {
+            printErr(`[TypeError] Cannot modify constant shared member '${key}' on class '${container.name}'.`);
+        }
+
+        let currVal = fieldEntry.value;
+        let rhsVal = await evaluate(node.value, env);
+        let finalVal = applyCompoundOp(currVal, rhsVal, node.operator);
+        if (fieldEntry.type && rhsVal !== null) {
+            finalVal = castToType(finalVal, fieldEntry.type);
+        }
+        fieldEntry.value = finalVal;
+        return finalVal;
+    }
 
     if (node.isDotAccess) {
         if (!container || container.kind !== 'Table') {
@@ -2837,6 +3036,22 @@ async function evalMemberAssign(node, env, evaluate) {
 async function evalMethodCall(node, env, evaluate) {
     let target = await evaluate(node.target, env);
     let targetType = getType(target);
+
+    if (target && target.kind === 'Class') {
+        let methodName = node.method;
+        checkPrivateSharedAccess(target, methodName, env, true);
+
+        let curr = target;
+        while (curr) {
+            if (curr.sharedMethods && methodName in curr.sharedMethods) {
+                let fnObj = curr.sharedMethods[methodName];
+                return await evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
+            }
+            curr = curr.superClass;
+        }
+
+        printErr(`[ReferenceError] Shared method '${methodName}' does not exist on class '${target.name}'.`);
+    }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
         let methodName = node.method;

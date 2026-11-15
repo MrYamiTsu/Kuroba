@@ -45,7 +45,8 @@ const KEYWORDS = {
   public: { type: "PUBLIC", value: "public" },
   private: { type: "PRIVATE", value: "private" },
   from: { type: "FROM", value: "from" },
-  base: { type: "BASE", value: "base" }
+  base: { type: "BASE", value: "base" },
+  shared: { type: "SHARED", value: "shared" }
 };
 
 const SYMBOLS = {

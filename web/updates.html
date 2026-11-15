@@ -99,6 +99,8 @@
             <span class="log-tag syntax">C#-Style Constructors</span>
             <span class="log-tag feat">Inheritance (from)</span>
             <span class="log-tag feat">base(...) Chaining</span>
+            <span class="log-tag feat">shared Members</span>
+            <span class="log-tag feat">hook &amp; orig</span>
             <span class="log-tag feat">public / private</span>
             <span class="log-tag feat">is Operator</span>
             <span class="log-tag syntax">Multi-Var Declarations</span>
@@ -139,6 +141,14 @@
             <li class="roadmap-item done">
               <span class="roadmap-check">✓</span>
               <span><strong>Base Delegation (<code>base</code>):</strong> Explicit constructor chaining <code>base(args...)</code> and parent method delegation <code>base.method(...)</code>.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Shared Static Members (<code>shared</code>):</strong> Grouped <code>shared then ... end</code> blocks and inline declarations with strict modifier ordering (<code>shared private</code>).</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
+              <span><strong>Class Method Interception:</strong> <code>hook ClassName.method</code> with <code>orig(...)</code> delegation, leaving <code>this</code> bound to the instance, and unhookable private methods.</span>
             </li>
             <li class="roadmap-item done">
               <span class="roadmap-check">✓</span>

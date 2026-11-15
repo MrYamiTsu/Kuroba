@@ -410,7 +410,7 @@ Kuroba/
   - [x] Single inheritance `class Sub from Super ... end` with `base(...)` and `base.method(...)`
   - [x] Instance reference (`this`)
   - [x] Encapsulation & Access Modifiers (`public`, `private`)
-  - [ ] Static class members (`static ivar`, `static function`)
+  - [x] Static class members (`shared ivar`, `shared function`, and `shared then ... end` blocks)
   - [x] Class Method Interception (`hook ClassName.method(args) then ... end`)
   - [ ] Namespaces integration & class scoping
 - [ ] Type & Value Constructs:
