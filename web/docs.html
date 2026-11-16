@@ -984,6 +984,8 @@ pasteLn(Player.getCount());     ~~ 2</code></pre>
           <li><strong><code>Main</code> Namespace:</strong> Single entry point for applications. Strictly indivisible (cannot have <code>~Module</code>) and cannot be imported by other files.</li>
           <li><strong>Direct Namespaces:</strong> Declare a self-contained namespace using <code>namespace Utils then ... end</code> and access its exports directly via <code>Utils.helper()</code>.</li>
           <li><strong>Modular Slices:</strong> Split larger packages across multiple files or subfolders with <code>namespace Game ~Combat then ... end</code>, merging into <code>Game.Combat</code>.</li>
+          <li><strong>Namespace Class Modules:</strong> Declare a class directly as a module of a namespace using <code>namespace Entities ~class Player [from SuperClass] then ... end</code>. When imported, the class is accessible as <code>Entities.Player()</code> or directly as <code>Player()</code> with <code>alias ~</code>.</li>
+          <li><strong>Qualified Paths &amp; Typing:</strong> Qualified dotted paths can be used in inheritance (<code>class Warrior from Entities.Player</code>), instance checks (<code>w is Entities.Player</code>), and type annotations (<code>ivar ~Entities.Player p = ...</code>).</li>
           <li><strong>Symbol Discovery &amp; Circular Guard:</strong> Kuroba indexes files by declared symbols (ignoring <code>node_modules</code>, <code>.git</code>, and the entry script) and raises an <code>[ImportError]</code> on circular dependencies.</li>
         </ul>
 
@@ -1009,7 +1011,21 @@ pasteLn(Math.sqrt(16));
 ~~ sub/combat.krb: namespace Game ~Combat then import Utils; function crit(ivar d) then return Utils.dbl(d); end end
 import Utils;
 import Game;
-pasteLn(Game.Combat.crit(10)); ~~ 20</code></pre>
+pasteLn(Game.Combat.crit(10)); ~~ 20
+
+~~ 6. Namespace Class Modules &amp; Qualified Paths
+~~ entities/player.krb:
+~~   namespace Entities ~class Player then
+~~       ivar name = "Hero";
+~~   end
+import Entities ~(Player);
+ivar ~Entities.Player p = Entities.Player();
+
+class Warrior from Entities.Player then
+    ivar power = 100;
+end
+ivar w = Warrior();
+pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
       </section>
 
       <!-- ====================================================================

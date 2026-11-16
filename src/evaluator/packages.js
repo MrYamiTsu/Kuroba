@@ -91,10 +91,42 @@ for (const filePath of files) {
 
                     activeImports.add(cacheKey);
                     try {
-                        moduleCache[cacheKey] = {
-                            isRoot: !stmt.module,
-                            table: evaluateNamespaceBody(stmt.body, evaluate, topImports)
-                        };
+                        if (stmt.isClassModule) {
+                            const nsScope = createScope();
+                            for (const [name, fn] of Object.entries(natives)) {
+                                nsScope.values[`__native_${name}`] = {
+                                    value: { kind: 'Function', isNative: true, fn },
+                                    type: 'Function',
+                                    isConst: true,
+                                    isNullable: false
+                                };
+                            }
+                            for (const imp of topImports) {
+                                evaluate(imp, nsScope);
+                            }
+                            const classObj = evaluate(stmt.classDecl, nsScope);
+                            moduleCache[cacheKey] = {
+                                isRoot: false,
+                                isClassModule: true,
+                                classObj,
+                                table: {
+                                    kind: 'Table',
+                                    fields: {
+                                        [modName]: {
+                                            value: classObj,
+                                            type: 'Class',
+                                            isConst: true,
+                                            isNullable: false
+                                        }
+                                    }
+                                }
+                            };
+                        } else {
+                            moduleCache[cacheKey] = {
+                                isRoot: !stmt.module,
+                                table: evaluateNamespaceBody(stmt.body, evaluate, topImports)
+                            };
+                        }
                     } finally {
                         activeImports.delete(cacheKey);
                     }
@@ -152,7 +184,14 @@ function evalImport(node, env, evaluate) {
 
     if (node.alias === '~') {
         for (const [modName, entry] of Object.entries(modulesToBind)) {
-            if (entry.isRoot) {
+            if (entry.isClassModule) {
+                env.values[modName] = {
+                    value: entry.classObj,
+                    type: 'Class',
+                    isConst: true,
+                    isNullable: false
+                };
+            } else if (entry.isRoot) {
                 for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
                     if (fieldName !== 'args' && fieldName !== 'Std') {
                         env.values[fieldName] = {
@@ -186,7 +225,14 @@ function evalImport(node, env, evaluate) {
     }
 
     for (const [modName, entry] of Object.entries(modulesToBind)) {
-        if (entry.isRoot) {
+        if (entry.isClassModule) {
+            env.values[targetNamespace].value.fields[modName] = {
+                value: entry.classObj,
+                type: 'Class',
+                isConst: true,
+                isNullable: false
+            };
+        } else if (entry.isRoot) {
             for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
                 if (fieldName !== 'args' && fieldName !== 'Std') {
                     env.values[targetNamespace].value.fields[fieldName] = fieldDef;

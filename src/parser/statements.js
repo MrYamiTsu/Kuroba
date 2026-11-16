@@ -139,6 +139,44 @@ class ParserStatements extends ParserControl {
                         eCol: startToken.col
                     });
                 }
+
+                if (this.match('CLASS')) {
+                    let classTok = this.previous();
+                    let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
+                    modName = className;
+
+                    let superClass = null;
+                    if (this.match('FROM')) {
+                        superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
+                    }
+
+                    this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
+
+                    let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
+
+                    let classDecl = {
+                        type: 'ClassDeclaration',
+                        name: className,
+                        superClass,
+                        fields,
+                        methods,
+                        sharedFields,
+                        sharedMethods,
+                        line: classTok.line,
+                        col: classTok.col
+                    };
+
+                    return {
+                        type: 'NamespaceStatement',
+                        namespace: nsName,
+                        module: modName,
+                        isClassModule: true,
+                        classDecl,
+                        body: [classDecl],
+                        line: startToken.line,
+                        col: startToken.col
+                    };
+                }
                 
                 modName = this.consume('IDENTIFIER', "Expected module name after '~'.").value;
             }
@@ -263,17 +301,7 @@ class ParserStatements extends ParserControl {
         return stmt;
     }
 
-    parseClassDeclaration() {
-        let startToken = this.previous();
-        let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
-        
-        let superClass = null;
-        if (this.match('FROM')) {
-            superClass = this.consume('IDENTIFIER', `Expected superclass name after 'from' in class '${className}'.`).value;
-        }
-
-        this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
-
+    parseClassBody(className) {
         let fields = [];
         let methods = [];
         let sharedFields = [];
@@ -395,6 +423,22 @@ class ParserStatements extends ParserControl {
         }
 
         this.consume('END', `Expected 'end' to close class '${className}' block.`);
+
+        return { fields, methods, sharedFields, sharedMethods };
+    }
+
+    parseClassDeclaration() {
+        let startToken = this.previous();
+        let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
+        
+        let superClass = null;
+        if (this.match('FROM')) {
+            superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
+        }
+
+        this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
+
+        let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
 
         return {
             type: 'ClassDeclaration',

@@ -148,6 +148,10 @@
             </li>
             <li class="roadmap-item done">
               <span class="roadmap-check">✓</span>
+              <span><strong>Namespace Class Modules &amp; Qualified Paths:</strong> Declare classes directly as namespace modules via <code>namespace Name ~class ClassName [from SuperClass] then ... end</code>. Fully integrated with multi-file imports (<code>Entities.Player()</code>), qualified inheritance (<code>class Warrior from Entities.Player</code>), instance checks (<code>w is Entities.Player</code>), and type annotations (<code>ivar ~Entities.Player p</code>).</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
               <span><strong>Unified Error Tables (<code>eName</code>, <code>eContext</code>):</strong> Standardized error table structure across the entire engine and runtime. All internal diagnostic errors now emit structured objects with <code>eName</code>, <code>eContext</code>, <code>eLine</code>, and <code>eCol</code> for seamless <code>try / catch</code> inspection.</span>
             </li>
             <li class="roadmap-item done">

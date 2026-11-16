@@ -1,6 +1,6 @@
 const { printErr } = require('../errors');
 const { isKurobaEqual, isTruthy, getType } = require('./types');
-const { findScope } = require('./scope');
+const { findScope, resolveQualifiedValue } = require('./scope');
 
 const KNOWN_TYPES = new Set([
     'Int', 'Float', 'String', 'Bool', 'List', 'Stack', 'Queue', 'Table', 'Function', 'Null'
@@ -81,15 +81,14 @@ function evalIs(node, env, evaluate) {
     let { baseType, elemType, isElemNullable } = spec.typeInfo;
 
     if (!KNOWN_TYPES.has(baseType)) {
-        let scope = findScope(baseType, env);
-        let classEntry = scope && scope.values[baseType];
-        if (classEntry && classEntry.value && classEntry.value.kind === 'Class') {
+        let classObj = resolveQualifiedValue(baseType, env);
+        if (classObj && classObj.kind === 'Class') {
             if (!val || val.kind !== 'Table' || !val.isInstance) return false;
 
             let curr = val.classRef;
 
             while (curr) {
-                if (curr.name === baseType) return true;
+                if (curr === classObj || curr.name === classObj.name) return true;
                 curr = curr.superClass;
             }
             

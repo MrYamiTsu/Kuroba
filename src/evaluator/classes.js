@@ -1,21 +1,20 @@
 const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
-const { createScope, findScope } = require('./scope');
+const { createScope, findScope, resolveQualifiedValue } = require('./scope');
 const { evalCall } = require('./functions');
 
-function evalClassDeclaration(node, env) {
+function evalClassDeclaration(node, env, shouldBind = true) {
     let superClassObj = null;
     if (node.superClass) {
-        const scope = findScope(node.superClass, env);
-        const entry = scope && scope.values[node.superClass];
-        if (!entry || !entry.value || entry.value.kind !== 'Class') {
+        const val = resolveQualifiedValue(node.superClass, env);
+        if (!val || val.kind !== 'Class') {
             printErr({
                 eName: 'ReferenceError',
                 eContext: `Cannot inherit from undefined class '${node.superClass}'.`,
                 eLine: node.line
             });
         }
-        superClassObj = entry.value;
+        superClassObj = val;
     }
 
     const classObj = {
@@ -114,12 +113,14 @@ function evalClassDeclaration(node, env) {
         }
     }
 
-    env.values[node.name] = {
-        value: classObj,
-        type: 'Class',
-        isConst: true,
-        isNullable: false
-    };
+    if (shouldBind) {
+        env.values[node.name] = {
+            value: classObj,
+            type: 'Class',
+            isConst: true,
+            isNullable: false
+        };
+    }
 
     return classObj;
 }

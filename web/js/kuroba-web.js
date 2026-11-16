@@ -773,6 +773,15 @@ class ParserCursor {
     
 
 class ParserTypes extends ParserCursor {
+    parseDottedIdentifier(msg) {
+        let name = this.consume('IDENTIFIER', msg).value;
+        while (this.match('DOT')) {
+            let part = this.consume('IDENTIFIER', "Expected identifier after '.' in qualified name.").value;
+            name += '.' + part;
+        }
+        return name;
+    }
+
     parseType() {
         let isNullable = true;
         let baseType = null;
@@ -781,7 +790,7 @@ class ParserTypes extends ParserCursor {
 
         if (this.match('LPAREN')) {
             isNullable = false;
-            baseType = this.consume('IDENTIFIER', "Expected type identifier inside '(...)'. (e.g. String, Int, List)").value;
+            baseType = this.parseDottedIdentifier("Expected type identifier inside '(...)'. (e.g. String, Int, List)");
             
             if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && this.match('LESS')) {
                 isElemNullable = false;
@@ -798,7 +807,7 @@ class ParserTypes extends ParserCursor {
 
             this.consume('RPAREN', "Expected closing ')' after non-nullable type.");
         } else {
-            baseType = this.consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Int, List).").value;
+            baseType = this.parseDottedIdentifier("Expected type identifier after '~' (e.g. String, Int, List).");
 
             if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && this.match('LESS')) {
                 if (this.match('LPAREN')) {
@@ -1713,6 +1722,44 @@ class ParserStatements extends ParserControl {
                         eCol: startToken.col
                     });
                 }
+
+                if (this.match('CLASS')) {
+                    let classTok = this.previous();
+                    let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
+                    modName = className;
+
+                    let superClass = null;
+                    if (this.match('FROM')) {
+                        superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
+                    }
+
+                    this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
+
+                    let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
+
+                    let classDecl = {
+                        type: 'ClassDeclaration',
+                        name: className,
+                        superClass,
+                        fields,
+                        methods,
+                        sharedFields,
+                        sharedMethods,
+                        line: classTok.line,
+                        col: classTok.col
+                    };
+
+                    return {
+                        type: 'NamespaceStatement',
+                        namespace: nsName,
+                        module: modName,
+                        isClassModule: true,
+                        classDecl,
+                        body: [classDecl],
+                        line: startToken.line,
+                        col: startToken.col
+                    };
+                }
                 
                 modName = this.consume('IDENTIFIER', "Expected module name after '~'.").value;
             }
@@ -1837,17 +1884,7 @@ class ParserStatements extends ParserControl {
         return stmt;
     }
 
-    parseClassDeclaration() {
-        let startToken = this.previous();
-        let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
-        
-        let superClass = null;
-        if (this.match('FROM')) {
-            superClass = this.consume('IDENTIFIER', `Expected superclass name after 'from' in class '${className}'.`).value;
-        }
-
-        this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
-
+    parseClassBody(className) {
         let fields = [];
         let methods = [];
         let sharedFields = [];
@@ -1969,6 +2006,22 @@ class ParserStatements extends ParserControl {
         }
 
         this.consume('END', `Expected 'end' to close class '${className}' block.`);
+
+        return { fields, methods, sharedFields, sharedMethods };
+    }
+
+    parseClassDeclaration() {
+        let startToken = this.previous();
+        let className = this.consume('IDENTIFIER', "Expected class name after 'class'.").value;
+        
+        let superClass = null;
+        if (this.match('FROM')) {
+            superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
+        }
+
+        this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
+
+        let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
 
         return {
             type: 'ClassDeclaration',
@@ -2196,6 +2249,32 @@ function findScope(name, env) {
     return null;
 }
 
+function resolveQualifiedValue(pathStr, env) {
+    if (!pathStr || typeof pathStr !== 'string') return null;
+    const parts = pathStr.split('.');
+    const first = parts[0];
+    const scope = findScope(first, env);
+    if (!scope) return null;
+    let curr = scope.values[first] ? scope.values[first].value : null;
+    for (let i = 1; i < parts.length; i++) {
+        if (!curr) return null;
+        if (curr.kind === 'Table' && curr.fields && parts[i] in curr.fields) {
+            curr = curr.fields[parts[i]].value;
+        } else if (curr.kind === 'Class') {
+            if (curr.sharedFields && parts[i] in curr.sharedFields) {
+                curr = curr.sharedFields[parts[i]].value;
+            } else if (curr.sharedMethods && parts[i] in curr.sharedMethods) {
+                curr = curr.sharedMethods[parts[i]];
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+    return curr;
+}
+
 
 
     
@@ -2352,15 +2431,14 @@ async function evalIs(node, env, evaluate) {
     let { baseType, elemType, isElemNullable } = spec.typeInfo;
 
     if (!KNOWN_TYPES.has(baseType)) {
-        let scope = findScope(baseType, env);
-        let classEntry = scope && scope.values[baseType];
-        if (classEntry && classEntry.value && classEntry.value.kind === 'Class') {
+        let classObj = resolveQualifiedValue(baseType, env);
+        if (classObj && classObj.kind === 'Class') {
             if (!val || val.kind !== 'Table' || !val.isInstance) return false;
 
             let curr = val.classRef;
 
             while (curr) {
-                if (curr.name === baseType) return true;
+                if (curr === classObj || curr.name === classObj.name) return true;
                 curr = curr.superClass;
             }
             
@@ -2638,19 +2716,18 @@ function evalKill(node, env) {
 
 
 
-async function evalClassDeclaration(node, env) {
+async function evalClassDeclaration(node, env, shouldBind = true) {
     let superClassObj = null;
     if (node.superClass) {
-        const scope = findScope(node.superClass, env);
-        const entry = scope && scope.values[node.superClass];
-        if (!entry || !entry.value || entry.value.kind !== 'Class') {
+        const val = resolveQualifiedValue(node.superClass, env);
+        if (!val || val.kind !== 'Class') {
             printErr({
                 eName: 'ReferenceError',
                 eContext: `Cannot inherit from undefined class '${node.superClass}'.`,
                 eLine: node.line
             });
         }
-        superClassObj = entry.value;
+        superClassObj = val;
     }
 
     const classObj = {
@@ -2749,12 +2826,14 @@ async function evalClassDeclaration(node, env) {
         }
     }
 
-    env.values[node.name] = {
-        value: classObj,
-        type: 'Class',
-        isConst: true,
-        isNullable: false
-    };
+    if (shouldBind) {
+        env.values[node.name] = {
+            value: classObj,
+            type: 'Class',
+            isConst: true,
+            isNullable: false
+        };
+    }
 
     return classObj;
 }
@@ -4569,12 +4648,33 @@ async function evaluate(node, env = createScope()) {
         case 'Program':
             for (let stmt of node.body) await evaluate(stmt, env);
             return;
-        case 'NamespaceStatement':
+        case 'NamespaceStatement': {
+            if (node.isClassModule) {
+                const classObj = await evalClassDeclaration(node.classDecl, env, false);
+                if (!env.values[node.namespace]) {
+                    env.values[node.namespace] = {
+                        value: { kind: 'Table', fields: {} },
+                        type: 'Table',
+                        isConst: true,
+                        isNullable: false
+                    };
+                }
+                const nsTable = env.values[node.namespace].value;
+                if (!nsTable.fields) nsTable.fields = {};
+                nsTable.fields[node.module] = {
+                    value: classObj,
+                    type: 'Class',
+                    isConst: true,
+                    isNullable: false
+                };
+                return classObj;
+            }
             for (const stmt of node.body) {
                 let res = await evaluate(stmt, env);
                 if (res && (res.isReturn || res.isBreak || res.isSkip)) return res;
             }
             return null;
+        }
         case 'InterpolatedString': 
             let res = '';
             for (let part of node.parts) {

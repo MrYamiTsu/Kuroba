@@ -79,4 +79,30 @@ function findScope(name, env) {
     return null;
 }
 
-module.exports = { createScope, findScope, setCliArgs, setProjectContext, getProjectContext, initGlobalScope };
+function resolveQualifiedValue(pathStr, env) {
+    if (!pathStr || typeof pathStr !== 'string') return null;
+    const parts = pathStr.split('.');
+    const first = parts[0];
+    const scope = findScope(first, env);
+    if (!scope) return null;
+    let curr = scope.values[first] ? scope.values[first].value : null;
+    for (let i = 1; i < parts.length; i++) {
+        if (!curr) return null;
+        if (curr.kind === 'Table' && curr.fields && parts[i] in curr.fields) {
+            curr = curr.fields[parts[i]].value;
+        } else if (curr.kind === 'Class') {
+            if (curr.sharedFields && parts[i] in curr.sharedFields) {
+                curr = curr.sharedFields[parts[i]].value;
+            } else if (curr.sharedMethods && parts[i] in curr.sharedMethods) {
+                curr = curr.sharedMethods[parts[i]];
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+    return curr;
+}
+
+module.exports = { createScope, findScope, resolveQualifiedValue, setCliArgs, setProjectContext, getProjectContext, initGlobalScope };

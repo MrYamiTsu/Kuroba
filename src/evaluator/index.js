@@ -17,12 +17,33 @@ function evaluate(node, env = createScope()) {
         case 'Program':
             for (let stmt of node.body) evaluate(stmt, env);
             return;
-        case 'NamespaceStatement':
+        case 'NamespaceStatement': {
+            if (node.isClassModule) {
+                const classObj = evalClassDeclaration(node.classDecl, env, false);
+                if (!env.values[node.namespace]) {
+                    env.values[node.namespace] = {
+                        value: { kind: 'Table', fields: {} },
+                        type: 'Table',
+                        isConst: true,
+                        isNullable: false
+                    };
+                }
+                const nsTable = env.values[node.namespace].value;
+                if (!nsTable.fields) nsTable.fields = {};
+                nsTable.fields[node.module] = {
+                    value: classObj,
+                    type: 'Class',
+                    isConst: true,
+                    isNullable: false
+                };
+                return classObj;
+            }
             for (const stmt of node.body) {
                 let res = evaluate(stmt, env);
                 if (res && (res.isReturn || res.isBreak || res.isSkip)) return res;
             }
             return null;
+        }
         case 'InterpolatedString': 
             let res = '';
             for (let part of node.parts) {

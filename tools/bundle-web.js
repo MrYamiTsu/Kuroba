@@ -38,7 +38,7 @@ function readAsyncEvaluator(relPath) {
         'async function $1('
     );
 
-    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall|instantiateClass)\(/g, 'await $1(');
+    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall|instantiateClass|evalClassDeclaration)\(/g, 'await $1(');
     code = code.replace(/\b(caller\.fn|fnObj\.fn)\(/g, 'await $1(');
     code = code.replace(/\bconst baseFn = \(([^)]*)\) => \{/g, 'const baseFn = async ($1) => {');
 

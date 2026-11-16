@@ -1,6 +1,15 @@
 const { ParserCursor } = require('./cursor');
 
 class ParserTypes extends ParserCursor {
+    parseDottedIdentifier(msg) {
+        let name = this.consume('IDENTIFIER', msg).value;
+        while (this.match('DOT')) {
+            let part = this.consume('IDENTIFIER', "Expected identifier after '.' in qualified name.").value;
+            name += '.' + part;
+        }
+        return name;
+    }
+
     parseType() {
         let isNullable = true;
         let baseType = null;
@@ -9,7 +18,7 @@ class ParserTypes extends ParserCursor {
 
         if (this.match('LPAREN')) {
             isNullable = false;
-            baseType = this.consume('IDENTIFIER', "Expected type identifier inside '(...)'. (e.g. String, Int, List)").value;
+            baseType = this.parseDottedIdentifier("Expected type identifier inside '(...)'. (e.g. String, Int, List)");
             
             if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && this.match('LESS')) {
                 isElemNullable = false;
@@ -26,7 +35,7 @@ class ParserTypes extends ParserCursor {
 
             this.consume('RPAREN', "Expected closing ')' after non-nullable type.");
         } else {
-            baseType = this.consume('IDENTIFIER', "Expected type identifier after '~' (e.g. String, Int, List).").value;
+            baseType = this.parseDottedIdentifier("Expected type identifier after '~' (e.g. String, Int, List).");
 
             if ((baseType === 'List' || baseType === 'Stack' || baseType === 'Queue') && this.match('LESS')) {
                 if (this.match('LPAREN')) {

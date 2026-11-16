@@ -412,7 +412,7 @@ Kuroba/
   - [x] Encapsulation & Access Modifiers (`public`, `private`)
   - [x] Static class members (`shared ivar`, `shared function`, and `shared then ... end` blocks)
   - [x] Class Method Interception (`hook ClassName.method(args) then ... end`)
-  - [ ] Namespaces integration & class scoping
+  - [x] Namespaces integration & class scoping (`namespace Name ~class ClassName [from SuperClass] then ... end`, qualified paths `Entities.Player`)
 - [ ] Type & Value Constructs:
   - [x] Runtime type checking operator (`is`, e.g., `if (x is Int) then`, `is NULL`, `is TRUE`, `is List<Int>`, `is Player`, `is Table`)
   - [ ] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
