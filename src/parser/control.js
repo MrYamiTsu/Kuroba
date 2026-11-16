@@ -312,7 +312,12 @@ class ParserControl extends ParserExpressions {
         } else if (this.check('IDENTIFIER')) {
             name = this.advance().value;
         } else {
-            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Expected function name or '~' for anonymous function after 'function'.`);
+            printErr({
+                eName: 'SyntaxError',
+                eContext: "Expected function name or '~' for anonymous function after 'function'.",
+                eLine: startToken.line,
+                eCol: startToken.col
+            });
         }
 
         this.consume('LPAREN', "Expected '(' after function name or '~'.");
@@ -375,7 +380,12 @@ class ParserControl extends ParserExpressions {
         }
 
         if (!catchBlock && !finallyBlock) {
-            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] 'try' block must contain at least a 'catch' or 'finally' clause.`);
+            printErr({
+                eName: 'SyntaxError',
+                eContext: "'try' block must contain at least a 'catch' or 'finally' clause.",
+                eLine: startToken.line,
+                eCol: startToken.col
+            });
         }
 
         this.consume('END', "Unclosed 'try' block. Expected 'end'.");

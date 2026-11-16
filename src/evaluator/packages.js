@@ -83,7 +83,10 @@ for (const filePath of files) {
                 if (!moduleCache[cacheKey]) {
                     if (activeImports.has(cacheKey)) {
                         const modLabel = stmt.module ? `${pkgName}~${stmt.module}` : pkgName;
-                        printErr(`[ImportError] Circular import detected for namespace '${modLabel}'.`);
+                        printErr({
+                            eName: 'ImportError',
+                            eContext: `Circular import detected for namespace '${modLabel}'.`
+                        });
                     }
 
                     activeImports.add(cacheKey);
@@ -107,7 +110,10 @@ for (const filePath of files) {
 
 function evalImport(node, env, evaluate) {
     if (node.package === 'Main') {
-        printErr("[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.");
+        printErr({
+            eName: 'ImportError',
+            eContext: "Cannot import namespace 'Main'. 'Main' is the execution root."
+        });
     }
 
     const availableModules = {};
@@ -122,7 +128,10 @@ function evalImport(node, env, evaluate) {
     }
 
     if (Object.keys(availableModules).length === 0) {
-        printErr(`[ImportError] Unknown package or namespace '${node.package}'. Create a '.krb' file with 'namespace ${node.package} then ... end' or import 'Std'.`);
+        printErr({
+            eName: 'ImportError',
+            eContext: `Unknown package or namespace '${node.package}'. Create a '.krb' file with 'namespace ${node.package} then ... end' or import 'Std'.`
+        });
     }
 
     const isFullPackage = !node.modules || node.modules.length === 0;
@@ -132,7 +141,10 @@ function evalImport(node, env, evaluate) {
     } else {
         for (const modName of node.modules) {
             if (!(modName in availableModules)) {
-                printErr(`[ImportError] Module '${modName}' not found in namespace '${node.package}'.`);
+                printErr({
+                    eName: 'ImportError',
+                    eContext: `Module '${modName}' not found in namespace '${node.package}'.`
+                });
             }
             modulesToBind[modName] = availableModules[modName];
         }

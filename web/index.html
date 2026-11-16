@@ -205,7 +205,7 @@ ivar h = Hero(); ~~ h is Hero -&gt; TRUE</code></pre>
         <tr>
           <td><strong>Exception Handling</strong></td>
           <td><code>try ... catch (ivar e) ... finally ... end</code></td>
-          <td>Structured exception safety with rich error metadata tables (<code>exName</code>, <code>exContext</code>).</td>
+          <td>Structured exception safety with rich error metadata tables (<code>eName</code>, <code>eContext</code>).</td>
         </tr>
         <tr>
           <td><strong>Memory Lifecycle</strong></td>
@@ -416,7 +416,7 @@ pasteLn(greet("Kuroba"));`,
 try
     ivar x = 100 / 0;
 catch (ivar err) then
-    pasteLn(~"[{err.exName}] {err.exContext}");
+    pasteLn(~"[{err.eName}] {err.eContext}");
 end`,
           output: '[MathError] Division by zero is undefined.'
         },

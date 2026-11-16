@@ -148,6 +148,10 @@
             </li>
             <li class="roadmap-item done">
               <span class="roadmap-check">✓</span>
+              <span><strong>Unified Error Tables (<code>eName</code>, <code>eContext</code>):</strong> Standardized error table structure across the entire engine and runtime. All internal diagnostic errors now emit structured objects with <code>eName</code>, <code>eContext</code>, <code>eLine</code>, and <code>eCol</code> for seamless <code>try / catch</code> inspection.</span>
+            </li>
+            <li class="roadmap-item done">
+              <span class="roadmap-check">✓</span>
               <span><strong>Class Method Interception:</strong> <code>hook ClassName.method</code> with <code>orig(...)</code> delegation, leaving <code>this</code> bound to the instance, and unhookable private methods.</span>
             </li>
             <li class="roadmap-item done">
@@ -239,7 +243,7 @@ pasteLn(hero is Table);     ~~ TRUE</code></pre>
             </li>
             <li class="roadmap-item done">
               <span class="roadmap-check">✓</span>
-              <span><strong>Rich Exception Tables:</strong> <code>throw</code> emits tables with <code>exName</code>, <code>exCode</code>, <code>exContext</code>, <code>exTime</code>, and <code>exLines</code>.</span>
+              <span><strong>Rich Exception Tables:</strong> <code>throw</code> emits tables with <code>eName</code>, <code>eCode</code>, <code>eContext</code>, <code>eTime</code>, and <code>eLines</code>.</span>
             </li>
             <li class="roadmap-item done">
               <span class="roadmap-check">✓</span>
@@ -263,14 +267,14 @@ ivar amount = 120;
 try
     if (balance &lt; amount) then
         throw {
-            exName: "InsufficientFunds",
-            exCode: 402,
-            exContext: "Checkout",
-            exTime: Time.now()
+            eName: "InsufficientFunds",
+            eCode: 402,
+            eContext: "Checkout",
+            eTime: Time.now()
         };
     end
 catch (ivar err) then
-    pasteLn(~"Caught error: {err.exName} (Code {err.exCode})");
+    pasteLn(~"Caught error: {err.eName} (Code {err.eCode})");
 finally
     pasteLn("Audit complete.");
 end</code></pre>

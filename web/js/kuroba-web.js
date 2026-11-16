@@ -69,23 +69,37 @@
     }
 
     class KurobaRuntimeError extends Error {
-        constructor(message) {
-            super(message);
+        constructor(message, errorTable = null) {
+            super(typeof message === 'string' ? message : ((message && message.eContext) || 'RuntimeError'));
             this.isKurobaRuntimeError = true;
-            this.message = message;
+            this.message = typeof message === 'string' ? message : '';
+            this.errorTable = errorTable;
         }
     }
 
-    function printErr(msg) {
+    function printErr(arg) {
+        let formattedMsg;
+        let errorTable;
+
+        if (arg && typeof arg === 'object') {
+            errorTable = createErrorTable(arg);
+            let line = arg.eLine !== undefined ? arg.eLine : undefined;
+            let col = arg.eCol !== undefined ? arg.eCol : undefined;
+            formattedMsg = formatExceptionMessage(errorTable, line, col, "");
+        } else {
+            formattedMsg = String(arg);
+            errorTable = parseRuntimeErrorToTable(formattedMsg);
+        }
+
         if (tryDepth > 0) {
-            throw new KurobaRuntimeError(msg);
+            throw new KurobaRuntimeError(formattedMsg, errorTable);
         }
         if (activeErrorHandler) {
-            activeErrorHandler(msg);
+            activeErrorHandler(formattedMsg);
         } else {
-            console.error(msg);
+            console.error(formattedMsg);
         }
-        throw new Error(msg);
+        throw new Error(formattedMsg);
     }
 
     function printException(msg) {
@@ -105,6 +119,41 @@
     return `${date} ${time}`;
 }
 
+function createErrorTable(obj) {
+    if (obj && obj.kind === 'Table') return obj;
+
+    let name = obj.eName || "RuntimeError";
+    let context = (obj.eContext !== undefined) ? obj.eContext : (obj.message || "");
+    let time = (obj.eTime !== undefined) ? obj.eTime : false;
+    let lines = (obj.eLines !== undefined) ? obj.eLines : true;
+    let code = (obj.eCode !== undefined) ? obj.eCode : null;
+    let line = (obj.eLine !== undefined) ? obj.eLine : null;
+    let col = (obj.eCol !== undefined) ? obj.eCol : null;
+
+    let fields = {
+        eName: { value: String(name), type: 'String', isNullable: false },
+        eContext: { value: String(context), type: 'String', isNullable: false },
+        eTime: { value: Boolean(time), type: 'Bool', isNullable: false }
+    };
+    if (lines !== true) {
+        fields.eLines = { value: Boolean(lines), type: 'Bool', isNullable: false };
+    }
+    if (code !== null) {
+        fields.eCode = { value: code, type: typeof code === 'number' ? 'Int' : 'String', isNullable: true };
+    }
+    if (line !== null) {
+        fields.eLine = { value: line, type: 'Int', isNullable: true };
+    }
+    if (col !== null) {
+        fields.eCol = { value: col, type: 'Int', isNullable: true };
+    }
+
+    return {
+        kind: 'Table',
+        fields
+    };
+}
+
 function formatExceptionMessage(rawVal, line, col, fallbackFormatted) {
     let name = "Exception";
     let showLines = true;
@@ -113,26 +162,41 @@ function formatExceptionMessage(rawVal, line, col, fallbackFormatted) {
     let context = null;
 
     if (rawVal && rawVal.kind === 'Table' && rawVal.fields) {
-        if ('exName' in rawVal.fields && rawVal.fields.exName.value !== null) {
-            name = String(rawVal.fields.exName.value);
+        let f = rawVal.fields;
+        if ('eName' in f && f.eName.value !== null) {
+            name = String(f.eName.value);
         }
-        if ('exLines' in rawVal.fields) {
-            let lVal = rawVal.fields.exLines.value;
+
+        if ('eLines' in f) {
+            let lVal = f.eLines.value;
             showLines = (lVal !== false && lVal !== 0);
         }
-        if ('exTime' in rawVal.fields) {
-            let tVal = rawVal.fields.exTime.value;
+
+        if ('eTime' in f) {
+            let tVal = f.eTime.value;
             showTime = (tVal !== false && tVal !== 0 && tVal !== null);
         }
-        if ('exCode' in rawVal.fields && rawVal.fields.exCode.value !== null) {
-            code = rawVal.fields.exCode.value;
+
+        if ('eCode' in f && f.eCode.value !== null) {
+            code = f.eCode.value;
         }
-        if ('exContext' in rawVal.fields && rawVal.fields.exContext.value !== null) {
-            context = String(rawVal.fields.exContext.value);
+
+        if ('eContext' in f && f.eContext.value !== null) {
+            context = String(f.eContext.value);
+        }
+
+        if (line === undefined && 'eLine' in f && f.eLine.value !== null) {
+            line = f.eLine.value;
+        }
+        if (col === undefined && 'eCol' in f && f.eCol.value !== null) {
+            col = f.eCol.value;
         }
     }
 
-    let loc = (line !== undefined) ? `Line ${line}, Col ${col}` : null;
+    let loc = null;
+    if (line !== undefined && line !== null) {
+        loc = (col !== undefined && col !== null) ? `Line ${line}, Col ${col}` : `Line ${line}`;
+    }
     let header = `[${name}${showLines && loc ? ': ' + loc : ''}]`;
 
     let desc = (context !== null) ? context : fallbackFormatted;
@@ -145,16 +209,25 @@ function formatExceptionMessage(rawVal, line, col, fallbackFormatted) {
 }
 
 function parseRuntimeErrorToTable(message) {
-    let match = message.match(/^\[([a-zA-Z]+)(?::\s*Line\s*(\d+),\s*Col\s*(\d+))?\]\s*(.*)$/s);
+    let match = message.match(/^\[([a-zA-Z]+)(?::\s*Line\s*(\d+)(?:,\s*Col\s*(\d+))?)?\]\s*(.*)$/s);
     let name = match ? match[1] : "RuntimeError";
+    let line = match && match[2] ? parseInt(match[2], 10) : null;
+    let col = match && match[3] ? parseInt(match[3], 10) : null;
     let context = match ? match[4] : message;
+    let fields = {
+        eName: { value: name, type: 'String', isNullable: false },
+        eContext: { value: context, type: 'String', isNullable: false },
+        eTime: { value: false, type: 'Bool', isNullable: false }
+    };
+    if (line !== null) {
+        fields.eLine = { value: line, type: 'Int', isNullable: true };
+    }
+    if (col !== null) {
+        fields.eCol = { value: col, type: 'Int', isNullable: true };
+    }
     return {
         kind: 'Table',
-        fields: {
-            exName: { value: name, type: 'String', isNullable: false },
-            exContext: { value: context, type: 'String', isNullable: false },
-            exTime: { value: false, type: 'Bool', isNullable: false }
-        }
+        fields
     };
 }
 
@@ -299,9 +372,12 @@ function tokenize(input) {
           }
 
           if (!closed) {
-            printErr(
-              `[SyntaxError: Line ${startLine}, Col ${startCol}] Unclosed multi-line comment. Expected '}}'.`,
-            );
+            printErr({
+              eName: "SyntaxError",
+              eContext: "Unclosed multi-line comment. Expected '}}'.",
+              eLine: startLine,
+              eCol: startCol,
+            });
           }
 
           continue;
@@ -337,7 +413,12 @@ function tokenize(input) {
         }
 
         if (cursor >= input.length || input[cursor] !== '"') {
-          printErr(`[SyntaxError: Line ${startLine}, Col ${startCol}] Unterminated interpolated string literal.`);
+          printErr({
+            eName: "SyntaxError",
+            eContext: "Unterminated interpolated string literal.",
+            eLine: startLine,
+            eCol: startCol,
+          });
         }
 
         cursor++;
@@ -377,9 +458,12 @@ function tokenize(input) {
       }
 
       if (cursor >= input.length || input[cursor] !== '"') {
-        printErr(
-          `[SyntaxError: Line ${startLine}, Col ${startCol}] Unterminated string literal. Expected closing quote '"'.`,
-        );
+        printErr({
+          eName: "SyntaxError",
+          eContext: "Unterminated string literal. Expected closing quote '\"'.",
+          eLine: startLine,
+          eCol: startCol,
+        });
       }
 
       cursor++;
@@ -480,9 +564,12 @@ function tokenize(input) {
         col += 2;
         continue;
       }
-      printErr(
-        `[SyntaxError: Line ${line}, Col ${col}] Unexpected single '&'. Did you mean '&&'?`,
-      );
+      printErr({
+        eName: "SyntaxError",
+        eContext: "Unexpected single '&'. Did you mean '&&'?",
+        eLine: line,
+        eCol: col,
+      });
     }
 
     if (char === "|") {
@@ -492,9 +579,12 @@ function tokenize(input) {
         col += 2;
         continue;
       }
-      printErr(
-        `[SyntaxError: Line ${line}, Col ${col}] Unexpected single '|'. Did you mean '||'?`,
-      );
+      printErr({
+        eName: "SyntaxError",
+        eContext: "Unexpected single '|'. Did you mean '||'?",
+        eLine: line,
+        eCol: col,
+      });
     }
 
     if (char === "!") {
@@ -584,9 +674,12 @@ function tokenize(input) {
       continue;
     }
 
-    printErr(
-      `[SyntaxError: Line ${line}, Col ${col}] Unexpected character '${char}'.`,
-    );
+    printErr({
+      eName: "SyntaxError",
+      eContext: `Unexpected character '${char}'.`,
+      eLine: line,
+      eCol: col,
+    });
   }
 
   return tokens;
@@ -654,7 +747,12 @@ class ParserCursor {
     consume(type, message) {
         if (this.check(type)) return this.advance();
         let token = this.peek() || this.previous();
-        printErr(`[SyntaxError: ${this.formatLocation(token)}] ${message}`);
+        printErr({
+            eName: 'SyntaxError',
+            eContext: message,
+            eLine: token ? token.line : null,
+            eCol: token ? token.col : null
+        });
     }
 
     isPropertyAssignAhead() {
@@ -731,7 +829,10 @@ class ParserExpressions extends ParserTypes {
         let token = this.peek();
 
         if (!token) {
-            printErr("[SyntaxError: at end of file] Unexpected end of input. Expected expression.");
+            printErr({
+                eName: 'SyntaxError',
+                eContext: "Unexpected end of input. Expected expression."
+            });
         }
 
         let expr = null;
@@ -760,7 +861,13 @@ class ParserExpressions extends ParserTypes {
                     if (this.match('IDENTIFIER', 'STRING')) {
                         key = this.previous().value;
                     } else {
-                        printErr(`[SyntaxError: ${this.formatLocation(this.peek())}] Expected key (identifier or string) in Table literal.`);
+                        let peekTok = this.peek();
+                        printErr({
+                            eName: 'SyntaxError',
+                            eContext: "Expected key (identifier or string) in Table literal.",
+                            eLine: peekTok ? peekTok.line : null,
+                            eCol: peekTok ? peekTok.col : null
+                        });
                     }
 
                     let typeInfo = null;
@@ -818,11 +925,22 @@ class ParserExpressions extends ParserTypes {
             expr = this.parseLogicOr();
 
             if (!this.match('RPAREN')) {
-                printErr(`[SyntaxError: ${this.formatLocation(this.peek() || openParen)}] Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`);
+                let errTok = this.peek() || openParen;
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`,
+                    eLine: errTok ? errTok.line : null,
+                    eCol: errTok ? errTok.col : null
+                });
             }
         }
         else {
-            printErr(`[SyntaxError: ${this.formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `Unexpected token '${token.value}' of type '${token.type}'.`,
+                eLine: token.line,
+                eCol: token.col
+            });
         }
 
         while (true) {
@@ -898,7 +1016,12 @@ class ParserExpressions extends ParserTypes {
                 }
 
                 if (braceCount > 0) {
-                    printErr(`[SyntaxError: Line ${token.line}, Col ${token.col}] Unclosed '{' in interpolated string.`);
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "Unclosed '{' in interpolated string.",
+                        eLine: token.line,
+                        eCol: token.col
+                    });
                 }
 
                 const innerTokens = tokenize(exprStr + ";");
@@ -1033,7 +1156,10 @@ class ParserExpressions extends ParserTypes {
         } else if (this.check('NOT')) {
             return this.parseUnary();
         } else {
-            printErr("[SyntaxError] Comparisons in conditions must be wrapped in parentheses '(...)'.");
+            printErr({
+                eName: 'SyntaxError',
+                eContext: "Comparisons in conditions must be wrapped in parentheses '(...)'."
+            });
         }
     }
 }
@@ -1354,7 +1480,12 @@ class ParserControl extends ParserExpressions {
         } else if (this.check('IDENTIFIER')) {
             name = this.advance().value;
         } else {
-            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Expected function name or '~' for anonymous function after 'function'.`);
+            printErr({
+                eName: 'SyntaxError',
+                eContext: "Expected function name or '~' for anonymous function after 'function'.",
+                eLine: startToken.line,
+                eCol: startToken.col
+            });
         }
 
         this.consume('LPAREN', "Expected '(' after function name or '~'.");
@@ -1417,7 +1548,12 @@ class ParserControl extends ParserExpressions {
         }
 
         if (!catchBlock && !finallyBlock) {
-            printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] 'try' block must contain at least a 'catch' or 'finally' clause.`);
+            printErr({
+                eName: 'SyntaxError',
+                eContext: "'try' block must contain at least a 'catch' or 'finally' clause.",
+                eLine: startToken.line,
+                eCol: startToken.col
+            });
         }
 
         this.consume('END', "Unclosed 'try' block. Expected 'end'.");
@@ -1468,7 +1604,13 @@ class ParserStatements extends ParserControl {
         }
 
         if (values.length > names.length) {
-            printErr(`[SyntaxError: ${this.formatLocation(this.peek() || this.previous())}] Too many values in declaration: expected at most ${names.length}, got ${values.length}.`);
+            let errTok = this.peek() || this.previous();
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `Too many values in declaration: expected at most ${names.length}, got ${values.length}.`,
+                eLine: errTok ? errTok.line : null,
+                eCol: errTok ? errTok.col : null
+            });
         }
 
         if (names.length === 1) {
@@ -1491,7 +1633,13 @@ class ParserStatements extends ParserControl {
             let expr = this.parseLogicOr();
             return { value: expr, operator: op };
         }
-        printErr(`[SyntaxError: ${this.formatLocation(this.peek())}] Expected assignment operator after ${targetDesc}.`);
+        let errTok = this.peek();
+        printErr({
+            eName: 'SyntaxError',
+            eContext: `Expected assignment operator after ${targetDesc}.`,
+            eLine: errTok ? errTok.line : null,
+            eCol: errTok ? errTok.col : null
+        });
     }
 
     parseStatement() {
@@ -1558,7 +1706,12 @@ class ParserStatements extends ParserControl {
 
             if (this.match('TILDE')) {
                 if (nsName === 'Main') {
-                    printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Namespace 'Main' cannot be split into modules.`);
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "Namespace 'Main' cannot be split into modules.",
+                        eLine: startToken.line,
+                        eCol: startToken.col
+                    });
                 }
                 
                 modName = this.consume('IDENTIFIER', "Expected module name after '~'.").value;
@@ -1711,13 +1864,23 @@ class ParserStatements extends ParserControl {
                         if (this.match('PRIVATE')) {
                             if (this.check('SHARED')) {
                                 let tok = this.peek();
-                                printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').`);
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
                             }
                             innerAccess = 'private';
                         } else if (this.match('PUBLIC')) {
                             if (this.check('SHARED')) {
                                 let tok = this.peek();
-                                printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').`);
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
                             }
                             innerAccess = 'public';
                         }
@@ -1737,7 +1900,12 @@ class ParserStatements extends ParserControl {
                             sharedMethods.push({ ...method, access: innerAccess, isShared: true });
                         } else {
                             let tok = this.peek();
-                            printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside 'shared' block of class '${className}'.`);
+                            printErr({
+                                eName: 'SyntaxError',
+                                eContext: `Unexpected token '${tok ? tok.value : 'EOF'}' inside 'shared' block of class '${className}'.`,
+                                eLine: tok ? tok.line : null,
+                                eCol: tok ? tok.col : null
+                            });
                         }
                     }
                     this.consume('END', "Expected 'end' to close 'shared' block.");
@@ -1753,13 +1921,23 @@ class ParserStatements extends ParserControl {
             } else if (this.match('PRIVATE')) {
                 if (this.check('SHARED')) {
                     let tok = this.peek();
-                    printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').`);
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
                 }
                 access = 'private';
             } else if (this.match('PUBLIC')) {
                 if (this.check('SHARED')) {
                     let tok = this.peek();
-                    printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').`);
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
                 }
                 access = 'public';
             }
@@ -1781,7 +1959,12 @@ class ParserStatements extends ParserControl {
                 targetMethods.push({ ...method, access, isShared });
             } else {
                 let tok = this.peek();
-                printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside class '${className}'. Expected field or method declaration.`);
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Unexpected token '${tok ? tok.value : 'EOF'}' inside class '${className}'. Expected field or method declaration.`,
+                    eLine: tok ? tok.line : null,
+                    eCol: tok ? tok.col : null
+                });
             }
         }
 
@@ -2044,7 +2227,10 @@ function castToType(val, targetType) {
     if (targetType === 'Int' || targetType === 'Float') {
         let numb = Number(val);
         if (isNaN(numb)) {
-            printErr(`[TypeError] Cannot cast value '${val}' to type '${targetType}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot cast value '${val}' to type '${targetType}'.`
+            });
         }
         return (targetType === 'Int') ? Math.trunc(numb) : numb;
     }
@@ -2102,17 +2288,30 @@ async function evalMath(node, env, evaluate) {
         case '-':  return left - right;
         case '*':  return left * right;
         case '/':
-            if (right === 0) printErr("[MathError] Division by zero is undefined.");
+            if (right === 0) {
+                printErr({
+                    eName: 'MathError',
+                    eContext: "Division by zero is undefined."
+                });
+            }
             return left / right;
         case '%':
-            if (right === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+            if (right === 0) {
+                printErr({
+                    eName: 'MathError',
+                    eContext: "Division or modulo by zero is undefined."
+                });
+            }
             return left % right;
         case '<':  return left < right;
         case '>':  return left > right;
         case '<=': return left <= right;
         case '>=': return left >= right;
         default:
-            printErr(`[RuntimeError] Unsupported operator '${node.operator}'.`);
+            printErr({
+                eName: 'RuntimeError',
+                eContext: `Unsupported operator '${node.operator}'.`
+            });
     }
 }
 
@@ -2120,7 +2319,10 @@ async function evalUnary(node, env, evaluate) {
     let right = await evaluate(node.right, env);
     if (node.operator === '!') return !isTruthy(right);
     if (node.operator === '-') return -right;
-    printErr(`[RuntimeError] Unsupported unary operator '${node.operator}'.`);
+    printErr({
+        eName: 'RuntimeError',
+        eContext: `Unsupported unary operator '${node.operator}'.`
+    });
 }
 
 async function evalLogical(node, env, evaluate) {
@@ -2133,7 +2335,10 @@ async function evalLogical(node, env, evaluate) {
         if (isTruthy(left)) return true;
         return isTruthy(await evaluate(node.right, env));
     }
-    printErr(`[RuntimeError] Unsupported logical operator '${node.operator}'.`);
+    printErr({
+        eName: 'RuntimeError',
+        eContext: `Unsupported logical operator '${node.operator}'.`
+    });
 }
 
 async function evalIs(node, env, evaluate) {
@@ -2162,7 +2367,10 @@ async function evalIs(node, env, evaluate) {
             return false;
         }
         
-        printErr(`[TypeError] Unknown type '${baseType}' in 'is' check.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Unknown type '${baseType}' in 'is' check.`
+        });
     }
 
     if (val && val.isInstance && baseType === 'Table') {
@@ -2204,14 +2412,20 @@ async function evalIs(node, env, evaluate) {
 function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
     if (val === null) {
         if (!isNullable) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable variable '${varName}' of type '(${targetType})'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign NULL to non-nullable variable '${varName}' of type '(${targetType})'.`
+            });
         }
         return null;
     }
 
     if (targetType === 'Table') {
         if (val && val.kind === 'Table') return val;
-        printErr(`[TypeError] Cannot assign non-Table value of type '${getType(val)}' to variable '${varName}' of type 'Table'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot assign non-Table value of type '${getType(val)}' to variable '${varName}' of type 'Table'.`
+        });
     }
 
     if (targetType === 'List' || targetType === 'Stack' || targetType === 'Queue') {
@@ -2222,7 +2436,10 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
         } else if (val && (val.kind === targetType || val.kind === 'Stack' || val.kind === 'Queue')) {
             rawItems = [...val.items];
         } else {
-            printErr(`[TypeError] Cannot assign non-collection value of type '${getType(val)}' to variable '${varName}' of type '${targetType}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign non-collection value of type '${getType(val)}' to variable '${varName}' of type '${targetType}'.`
+            });
         }
 
         if (typeInfo && typeInfo.elemType) {
@@ -2230,7 +2447,10 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
                 let elem = rawItems[i];
                 if (elem === null) {
                     if (!typeInfo.isElemNullable) {
-                        printErr(`[TypeError] Element at index ${i} in ${targetType} '${varName}' cannot be NULL.`);
+                        printErr({
+                            eName: 'TypeError',
+                            eContext: `Element at index ${i} in ${targetType} '${varName}' cannot be NULL.`
+                        });
                     }
                 } else {
                     rawItems[i] = castToType(elem, typeInfo.elemType);
@@ -2266,16 +2486,29 @@ async function evalVarDeclar(node, env, evaluate) {
 
 async function evalVarAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
-    if (!scope) printErr(`[ReferenceError] Cannot reassign undeclared variable '${node.name}'.`);
+    if (!scope) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot reassign undeclared variable '${node.name}'.`
+        });
+    }
     let target = scope.values[node.name];
-    if (target.isConst) printErr(`[TypeError] Cannot reassign constant '${node.name}'.`);
+    if (target.isConst) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot reassign constant '${node.name}'.`
+        });
+    }
 
     let rawVal = await evaluate(node.value, env);
     let val = validateAndCast(rawVal, target.type, target.isNullable, target.typeInfo, node.name);
 
     let newType = getType(val);
     if (val !== null && target.type !== newType) {
-        printErr(`[TypeError] Cannot assign type '${newType}' to variable '${node.name}' of type '${target.type}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot assign type '${newType}' to variable '${node.name}' of type '${target.type}'.`
+        });
     }
 
     target.value = val;
@@ -2285,14 +2518,27 @@ async function evalVarAssign(node, env, evaluate) {
 function evalVariable(node, env) {
     let scope = findScope(node.name, env);
     if (scope) return scope.values[node.name].value;
-    printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+    printErr({
+        eName: 'ReferenceError',
+        eContext: `Variable '${node.name}' is not defined.`
+    });
 }
 
 async function evalVarRetype(node, env, evaluate) {
     let scope = findScope(node.name, env);
-    if (!scope) printErr(`[ReferenceError] Cannot retype undeclared variable '${node.name}'.`);
+    if (!scope) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot retype undeclared variable '${node.name}'.`
+        });
+    }
     let target = scope.values[node.name];
-    if (target.isConst) printErr(`[TypeError] Cannot retype constant '${node.name}'.`);
+    if (target.isConst) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot retype constant '${node.name}'.`
+        });
+    }
 
     let rawVal = await evaluate(node.value, env);
     let val = validateAndCast(rawVal, node.targetType, node.isNullable, node.typeInfo, node.name);
@@ -2307,19 +2553,54 @@ async function evalVarRetype(node, env, evaluate) {
 function evalSwap(node, env) {
     let scopeLeft = findScope(node.left, env);
     let scopeRight = findScope(node.right, env);
-    if (!scopeLeft) printErr(`[ReferenceError] Cannot swap undeclared variable '${node.left}'.`);
-    if (!scopeRight) printErr(`[ReferenceError] Cannot swap undeclared variable '${node.right}'.`);
+    if (!scopeLeft) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot swap undeclared variable '${node.left}'.`
+        });
+    }
+    if (!scopeRight) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot swap undeclared variable '${node.right}'.`
+        });
+    }
 
     let varA = scopeLeft.values[node.left];
     let varB = scopeRight.values[node.right];
 
-    if (varA.isConst) printErr(`[TypeError] Cannot swap constant '${node.left}'.`);
-    if (varB.isConst) printErr(`[TypeError] Cannot swap constant '${node.right}'.`);
+    if (varA.isConst) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap constant '${node.left}'.`
+        });
+    }
+    if (varB.isConst) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap constant '${node.right}'.`
+        });
+    }
 
-    if (!varA.isNullable && varB.value === null) printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.left}'.`);
-    if (!varB.isNullable && varA.value === null) printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.right}'.`);
+    if (!varA.isNullable && varB.value === null) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap NULL into non-nullable variable '${node.left}'.`
+        });
+    }
+    if (!varB.isNullable && varA.value === null) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap NULL into non-nullable variable '${node.right}'.`
+        });
+    }
     
-    if (varA.type !== varB.type) printErr(`[TypeError] Cannot swap variable '${node.left}' of type '${varA.type}' with variable '${node.right}' of type '${varB.type}'.`);
+    if (varA.type !== varB.type) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap variable '${node.left}' of type '${varA.type}' with variable '${node.right}' of type '${varB.type}'.`
+        });
+    }
 
     let temp = varA.value;
     varA.value = varB.value;
@@ -2329,12 +2610,20 @@ function evalSwap(node, env) {
 function evalKill(node, env) {
     let scope = findScope(node.name, env);
     if (!scope) {
-        printErr(`[ReferenceError: Line ${node.line}] Cannot kill undefined variable '${node.name}'.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot kill undefined variable '${node.name}'.`,
+            eLine: node.line
+        });
     }
 
     let targetVar = scope.values[node.name];
     if (targetVar.isConst) {
-        printErr(`[TypeError: Line ${node.line}] Cannot kill constant variable '${node.name}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot kill constant variable '${node.name}'.`,
+            eLine: node.line
+        });
     }
 
     delete scope.values[node.name];
@@ -2355,7 +2644,11 @@ async function evalClassDeclaration(node, env) {
         const scope = findScope(node.superClass, env);
         const entry = scope && scope.values[node.superClass];
         if (!entry || !entry.value || entry.value.kind !== 'Class') {
-            printErr(`[ReferenceError] Cannot inherit from undefined class '${node.superClass}'.`);
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Cannot inherit from undefined class '${node.superClass}'.`,
+                eLine: node.line
+            });
         }
         superClassObj = entry.value;
     }
@@ -2406,13 +2699,21 @@ async function evalClassDeclaration(node, env) {
             if (f.typeInfo && f.typeInfo.baseType) {
                 fieldType = f.typeInfo.baseType;
                 if (!f.typeInfo.isNullable && val === null) {
-                    printErr(`[TypeError] Cannot assign NULL to non-nullable shared field '${f.name}'.`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot assign NULL to non-nullable shared field '${f.name}'.`,
+                        eLine: f.line
+                    });
                 }
                 if (val !== null) {
                     val = castToType(val, fieldType);
                 }
             } else if (!f.isNullable && val === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable shared field '${f.name}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable shared field '${f.name}'.`,
+                    eLine: f.line
+                });
             }
             classObj.sharedFields[f.name] = {
                 value: val,
@@ -2503,7 +2804,10 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
             };
             return await evalCall({ caller: { type: 'Literal', value: ctorObj }, args: rawArgs }, activeEnv, activeEval);
         } else if (rawArgs.length > 0) {
-            printErr(`[TypeError] Superclass '${superClass.name}' has no constructor that takes ${rawArgs.length} arguments.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Superclass '${superClass.name}' has no constructor that takes ${rawArgs.length} arguments.`
+            });
         }
     };
 
@@ -2616,11 +2920,19 @@ function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
     }
 
     if (!origMethodAst) {
-        printErr(`[ReferenceError: Line ${hookNode.line}] Method '${methodName}' does not exist on class '${classObj.name}'.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Method '${methodName}' does not exist on class '${classObj.name}'.`,
+            eLine: hookNode.line
+        });
     }
 
     if (origMethodAst.access === 'private' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName))) {
-        printErr(`[TypeError: Line ${hookNode.line}] Cannot hook private method '${methodName}' of class '${targetClass.name}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot hook private method '${methodName}' of class '${targetClass.name}'.`,
+            eLine: hookNode.line
+        });
     }
 
     const hookMethodAst = {
@@ -2696,13 +3008,21 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
             if (field.typeInfo && field.typeInfo.baseType) {
                 fieldType = field.typeInfo.baseType;
                 if (!field.typeInfo.isNullable && val === null) {
-                    printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}' of type '(${fieldType})'.`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot assign NULL to non-nullable field '${field.name}' of type '(${fieldType})'.`,
+                        eLine: field.line
+                    });
                 }
                 if (val !== null) {
                     val = castToType(val, fieldType);
                 }
             } else if (!field.isNullable && val === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable field '${field.name}'.`,
+                    eLine: field.line
+                });
             }
 
             instance.fields[field.name] = {
@@ -2756,7 +3076,10 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
 
         await evalCall({ caller: { type: 'Literal', value: ctorFn }, args: rawArgs }, env, evaluate);
     } else if (rawArgs.length > 0) {
-        printErr(`[TypeError] Class '${classObj.name}' has no constructor that takes ${rawArgs.length} arguments.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Class '${classObj.name}' has no constructor that takes ${rawArgs.length} arguments.`
+        });
     }
 
     return instance;
@@ -2772,7 +3095,10 @@ function checkPrivateAccess(target, memberName, env, isMethod = false) {
 
     if (!callerThis || callerThis !== target) {
         const kind = isMethod ? 'method' : 'member';
-        printErr(`[TypeError] Cannot access private ${kind} '${memberName}' of class '${target.className}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access private ${kind} '${memberName}' of class '${target.className}'.`
+        });
     }
 
     if (target.privateOwners && target.privateOwners.has(memberName)) {
@@ -2781,7 +3107,10 @@ function checkPrivateAccess(target, memberName, env, isMethod = false) {
         const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
         if (currentFn && currentFn.declaringClass && currentFn.declaringClass !== ownerClass) {
             const kind = isMethod ? 'method' : 'member';
-            printErr(`[TypeError] Cannot access private ${kind} '${memberName}' of parent class '${ownerClass}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot access private ${kind} '${memberName}' of parent class '${ownerClass}'.`
+            });
         }
     }
 }
@@ -2803,7 +3132,10 @@ function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false
     }
 
     const kind = isMethod ? 'method' : 'member';
-    printErr(`[TypeError] Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`);
+    printErr({
+        eName: 'TypeError',
+        eContext: `Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`
+    });
 }
 
 
@@ -2836,12 +3168,18 @@ async function evalIndexAccess(node, env, evaluate) {
             curr = curr.superClass;
         }
 
-        printErr(`[ReferenceError] Shared member '${key}' does not exist on class '${target.name}'.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Shared member '${key}' does not exist on class '${target.name}'.`
+        });
     }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
         if (!node.isDotAccess) {
-            printErr("[TypeError] Tables do not support bracket indexing. Use dot notation 'table.property' instead.");
+            printErr({
+                eName: 'TypeError',
+                eContext: "Tables do not support bracket indexing. Use dot notation 'table.property' instead."
+            });
         }
 
         let key = node.index;
@@ -2856,20 +3194,48 @@ async function evalIndexAccess(node, env, evaluate) {
     }
 
     if (node.isDotAccess) {
-        printErr(`[TypeError] Cannot access '${getType(target)}' with dot notation. Use bracket indexing 'list[index]' instead.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access '${getType(target)}' with dot notation. Use bracket indexing 'list[index]' instead.`
+        });
     }
 
     if (typeof target === 'string') {
         let idx = await evaluate(node.index, env);
-        if (!Number.isInteger(idx)) printErr(`[IndexError] String index must be an integer, got '${idx}'.`);
-        if (idx < 0 || idx >= target.length) printErr(`[IndexError] Index ${idx} out of bounds for string of length ${target.length}.`);
+        if (!Number.isInteger(idx)) {
+            printErr({
+                eName: 'IndexError',
+                eContext: `String index must be an integer, got '${idx}'.`
+            });
+        }
+        if (idx < 0 || idx >= target.length) {
+            printErr({
+                eName: 'IndexError',
+                eContext: `Index ${idx} out of bounds for string of length ${target.length}.`
+            });
+        }
         return target[idx];
     }
 
-    if (!Array.isArray(target)) printErr(`[TypeError] Cannot index non-list value of type '${getType(target)}'.`);
+    if (!Array.isArray(target)) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot index non-list value of type '${getType(target)}'.`
+        });
+    }
     let idx = await evaluate(node.index, env);
-    if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
-    if (idx < 0 || idx >= target.length) printErr(`[IndexError] Index ${idx} out of bounds for list of length ${target.length}.`);
+    if (!Number.isInteger(idx)) {
+        printErr({
+            eName: 'IndexError',
+            eContext: `List index must be an integer, got '${idx}'.`
+        });
+    }
+    if (idx < 0 || idx >= target.length) {
+        printErr({
+            eName: 'IndexError',
+            eContext: `Index ${idx} out of bounds for list of length ${target.length}.`
+        });
+    }
     return target[idx];
 }
 
@@ -2879,10 +3245,20 @@ function applyCompoundOp(currVal, rhsVal, operator) {
         case '-': return currVal - rhsVal;
         case '*': return currVal * rhsVal;
         case '/':
-            if (rhsVal === 0) printErr("[MathError] Division by zero is undefined.");
+            if (rhsVal === 0) {
+                printErr({
+                    eName: 'MathError',
+                    eContext: "Division by zero is undefined."
+                });
+            }
             return currVal / rhsVal;
         case '%':
-            if (rhsVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+            if (rhsVal === 0) {
+                printErr({
+                    eName: 'MathError',
+                    eContext: "Division or modulo by zero is undefined."
+                });
+            }
             return currVal % rhsVal;
         default:
             return rhsVal;
@@ -2898,11 +3274,19 @@ async function evalMemberAssign(node, env, evaluate) {
     let rootVarEntry = null;
     if (root && root.type === 'Variable') {
         let scope = findScope(root.name, env);
-        if (!scope) printErr(`[ReferenceError] Variable '${root.name}' is not defined.`);
+        if (!scope) {
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Variable '${root.name}' is not defined.`
+            });
+        }
         
         rootVarEntry = scope.values[root.name];
         if (rootVarEntry.isConst && root.name !== 'this' && rootVarEntry.type !== 'Class') {
-            printErr(`[TypeError] Cannot modify constant '${root.name}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot modify constant '${root.name}'.`
+            });
         }
     }
 
@@ -2923,11 +3307,17 @@ async function evalMemberAssign(node, env, evaluate) {
         }
 
         if (!fieldEntry) {
-            printErr(`[ReferenceError] Shared variable '${key}' does not exist on class '${container.name}'.`);
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Shared variable '${key}' does not exist on class '${container.name}'.`
+            });
         }
 
         if (fieldEntry.isConst) {
-            printErr(`[TypeError] Cannot modify constant shared member '${key}' on class '${container.name}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot modify constant shared member '${key}' on class '${container.name}'.`
+            });
         }
 
         let currVal = fieldEntry.value;
@@ -2942,7 +3332,10 @@ async function evalMemberAssign(node, env, evaluate) {
 
     if (node.isDotAccess) {
         if (!container || container.kind !== 'Table') {
-            printErr(`[TypeError] Cannot set property '${node.index}' on non-Table value of type '${getType(container)}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot set property '${node.index}' on non-Table value of type '${getType(container)}'.`
+            });
         }
 
         checkPrivateAccess(container, node.index, env, false);
@@ -2959,7 +3352,10 @@ async function evalMemberAssign(node, env, evaluate) {
             let targetType = node.typeInfo.baseType;
             let isNullable = node.typeInfo.isNullable;
             if (!isNullable && newVal === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`
+                });
             }
             if (newVal !== null) {
                 newVal = castToType(newVal, targetType);
@@ -2971,12 +3367,18 @@ async function evalMemberAssign(node, env, evaluate) {
         if (key in container.fields) {
             let field = container.fields[key];
             if (!field.isNullable && newVal === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`
+                });
             }
             if (newVal !== null) {
                 let actualType = getType(newVal);
                 if (field.type !== actualType) {
-                    printErr(`[TypeError] Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`
+                    });
                 }
             }
             field.value = newVal;
@@ -2992,17 +3394,31 @@ async function evalMemberAssign(node, env, evaluate) {
     }
 
     if (container && container.kind === 'Table') {
-        printErr(`[TypeError] Tables do not support bracket assignment. Use dot notation 'table.${await evaluate(node.index, env)} = ...' instead.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Tables do not support bracket assignment. Use dot notation 'table.${await evaluate(node.index, env)} = ...' instead.`
+        });
     }
 
     if (!Array.isArray(container)) {
-        printErr(`[TypeError] Cannot index non-list value of type '${getType(container)}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot index non-list value of type '${getType(container)}'.`
+        });
     }
 
     let idx = await evaluate(node.index, env);
-    if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
+    if (!Number.isInteger(idx)) {
+        printErr({
+            eName: 'IndexError',
+            eContext: `List index must be an integer, got '${idx}'.`
+        });
+    }
     if (idx < 0 || idx >= container.length) {
-        printErr(`[IndexError] Index ${idx} out of bounds for list of length ${container.length}.`);
+        printErr({
+            eName: 'IndexError',
+            eContext: `Index ${idx} out of bounds for list of length ${container.length}.`
+        });
     }
 
     let newVal = await evaluate(node.value, env);
@@ -3014,7 +3430,10 @@ async function evalMemberAssign(node, env, evaluate) {
     if (listTypeInfo && listTypeInfo.elemType) {
         if (newVal === null) {
             if (!listTypeInfo.isElemNullable) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable element of list '${node.target.name}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable element of list '${node.target.name}'.`
+                });
             }
         } else {
             newVal = castToType(newVal, listTypeInfo.elemType);
@@ -3022,7 +3441,10 @@ async function evalMemberAssign(node, env, evaluate) {
     } else if (node.typeInfo) {
         let targetType = node.typeInfo.baseType;
         if (!node.typeInfo.isNullable && newVal === null) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable element of type '(${targetType})'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign NULL to non-nullable element of type '(${targetType})'.`
+            });
         }
         if (newVal !== null) {
             newVal = castToType(newVal, targetType);
@@ -3050,7 +3472,10 @@ async function evalMethodCall(node, env, evaluate) {
             curr = curr.superClass;
         }
 
-        printErr(`[ReferenceError] Shared method '${methodName}' does not exist on class '${target.name}'.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Shared method '${methodName}' does not exist on class '${target.name}'.`
+        });
     }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
@@ -3072,11 +3497,17 @@ async function evalMethodCall(node, env, evaluate) {
                 return await evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
 
-            printErr(`[TypeError] Field '${methodName}' on Table is not a callable function.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Field '${methodName}' on Table is not a callable function.`
+            });
         }
 
         let targetDesc = target.isInstance ? `class '${target.className}'` : 'Table';
-        printErr(`[ReferenceError] Method or field '${methodName}' does not exist on ${targetDesc}.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Method or field '${methodName}' does not exist on ${targetDesc}.`
+        });
     }
 
     let isList = Array.isArray(target);
@@ -3084,7 +3515,10 @@ async function evalMethodCall(node, env, evaluate) {
     let isQueue = target && target.kind === 'Queue';
 
     if (!isList && !isStack && !isQueue) {
-        printErr(`[TypeError] Cannot call method '.${node.method}()' on type '${targetType}'. Supported types are 'List', 'Stack', 'Queue' and 'Table'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot call method '.${node.method}()' on type '${targetType}'. Supported types are 'List', 'Stack', 'Queue' and 'Table'.`
+        });
     }
 
     let items = isList ? target : target.items;
@@ -3099,7 +3533,10 @@ async function evalMethodCall(node, env, evaluate) {
     switch (method) {
         case 'push': {
             if (node.args.length < 1) {
-                printErr(`[TypeError] Method '.push()' expects at least 1 argument.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Method '.push()' expects at least 1 argument.`
+                });
             }
 
             let val = await evaluate(node.args[0], env);
@@ -3107,7 +3544,10 @@ async function evalMethodCall(node, env, evaluate) {
             if (tInfo && tInfo.elemType) {
                 if (val === null) {
                     if (!tInfo.isElemNullable) {
-                        printErr(`[TypeError] Cannot push NULL into ${targetType} '${node.target.name}' with non-nullable elements.`);
+                        printErr({
+                            eName: 'TypeError',
+                            eContext: `Cannot push NULL into ${targetType} '${node.target.name}' with non-nullable elements.`
+                        });
                     }
                 } else {
                     val = castToType(val, tInfo.elemType);
@@ -3121,8 +3561,18 @@ async function evalMethodCall(node, env, evaluate) {
             } else {
                 if (node.args.length >= 2) {
                     let pos = await evaluate(node.args[1], env);
-                    if (!Number.isInteger(pos)) printErr(`[IndexError] Position argument in '.push()' must be an integer, got '${pos}'.`);
-                    if (pos < 0 || pos > items.length) printErr(`[IndexError] Position ${pos} out of bounds for list of length ${items.length}.`);
+                    if (!Number.isInteger(pos)) {
+                        printErr({
+                            eName: 'IndexError',
+                            eContext: `Position argument in '.push()' must be an integer, got '${pos}'.`
+                        });
+                    }
+                    if (pos < 0 || pos > items.length) {
+                        printErr({
+                            eName: 'IndexError',
+                            eContext: `Position ${pos} out of bounds for list of length ${items.length}.`
+                        });
+                    }
                     items.splice(pos, 0, val);
                 } else {
                     items.push(val);
@@ -3133,7 +3583,10 @@ async function evalMethodCall(node, env, evaluate) {
         }
         case 'pop': {
             if (items.length === 0) {
-                printErr(`[IndexError] Cannot pop from an empty ${targetType}.`);
+                printErr({
+                    eName: 'IndexError',
+                    eContext: `Cannot pop from an empty ${targetType}.`
+                });
             }
 
             if (isStack) {
@@ -3142,19 +3595,35 @@ async function evalMethodCall(node, env, evaluate) {
                 return items.shift();
             } else {
                 if (node.args.length < 1) {
-                    printErr(`[TypeError] Method '.pop()' on a List requires an index argument. (e.g. list.pop(0))`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Method '.pop()' on a List requires an index argument. (e.g. list.pop(0))`
+                    });
                 }
 
                 let pos = await evaluate(node.args[0], env);
-                if (!Number.isInteger(pos)) printErr(`[IndexError] Index argument in '.pop()' must be an integer, got '${pos}'.`);
-                if (pos < 0 || pos >= items.length) printErr(`[IndexError] Index ${pos} out of bounds for list of length ${items.length}.`);
+                if (!Number.isInteger(pos)) {
+                    printErr({
+                        eName: 'IndexError',
+                        eContext: `Index argument in '.pop()' must be an integer, got '${pos}'.`
+                    });
+                }
+                if (pos < 0 || pos >= items.length) {
+                    printErr({
+                        eName: 'IndexError',
+                        eContext: `Index ${pos} out of bounds for list of length ${items.length}.`
+                    });
+                }
 
                 return items.splice(pos, 1)[0];
             }
         }
         case 'peek': {
             if (items.length === 0) {
-                printErr(`[IndexError] Cannot peek into an empty ${targetType}.`);
+                printErr({
+                    eName: 'IndexError',
+                    eContext: `Cannot peek into an empty ${targetType}.`
+                });
             }
 
             if (isStack) {
@@ -3163,12 +3632,25 @@ async function evalMethodCall(node, env, evaluate) {
                 return items[0];
             } else {
                 if (node.args.length < 1) {
-                    printErr(`[TypeError] Method '.peek()' on a List requires an index argument. (e.g. list.peek(0))`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Method '.peek()' on a List requires an index argument. (e.g. list.peek(0))`
+                    });
                 }
 
                 let pos = await evaluate(node.args[0], env);
-                if (!Number.isInteger(pos)) printErr(`[IndexError] Index argument in '.peek()' must be an integer, got '${pos}'.`);
-                if (pos < 0 || pos >= items.length) printErr(`[IndexError] Index ${pos} out of bounds for list of length ${items.length}.`);
+                if (!Number.isInteger(pos)) {
+                    printErr({
+                        eName: 'IndexError',
+                        eContext: `Index argument in '.peek()' must be an integer, got '${pos}'.`
+                    });
+                }
+                if (pos < 0 || pos >= items.length) {
+                    printErr({
+                        eName: 'IndexError',
+                        eContext: `Index ${pos} out of bounds for list of length ${items.length}.`
+                    });
+                }
                 
                 return items[pos];
             }
@@ -3177,7 +3659,10 @@ async function evalMethodCall(node, env, evaluate) {
             return items.length;
         }
         default:
-            printErr(`[TypeError] Unknown method '.${method}()' on type '${targetType}'. Supported methods are 'push', 'pop', 'peek' and 'count'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Unknown method '.${method}()' on type '${targetType}'. Supported methods are 'push', 'pop', 'peek' and 'count'.`
+            });
     }
 }
 
@@ -3200,7 +3685,10 @@ async function evalTableLiteral(node, env, evaluate) {
             type = entry.typeInfo.baseType;
             isNullable = entry.typeInfo.isNullable;
             if (!isNullable && rawVal === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${entry.key}' of type '(${type})'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable field '${entry.key}' of type '(${type})'.`
+                });
             }
             if (rawVal !== null) {
                 val = castToType(rawVal, type);
@@ -3219,15 +3707,26 @@ async function evalTableLiteral(node, env, evaluate) {
 
 async function evalPropertyAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
-    if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+    if (!scope) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Variable '${node.name}' is not defined.`
+        });
+    }
 
     let targetVar = scope.values[node.name];
     if (targetVar.isConst) {
-        printErr(`[TypeError] Cannot modify properties of constant Table '${node.name}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot modify properties of constant Table '${node.name}'.`
+        });
     }
 
     if (!targetVar.value || targetVar.value.kind !== 'Table') {
-        printErr(`[TypeError] Cannot set property '${node.property}' on non-Table value of type '${getType(targetVar.value)}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot set property '${node.property}' on non-Table value of type '${getType(targetVar.value)}'.`
+        });
     }
 
     let table = targetVar.value;
@@ -3236,11 +3735,17 @@ async function evalPropertyAssign(node, env, evaluate) {
     for (let i = 0; i < path.length - 1; i++) {
         let seg = path[i];
         if (!table.fields || !(seg in table.fields)) {
-            printErr(`[ReferenceError] Property '${seg}' does not exist on Table.`);
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Property '${seg}' does not exist on Table.`
+            });
         }
         let child = table.fields[seg].value;
         if (!child || child.kind !== 'Table') {
-            printErr(`[TypeError] Cannot access property through non-Table field '${seg}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot access property through non-Table field '${seg}'.`
+            });
         }
         table = child;
     }
@@ -3255,11 +3760,21 @@ async function evalPropertyAssign(node, env, evaluate) {
             case '-': newVal = currVal - newVal; break;
             case '*': newVal = currVal * newVal; break;
             case '/':
-                if (newVal === 0) printErr("[MathError] Division by zero is undefined.");
+                if (newVal === 0) {
+                    printErr({
+                        eName: 'MathError',
+                        eContext: "Division by zero is undefined."
+                    });
+                }
                 newVal = currVal / newVal;
                 break;
             case '%':
-                if (newVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+                if (newVal === 0) {
+                    printErr({
+                        eName: 'MathError',
+                        eContext: "Division or modulo by zero is undefined."
+                    });
+                }
                 newVal = currVal % newVal;
                 break;
         }
@@ -3269,7 +3784,10 @@ async function evalPropertyAssign(node, env, evaluate) {
         let targetType = node.typeInfo.baseType;
         let isNullable = node.typeInfo.isNullable;
         if (!isNullable && newVal === null) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`
+            });
         }
         if (newVal !== null) {
             newVal = castToType(newVal, targetType);
@@ -3281,12 +3799,18 @@ async function evalPropertyAssign(node, env, evaluate) {
     if (key in table.fields) {
         let field = table.fields[key];
         if (!field.isNullable && newVal === null) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`
+            });
         }
         if (newVal !== null) {
             let actualType = getType(newVal);
             if (field.type !== actualType) {
-                printErr(`[TypeError] Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`
+                });
             }
         }
         field.value = newVal;
@@ -3399,7 +3923,11 @@ async function evalGiven(node, env, evaluate) {
 async function evalForIn(node, env, evaluate) {
     let collection = await evaluate(node.iterable, env);
     if (collection === null || collection === undefined) {
-        printErr(`[TypeError: Line ${node.line}] Cannot iterate over '${collection}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot iterate over '${collection}'.`,
+            eLine: node.line
+        });
     }
 
     let pairs = [];
@@ -3418,7 +3946,11 @@ async function evalForIn(node, env, evaluate) {
         }
     } else {
         let typeName = getType(collection);
-        printErr(`[TypeError: Line ${node.line}] Cannot iterate over value of type '${typeName}'. Expected List, Stack, Queue, or Table.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot iterate over value of type '${typeName}'. Expected List, Stack, Queue, or Table.`,
+            eLine: node.line
+        });
     }
 
     let forEnv = createScope(env);
@@ -3471,7 +4003,7 @@ async function evalTry(node, env, evaluate) {
         if (err && err.isKurobaUserException) {
             caughtValue = err.value;
         } else if (err && err.isKurobaRuntimeError) {
-            caughtValue = parseRuntimeErrorToTable(err.message);
+            caughtValue = err.errorTable || parseRuntimeErrorToTable(err.message);
         } else {
             unhandledError = err;
         }
@@ -3545,7 +4077,11 @@ async function evalReturn(node, env, evaluate) {
 
 async function evalCall(node, env, evaluate) {
     if (callDepth >= MAX_CALL_DEPTH) {
-        printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded.`);
+        printErr({
+            eName: 'RecursionError',
+            eContext: `Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded.`,
+            eLine: node.line
+        });
     }
 
     let caller = await evaluate(node.caller, env);
@@ -3561,7 +4097,11 @@ async function evalCall(node, env, evaluate) {
     
     if (!caller || caller.kind !== 'Function') {
         let typeName = getType(caller);
-        printErr(`[TypeError] Cannot call non-function value of type '${typeName}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot call non-function value of type '${typeName}'.`,
+            eLine: node.line
+        });
     }
 
     if (caller.isNative) {
@@ -3580,15 +4120,27 @@ async function evalCall(node, env, evaluate) {
     if (node.args.length < minArgs || node.args.length > maxArgs) {
         let funcName = caller.name || '~';
         if (minArgs === maxArgs) {
-            printErr(`[TypeError] Function '${funcName}' expects ${maxArgs} arguments, got ${node.args.length}.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Function '${funcName}' expects ${maxArgs} arguments, got ${node.args.length}.`,
+                eLine: node.line
+            });
         } else {
-            printErr(`[TypeError] Function '${funcName}' expects between ${minArgs} and ${maxArgs} arguments, got ${node.args.length}.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Function '${funcName}' expects between ${minArgs} and ${maxArgs} arguments, got ${node.args.length}.`,
+                eLine: node.line
+            });
         }
     }
 
     if (callDepth >= MAX_CALL_DEPTH) {
         let funcName = caller.name || '~';
-        printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded in function '${funcName}'.`);
+        printErr({
+            eName: 'RecursionError',
+            eContext: `Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded in function '${funcName}'.`,
+            eLine: node.line
+        });
     }
 
     callDepth++;
@@ -3612,7 +4164,11 @@ async function evalCall(node, env, evaluate) {
                 let isNullable = param.typeInfo.isNullable;
 
                 if (!isNullable && argVal === null) {
-                    printErr(`[TypeError] Cannot pass NULL to non-nullable parameter '${param.name}' of type '(${baseType})'.`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot pass NULL to non-nullable parameter '${param.name}' of type '(${baseType})'.`,
+                        eLine: node.line
+                    });
                 }
                 if (argVal !== null) {
                     argVal = castToType(argVal, baseType);
@@ -3660,7 +4216,11 @@ async function evalHook(node, env, evaluate) {
         let origFunc = await evaluate(node.target, env);
         if (!origFunc || origFunc.kind !== 'Function') {
             let typeName = getType(origFunc);
-            printErr(`[TypeError: Line ${node.line}] Cannot hook non-function target of type '${typeName}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot hook non-function target of type '${typeName}'.`,
+                eLine: node.line
+            });
         }
 
         let hookClosure = createScope(env);
@@ -3681,7 +4241,11 @@ async function evalHook(node, env, evaluate) {
 
         let scope = findScope(node.target.name, env);
         if (!scope) {
-            printErr(`[ReferenceError: Line ${node.line}] Variable '${node.target.name}' not found.`);
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Variable '${node.target.name}' not found.`,
+                eLine: node.line
+            });
         }
         scope.values[node.target.name].value = hookFunc;
         return hookFunc;
@@ -3701,12 +4265,20 @@ async function evalHook(node, env, evaluate) {
 
         if (container && container.kind === 'Table') {
             if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
-                printErr(`[TypeError: Line ${node.line}] Cannot hook private method '${key}' of class '${container.className}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot hook private method '${key}' of class '${container.className}'.`,
+                    eLine: node.line
+                });
             }
 
             let origFunc = container.fields[key] ? container.fields[key].value : null;
             if (!origFunc || origFunc.kind !== 'Function') {
-                printErr(`[TypeError: Line ${node.line}] Cannot hook non-function member '${key}' on Table.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot hook non-function member '${key}' on Table.`,
+                    eLine: node.line
+                });
             }
 
             let hookClosure = createScope(env);
@@ -3736,10 +4308,18 @@ async function evalHook(node, env, evaluate) {
             return hookFunc;
         }
 
-        printErr(`[TypeError: Line ${node.line}] Target for hook must be a function, Table method, or Class method.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Target for hook must be a function, Table method, or Class method.`,
+            eLine: node.line
+        });
     }
 
-    printErr(`[SyntaxError: Line ${node.line}] Invalid target expression for hook.`);
+    printErr({
+        eName: 'SyntaxError',
+        eContext: `Invalid target expression for hook.`,
+        eLine: node.line
+    });
 }
 
 
@@ -4046,7 +4626,10 @@ async function evaluate(node, env = createScope()) {
         case 'ImportStatement':     return await evalImport(node, env, evaluate);
         case 'ClassDeclaration':    return await evalClassDeclaration(node, env);
         default:
-            printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
+            printErr({
+                eName: 'RuntimeError',
+                eContext: `Unknown AST node type '${node.type}'.`
+            });
     }
 }
 

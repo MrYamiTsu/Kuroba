@@ -92,7 +92,11 @@ function evalGiven(node, env, evaluate) {
 function evalForIn(node, env, evaluate) {
     let collection = evaluate(node.iterable, env);
     if (collection === null || collection === undefined) {
-        printErr(`[TypeError: Line ${node.line}] Cannot iterate over '${collection}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot iterate over '${collection}'.`,
+            eLine: node.line
+        });
     }
 
     let pairs = [];
@@ -111,7 +115,11 @@ function evalForIn(node, env, evaluate) {
         }
     } else {
         let typeName = getType(collection);
-        printErr(`[TypeError: Line ${node.line}] Cannot iterate over value of type '${typeName}'. Expected List, Stack, Queue, or Table.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot iterate over value of type '${typeName}'. Expected List, Stack, Queue, or Table.`,
+            eLine: node.line
+        });
     }
 
     let forEnv = createScope(env);
@@ -164,7 +172,7 @@ function evalTry(node, env, evaluate) {
         if (err && err.isKurobaUserException) {
             caughtValue = err.value;
         } else if (err && err.isKurobaRuntimeError) {
-            caughtValue = parseRuntimeErrorToTable(err.message);
+            caughtValue = err.errorTable || parseRuntimeErrorToTable(err.message);
         } else {
             unhandledError = err;
         }

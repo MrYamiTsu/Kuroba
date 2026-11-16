@@ -83,12 +83,18 @@ const natives = {
     ioCopy: (filePath) => {
         const p = String(filePath);
         if (!fs.existsSync(p)) {
-            printErr(`[IOError] File not found: '${p}'.`);
+            printErr({
+                eName: 'IOError',
+                eContext: `File not found: '${p}'.`
+            });
         }
         try {
             return fs.readFileSync(p, 'utf-8');
         } catch (err) {
-            printErr(`[IOError] Failed to read file '${p}': ${err.message}`);
+            printErr({
+                eName: 'IOError',
+                eContext: `Failed to read file '${p}': ${err.message}`
+            });
         }
     },
     ioPaste: (filePath, content) => {
@@ -97,7 +103,10 @@ const natives = {
             fs.writeFileSync(p, String(content), 'utf-8');
             return true;
         } catch (err) {
-            printErr(`[IOError] Failed to write to file '${p}': ${err.message}`);
+            printErr({
+                eName: 'IOError',
+                eContext: `Failed to write to file '${p}': ${err.message}`
+            });
         }
     },
     ioPasteLn: (filePath, content) => {
@@ -106,7 +115,10 @@ const natives = {
             fs.appendFileSync(p, String(content) + '\n', 'utf-8');
             return true;
         } catch (err) {
-            printErr(`[IOError] Failed to append to file '${p}': ${err.message}`);
+            printErr({
+                eName: 'IOError',
+                eContext: `Failed to append to file '${p}': ${err.message}`
+            });
         }
     },
     ioAppend: (filePath, content) => {
@@ -115,7 +127,10 @@ const natives = {
             fs.appendFileSync(p, String(content), 'utf-8');
             return true;
         } catch (err) {
-            printErr(`[IOError] Failed to append to file '${p}': ${err.message}`);
+            printErr({
+                eName: 'IOError',
+                eContext: `Failed to append to file '${p}': ${err.message}`
+            });
         }
     },
     ioExists: (filePath) => {
@@ -128,7 +143,10 @@ const natives = {
             fs.unlinkSync(p);
             return true;
         } catch (err) {
-            printErr(`[IOError] Failed to delete file '${p}': ${err.message}`);
+            printErr({
+                eName: 'IOError',
+                eContext: `Failed to delete file '${p}': ${err.message}`
+            });
         }
     }
 };

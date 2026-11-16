@@ -27,7 +27,10 @@ function castToType(val, targetType) {
     if (targetType === 'Int' || targetType === 'Float') {
         let numb = Number(val);
         if (isNaN(numb)) {
-            printErr(`[TypeError] Cannot cast value '${val}' to type '${targetType}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot cast value '${val}' to type '${targetType}'.`
+            });
         }
         return (targetType === 'Int') ? Math.trunc(numb) : numb;
     }

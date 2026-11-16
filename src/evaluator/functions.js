@@ -36,7 +36,11 @@ function evalReturn(node, env, evaluate) {
 
 function evalCall(node, env, evaluate) {
     if (callDepth >= MAX_CALL_DEPTH) {
-        printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded.`);
+        printErr({
+            eName: 'RecursionError',
+            eContext: `Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded.`,
+            eLine: node.line
+        });
     }
 
     let caller = evaluate(node.caller, env);
@@ -52,7 +56,11 @@ function evalCall(node, env, evaluate) {
     
     if (!caller || caller.kind !== 'Function') {
         let typeName = getType(caller);
-        printErr(`[TypeError] Cannot call non-function value of type '${typeName}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot call non-function value of type '${typeName}'.`,
+            eLine: node.line
+        });
     }
 
     if (caller.isNative) {
@@ -71,15 +79,27 @@ function evalCall(node, env, evaluate) {
     if (node.args.length < minArgs || node.args.length > maxArgs) {
         let funcName = caller.name || '~';
         if (minArgs === maxArgs) {
-            printErr(`[TypeError] Function '${funcName}' expects ${maxArgs} arguments, got ${node.args.length}.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Function '${funcName}' expects ${maxArgs} arguments, got ${node.args.length}.`,
+                eLine: node.line
+            });
         } else {
-            printErr(`[TypeError] Function '${funcName}' expects between ${minArgs} and ${maxArgs} arguments, got ${node.args.length}.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Function '${funcName}' expects between ${minArgs} and ${maxArgs} arguments, got ${node.args.length}.`,
+                eLine: node.line
+            });
         }
     }
 
     if (callDepth >= MAX_CALL_DEPTH) {
         let funcName = caller.name || '~';
-        printErr(`[RecursionError] Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded in function '${funcName}'.`);
+        printErr({
+            eName: 'RecursionError',
+            eContext: `Maximum recursion depth (${MAX_CALL_DEPTH}) exceeded in function '${funcName}'.`,
+            eLine: node.line
+        });
     }
 
     callDepth++;
@@ -103,7 +123,11 @@ function evalCall(node, env, evaluate) {
                 let isNullable = param.typeInfo.isNullable;
 
                 if (!isNullable && argVal === null) {
-                    printErr(`[TypeError] Cannot pass NULL to non-nullable parameter '${param.name}' of type '(${baseType})'.`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot pass NULL to non-nullable parameter '${param.name}' of type '(${baseType})'.`,
+                        eLine: node.line
+                    });
                 }
                 if (argVal !== null) {
                     argVal = castToType(argVal, baseType);
@@ -151,7 +175,11 @@ function evalHook(node, env, evaluate) {
         let origFunc = evaluate(node.target, env);
         if (!origFunc || origFunc.kind !== 'Function') {
             let typeName = getType(origFunc);
-            printErr(`[TypeError: Line ${node.line}] Cannot hook non-function target of type '${typeName}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot hook non-function target of type '${typeName}'.`,
+                eLine: node.line
+            });
         }
 
         let hookClosure = createScope(env);
@@ -172,7 +200,11 @@ function evalHook(node, env, evaluate) {
 
         let scope = findScope(node.target.name, env);
         if (!scope) {
-            printErr(`[ReferenceError: Line ${node.line}] Variable '${node.target.name}' not found.`);
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Variable '${node.target.name}' not found.`,
+                eLine: node.line
+            });
         }
         scope.values[node.target.name].value = hookFunc;
         return hookFunc;
@@ -192,12 +224,20 @@ function evalHook(node, env, evaluate) {
 
         if (container && container.kind === 'Table') {
             if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
-                printErr(`[TypeError: Line ${node.line}] Cannot hook private method '${key}' of class '${container.className}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot hook private method '${key}' of class '${container.className}'.`,
+                    eLine: node.line
+                });
             }
 
             let origFunc = container.fields[key] ? container.fields[key].value : null;
             if (!origFunc || origFunc.kind !== 'Function') {
-                printErr(`[TypeError: Line ${node.line}] Cannot hook non-function member '${key}' on Table.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot hook non-function member '${key}' on Table.`,
+                    eLine: node.line
+                });
             }
 
             let hookClosure = createScope(env);
@@ -227,10 +267,18 @@ function evalHook(node, env, evaluate) {
             return hookFunc;
         }
 
-        printErr(`[TypeError: Line ${node.line}] Target for hook must be a function, Table method, or Class method.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Target for hook must be a function, Table method, or Class method.`,
+            eLine: node.line
+        });
     }
 
-    printErr(`[SyntaxError: Line ${node.line}] Invalid target expression for hook.`);
+    printErr({
+        eName: 'SyntaxError',
+        eContext: `Invalid target expression for hook.`,
+        eLine: node.line
+    });
 }
 
 module.exports = { evalFunctionDeclaration, evalReturn, evalCall, evalHook };

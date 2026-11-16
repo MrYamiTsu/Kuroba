@@ -48,11 +48,17 @@ if (!filename || arg === '-i' || arg === '--repl') {
 
 const isValidExtension = filename.endsWith(config.extension) || filename.endsWith('.tulg');
 if (!isValidExtension) {
-    printErr(`[CLIError] Invalid file extension. Expected a '${config.extension}' file, but received: '${filename}'`);
+    printErr({
+        eName: 'CLIError',
+        eContext: `Invalid file extension. Expected a '${config.extension}' file, but received: '${filename}'`
+    });
 }
 
 if (!fs.existsSync(filename)) {
-    printErr(`[CLIError] File not found: '${filename}'`);
+    printErr({
+        eName: 'CLIError',
+        eContext: `File not found: '${filename}'`
+    });
 }
 
 const resolvedFilename = path.resolve(filename);

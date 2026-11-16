@@ -5,14 +5,20 @@ const { findScope } = require('./scope');
 function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
     if (val === null) {
         if (!isNullable) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable variable '${varName}' of type '(${targetType})'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign NULL to non-nullable variable '${varName}' of type '(${targetType})'.`
+            });
         }
         return null;
     }
 
     if (targetType === 'Table') {
         if (val && val.kind === 'Table') return val;
-        printErr(`[TypeError] Cannot assign non-Table value of type '${getType(val)}' to variable '${varName}' of type 'Table'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot assign non-Table value of type '${getType(val)}' to variable '${varName}' of type 'Table'.`
+        });
     }
 
     if (targetType === 'List' || targetType === 'Stack' || targetType === 'Queue') {
@@ -23,7 +29,10 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
         } else if (val && (val.kind === targetType || val.kind === 'Stack' || val.kind === 'Queue')) {
             rawItems = [...val.items];
         } else {
-            printErr(`[TypeError] Cannot assign non-collection value of type '${getType(val)}' to variable '${varName}' of type '${targetType}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign non-collection value of type '${getType(val)}' to variable '${varName}' of type '${targetType}'.`
+            });
         }
 
         if (typeInfo && typeInfo.elemType) {
@@ -31,7 +40,10 @@ function validateAndCast(val, targetType, isNullable, typeInfo, varName) {
                 let elem = rawItems[i];
                 if (elem === null) {
                     if (!typeInfo.isElemNullable) {
-                        printErr(`[TypeError] Element at index ${i} in ${targetType} '${varName}' cannot be NULL.`);
+                        printErr({
+                            eName: 'TypeError',
+                            eContext: `Element at index ${i} in ${targetType} '${varName}' cannot be NULL.`
+                        });
                     }
                 } else {
                     rawItems[i] = castToType(elem, typeInfo.elemType);
@@ -67,16 +79,29 @@ function evalVarDeclar(node, env, evaluate) {
 
 function evalVarAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
-    if (!scope) printErr(`[ReferenceError] Cannot reassign undeclared variable '${node.name}'.`);
+    if (!scope) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot reassign undeclared variable '${node.name}'.`
+        });
+    }
     let target = scope.values[node.name];
-    if (target.isConst) printErr(`[TypeError] Cannot reassign constant '${node.name}'.`);
+    if (target.isConst) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot reassign constant '${node.name}'.`
+        });
+    }
 
     let rawVal = evaluate(node.value, env);
     let val = validateAndCast(rawVal, target.type, target.isNullable, target.typeInfo, node.name);
 
     let newType = getType(val);
     if (val !== null && target.type !== newType) {
-        printErr(`[TypeError] Cannot assign type '${newType}' to variable '${node.name}' of type '${target.type}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot assign type '${newType}' to variable '${node.name}' of type '${target.type}'.`
+        });
     }
 
     target.value = val;
@@ -86,14 +111,27 @@ function evalVarAssign(node, env, evaluate) {
 function evalVariable(node, env) {
     let scope = findScope(node.name, env);
     if (scope) return scope.values[node.name].value;
-    printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+    printErr({
+        eName: 'ReferenceError',
+        eContext: `Variable '${node.name}' is not defined.`
+    });
 }
 
 function evalVarRetype(node, env, evaluate) {
     let scope = findScope(node.name, env);
-    if (!scope) printErr(`[ReferenceError] Cannot retype undeclared variable '${node.name}'.`);
+    if (!scope) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot retype undeclared variable '${node.name}'.`
+        });
+    }
     let target = scope.values[node.name];
-    if (target.isConst) printErr(`[TypeError] Cannot retype constant '${node.name}'.`);
+    if (target.isConst) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot retype constant '${node.name}'.`
+        });
+    }
 
     let rawVal = evaluate(node.value, env);
     let val = validateAndCast(rawVal, node.targetType, node.isNullable, node.typeInfo, node.name);
@@ -108,19 +146,54 @@ function evalVarRetype(node, env, evaluate) {
 function evalSwap(node, env) {
     let scopeLeft = findScope(node.left, env);
     let scopeRight = findScope(node.right, env);
-    if (!scopeLeft) printErr(`[ReferenceError] Cannot swap undeclared variable '${node.left}'.`);
-    if (!scopeRight) printErr(`[ReferenceError] Cannot swap undeclared variable '${node.right}'.`);
+    if (!scopeLeft) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot swap undeclared variable '${node.left}'.`
+        });
+    }
+    if (!scopeRight) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot swap undeclared variable '${node.right}'.`
+        });
+    }
 
     let varA = scopeLeft.values[node.left];
     let varB = scopeRight.values[node.right];
 
-    if (varA.isConst) printErr(`[TypeError] Cannot swap constant '${node.left}'.`);
-    if (varB.isConst) printErr(`[TypeError] Cannot swap constant '${node.right}'.`);
+    if (varA.isConst) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap constant '${node.left}'.`
+        });
+    }
+    if (varB.isConst) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap constant '${node.right}'.`
+        });
+    }
 
-    if (!varA.isNullable && varB.value === null) printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.left}'.`);
-    if (!varB.isNullable && varA.value === null) printErr(`[TypeError] Cannot swap NULL into non-nullable variable '${node.right}'.`);
+    if (!varA.isNullable && varB.value === null) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap NULL into non-nullable variable '${node.left}'.`
+        });
+    }
+    if (!varB.isNullable && varA.value === null) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap NULL into non-nullable variable '${node.right}'.`
+        });
+    }
     
-    if (varA.type !== varB.type) printErr(`[TypeError] Cannot swap variable '${node.left}' of type '${varA.type}' with variable '${node.right}' of type '${varB.type}'.`);
+    if (varA.type !== varB.type) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot swap variable '${node.left}' of type '${varA.type}' with variable '${node.right}' of type '${varB.type}'.`
+        });
+    }
 
     let temp = varA.value;
     varA.value = varB.value;
@@ -130,12 +203,20 @@ function evalSwap(node, env) {
 function evalKill(node, env) {
     let scope = findScope(node.name, env);
     if (!scope) {
-        printErr(`[ReferenceError: Line ${node.line}] Cannot kill undefined variable '${node.name}'.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Cannot kill undefined variable '${node.name}'.`,
+            eLine: node.line
+        });
     }
 
     let targetVar = scope.values[node.name];
     if (targetVar.isConst) {
-        printErr(`[TypeError: Line ${node.line}] Cannot kill constant variable '${node.name}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot kill constant variable '${node.name}'.`,
+            eLine: node.line
+        });
     }
 
     delete scope.values[node.name];

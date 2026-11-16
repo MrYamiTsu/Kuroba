@@ -504,34 +504,40 @@ throw 404;
           </thead>
           <tbody>
             <tr>
-              <td><code>exName</code></td>
+              <td><code>eName</code></td>
               <td><code>String</code></td>
               <td><code>"Exception"</code></td>
               <td>Replaces the bracketed header name (e.g. <code>[AuthError]</code> instead of <code>[Exception]</code>).</td>
             </tr>
             <tr>
-              <td><code>exLines</code></td>
+              <td><code>eLines</code></td>
               <td><code>Bool</code></td>
               <td><code>TRUE</code></td>
               <td>When <code>FALSE</code>, suppresses line and column numbers from the header.</td>
             </tr>
             <tr>
-              <td><code>exCode</code></td>
+              <td><code>eCode</code></td>
               <td><code>Int / String</code></td>
               <td><code>NULL</code></td>
-              <td>Prefixes the diagnostic message with <code>Error &lt;exCode&gt;: </code>.</td>
+              <td>Prefixes the diagnostic message with <code>Error &lt;eCode&gt;: </code>.</td>
             </tr>
             <tr>
-              <td><code>exContext</code></td>
+              <td><code>eContext</code></td>
               <td><code>String</code></td>
               <td><code>NULL</code></td>
               <td>Sets the error description body, replacing default table serialization.</td>
             </tr>
             <tr>
-              <td><code>exTime</code></td>
+              <td><code>eTime</code></td>
               <td><code>Bool</code></td>
               <td><code>FALSE</code></td>
               <td>When <code>TRUE</code>, prepends the local timestamp (<code>[YYYY-MM-DD HH:MM:SS]</code>) at the start of the error line.</td>
+            </tr>
+            <tr>
+              <td><code>eLine</code> / <code>eCol</code></td>
+              <td><code>Int</code></td>
+              <td><code>NULL</code></td>
+              <td>Line and column metadata attached when intercepting errors or inspecting diagnostics.</td>
             </tr>
           </tbody>
         </table>
@@ -539,24 +545,24 @@ throw 404;
         <h3>Examples of Structured Exceptions</h3>
         <pre><code class="language-kuroba">~~ Custom name, HTTP code, description, and timestamp
 throw {
-    exName: "AccessDenied",
-    exCode: 403,
-    exTime: TRUE,
-    exContext: "Root privileges required for this operation"
+    eName: "AccessDenied",
+    eCode: 403,
+    eTime: TRUE,
+    eContext: "Root privileges required for this operation"
 };
 ~~ Output: [2026-11-10 13:22:09] [AccessDenied: Line 2, Col 1] Error 403: Root privileges required for this operation
 
 ~~ Suppressing line tracking for clean CLI alerts
 throw {
-    exName: "SecurityPanic",
-    exLines: FALSE,
-    exContext: "Immediate intrusion alert detected"
+    eName: "SecurityPanic",
+    eLines: FALSE,
+    eContext: "Immediate intrusion alert detected"
 };
 ~~ Output: [SecurityPanic] Immediate intrusion alert detected
 
 ~~ Code without context (formats the table data)
-throw { exCode: 404, route: "/api/v1/users" };
-~~ Output: [Exception: Line 13, Col 1] Error 404: { route: "/api/v1/users", exCode: 404 }</code></pre>
+throw { eCode: 404, route: "/api/v1/users" };
+~~ Output: [Exception: Line 13, Col 1] Error 404: { route: "/api/v1/users", eCode: 404 }</code></pre>
 
         <h3>3. Exception Handling (<code>try ... catch (ivar e) ... finally ... end</code>)</h3>
         <p>The <code>try</code> block wraps guarded operations. The trailing <code>then</code> keyword is optional across all clauses (<code>try</code> or <code>try then</code>, <code>catch (ivar e)</code> or <code>catch (ivar e) then</code>, <code>finally</code> or <code>finally then</code>):</p>
@@ -564,25 +570,25 @@ throw { exCode: 404, route: "/api/v1/users" };
         <pre><code class="language-kuroba">try
     pasteLn("1. Attempting secure transaction...");
     throw {
-        exName: "PaymentError",
-        exContext: "Insufficient account balance"
+        eName: "PaymentError",
+        eContext: "Insufficient account balance"
     };
 catch (ivar err) then
-    pasteLn("2. Caught exception: " + err.exName);
-    pasteLn("   Reason: " + err.exContext);
+    pasteLn("2. Caught exception: " + err.eName);
+    pasteLn("   Reason: " + err.eContext);
 finally
     pasteLn("3. Transaction session closed.");
 end</code></pre>
 
         <h3>4. Intercepting Native Runtime Errors</h3>
-        <p>Kuroba's <code>try / catch</code> seamlessly captures built-in runtime failures (such as division by zero, missing files, or out-of-bounds indexing) and transforms them into structured tables with <code>exName</code> and <code>exContext</code> fields:</p>
+        <p>Kuroba's <code>try / catch</code> seamlessly captures built-in runtime failures (such as division by zero, missing files, or out-of-bounds indexing) and transforms them into structured tables with <code>eName</code>, <code>eContext</code>, and <code>eLine</code> fields:</p>
 
         <pre><code class="language-kuroba">try
     ~~ Trigger a division by zero error
     ivar result = 100 / 0;
 catch (ivar e) then
-    pasteLn("Error intercepted: " + e.exName);
-    pasteLn("Details: " + e.exContext);
+    pasteLn("Error intercepted: " + e.eName);
+    pasteLn("Details: " + e.eContext);
 end
 ~~ Output:
 ~~ Error intercepted: MathError
@@ -822,7 +828,7 @@ pasteLn(~"Hero energy: {hero.getEnergy()}");
 try
     paste(hero._energy); ~~ Throws [TypeError] Cannot access private member
 catch (ivar err) then
-    pasteLn(~"Intercepted private violation: {err.exName}");
+    pasteLn(~"Intercepted private violation: {err.eName}");
 end</code></pre>
 
         <h3>5. Type Checking with the <code>is</code> Operator</h3>

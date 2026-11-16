@@ -60,9 +60,12 @@ function tokenize(input) {
           }
 
           if (!closed) {
-            printErr(
-              `[SyntaxError: Line ${startLine}, Col ${startCol}] Unclosed multi-line comment. Expected '}}'.`,
-            );
+            printErr({
+              eName: "SyntaxError",
+              eContext: "Unclosed multi-line comment. Expected '}}'.",
+              eLine: startLine,
+              eCol: startCol,
+            });
           }
 
           continue;
@@ -98,7 +101,12 @@ function tokenize(input) {
         }
 
         if (cursor >= input.length || input[cursor] !== '"') {
-          printErr(`[SyntaxError: Line ${startLine}, Col ${startCol}] Unterminated interpolated string literal.`);
+          printErr({
+            eName: "SyntaxError",
+            eContext: "Unterminated interpolated string literal.",
+            eLine: startLine,
+            eCol: startCol,
+          });
         }
 
         cursor++;
@@ -138,9 +146,12 @@ function tokenize(input) {
       }
 
       if (cursor >= input.length || input[cursor] !== '"') {
-        printErr(
-          `[SyntaxError: Line ${startLine}, Col ${startCol}] Unterminated string literal. Expected closing quote '"'.`,
-        );
+        printErr({
+          eName: "SyntaxError",
+          eContext: "Unterminated string literal. Expected closing quote '\"'.",
+          eLine: startLine,
+          eCol: startCol,
+        });
       }
 
       cursor++;
@@ -241,9 +252,12 @@ function tokenize(input) {
         col += 2;
         continue;
       }
-      printErr(
-        `[SyntaxError: Line ${line}, Col ${col}] Unexpected single '&'. Did you mean '&&'?`,
-      );
+      printErr({
+        eName: "SyntaxError",
+        eContext: "Unexpected single '&'. Did you mean '&&'?",
+        eLine: line,
+        eCol: col,
+      });
     }
 
     if (char === "|") {
@@ -253,9 +267,12 @@ function tokenize(input) {
         col += 2;
         continue;
       }
-      printErr(
-        `[SyntaxError: Line ${line}, Col ${col}] Unexpected single '|'. Did you mean '||'?`,
-      );
+      printErr({
+        eName: "SyntaxError",
+        eContext: "Unexpected single '|'. Did you mean '||'?",
+        eLine: line,
+        eCol: col,
+      });
     }
 
     if (char === "!") {
@@ -345,9 +362,12 @@ function tokenize(input) {
       continue;
     }
 
-    printErr(
-      `[SyntaxError: Line ${line}, Col ${col}] Unexpected character '${char}'.`,
-    );
+    printErr({
+      eName: "SyntaxError",
+      eContext: `Unexpected character '${char}'.`,
+      eLine: line,
+      eCol: col,
+    });
   }
 
   return tokens;

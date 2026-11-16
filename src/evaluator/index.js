@@ -74,7 +74,10 @@ function evaluate(node, env = createScope()) {
         case 'ImportStatement':     return evalImport(node, env, evaluate);
         case 'ClassDeclaration':    return evalClassDeclaration(node, env);
         default:
-            printErr(`[RuntimeError] Unknown AST node type '${node.type}'.`);
+            printErr({
+                eName: 'RuntimeError',
+                eContext: `Unknown AST node type '${node.type}'.`
+            });
     }
 }
 

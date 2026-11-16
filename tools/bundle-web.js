@@ -18,9 +18,11 @@ function readSource(relPath) {
 
 function readErrorFormatters() {
     const src = fs.readFileSync(path.join(__dirname, '../src/errors.js'), 'utf-8');
-    const idx = src.indexOf('function formatTimestamp()');
-    if (idx === -1) throw new Error('formatTimestamp not found in src/errors.js');
-    return src.slice(idx).replace(/module\.exports\s*=\s*\{[^}]*\};?/g, '').trim();
+    const startIdx = src.indexOf('function formatTimestamp()');
+    if (startIdx === -1) throw new Error('formatTimestamp not found in src/errors.js');
+    const endIdx = src.indexOf('function printErr(');
+    const content = (endIdx !== -1) ? src.slice(startIdx, endIdx) : src.slice(startIdx);
+    return content.replace(/module\.exports\s*=\s*\{[^}]*\};?/g, '').trim();
 }
 
 function readAsyncEvaluator(relPath) {
@@ -123,23 +125,37 @@ const bundleCode = `/**
     }
 
     class KurobaRuntimeError extends Error {
-        constructor(message) {
-            super(message);
+        constructor(message, errorTable = null) {
+            super(typeof message === 'string' ? message : ((message && message.eContext) || 'RuntimeError'));
             this.isKurobaRuntimeError = true;
-            this.message = message;
+            this.message = typeof message === 'string' ? message : '';
+            this.errorTable = errorTable;
         }
     }
 
-    function printErr(msg) {
+    function printErr(arg) {
+        let formattedMsg;
+        let errorTable;
+
+        if (arg && typeof arg === 'object') {
+            errorTable = createErrorTable(arg);
+            let line = arg.eLine !== undefined ? arg.eLine : undefined;
+            let col = arg.eCol !== undefined ? arg.eCol : undefined;
+            formattedMsg = formatExceptionMessage(errorTable, line, col, "");
+        } else {
+            formattedMsg = String(arg);
+            errorTable = parseRuntimeErrorToTable(formattedMsg);
+        }
+
         if (tryDepth > 0) {
-            throw new KurobaRuntimeError(msg);
+            throw new KurobaRuntimeError(formattedMsg, errorTable);
         }
         if (activeErrorHandler) {
-            activeErrorHandler(msg);
+            activeErrorHandler(formattedMsg);
         } else {
-            console.error(msg);
+            console.error(formattedMsg);
         }
-        throw new Error(msg);
+        throw new Error(formattedMsg);
     }
 
     function printException(msg) {

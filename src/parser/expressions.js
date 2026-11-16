@@ -7,7 +7,10 @@ class ParserExpressions extends ParserTypes {
         let token = this.peek();
 
         if (!token) {
-            printErr("[SyntaxError: at end of file] Unexpected end of input. Expected expression.");
+            printErr({
+                eName: 'SyntaxError',
+                eContext: "Unexpected end of input. Expected expression."
+            });
         }
 
         let expr = null;
@@ -36,7 +39,13 @@ class ParserExpressions extends ParserTypes {
                     if (this.match('IDENTIFIER', 'STRING')) {
                         key = this.previous().value;
                     } else {
-                        printErr(`[SyntaxError: ${this.formatLocation(this.peek())}] Expected key (identifier or string) in Table literal.`);
+                        let peekTok = this.peek();
+                        printErr({
+                            eName: 'SyntaxError',
+                            eContext: "Expected key (identifier or string) in Table literal.",
+                            eLine: peekTok ? peekTok.line : null,
+                            eCol: peekTok ? peekTok.col : null
+                        });
                     }
 
                     let typeInfo = null;
@@ -94,11 +103,22 @@ class ParserExpressions extends ParserTypes {
             expr = this.parseLogicOr();
 
             if (!this.match('RPAREN')) {
-                printErr(`[SyntaxError: ${this.formatLocation(this.peek() || openParen)}] Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`);
+                let errTok = this.peek() || openParen;
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Unclosed parenthesis. Missing closing ')' to match '(' at Line ${openParen.line}, Col ${openParen.col}.`,
+                    eLine: errTok ? errTok.line : null,
+                    eCol: errTok ? errTok.col : null
+                });
             }
         }
         else {
-            printErr(`[SyntaxError: ${this.formatLocation(token)}] Unexpected token '${token.value}' of type '${token.type}'.`);
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `Unexpected token '${token.value}' of type '${token.type}'.`,
+                eLine: token.line,
+                eCol: token.col
+            });
         }
 
         while (true) {
@@ -174,7 +194,12 @@ class ParserExpressions extends ParserTypes {
                 }
 
                 if (braceCount > 0) {
-                    printErr(`[SyntaxError: Line ${token.line}, Col ${token.col}] Unclosed '{' in interpolated string.`);
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "Unclosed '{' in interpolated string.",
+                        eLine: token.line,
+                        eCol: token.col
+                    });
                 }
 
                 const innerTokens = tokenize(exprStr + ";");
@@ -309,7 +334,10 @@ class ParserExpressions extends ParserTypes {
         } else if (this.check('NOT')) {
             return this.parseUnary();
         } else {
-            printErr("[SyntaxError] Comparisons in conditions must be wrapped in parentheses '(...)'.");
+            printErr({
+                eName: 'SyntaxError',
+                eContext: "Comparisons in conditions must be wrapped in parentheses '(...)'."
+            });
         }
     }
 }

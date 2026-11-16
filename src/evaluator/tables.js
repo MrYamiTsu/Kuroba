@@ -15,7 +15,10 @@ function evalTableLiteral(node, env, evaluate) {
             type = entry.typeInfo.baseType;
             isNullable = entry.typeInfo.isNullable;
             if (!isNullable && rawVal === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${entry.key}' of type '(${type})'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable field '${entry.key}' of type '(${type})'.`
+                });
             }
             if (rawVal !== null) {
                 val = castToType(rawVal, type);
@@ -34,15 +37,26 @@ function evalTableLiteral(node, env, evaluate) {
 
 function evalPropertyAssign(node, env, evaluate) {
     let scope = findScope(node.name, env);
-    if (!scope) printErr(`[ReferenceError] Variable '${node.name}' is not defined.`);
+    if (!scope) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Variable '${node.name}' is not defined.`
+        });
+    }
 
     let targetVar = scope.values[node.name];
     if (targetVar.isConst) {
-        printErr(`[TypeError] Cannot modify properties of constant Table '${node.name}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot modify properties of constant Table '${node.name}'.`
+        });
     }
 
     if (!targetVar.value || targetVar.value.kind !== 'Table') {
-        printErr(`[TypeError] Cannot set property '${node.property}' on non-Table value of type '${getType(targetVar.value)}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot set property '${node.property}' on non-Table value of type '${getType(targetVar.value)}'.`
+        });
     }
 
     let table = targetVar.value;
@@ -51,11 +65,17 @@ function evalPropertyAssign(node, env, evaluate) {
     for (let i = 0; i < path.length - 1; i++) {
         let seg = path[i];
         if (!table.fields || !(seg in table.fields)) {
-            printErr(`[ReferenceError] Property '${seg}' does not exist on Table.`);
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Property '${seg}' does not exist on Table.`
+            });
         }
         let child = table.fields[seg].value;
         if (!child || child.kind !== 'Table') {
-            printErr(`[TypeError] Cannot access property through non-Table field '${seg}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot access property through non-Table field '${seg}'.`
+            });
         }
         table = child;
     }
@@ -70,11 +90,21 @@ function evalPropertyAssign(node, env, evaluate) {
             case '-': newVal = currVal - newVal; break;
             case '*': newVal = currVal * newVal; break;
             case '/':
-                if (newVal === 0) printErr("[MathError] Division by zero is undefined.");
+                if (newVal === 0) {
+                    printErr({
+                        eName: 'MathError',
+                        eContext: "Division by zero is undefined."
+                    });
+                }
                 newVal = currVal / newVal;
                 break;
             case '%':
-                if (newVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+                if (newVal === 0) {
+                    printErr({
+                        eName: 'MathError',
+                        eContext: "Division or modulo by zero is undefined."
+                    });
+                }
                 newVal = currVal % newVal;
                 break;
         }
@@ -84,7 +114,10 @@ function evalPropertyAssign(node, env, evaluate) {
         let targetType = node.typeInfo.baseType;
         let isNullable = node.typeInfo.isNullable;
         if (!isNullable && newVal === null) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`
+            });
         }
         if (newVal !== null) {
             newVal = castToType(newVal, targetType);
@@ -96,12 +129,18 @@ function evalPropertyAssign(node, env, evaluate) {
     if (key in table.fields) {
         let field = table.fields[key];
         if (!field.isNullable && newVal === null) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`
+            });
         }
         if (newVal !== null) {
             let actualType = getType(newVal);
             if (field.type !== actualType) {
-                printErr(`[TypeError] Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`
+                });
             }
         }
         field.value = newVal;

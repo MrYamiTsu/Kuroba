@@ -26,12 +26,18 @@ function evalIndexAccess(node, env, evaluate) {
             curr = curr.superClass;
         }
 
-        printErr(`[ReferenceError] Shared member '${key}' does not exist on class '${target.name}'.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Shared member '${key}' does not exist on class '${target.name}'.`
+        });
     }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
         if (!node.isDotAccess) {
-            printErr("[TypeError] Tables do not support bracket indexing. Use dot notation 'table.property' instead.");
+            printErr({
+                eName: 'TypeError',
+                eContext: "Tables do not support bracket indexing. Use dot notation 'table.property' instead."
+            });
         }
 
         let key = node.index;
@@ -46,20 +52,48 @@ function evalIndexAccess(node, env, evaluate) {
     }
 
     if (node.isDotAccess) {
-        printErr(`[TypeError] Cannot access '${getType(target)}' with dot notation. Use bracket indexing 'list[index]' instead.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access '${getType(target)}' with dot notation. Use bracket indexing 'list[index]' instead.`
+        });
     }
 
     if (typeof target === 'string') {
         let idx = evaluate(node.index, env);
-        if (!Number.isInteger(idx)) printErr(`[IndexError] String index must be an integer, got '${idx}'.`);
-        if (idx < 0 || idx >= target.length) printErr(`[IndexError] Index ${idx} out of bounds for string of length ${target.length}.`);
+        if (!Number.isInteger(idx)) {
+            printErr({
+                eName: 'IndexError',
+                eContext: `String index must be an integer, got '${idx}'.`
+            });
+        }
+        if (idx < 0 || idx >= target.length) {
+            printErr({
+                eName: 'IndexError',
+                eContext: `Index ${idx} out of bounds for string of length ${target.length}.`
+            });
+        }
         return target[idx];
     }
 
-    if (!Array.isArray(target)) printErr(`[TypeError] Cannot index non-list value of type '${getType(target)}'.`);
+    if (!Array.isArray(target)) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot index non-list value of type '${getType(target)}'.`
+        });
+    }
     let idx = evaluate(node.index, env);
-    if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
-    if (idx < 0 || idx >= target.length) printErr(`[IndexError] Index ${idx} out of bounds for list of length ${target.length}.`);
+    if (!Number.isInteger(idx)) {
+        printErr({
+            eName: 'IndexError',
+            eContext: `List index must be an integer, got '${idx}'.`
+        });
+    }
+    if (idx < 0 || idx >= target.length) {
+        printErr({
+            eName: 'IndexError',
+            eContext: `Index ${idx} out of bounds for list of length ${target.length}.`
+        });
+    }
     return target[idx];
 }
 
@@ -69,10 +103,20 @@ function applyCompoundOp(currVal, rhsVal, operator) {
         case '-': return currVal - rhsVal;
         case '*': return currVal * rhsVal;
         case '/':
-            if (rhsVal === 0) printErr("[MathError] Division by zero is undefined.");
+            if (rhsVal === 0) {
+                printErr({
+                    eName: 'MathError',
+                    eContext: "Division by zero is undefined."
+                });
+            }
             return currVal / rhsVal;
         case '%':
-            if (rhsVal === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+            if (rhsVal === 0) {
+                printErr({
+                    eName: 'MathError',
+                    eContext: "Division or modulo by zero is undefined."
+                });
+            }
             return currVal % rhsVal;
         default:
             return rhsVal;
@@ -88,11 +132,19 @@ function evalMemberAssign(node, env, evaluate) {
     let rootVarEntry = null;
     if (root && root.type === 'Variable') {
         let scope = findScope(root.name, env);
-        if (!scope) printErr(`[ReferenceError] Variable '${root.name}' is not defined.`);
+        if (!scope) {
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Variable '${root.name}' is not defined.`
+            });
+        }
         
         rootVarEntry = scope.values[root.name];
         if (rootVarEntry.isConst && root.name !== 'this' && rootVarEntry.type !== 'Class') {
-            printErr(`[TypeError] Cannot modify constant '${root.name}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot modify constant '${root.name}'.`
+            });
         }
     }
 
@@ -113,11 +165,17 @@ function evalMemberAssign(node, env, evaluate) {
         }
 
         if (!fieldEntry) {
-            printErr(`[ReferenceError] Shared variable '${key}' does not exist on class '${container.name}'.`);
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Shared variable '${key}' does not exist on class '${container.name}'.`
+            });
         }
 
         if (fieldEntry.isConst) {
-            printErr(`[TypeError] Cannot modify constant shared member '${key}' on class '${container.name}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot modify constant shared member '${key}' on class '${container.name}'.`
+            });
         }
 
         let currVal = fieldEntry.value;
@@ -132,7 +190,10 @@ function evalMemberAssign(node, env, evaluate) {
 
     if (node.isDotAccess) {
         if (!container || container.kind !== 'Table') {
-            printErr(`[TypeError] Cannot set property '${node.index}' on non-Table value of type '${getType(container)}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot set property '${node.index}' on non-Table value of type '${getType(container)}'.`
+            });
         }
 
         checkPrivateAccess(container, node.index, env, false);
@@ -149,7 +210,10 @@ function evalMemberAssign(node, env, evaluate) {
             let targetType = node.typeInfo.baseType;
             let isNullable = node.typeInfo.isNullable;
             if (!isNullable && newVal === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable field '${key}' of type '(${targetType})'.`
+                });
             }
             if (newVal !== null) {
                 newVal = castToType(newVal, targetType);
@@ -161,12 +225,18 @@ function evalMemberAssign(node, env, evaluate) {
         if (key in container.fields) {
             let field = container.fields[key];
             if (!field.isNullable && newVal === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable field '${key}' of type '(${field.type})'.`
+                });
             }
             if (newVal !== null) {
                 let actualType = getType(newVal);
                 if (field.type !== actualType) {
-                    printErr(`[TypeError] Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot assign type '${actualType}' to field '${key}' of type '${field.type}'.`
+                    });
                 }
             }
             field.value = newVal;
@@ -182,17 +252,31 @@ function evalMemberAssign(node, env, evaluate) {
     }
 
     if (container && container.kind === 'Table') {
-        printErr(`[TypeError] Tables do not support bracket assignment. Use dot notation 'table.${evaluate(node.index, env)} = ...' instead.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Tables do not support bracket assignment. Use dot notation 'table.${evaluate(node.index, env)} = ...' instead.`
+        });
     }
 
     if (!Array.isArray(container)) {
-        printErr(`[TypeError] Cannot index non-list value of type '${getType(container)}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot index non-list value of type '${getType(container)}'.`
+        });
     }
 
     let idx = evaluate(node.index, env);
-    if (!Number.isInteger(idx)) printErr(`[IndexError] List index must be an integer, got '${idx}'.`);
+    if (!Number.isInteger(idx)) {
+        printErr({
+            eName: 'IndexError',
+            eContext: `List index must be an integer, got '${idx}'.`
+        });
+    }
     if (idx < 0 || idx >= container.length) {
-        printErr(`[IndexError] Index ${idx} out of bounds for list of length ${container.length}.`);
+        printErr({
+            eName: 'IndexError',
+            eContext: `Index ${idx} out of bounds for list of length ${container.length}.`
+        });
     }
 
     let newVal = evaluate(node.value, env);
@@ -204,7 +288,10 @@ function evalMemberAssign(node, env, evaluate) {
     if (listTypeInfo && listTypeInfo.elemType) {
         if (newVal === null) {
             if (!listTypeInfo.isElemNullable) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable element of list '${node.target.name}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable element of list '${node.target.name}'.`
+                });
             }
         } else {
             newVal = castToType(newVal, listTypeInfo.elemType);
@@ -212,7 +299,10 @@ function evalMemberAssign(node, env, evaluate) {
     } else if (node.typeInfo) {
         let targetType = node.typeInfo.baseType;
         if (!node.typeInfo.isNullable && newVal === null) {
-            printErr(`[TypeError] Cannot assign NULL to non-nullable element of type '(${targetType})'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot assign NULL to non-nullable element of type '(${targetType})'.`
+            });
         }
         if (newVal !== null) {
             newVal = castToType(newVal, targetType);
@@ -240,7 +330,10 @@ function evalMethodCall(node, env, evaluate) {
             curr = curr.superClass;
         }
 
-        printErr(`[ReferenceError] Shared method '${methodName}' does not exist on class '${target.name}'.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Shared method '${methodName}' does not exist on class '${target.name}'.`
+        });
     }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
@@ -262,11 +355,17 @@ function evalMethodCall(node, env, evaluate) {
                 return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
 
-            printErr(`[TypeError] Field '${methodName}' on Table is not a callable function.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Field '${methodName}' on Table is not a callable function.`
+            });
         }
 
         let targetDesc = target.isInstance ? `class '${target.className}'` : 'Table';
-        printErr(`[ReferenceError] Method or field '${methodName}' does not exist on ${targetDesc}.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Method or field '${methodName}' does not exist on ${targetDesc}.`
+        });
     }
 
     let isList = Array.isArray(target);
@@ -274,7 +373,10 @@ function evalMethodCall(node, env, evaluate) {
     let isQueue = target && target.kind === 'Queue';
 
     if (!isList && !isStack && !isQueue) {
-        printErr(`[TypeError] Cannot call method '.${node.method}()' on type '${targetType}'. Supported types are 'List', 'Stack', 'Queue' and 'Table'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot call method '.${node.method}()' on type '${targetType}'. Supported types are 'List', 'Stack', 'Queue' and 'Table'.`
+        });
     }
 
     let items = isList ? target : target.items;
@@ -289,7 +391,10 @@ function evalMethodCall(node, env, evaluate) {
     switch (method) {
         case 'push': {
             if (node.args.length < 1) {
-                printErr(`[TypeError] Method '.push()' expects at least 1 argument.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Method '.push()' expects at least 1 argument.`
+                });
             }
 
             let val = evaluate(node.args[0], env);
@@ -297,7 +402,10 @@ function evalMethodCall(node, env, evaluate) {
             if (tInfo && tInfo.elemType) {
                 if (val === null) {
                     if (!tInfo.isElemNullable) {
-                        printErr(`[TypeError] Cannot push NULL into ${targetType} '${node.target.name}' with non-nullable elements.`);
+                        printErr({
+                            eName: 'TypeError',
+                            eContext: `Cannot push NULL into ${targetType} '${node.target.name}' with non-nullable elements.`
+                        });
                     }
                 } else {
                     val = castToType(val, tInfo.elemType);
@@ -311,8 +419,18 @@ function evalMethodCall(node, env, evaluate) {
             } else {
                 if (node.args.length >= 2) {
                     let pos = evaluate(node.args[1], env);
-                    if (!Number.isInteger(pos)) printErr(`[IndexError] Position argument in '.push()' must be an integer, got '${pos}'.`);
-                    if (pos < 0 || pos > items.length) printErr(`[IndexError] Position ${pos} out of bounds for list of length ${items.length}.`);
+                    if (!Number.isInteger(pos)) {
+                        printErr({
+                            eName: 'IndexError',
+                            eContext: `Position argument in '.push()' must be an integer, got '${pos}'.`
+                        });
+                    }
+                    if (pos < 0 || pos > items.length) {
+                        printErr({
+                            eName: 'IndexError',
+                            eContext: `Position ${pos} out of bounds for list of length ${items.length}.`
+                        });
+                    }
                     items.splice(pos, 0, val);
                 } else {
                     items.push(val);
@@ -323,7 +441,10 @@ function evalMethodCall(node, env, evaluate) {
         }
         case 'pop': {
             if (items.length === 0) {
-                printErr(`[IndexError] Cannot pop from an empty ${targetType}.`);
+                printErr({
+                    eName: 'IndexError',
+                    eContext: `Cannot pop from an empty ${targetType}.`
+                });
             }
 
             if (isStack) {
@@ -332,19 +453,35 @@ function evalMethodCall(node, env, evaluate) {
                 return items.shift();
             } else {
                 if (node.args.length < 1) {
-                    printErr(`[TypeError] Method '.pop()' on a List requires an index argument. (e.g. list.pop(0))`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Method '.pop()' on a List requires an index argument. (e.g. list.pop(0))`
+                    });
                 }
 
                 let pos = evaluate(node.args[0], env);
-                if (!Number.isInteger(pos)) printErr(`[IndexError] Index argument in '.pop()' must be an integer, got '${pos}'.`);
-                if (pos < 0 || pos >= items.length) printErr(`[IndexError] Index ${pos} out of bounds for list of length ${items.length}.`);
+                if (!Number.isInteger(pos)) {
+                    printErr({
+                        eName: 'IndexError',
+                        eContext: `Index argument in '.pop()' must be an integer, got '${pos}'.`
+                    });
+                }
+                if (pos < 0 || pos >= items.length) {
+                    printErr({
+                        eName: 'IndexError',
+                        eContext: `Index ${pos} out of bounds for list of length ${items.length}.`
+                    });
+                }
 
                 return items.splice(pos, 1)[0];
             }
         }
         case 'peek': {
             if (items.length === 0) {
-                printErr(`[IndexError] Cannot peek into an empty ${targetType}.`);
+                printErr({
+                    eName: 'IndexError',
+                    eContext: `Cannot peek into an empty ${targetType}.`
+                });
             }
 
             if (isStack) {
@@ -353,12 +490,25 @@ function evalMethodCall(node, env, evaluate) {
                 return items[0];
             } else {
                 if (node.args.length < 1) {
-                    printErr(`[TypeError] Method '.peek()' on a List requires an index argument. (e.g. list.peek(0))`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Method '.peek()' on a List requires an index argument. (e.g. list.peek(0))`
+                    });
                 }
 
                 let pos = evaluate(node.args[0], env);
-                if (!Number.isInteger(pos)) printErr(`[IndexError] Index argument in '.peek()' must be an integer, got '${pos}'.`);
-                if (pos < 0 || pos >= items.length) printErr(`[IndexError] Index ${pos} out of bounds for list of length ${items.length}.`);
+                if (!Number.isInteger(pos)) {
+                    printErr({
+                        eName: 'IndexError',
+                        eContext: `Index argument in '.peek()' must be an integer, got '${pos}'.`
+                    });
+                }
+                if (pos < 0 || pos >= items.length) {
+                    printErr({
+                        eName: 'IndexError',
+                        eContext: `Index ${pos} out of bounds for list of length ${items.length}.`
+                    });
+                }
                 
                 return items[pos];
             }
@@ -367,7 +517,10 @@ function evalMethodCall(node, env, evaluate) {
             return items.length;
         }
         default:
-            printErr(`[TypeError] Unknown method '.${method}()' on type '${targetType}'. Supported methods are 'push', 'pop', 'peek' and 'count'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Unknown method '.${method}()' on type '${targetType}'. Supported methods are 'push', 'pop', 'peek' and 'count'.`
+            });
     }
 }
 

@@ -9,7 +9,11 @@ function evalClassDeclaration(node, env) {
         const scope = findScope(node.superClass, env);
         const entry = scope && scope.values[node.superClass];
         if (!entry || !entry.value || entry.value.kind !== 'Class') {
-            printErr(`[ReferenceError] Cannot inherit from undefined class '${node.superClass}'.`);
+            printErr({
+                eName: 'ReferenceError',
+                eContext: `Cannot inherit from undefined class '${node.superClass}'.`,
+                eLine: node.line
+            });
         }
         superClassObj = entry.value;
     }
@@ -60,13 +64,21 @@ function evalClassDeclaration(node, env) {
             if (f.typeInfo && f.typeInfo.baseType) {
                 fieldType = f.typeInfo.baseType;
                 if (!f.typeInfo.isNullable && val === null) {
-                    printErr(`[TypeError] Cannot assign NULL to non-nullable shared field '${f.name}'.`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot assign NULL to non-nullable shared field '${f.name}'.`,
+                        eLine: f.line
+                    });
                 }
                 if (val !== null) {
                     val = castToType(val, fieldType);
                 }
             } else if (!f.isNullable && val === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable shared field '${f.name}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable shared field '${f.name}'.`,
+                    eLine: f.line
+                });
             }
             classObj.sharedFields[f.name] = {
                 value: val,
@@ -157,7 +169,10 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
             };
             return evalCall({ caller: { type: 'Literal', value: ctorObj }, args: rawArgs }, activeEnv, activeEval);
         } else if (rawArgs.length > 0) {
-            printErr(`[TypeError] Superclass '${superClass.name}' has no constructor that takes ${rawArgs.length} arguments.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Superclass '${superClass.name}' has no constructor that takes ${rawArgs.length} arguments.`
+            });
         }
     };
 
@@ -270,11 +285,19 @@ function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
     }
 
     if (!origMethodAst) {
-        printErr(`[ReferenceError: Line ${hookNode.line}] Method '${methodName}' does not exist on class '${classObj.name}'.`);
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Method '${methodName}' does not exist on class '${classObj.name}'.`,
+            eLine: hookNode.line
+        });
     }
 
     if (origMethodAst.access === 'private' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName))) {
-        printErr(`[TypeError: Line ${hookNode.line}] Cannot hook private method '${methodName}' of class '${targetClass.name}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot hook private method '${methodName}' of class '${targetClass.name}'.`,
+            eLine: hookNode.line
+        });
     }
 
     const hookMethodAst = {
@@ -350,13 +373,21 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
             if (field.typeInfo && field.typeInfo.baseType) {
                 fieldType = field.typeInfo.baseType;
                 if (!field.typeInfo.isNullable && val === null) {
-                    printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}' of type '(${fieldType})'.`);
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot assign NULL to non-nullable field '${field.name}' of type '(${fieldType})'.`,
+                        eLine: field.line
+                    });
                 }
                 if (val !== null) {
                     val = castToType(val, fieldType);
                 }
             } else if (!field.isNullable && val === null) {
-                printErr(`[TypeError] Cannot assign NULL to non-nullable field '${field.name}'.`);
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Cannot assign NULL to non-nullable field '${field.name}'.`,
+                    eLine: field.line
+                });
             }
 
             instance.fields[field.name] = {
@@ -410,7 +441,10 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
 
         evalCall({ caller: { type: 'Literal', value: ctorFn }, args: rawArgs }, env, evaluate);
     } else if (rawArgs.length > 0) {
-        printErr(`[TypeError] Class '${classObj.name}' has no constructor that takes ${rawArgs.length} arguments.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Class '${classObj.name}' has no constructor that takes ${rawArgs.length} arguments.`
+        });
     }
 
     return instance;
@@ -426,7 +460,10 @@ function checkPrivateAccess(target, memberName, env, isMethod = false) {
 
     if (!callerThis || callerThis !== target) {
         const kind = isMethod ? 'method' : 'member';
-        printErr(`[TypeError] Cannot access private ${kind} '${memberName}' of class '${target.className}'.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access private ${kind} '${memberName}' of class '${target.className}'.`
+        });
     }
 
     if (target.privateOwners && target.privateOwners.has(memberName)) {
@@ -435,7 +472,10 @@ function checkPrivateAccess(target, memberName, env, isMethod = false) {
         const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
         if (currentFn && currentFn.declaringClass && currentFn.declaringClass !== ownerClass) {
             const kind = isMethod ? 'method' : 'member';
-            printErr(`[TypeError] Cannot access private ${kind} '${memberName}' of parent class '${ownerClass}'.`);
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot access private ${kind} '${memberName}' of parent class '${ownerClass}'.`
+            });
         }
     }
 }
@@ -457,7 +497,10 @@ function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false
     }
 
     const kind = isMethod ? 'method' : 'member';
-    printErr(`[TypeError] Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`);
+    printErr({
+        eName: 'TypeError',
+        eContext: `Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`
+    });
 }
 
 module.exports = { 

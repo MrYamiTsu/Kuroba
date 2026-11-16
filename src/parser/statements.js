@@ -30,7 +30,13 @@ class ParserStatements extends ParserControl {
         }
 
         if (values.length > names.length) {
-            printErr(`[SyntaxError: ${this.formatLocation(this.peek() || this.previous())}] Too many values in declaration: expected at most ${names.length}, got ${values.length}.`);
+            let errTok = this.peek() || this.previous();
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `Too many values in declaration: expected at most ${names.length}, got ${values.length}.`,
+                eLine: errTok ? errTok.line : null,
+                eCol: errTok ? errTok.col : null
+            });
         }
 
         if (names.length === 1) {
@@ -53,7 +59,13 @@ class ParserStatements extends ParserControl {
             let expr = this.parseLogicOr();
             return { value: expr, operator: op };
         }
-        printErr(`[SyntaxError: ${this.formatLocation(this.peek())}] Expected assignment operator after ${targetDesc}.`);
+        let errTok = this.peek();
+        printErr({
+            eName: 'SyntaxError',
+            eContext: `Expected assignment operator after ${targetDesc}.`,
+            eLine: errTok ? errTok.line : null,
+            eCol: errTok ? errTok.col : null
+        });
     }
 
     parseStatement() {
@@ -120,7 +132,12 @@ class ParserStatements extends ParserControl {
 
             if (this.match('TILDE')) {
                 if (nsName === 'Main') {
-                    printErr(`[SyntaxError: Line ${startToken.line}, Col ${startToken.col}] Namespace 'Main' cannot be split into modules.`);
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "Namespace 'Main' cannot be split into modules.",
+                        eLine: startToken.line,
+                        eCol: startToken.col
+                    });
                 }
                 
                 modName = this.consume('IDENTIFIER', "Expected module name after '~'.").value;
@@ -273,13 +290,23 @@ class ParserStatements extends ParserControl {
                         if (this.match('PRIVATE')) {
                             if (this.check('SHARED')) {
                                 let tok = this.peek();
-                                printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').`);
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
                             }
                             innerAccess = 'private';
                         } else if (this.match('PUBLIC')) {
                             if (this.check('SHARED')) {
                                 let tok = this.peek();
-                                printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').`);
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
                             }
                             innerAccess = 'public';
                         }
@@ -299,7 +326,12 @@ class ParserStatements extends ParserControl {
                             sharedMethods.push({ ...method, access: innerAccess, isShared: true });
                         } else {
                             let tok = this.peek();
-                            printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside 'shared' block of class '${className}'.`);
+                            printErr({
+                                eName: 'SyntaxError',
+                                eContext: `Unexpected token '${tok ? tok.value : 'EOF'}' inside 'shared' block of class '${className}'.`,
+                                eLine: tok ? tok.line : null,
+                                eCol: tok ? tok.col : null
+                            });
                         }
                     }
                     this.consume('END', "Expected 'end' to close 'shared' block.");
@@ -315,13 +347,23 @@ class ParserStatements extends ParserControl {
             } else if (this.match('PRIVATE')) {
                 if (this.check('SHARED')) {
                     let tok = this.peek();
-                    printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').`);
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared private ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
                 }
                 access = 'private';
             } else if (this.match('PUBLIC')) {
                 if (this.check('SHARED')) {
                     let tok = this.peek();
-                    printErr(`[SyntaxError: ${this.formatLocation(tok)}] 'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').`);
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared public ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
                 }
                 access = 'public';
             }
@@ -343,7 +385,12 @@ class ParserStatements extends ParserControl {
                 targetMethods.push({ ...method, access, isShared });
             } else {
                 let tok = this.peek();
-                printErr(`[SyntaxError: ${this.formatLocation(tok)}] Unexpected token '${tok ? tok.value : 'EOF'}' inside class '${className}'. Expected field or method declaration.`);
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Unexpected token '${tok ? tok.value : 'EOF'}' inside class '${className}'. Expected field or method declaration.`,
+                    eLine: tok ? tok.line : null,
+                    eCol: tok ? tok.col : null
+                });
             }
         }
 

@@ -54,7 +54,12 @@ class ParserCursor {
     consume(type, message) {
         if (this.check(type)) return this.advance();
         let token = this.peek() || this.previous();
-        printErr(`[SyntaxError: ${this.formatLocation(token)}] ${message}`);
+        printErr({
+            eName: 'SyntaxError',
+            eContext: message,
+            eLine: token ? token.line : null,
+            eCol: token ? token.col : null
+        });
     }
 
     isPropertyAssignAhead() {

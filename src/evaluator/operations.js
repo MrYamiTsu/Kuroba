@@ -17,17 +17,30 @@ function evalMath(node, env, evaluate) {
         case '-':  return left - right;
         case '*':  return left * right;
         case '/':
-            if (right === 0) printErr("[MathError] Division by zero is undefined.");
+            if (right === 0) {
+                printErr({
+                    eName: 'MathError',
+                    eContext: "Division by zero is undefined."
+                });
+            }
             return left / right;
         case '%':
-            if (right === 0) printErr("[MathError] Division or modulo by zero is undefined.");
+            if (right === 0) {
+                printErr({
+                    eName: 'MathError',
+                    eContext: "Division or modulo by zero is undefined."
+                });
+            }
             return left % right;
         case '<':  return left < right;
         case '>':  return left > right;
         case '<=': return left <= right;
         case '>=': return left >= right;
         default:
-            printErr(`[RuntimeError] Unsupported operator '${node.operator}'.`);
+            printErr({
+                eName: 'RuntimeError',
+                eContext: `Unsupported operator '${node.operator}'.`
+            });
     }
 }
 
@@ -35,7 +48,10 @@ function evalUnary(node, env, evaluate) {
     let right = evaluate(node.right, env);
     if (node.operator === '!') return !isTruthy(right);
     if (node.operator === '-') return -right;
-    printErr(`[RuntimeError] Unsupported unary operator '${node.operator}'.`);
+    printErr({
+        eName: 'RuntimeError',
+        eContext: `Unsupported unary operator '${node.operator}'.`
+    });
 }
 
 function evalLogical(node, env, evaluate) {
@@ -48,7 +64,10 @@ function evalLogical(node, env, evaluate) {
         if (isTruthy(left)) return true;
         return isTruthy(evaluate(node.right, env));
     }
-    printErr(`[RuntimeError] Unsupported logical operator '${node.operator}'.`);
+    printErr({
+        eName: 'RuntimeError',
+        eContext: `Unsupported logical operator '${node.operator}'.`
+    });
 }
 
 function evalIs(node, env, evaluate) {
@@ -77,7 +96,10 @@ function evalIs(node, env, evaluate) {
             return false;
         }
         
-        printErr(`[TypeError] Unknown type '${baseType}' in 'is' check.`);
+        printErr({
+            eName: 'TypeError',
+            eContext: `Unknown type '${baseType}' in 'is' check.`
+        });
     }
 
     if (val && val.isInstance && baseType === 'Table') {
