@@ -1393,6 +1393,7 @@ class ParserControl extends ParserExpressions {
     }
 
     parseDoWhileStatement() {
+        this.match('THEN');
         let body = [];
         while (!this.check('WHILE') && !this.isAtEnd()) {
             body.push(this.parseStatement());
