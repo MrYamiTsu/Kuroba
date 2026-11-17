@@ -385,12 +385,22 @@ pasteLn(!(5 is String));     ~~ TRUE</code></pre>
         </table>
 
         <h3>Native Atomic Swap (<code>&lt;-&gt;</code>)</h3>
-        <p>Exchanges the values of two variables in-place without a temporary holder. It validates type compatibility, guards constants, and prevents transferring <code>NULL</code> into a non-nullable variable:</p>
+        <p>Exchanges the values of two variables, list elements, or table fields in-place without a temporary holder. It validates type compatibility, guards constants, and prevents transferring <code>NULL</code> into a non-nullable variable:</p>
         <pre><code class="language-kuroba">ivar a = 10;
 ivar b = 99;
 a &lt;-&gt; b;
 pasteLn(a); ~~ 99
-pasteLn(b); ~~ 10</code></pre>
+pasteLn(b); ~~ 10
+
+~~ In-place list elements swap (ideal for shuffle / sorting)
+ivar deck = [1, 2, 3];
+deck[0] &lt;-&gt; deck[2];
+pasteLn(deck); ~~ [3, 2, 1]
+
+~~ Table properties swap
+ivar hero = { main: "Sword", stash: "Bow" };
+hero.main &lt;-&gt; hero.stash;
+pasteLn(hero.main); ~~ "Bow"</code></pre>
 
         <h3>String Interpolation (<code>~"..."</code>)</h3>
         <p>The tilde prefix allows embedded Kuroba expressions between curly braces:</p>

@@ -33,11 +33,11 @@ function readAsyncEvaluator(relPath) {
     );
 
     code = code.replace(
-        /\bfunction (evaluate|executeBlock|instantiateClass|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MemberAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is|ClassDeclaration|EnumDeclaration))\(/g,
+        /\bfunction (evaluate|executeBlock|instantiateClass|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MemberAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is|ClassDeclaration|EnumDeclaration|Swap))\(/g,
         'async function $1('
     );
 
-    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall|instantiateClass|evalClassDeclaration|evalEnumDeclaration)\(/g, 'await $1(');
+    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall|instantiateClass|evalClassDeclaration|evalEnumDeclaration|evalSwap)\(/g, 'await $1(');
     code = code.replace(/\b(caller\.fn|fnObj\.fn)\(/g, 'await $1(');
     code = code.replace(/\bconst baseFn = \(([^)]*)\) => \{/g, 'const baseFn = async ($1) => {');
 

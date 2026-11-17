@@ -1832,11 +1832,6 @@ class ParserStatements extends ParserControl {
             let startToken = this.previous();
             let value = this.parseLogicOr();
             stmt = { type: 'ThrowStatement', value, line: startToken.line, col: startToken.col };
-                } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'SWAP') {
-            let leftVar = this.advance().value;
-            this.advance();
-            let rightVar = this.consume('IDENTIFIER', "Expected variable name after '<->' swap operator.").value;
-            stmt = { type: 'SwapStatement', left: leftVar, right: rightVar };
         } else if (this.match('BREAK')) {
             stmt = { type: 'BreakStatement' };
         } else if (this.match('SKIP')) {
@@ -1846,7 +1841,28 @@ class ParserStatements extends ParserControl {
             const nextToken = this.peek();
             const isAssignOp = nextToken && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(nextToken.type);
             
-            if (expr.type === 'Variable' && (this.check('TILDE') || isAssignOp)) {
+            if (this.match('SWAP')) {
+                let startToken = this.previous();
+                if (expr.type !== 'Variable' && expr.type !== 'IndexAccess') {
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "Invalid left-hand target in '<->' swap statement. Must be a variable, table property, or collection index.",
+                        eLine: startToken.line,
+                        eCol: startToken.col
+                    });
+                }
+                
+                let right = this.parseLogicOr();
+                if (right.type !== 'Variable' && right.type !== 'IndexAccess') {
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "Invalid right-hand target in '<->' swap statement. Must be a variable, table property, or collection index.",
+                        eLine: startToken.line,
+                        eCol: startToken.col
+                    });
+                }
+                stmt = { type: 'SwapStatement', left: expr, right: right, line: startToken.line, col: startToken.col };
+            } else if (expr.type === 'Variable' && (this.check('TILDE') || isAssignOp)) {
                 if (this.match('TILDE')) {
                     let typeInfo = this.parseType();
                     let targetType = typeInfo.baseType;
@@ -2685,61 +2701,37 @@ async function evalVarRetype(node, env, evaluate) {
     return val;
 }
 
-function evalSwap(node, env) {
-    let scopeLeft = findScope(node.left, env);
-    let scopeRight = findScope(node.right, env);
-    if (!scopeLeft) {
-        printErr({
-            eName: 'ReferenceError',
-            eContext: `Cannot swap undeclared variable '${node.left}'.`
-        });
+function assignTarget(targetNode, val, env, evaluate) {
+    if (targetNode.type === 'Variable') {
+        evalVarAssign({
+            type: 'VarAssign',
+            name: targetNode.name,
+            value: { type: 'Literal', value: val }
+        }, env, evaluate);
+    } else if (targetNode.type === 'IndexAccess') {
+        
+        evalMemberAssign({
+            type: 'MemberAssign',
+            target: targetNode.target,
+            index: targetNode.index,
+            isDotAccess: targetNode.isDotAccess,
+            value: { type: 'Literal', value: val },
+            operator: null,
+            typeInfo: null
+        }, env, evaluate);
     }
-    if (!scopeRight) {
-        printErr({
-            eName: 'ReferenceError',
-            eContext: `Cannot swap undeclared variable '${node.right}'.`
-        });
-    }
+}
 
-    let varA = scopeLeft.values[node.left];
-    let varB = scopeRight.values[node.right];
+async function evalSwap(node, env, evaluate) {
+    let leftNode = (typeof node.left === 'string') ? { type: 'Variable', name: node.left } : node.left;
+    let rightNode = (typeof node.right === 'string') ? { type: 'Variable', name: node.right } : node.right;
 
-    if (varA.isConst) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap constant '${node.left}'.`
-        });
-    }
-    if (varB.isConst) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap constant '${node.right}'.`
-        });
-    }
+    let valA = await evaluate(leftNode, env);
+    let valB = await evaluate(rightNode, env);
 
-    if (!varA.isNullable && varB.value === null) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap NULL into non-nullable variable '${node.left}'.`
-        });
-    }
-    if (!varB.isNullable && varA.value === null) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap NULL into non-nullable variable '${node.right}'.`
-        });
-    }
-    
-    if (varA.type !== varB.type) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap variable '${node.left}' of type '${varA.type}' with variable '${node.right}' of type '${varB.type}'.`
-        });
-    }
-
-    let temp = varA.value;
-    varA.value = varB.value;
-    varB.value = temp;
+    assignTarget(leftNode, valB, env, evaluate);
+    assignTarget(rightNode, valA, env, evaluate);
+    return null;
 }
 
 function evalKill(node, env) {
@@ -4798,7 +4790,7 @@ async function evaluate(node, env = createScope()) {
         case 'VarAssign':           return await evalVarAssign(node, env, evaluate);
         case 'Variable':            return await evalVariable(node, env);
         case 'VarRetype':           return await evalVarRetype(node, env, evaluate);
-        case 'SwapStatement':       return await evalSwap(node, env);
+        case 'SwapStatement':       return await evalSwap(node, env, evaluate);
         case 'IfStatement':         return await evalIf(node, env, evaluate);
         case 'ForStatement':        return await evalFor(node, env, evaluate);
         case 'WhileStatement':      return await evalWhile(node, env, evaluate);
