@@ -74,6 +74,8 @@
         <a href="#std-time" class="docs-item-link">Std.Time (Timers &amp; Chronometry)</a>
         <a href="#std-string" class="docs-item-link">Std.String (Text Processing)</a>
         <a href="#std-io" class="docs-item-link">Std.IO (Filesystem Persistence)</a>
+        <a href="#stde-random" class="docs-item-link">StdE.Random (PRNG &amp; Gaming)</a>
+        <a href="#stde-json" class="docs-item-link">StdE.Json (Serialization)</a>
         <a href="#errors" class="docs-item-link">Error Diagnostics (All 8 Classes)</a>
       </div>
     </aside>
@@ -86,7 +88,7 @@
         <div class="docs-track-pills" role="tablist" aria-label="Documentation chapters">
           <button class="docs-track-pill active" data-track="setup">Setup &amp; CLI (3)</button>
           <button class="docs-track-pill" data-track="core">Language Core (9)</button>
-          <button class="docs-track-pill" data-track="stdlib">Namespaces &amp; Stdlib (5)</button>
+          <button class="docs-track-pill" data-track="stdlib">Namespaces &amp; Stdlib (7)</button>
           <button class="docs-track-pill" data-track="errors">Diagnostics (1)</button>
         </div>
         <button id="btn-docs-view-mode" class="docs-roadmap-shortcut" type="button" title="Toggle between single-chapter focus view and full-page scroll">Show All (18)</button>
@@ -1483,6 +1485,156 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
               <td><code>IO.fileKill(path)</code></td>
               <td><code>(ivar path) -&gt; Bool</code></td>
               <td>Deletes the file from disk. Returns <code>TRUE</code> if deleted, <code>FALSE</code> if not found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : StdE.Random Reference
+           ==================================================================== -->
+      <section id="stde-random">
+        <h2>StdE.Random (Deterministic PRNG &amp; Gaming Engine)</h2>
+        <p>A high-performance stochastic module decoupled from <code>Std.Math</code>, powered by a 32-bit Mulberry32 pseudo-random number generator with full seed reproducibility:</p>
+        <pre><code class="language-kuroba">import StdE ~(Random) alias ~;
+
+~~ Seedable PRNG for procedural generation
+Random.seed(42);
+ivar roll = Random.int(1, 20);
+ivar odds = Random.float();
+
+~~ Collection utilities (in-place shuffle via native swap &lt;-&gt;)
+ivar deck = ["Fire", "Ice", "Lightning", "Earth"];
+ivar card = Random.item(deck);
+Random.shuffle(deck);
+
+~~ Unique IDs &amp; cryptographic tokens
+ivar id = Random.uuid();
+ivar key = Random.token(16);</code></pre>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Method Signature</th>
+              <th>Parameter Types</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Random.seed(s)</code></td>
+              <td><code>(ivar s: Int) -&gt; Null</code></td>
+              <td>Initializes the Mulberry32 PRNG with a deterministic seed integer.</td>
+            </tr>
+            <tr>
+              <td><code>Random.float()</code></td>
+              <td><code>() -&gt; Float</code></td>
+              <td>Returns a pseudo-random floating point number in <code>[0.0, 1.0)</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Random.int(min, max)</code></td>
+              <td><code>(ivar min: Int, ivar max: Int) -&gt; Int</code></td>
+              <td>Returns a random integer inclusive between <code>min</code> and <code>max</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Random.chance(p)</code></td>
+              <td><code>(ivar p: Float) -&gt; Bool</code></td>
+              <td>Returns <code>TRUE</code> with probability <code>p</code> (between <code>0.0</code> and <code>1.0</code>).</td>
+            </tr>
+            <tr>
+              <td><code>Random.item(list)</code></td>
+              <td><code>(ivar list: List) -&gt; Any</code></td>
+              <td>Returns a random element from <code>list</code> (or <code>NULL</code> if empty).</td>
+            </tr>
+            <tr>
+              <td><code>Random.shuffle(list)</code></td>
+              <td><code>(ivar list: List) -&gt; List</code></td>
+              <td>Fisher-Yates in-place shuffle of <code>list</code> using native <code>&lt;-&gt;</code> swap.</td>
+            </tr>
+            <tr>
+              <td><code>Random.uuid()</code></td>
+              <td><code>() -&gt; String</code></td>
+              <td>Generates a standardized RFC4122 v4 UUID string.</td>
+            </tr>
+            <tr>
+              <td><code>Random.token(len)</code></td>
+              <td><code>(ivar len: Int) -&gt; String</code></td>
+              <td>Generates a secure random alphanumeric token string of length <code>len</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : StdE.Json Reference
+           ==================================================================== -->
+      <section id="stde-json">
+        <h2>StdE.Json (Serialization, Storage &amp; Formatting)</h2>
+        <p>Comprehensive JSON parser and serializer with seamless bidirectional translation between Kuroba Tables/Lists and JSON data:</p>
+        <pre><code class="language-kuroba">import StdE ~(Json) alias ~;
+
+ivar data = {
+    player: "Kenji",
+    level: 42,
+    inventory: ["Blade", "Potion"]
+};
+
+~~ Serialize to JSON string
+ivar raw = Json.stringify(data);
+pasteLn(Json.isValid(raw)); ~~ TRUE
+
+~~ Format (pretty-print) &amp; Minify
+ivar formatted = Json.format(data, 2);
+ivar minified = Json.minify(formatted);
+
+~~ Filesystem JSON read / write (CLI &amp; Web virtualFS)
+Json.write("save.json", data, 2);
+ivar loaded = Json.read("save.json");
+pasteLn(loaded.player); ~~ "Kenji"</code></pre>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Method Signature</th>
+              <th>Parameter Types</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Json.parse(text)</code></td>
+              <td><code>(ivar text: String) -&gt; Any</code></td>
+              <td>Parses a JSON string into a Kuroba Table, List, or primitive value.</td>
+            </tr>
+            <tr>
+              <td><code>Json.stringify(val)</code></td>
+              <td><code>(ivar val: Any) -&gt; String</code></td>
+              <td>Serializes a Kuroba Table, List, or primitive into a compact JSON string.</td>
+            </tr>
+            <tr>
+              <td><code>Json.isValid(text)</code></td>
+              <td><code>(ivar text: String) -&gt; Bool</code></td>
+              <td>Validates whether <code>text</code> is valid JSON without throwing errors.</td>
+            </tr>
+            <tr>
+              <td><code>Json.format(val, indent)</code></td>
+              <td><code>(ivar val: Any, ivar indent: Int) -&gt; String</code></td>
+              <td>Formats value into pretty-printed JSON string with given indentation spaces.</td>
+            </tr>
+            <tr>
+              <td><code>Json.minify(text)</code></td>
+              <td><code>(ivar text: String) -&gt; String</code></td>
+              <td>Minifies a formatted JSON string by stripping whitespace and newlines.</td>
+            </tr>
+            <tr>
+              <td><code>Json.read(path)</code></td>
+              <td><code>(ivar path: String) -&gt; Any</code></td>
+              <td>Reads a file from disk and parses its contents as JSON.</td>
+            </tr>
+            <tr>
+              <td><code>Json.write(path, val, indent)</code></td>
+              <td><code>(ivar path, ivar val, ivar indent) -&gt; Bool</code></td>
+              <td>Serializes and writes JSON value to <code>path</code> with optional indentation.</td>
             </tr>
           </tbody>
         </table>

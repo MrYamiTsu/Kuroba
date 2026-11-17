@@ -153,6 +153,10 @@ function evalImport(node, env, evaluate) {
         const stdLibDir = path.join(__dirname, '../../lib/std');
         Object.assign(availableModules, discoverNamespaceModules('Std', stdLibDir, evaluate));
     }
+    if (node.package === 'StdE') {
+        const stdELibDir = path.join(__dirname, '../../lib/stde');
+        Object.assign(availableModules, discoverNamespaceModules('StdE', stdELibDir, evaluate));
+    }
 
     const { baseDir, entryFilePath } = getProjectContext();
     if (baseDir) {
@@ -193,7 +197,7 @@ function evalImport(node, env, evaluate) {
                 };
             } else if (entry.isRoot) {
                 for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                    if (fieldName !== 'args' && fieldName !== 'Std') {
+                    if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                         env.values[fieldName] = {
                             value: fieldDef.value,
                             type: fieldDef.type,
@@ -234,7 +238,7 @@ function evalImport(node, env, evaluate) {
             };
         } else if (entry.isRoot) {
             for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                if (fieldName !== 'args' && fieldName !== 'Std') {
+                if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                     env.values[targetNamespace].value.fields[fieldName] = fieldDef;
                 }
             }

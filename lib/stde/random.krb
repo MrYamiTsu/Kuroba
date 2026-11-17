@@ -1,0 +1,29 @@
+~~ ============================================================================
+~~ Kuroba StdE Library: Random
+~~ ============================================================================
+namespace StdE ~Random then
+    iconst seed    = __native_random_seed;
+    iconst float   = __native_random_float;
+    iconst int     = __native_random_int;
+    iconst chance  = __native_random_chance;
+    iconst uuid    = __native_random_uuid;
+    iconst token   = __native_random_token;
+    function item(ivar list) then
+        if (list.count() == 0) then
+            return NULL;
+        end
+        ivar idx = int(0, list.count() - 1);
+        return list[idx];
+    end
+    function shuffle(ivar list) then
+        ivar n = list.count();
+        if (n <= 1) then
+            return list;
+        end
+        for (ivar i = n - 1; i > 0; i--) then
+            ivar j = int(0, i);
+            list[i] <-> list[j];
+        end
+        return list;
+    end
+end

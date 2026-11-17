@@ -424,20 +424,23 @@ Kuroba/
 ### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
 
 - [ ] OOP Contracts & Architectural Interfaces:
-  - [ ] Interface definition (`interface IEntity then ... end`)
-  - [ ] Class implementation contracts (`class Player implements IEntity then ... end`, `class Player from Base with IEntity`)
-  - [ ] Runtime interface conformance checking (`player is IEntity`)
-  - [ ] Inherited Private / Protected Visibility (`protected ivar/iconst/function` accessible by descendant subclasses, but encapsulated from external access)
+  - [ ] Interface contracts (`interface IEntity then ... end`, `class Player implements IEntity`) & runtime conformance (`player is IEntity`)
+  - [ ] Protected visibility modifier (`protected ivar/iconst/function`) accessible across class hierarchies
 - [ ] Concurrency & Asynchronous Programming:
-  - [ ] Non-blocking async routines (`async` / `await`) and lightweight coroutines (`task` / `yield`)
+  - [ ] Async/Await syntax and runtime semantics (`async function`, `await expr`) integrated with event loop
+  - [ ] Lightweight coroutines and cooperative multitasking (`task`, `yield`)
+  - [ ] Asynchronous exception handling and timeout cancellation within `try / catch`
 - [ ] Built-in `StdE` Package (Standard Extended):
-  - [ ] `StdE.Json` (native parse and stringify of Tables to JSON)
-  - [ ] `StdE.Path` (join, resolve, dirname, basename, extname)
-  - [ ] `StdE.Process` (spawning child processes, command execution, pipes)
-  - [ ] `StdE.Term` (ANSI text colors & styles, terminal dimensions, cursor positioning)
+  - [x] `StdE.Random` (dedicated stochastic engine decoupled from `Std.Math`: `seed`, `int`, `float`, `item`, `shuffle`, `chance`, `uuid`, `token`)
+  - [x] `StdE.Json` (native bidirectional parse and stringify of Tables to JSON, formatted read/write, minify)
+  - [ ] `StdE.Path` (cross-platform path resolution: `join`, `resolve`, `dirname`, `basename`, `extname`)
+  - [ ] `StdE.Process` (child process execution, commands, and pipe streaming for CLI)
+  - [ ] `StdE.Term` (ANSI colors, terminal styling, dimensions, and cursor control)
 - [ ] Built-in `Web` Package (Networking & HTTP):
-  - [ ] HTTP client fetcher (`Web.fetch` for REST API queries)
-  - [ ] Native HTTP web server (`Web.serve`, `Web.listen`)
+  - [ ] HTTP Client (`Web.fetch`, `Web.get`, `Web.post` with query params, custom headers, timeouts, and JSON conversion)
+  - [ ] Native HTTP Server (`Web.serve`, `Web.listen`) with incoming request parser (`req.method`, `req.url`, `req.headers`, `req.body`, `req.query`)
+  - [ ] Server Response & Middleware Pipeline (`res.status`, `res.json`, `res.text`, `res.header`, `res.sendFile`, route dispatching)
+  - [ ] Network Security & Fault Tolerance (body size limits, socket timeouts, CORS headers, and `e*` network error tables)
 
 ### Phase 9: Native 2D Game Engine (`App`), Developer Tooling & Tour `(v1.0.9)`
 

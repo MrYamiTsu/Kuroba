@@ -10,7 +10,9 @@
   "io.krb": "~~ ============================================================================\n~~ Kuroba Std Library: IO\n~~ ============================================================================\nnamespace Std ~IO then\n    iconst fileCopy    = __native_ioCopy;\n    iconst filePaste   = __native_ioPaste;\n    iconst filePasteLn = __native_ioPasteLn;\n    iconst fileAppend  = __native_ioAppend;\n    iconst fileExists  = __native_ioExists;\n    iconst fileKill    = __native_ioKill;\nend",
   "math.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Math\n~~ ============================================================================\nnamespace Std ~Math then\n    iconst PI  = 3.141592653589793;\n    iconst TAU = 6.283185307179586;\n    iconst E   = 2.718281828459045;\n\n    iconst random = __native_random;\n    iconst sqrt   = __native_sqrt;\n    iconst pow    = __native_pow;\n    iconst sin    = __native_sin;\n    iconst cos    = __native_cos;\n    iconst tan    = __native_tan;\n    iconst asin   = __native_asin;\n    iconst acos   = __native_acos;\n    iconst atan   = __native_atan;\n    iconst atan2  = __native_atan2;\n    iconst log    = __native_log;\n    iconst log10  = __native_log10;\n    iconst exp    = __native_exp;\n\n    function randomItem(ivar list) then\n        if (list.count() == 0) then\n            return NULL;\n        end\n        ivar idx = random(0, list.count() - 1);\n        return list[idx];\n    end\n\n    function abs(ivar x) then\n        if (x < 0) then\n            return 0 - x;\n        end\n        return x;\n    end\n\n    function min(ivar a, ivar b) then\n        if (a < b) then\n            return a;\n        end\n        return b;\n    end\n\n    function max(ivar a, ivar b) then\n        if (a > b) then\n            return a;\n        end\n        return b;\n    end\n\n    function clamp(ivar val, ivar minVal, ivar maxVal) then\n        if (val < minVal) then\n            return minVal;\n        end\n        if (val > maxVal) then\n            return maxVal;\n        end\n        return val;\n    end\n\n    function trunc(ivar x) then\n        ivar i = 0;\n        i~Int = x;\n        return i;\n    end\n\n    function floor(ivar x) then\n        ivar i = 0;\n        i~Int = x;\n        if (x < 0 && x != i) then\n            return i - 1;\n        end\n        return i;\n    end\n\n    function ceil(ivar x) then\n        ivar i = 0;\n        i~Int = x;\n        if (x > 0 && x != i) then\n            return i + 1;\n        end\n        return i;\n    end\n\n    function round(ivar x) then\n        return floor(x + 0.5);\n    end\n\n    function dist(ivar x1, ivar y1, ivar x2, ivar y2) then\n        ivar dx = x2 - x1;\n        ivar dy = y2 - y1;\n        return sqrt((dx * dx) + (dy * dy));\n    end\n\n    function degToRad(ivar deg) then\n        return deg * (PI / 180.0);\n    end\n\n    function radToDeg(ivar rad) then\n        return rad * (180.0 / PI);\n    end\n\n    function sign(ivar x) then\n        if (x > 0) then return 1; end\n        if (x < 0) then return 0 - 1; end\n        return 0;\n    end\n\n    function lerp(ivar a, ivar b, ivar t) then\n        return a + (b - a) * t;\n    end\nend",
   "string.krb": "~~ ============================================================================\n~~ Kuroba Std Library: String\n~~ ============================================================================\nnamespace Std ~String then\n    iconst DIGITS      = \"0123456789\";\n    iconst ASCII_LOWER = \"abcdefghijklmnopqrstuvwxyz\";\n    iconst ASCII_UPPER = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";\n\n    iconst upper      = __native_strUpper;\n    iconst lower      = __native_strLower;\n    iconst count      = __native_strCount;\n    iconst trim       = __native_strTrim;\n    iconst split      = __native_strSplit;\n    iconst replace    = __native_strReplace;\n    iconst contains   = __native_strContains;\n    iconst startsWith = __native_strStartsWith;\n    iconst endsWith   = __native_strEndsWith;\n    iconst indexOf    = __native_strIndexOf;\n    iconst slice      = __native_strSlice;\n    iconst repeat     = __native_strRepeat;\n    iconst reverse    = __native_strReverse;\n    iconst join       = __native_strJoin;\nend\n",
-  "time.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Time\n~~ ============================================================================\nnamespace Std ~Time then\n    iconst sleep  = __native_sleep;\n    iconst now    = __native_now;\n    iconst unix   = __native_unix;\n    iconst perf   = __native_perf;\n    iconst hires  = __native_perf;\n    iconst clock  = __native_clock;\n    iconst iso    = __native_iso;\n    iconst format = __native_timeFormat;\n\n    function sleepSec(ivar sec) then\n        sleep(sec * 1000);\n    end\n\n    function since(ivar timestamp) then\n        return now() - timestamp;\n    end\n    \n    function stopwatch() then\n        ivar start = now();\n        return {\n            elapsed: function ~() then\n                return now() - start;\n            end,\n            reset: function ~() then\n                start = now();\n                return start;\n            end\n        };\n    end\nend\n"
+  "time.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Time\n~~ ============================================================================\nnamespace Std ~Time then\n    iconst sleep  = __native_sleep;\n    iconst now    = __native_now;\n    iconst unix   = __native_unix;\n    iconst perf   = __native_perf;\n    iconst hires  = __native_perf;\n    iconst clock  = __native_clock;\n    iconst iso    = __native_iso;\n    iconst format = __native_timeFormat;\n\n    function sleepSec(ivar sec) then\n        sleep(sec * 1000);\n    end\n\n    function since(ivar timestamp) then\n        return now() - timestamp;\n    end\n    \n    function stopwatch() then\n        ivar start = now();\n        return {\n            elapsed: function ~() then\n                return now() - start;\n            end,\n            reset: function ~() then\n                start = now();\n                return start;\n            end\n        };\n    end\nend\n",
+  "stde_json.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Json\r\n~~ ============================================================================\r\nnamespace StdE ~Json then\r\n    iconst parse     = __native_json_parse;\r\n    iconst stringify = __native_json_stringify;\r\n    iconst isValid   = __native_json_is_valid;\r\n    iconst read      = __native_json_read;\r\n    iconst write     = __native_json_write;\r\n    iconst minify    = __native_json_minify;\r\n    iconst format    = __native_json_format;\r\nend",
+  "stde_random.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Random\r\n~~ ============================================================================\r\nnamespace StdE ~Random then\r\n    iconst seed    = __native_random_seed;\r\n    iconst float   = __native_random_float;\r\n    iconst int     = __native_random_int;\r\n    iconst chance  = __native_random_chance;\r\n    iconst uuid    = __native_random_uuid;\r\n    iconst token   = __native_random_token;\r\n    function item(ivar list) then\r\n        if (list.count() == 0) then\r\n            return NULL;\r\n        end\r\n        ivar idx = int(0, list.count() - 1);\r\n        return list[idx];\r\n    end\r\n    function shuffle(ivar list) then\r\n        ivar n = list.count();\r\n        if (n <= 1) then\r\n            return list;\r\n        end\r\n        for (ivar i = n - 1; i > 0; i--) then\r\n            ivar j = int(0, i);\r\n            list[i] <-> list[j];\r\n        end\r\n        return list;\r\n    end\r\nend"
 };
     
     // In-memory Virtual Filesystem for Std.IO in the browser
@@ -2129,12 +2131,82 @@ function parse(tokens) {
     // =========================================================================
     // 3. RUNTIME NATIVES
     // =========================================================================
+    let prngInstance = null;
+
+    function mulberry32(a) {
+        return function() {
+            let t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function nextRandom() {
+        return prngInstance ? prngInstance() : Math.random();
+    }
+
+    function jsToKurobaValue(json) {
+        if (json === null || json === undefined) return null;
+        if (typeof json === 'boolean' || typeof json === 'number' || typeof json === 'string') {
+            return json;
+        }
+        if (Array.isArray(json)) {
+            return json.map(jsToKurobaValue);
+        }
+        if (typeof json === 'object') {
+            const fields = {};
+            for (const [k, v] of Object.entries(json)) {
+                const val = jsToKurobaValue(v);
+                fields[k] = {
+                    value: val,
+                    type: getType(val),
+                    isNullable: true
+                };
+            }
+            return { kind: 'Table', fields };
+        }
+        return json;
+    }
+
+    function kurobaValueToJs(val) {
+        if (val === null || val === undefined) return null;
+        if (typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string') {
+            return val;
+        }
+        if (Array.isArray(val)) {
+            return val.map(kurobaValueToJs);
+        }
+        if (val && typeof val === 'object') {
+            if (val.kind === 'List' || val.kind === 'Stack' || val.kind === 'Queue') {
+                return val.items.map(kurobaValueToJs);
+            }
+            if (val.kind === 'Table') {
+                const obj = {};
+                for (const [k, fieldDef] of Object.entries(val.fields)) {
+                    obj[k] = kurobaValueToJs(fieldDef.value);
+                }
+                return obj;
+            }
+            if (val.kind === 'Enum') {
+                return val.name;
+            }
+        }
+        return val;
+    }
+
     const natives = {
         random: (...args) => {
-            if (args.length === 0) return Math.random();
-            if (args.length === 1) return Math.floor(Math.random() * Math.floor(args[0])) + 1;
-            const min = Math.ceil(args[0]), max = Math.floor(args[1]);
-            return Math.floor(Math.random() * (max - min + 1)) + min;
+            if (args.length === 0) return nextRandom();
+            if (args.length === 1) {
+                const max = Math.floor(args[0]);
+                return Math.floor(nextRandom() * max) + 1;
+            }
+            if (args.length >= 2) {
+                const min = Math.ceil(args[0]);
+                const max = Math.floor(args[1]);
+                return Math.floor(nextRandom() * (max - min + 1)) + min;
+            }
         },
         sqrt: (x) => Math.sqrt(x),
         pow: (b, e) => Math.pow(b, e),
@@ -2227,6 +2299,128 @@ function parse(tokens) {
                 return true;
             }
             return false;
+        },
+        random_seed: (seed) => {
+            prngInstance = mulberry32(Math.floor(seed));
+            return null;
+        },
+        random_float: (...args) => {
+            if (args.length === 0) return nextRandom();
+            if (args.length === 1) return nextRandom() * args[0];
+            const min = args[0], max = args[1];
+            return min + nextRandom() * (max - min);
+        },
+        random_int: (...args) => {
+            if (args.length === 0) return Math.floor(nextRandom() * 100);
+            if (args.length === 1) return Math.floor(nextRandom() * args[0]) + 1;
+            const min = Math.ceil(args[0]);
+            const max = Math.floor(args[1]);
+            return Math.floor(nextRandom() * (max - min + 1)) + min;
+        },
+        random_chance: (prob) => nextRandom() < (typeof prob === 'number' ? prob : 0.5),
+        random_uuid: () => {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = Math.floor(nextRandom() * 16);
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        },
+        random_token: (len = 16) => {
+            const count = typeof len === 'number' ? len : 16;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let res = '';
+            for (let i = 0; i < count; i++) {
+                res += chars[Math.floor(nextRandom() * chars.length)];
+            }
+            return res;
+        },
+        json_parse: (str) => {
+            if (typeof str !== 'string') {
+                printErr({
+                    eName: 'TypeError',
+                    eContext: "Expected String argument in Json.parse(), but received '" + getType(str) + "'."
+                });
+            }
+            try {
+                return jsToKurobaValue(JSON.parse(str));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to parse JSON string: " + e.message
+                });
+            }
+        },
+        json_stringify: (val, indent = 0) => {
+            try {
+                const jsVal = kurobaValueToJs(val);
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : undefined;
+                return JSON.stringify(jsVal, null, spaces);
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to stringify value to JSON: " + e.message
+                });
+            }
+        },
+        json_is_valid: (str) => {
+            if (typeof str !== 'string') return false;
+            try {
+                JSON.parse(str);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        json_read: (filePath) => {
+            const p = String(filePath);
+            if (!(p in virtualFS)) {
+                printErr({
+                    eName: 'IOError',
+                    eContext: "File not found in Json.read(): '" + p + "'."
+                });
+            }
+            try {
+                return jsToKurobaValue(JSON.parse(virtualFS[p]));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to read/parse JSON file '" + p + "': " + e.message
+                });
+            }
+        },
+        json_write: (filePath, val, indent = 4) => {
+            try {
+                const jsVal = kurobaValueToJs(val);
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : undefined;
+                virtualFS[String(filePath)] = JSON.stringify(jsVal, null, spaces);
+                persistVirtualFS();
+                return true;
+            } catch (e) {
+                printErr({
+                    eName: 'IOError',
+                    eContext: "Failed to write JSON file '" + filePath + "': " + e.message
+                });
+            }
+        },
+        json_minify: (str) => {
+            try {
+                return JSON.stringify(JSON.parse(str));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to minify JSON: " + e.message
+                });
+            }
+        },
+        json_format: (str, indent = 4) => {
+            try {
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : 4;
+                return JSON.stringify(JSON.parse(str), null, spaces);
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to format JSON: " + e.message
+                });
+            }
         }
     };
 
@@ -4582,7 +4776,7 @@ async function evalHook(node, env, evaluate) {
     async function discoverNamespaceModules(pkgName) {
         const discovered = {};
 
-        if (pkgName === 'Std') {
+        if (pkgName === 'Std' || pkgName === 'StdE') {
             for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
                 const ast = parse(tokenize(source));
                 const topImports = ast.body.filter(s => s.type === 'ImportStatement');
@@ -4660,7 +4854,7 @@ async function evalHook(node, env, evaluate) {
             for (const [modName, entry] of Object.entries(modulesToBind)) {
                 if (entry.isRoot) {
                     for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                        if (fieldName !== 'args' && fieldName !== 'Std') {
+                        if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                             env.values[fieldName] = {
                                 value: fieldDef.value,
                                 type: fieldDef.type,
@@ -4694,7 +4888,7 @@ async function evalHook(node, env, evaluate) {
         for (const [modName, entry] of Object.entries(modulesToBind)) {
             if (entry.isRoot) {
                 for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                    if (fieldName !== 'args' && fieldName !== 'Std') {
+                    if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                         pkgTable.fields[fieldName] = fieldDef;
                     }
                 }

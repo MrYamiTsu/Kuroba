@@ -8,6 +8,14 @@ for (const file of fs.readdirSync(stdDir)) {
         stdFiles[file] = fs.readFileSync(path.join(stdDir, file), 'utf-8');
     }
 }
+const stdeDir = path.join(__dirname, '../lib/stde');
+if (fs.existsSync(stdeDir)) {
+    for (const file of fs.readdirSync(stdeDir)) {
+        if (file.endsWith('.krb')) {
+            stdFiles['stde_' + file] = fs.readFileSync(path.join(stdeDir, file), 'utf-8');
+        }
+    }
+}
 
 function readSource(relPath) {
     return fs.readFileSync(path.join(__dirname, relPath), 'utf-8')
@@ -187,12 +195,82 @@ const bundleCode = `/**
     // =========================================================================
     // 3. RUNTIME NATIVES
     // =========================================================================
+    let prngInstance = null;
+
+    function mulberry32(a) {
+        return function() {
+            let t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function nextRandom() {
+        return prngInstance ? prngInstance() : Math.random();
+    }
+
+    function jsToKurobaValue(json) {
+        if (json === null || json === undefined) return null;
+        if (typeof json === 'boolean' || typeof json === 'number' || typeof json === 'string') {
+            return json;
+        }
+        if (Array.isArray(json)) {
+            return json.map(jsToKurobaValue);
+        }
+        if (typeof json === 'object') {
+            const fields = {};
+            for (const [k, v] of Object.entries(json)) {
+                const val = jsToKurobaValue(v);
+                fields[k] = {
+                    value: val,
+                    type: getType(val),
+                    isNullable: true
+                };
+            }
+            return { kind: 'Table', fields };
+        }
+        return json;
+    }
+
+    function kurobaValueToJs(val) {
+        if (val === null || val === undefined) return null;
+        if (typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string') {
+            return val;
+        }
+        if (Array.isArray(val)) {
+            return val.map(kurobaValueToJs);
+        }
+        if (val && typeof val === 'object') {
+            if (val.kind === 'List' || val.kind === 'Stack' || val.kind === 'Queue') {
+                return val.items.map(kurobaValueToJs);
+            }
+            if (val.kind === 'Table') {
+                const obj = {};
+                for (const [k, fieldDef] of Object.entries(val.fields)) {
+                    obj[k] = kurobaValueToJs(fieldDef.value);
+                }
+                return obj;
+            }
+            if (val.kind === 'Enum') {
+                return val.name;
+            }
+        }
+        return val;
+    }
+
     const natives = {
         random: (...args) => {
-            if (args.length === 0) return Math.random();
-            if (args.length === 1) return Math.floor(Math.random() * Math.floor(args[0])) + 1;
-            const min = Math.ceil(args[0]), max = Math.floor(args[1]);
-            return Math.floor(Math.random() * (max - min + 1)) + min;
+            if (args.length === 0) return nextRandom();
+            if (args.length === 1) {
+                const max = Math.floor(args[0]);
+                return Math.floor(nextRandom() * max) + 1;
+            }
+            if (args.length >= 2) {
+                const min = Math.ceil(args[0]);
+                const max = Math.floor(args[1]);
+                return Math.floor(nextRandom() * (max - min + 1)) + min;
+            }
         },
         sqrt: (x) => Math.sqrt(x),
         pow: (b, e) => Math.pow(b, e),
@@ -285,6 +363,128 @@ const bundleCode = `/**
                 return true;
             }
             return false;
+        },
+        random_seed: (seed) => {
+            prngInstance = mulberry32(Math.floor(seed));
+            return null;
+        },
+        random_float: (...args) => {
+            if (args.length === 0) return nextRandom();
+            if (args.length === 1) return nextRandom() * args[0];
+            const min = args[0], max = args[1];
+            return min + nextRandom() * (max - min);
+        },
+        random_int: (...args) => {
+            if (args.length === 0) return Math.floor(nextRandom() * 100);
+            if (args.length === 1) return Math.floor(nextRandom() * args[0]) + 1;
+            const min = Math.ceil(args[0]);
+            const max = Math.floor(args[1]);
+            return Math.floor(nextRandom() * (max - min + 1)) + min;
+        },
+        random_chance: (prob) => nextRandom() < (typeof prob === 'number' ? prob : 0.5),
+        random_uuid: () => {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = Math.floor(nextRandom() * 16);
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        },
+        random_token: (len = 16) => {
+            const count = typeof len === 'number' ? len : 16;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let res = '';
+            for (let i = 0; i < count; i++) {
+                res += chars[Math.floor(nextRandom() * chars.length)];
+            }
+            return res;
+        },
+        json_parse: (str) => {
+            if (typeof str !== 'string') {
+                printErr({
+                    eName: 'TypeError',
+                    eContext: "Expected String argument in Json.parse(), but received '" + getType(str) + "'."
+                });
+            }
+            try {
+                return jsToKurobaValue(JSON.parse(str));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to parse JSON string: " + e.message
+                });
+            }
+        },
+        json_stringify: (val, indent = 0) => {
+            try {
+                const jsVal = kurobaValueToJs(val);
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : undefined;
+                return JSON.stringify(jsVal, null, spaces);
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to stringify value to JSON: " + e.message
+                });
+            }
+        },
+        json_is_valid: (str) => {
+            if (typeof str !== 'string') return false;
+            try {
+                JSON.parse(str);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        json_read: (filePath) => {
+            const p = String(filePath);
+            if (!(p in virtualFS)) {
+                printErr({
+                    eName: 'IOError',
+                    eContext: "File not found in Json.read(): '" + p + "'."
+                });
+            }
+            try {
+                return jsToKurobaValue(JSON.parse(virtualFS[p]));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to read/parse JSON file '" + p + "': " + e.message
+                });
+            }
+        },
+        json_write: (filePath, val, indent = 4) => {
+            try {
+                const jsVal = kurobaValueToJs(val);
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : undefined;
+                virtualFS[String(filePath)] = JSON.stringify(jsVal, null, spaces);
+                persistVirtualFS();
+                return true;
+            } catch (e) {
+                printErr({
+                    eName: 'IOError',
+                    eContext: "Failed to write JSON file '" + filePath + "': " + e.message
+                });
+            }
+        },
+        json_minify: (str) => {
+            try {
+                return JSON.stringify(JSON.parse(str));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to minify JSON: " + e.message
+                });
+            }
+        },
+        json_format: (str, indent = 4) => {
+            try {
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : 4;
+                return JSON.stringify(JSON.parse(str), null, spaces);
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to format JSON: " + e.message
+                });
+            }
         }
     };
 
@@ -399,7 +599,7 @@ const bundleCode = `/**
     async function discoverNamespaceModules(pkgName) {
         const discovered = {};
 
-        if (pkgName === 'Std') {
+        if (pkgName === 'Std' || pkgName === 'StdE') {
             for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
                 const ast = parse(tokenize(source));
                 const topImports = ast.body.filter(s => s.type === 'ImportStatement');
@@ -477,7 +677,7 @@ const bundleCode = `/**
             for (const [modName, entry] of Object.entries(modulesToBind)) {
                 if (entry.isRoot) {
                     for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                        if (fieldName !== 'args' && fieldName !== 'Std') {
+                        if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                             env.values[fieldName] = {
                                 value: fieldDef.value,
                                 type: fieldDef.type,
@@ -511,7 +711,7 @@ const bundleCode = `/**
         for (const [modName, entry] of Object.entries(modulesToBind)) {
             if (entry.isRoot) {
                 for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                    if (fieldName !== 'args' && fieldName !== 'Std') {
+                    if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                         pkgTable.fields[fieldName] = fieldDef;
                     }
                 }
