@@ -143,61 +143,37 @@ function evalVarRetype(node, env, evaluate) {
     return val;
 }
 
-function evalSwap(node, env) {
-    let scopeLeft = findScope(node.left, env);
-    let scopeRight = findScope(node.right, env);
-    if (!scopeLeft) {
-        printErr({
-            eName: 'ReferenceError',
-            eContext: `Cannot swap undeclared variable '${node.left}'.`
-        });
+function assignTarget(targetNode, val, env, evaluate) {
+    if (targetNode.type === 'Variable') {
+        evalVarAssign({
+            type: 'VarAssign',
+            name: targetNode.name,
+            value: { type: 'Literal', value: val }
+        }, env, evaluate);
+    } else if (targetNode.type === 'IndexAccess') {
+        const { evalMemberAssign } = require('./collections');
+        evalMemberAssign({
+            type: 'MemberAssign',
+            target: targetNode.target,
+            index: targetNode.index,
+            isDotAccess: targetNode.isDotAccess,
+            value: { type: 'Literal', value: val },
+            operator: null,
+            typeInfo: null
+        }, env, evaluate);
     }
-    if (!scopeRight) {
-        printErr({
-            eName: 'ReferenceError',
-            eContext: `Cannot swap undeclared variable '${node.right}'.`
-        });
-    }
+}
 
-    let varA = scopeLeft.values[node.left];
-    let varB = scopeRight.values[node.right];
+function evalSwap(node, env, evaluate) {
+    let leftNode = (typeof node.left === 'string') ? { type: 'Variable', name: node.left } : node.left;
+    let rightNode = (typeof node.right === 'string') ? { type: 'Variable', name: node.right } : node.right;
 
-    if (varA.isConst) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap constant '${node.left}'.`
-        });
-    }
-    if (varB.isConst) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap constant '${node.right}'.`
-        });
-    }
+    let valA = evaluate(leftNode, env);
+    let valB = evaluate(rightNode, env);
 
-    if (!varA.isNullable && varB.value === null) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap NULL into non-nullable variable '${node.left}'.`
-        });
-    }
-    if (!varB.isNullable && varA.value === null) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap NULL into non-nullable variable '${node.right}'.`
-        });
-    }
-    
-    if (varA.type !== varB.type) {
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot swap variable '${node.left}' of type '${varA.type}' with variable '${node.right}' of type '${varB.type}'.`
-        });
-    }
-
-    let temp = varA.value;
-    varA.value = varB.value;
-    varB.value = temp;
+    assignTarget(leftNode, valB, env, evaluate);
+    assignTarget(rightNode, valA, env, evaluate);
+    return null;
 }
 
 function evalKill(node, env) {

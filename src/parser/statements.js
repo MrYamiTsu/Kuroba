@@ -247,11 +247,6 @@ class ParserStatements extends ParserControl {
             let startToken = this.previous();
             let value = this.parseLogicOr();
             stmt = { type: 'ThrowStatement', value, line: startToken.line, col: startToken.col };
-                } else if (this.check('IDENTIFIER') && this.tokens[this.cursor + 1] && this.tokens[this.cursor + 1].type === 'SWAP') {
-            let leftVar = this.advance().value;
-            this.advance();
-            let rightVar = this.consume('IDENTIFIER', "Expected variable name after '<->' swap operator.").value;
-            stmt = { type: 'SwapStatement', left: leftVar, right: rightVar };
         } else if (this.match('BREAK')) {
             stmt = { type: 'BreakStatement' };
         } else if (this.match('SKIP')) {
@@ -261,7 +256,28 @@ class ParserStatements extends ParserControl {
             const nextToken = this.peek();
             const isAssignOp = nextToken && ['INCREMENT', 'DECREMENT', 'ASSIGN', 'PLUSASSIGN', 'MINUSASSIGN', 'MULTASSIGN', 'DIVIDEASSIGN', 'MODULOASSIGN'].includes(nextToken.type);
             
-            if (expr.type === 'Variable' && (this.check('TILDE') || isAssignOp)) {
+            if (this.match('SWAP')) {
+                let startToken = this.previous();
+                if (expr.type !== 'Variable' && expr.type !== 'IndexAccess') {
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "Invalid left-hand target in '<->' swap statement. Must be a variable, table property, or collection index.",
+                        eLine: startToken.line,
+                        eCol: startToken.col
+                    });
+                }
+                
+                let right = this.parseLogicOr();
+                if (right.type !== 'Variable' && right.type !== 'IndexAccess') {
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "Invalid right-hand target in '<->' swap statement. Must be a variable, table property, or collection index.",
+                        eLine: startToken.line,
+                        eCol: startToken.col
+                    });
+                }
+                stmt = { type: 'SwapStatement', left: expr, right: right, line: startToken.line, col: startToken.col };
+            } else if (expr.type === 'Variable' && (this.check('TILDE') || isAssignOp)) {
                 if (this.match('TILDE')) {
                     let typeInfo = this.parseType();
                     let targetType = typeInfo.baseType;

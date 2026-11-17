@@ -64,7 +64,7 @@ function evaluate(node, env = createScope()) {
         case 'VarAssign':           return evalVarAssign(node, env, evaluate);
         case 'Variable':            return evalVariable(node, env);
         case 'VarRetype':           return evalVarRetype(node, env, evaluate);
-        case 'SwapStatement':       return evalSwap(node, env);
+        case 'SwapStatement':       return evalSwap(node, env, evaluate);
         case 'IfStatement':         return evalIf(node, env, evaluate);
         case 'ForStatement':        return evalFor(node, env, evaluate);
         case 'WhileStatement':      return evalWhile(node, env, evaluate);
