@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-// Read stdlib files to embed in virtual FS
 const stdDir = path.join(__dirname, '../lib/std');
 const stdFiles = {};
 for (const file of fs.readdirSync(stdDir)) {
@@ -60,7 +59,7 @@ function readAsyncEvaluator(relPath) {
 
 // Generate self-contained bundle for browser
 const bundleCode = `/**
- * Kuroba — In-Browser Runtime Engine v1.0.6
+ * Kuroba — In-Browser Runtime Engine v1.0.7
  * Zero External Dependencies • Pure Vanilla JavaScript
  */
 (function(global) {
@@ -541,7 +540,7 @@ const bundleCode = `/**
 
     // Expose Kuroba API on global window
     global.Kuroba = {
-        version: '1.0.6',
+        version: '1.0.7',
         run: async function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });

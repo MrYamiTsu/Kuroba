@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.6-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.7-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Website](https://img.shields.io/badge/website-live-success.svg?style=for-the-badge&logo=githubpages)](https://mryamitsu.github.io/Kuroba/)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
@@ -403,7 +403,7 @@ Kuroba/
   - [x] Optional `then` keyword across `try`, `catch`, and `finally`
 - [x] Call stack depth limit with catchable `[RecursionError]` diagnostics
 
-### Phase 7: Object-Oriented Programming & Language Ergonomics `(v1.0.7)`
+### Phase 7: Object-Oriented Programming & Language Ergonomics `(Completed - v1.0.7)`
 
 - [x] Ergonomic Classes (designed as a clean, structured abstraction over `Table`):
   - [x] Class definition `class Name ... end` with constructor and instance methods
