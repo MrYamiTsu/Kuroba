@@ -341,7 +341,7 @@ Kuroba/
 - [x] Loop structures:
   - [x] Classical `for` loops (`for (...) then ... end`) with `break;` and `skip;`
   - [x] `while <cond> then ... end`
-  - [x] `do ... while <cond>;`
+  - [x] `do [then] ... while <cond>;`
 - [x] Interactive console input: `copy(...)` (blocking prompt) and `copyKey()` (single keypress)
 - [x] Console screen management: `clear()`, `clear(cond)`
 
@@ -427,6 +427,7 @@ Kuroba/
   - [ ] Interface definition (`interface IEntity then ... end`)
   - [ ] Class implementation contracts (`class Player implements IEntity then ... end`, `class Player from Base with IEntity`)
   - [ ] Runtime interface conformance checking (`player is IEntity`)
+  - [ ] Inherited Private / Protected Visibility (`protected ivar/iconst/function` accessible by descendant subclasses, but encapsulated from external access)
 - [ ] Concurrency & Asynchronous Programming:
   - [ ] Non-blocking async routines (`async` / `await`) and lightweight coroutines (`task` / `yield`)
 - [ ] Built-in `StdE` Package (Standard Extended):
