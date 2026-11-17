@@ -9,6 +9,7 @@ const { evalMath, evalUnary, evalLogical, evalIs } = require('./operations');
 const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');
 const { evalImport } = require('./packages');
 const { evalClassDeclaration } = require('./classes');
+const { evalEnumDeclaration } = require('./enums');
 
 function evaluate(node, env = createScope()) {
     if (!node || !node.type) return node;
@@ -94,6 +95,7 @@ function evaluate(node, env = createScope()) {
         case 'HookStatement':       return evalHook(node, env, evaluate);
         case 'ImportStatement':     return evalImport(node, env, evaluate);
         case 'ClassDeclaration':    return evalClassDeclaration(node, env);
+        case 'EnumDeclaration':     return evalEnumDeclaration(node, env, evaluate);
         default:
             printErr({
                 eName: 'RuntimeError',

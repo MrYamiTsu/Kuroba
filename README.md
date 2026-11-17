@@ -405,7 +405,7 @@ Kuroba/
 
 ### Phase 7: Object-Oriented Programming & Language Ergonomics `(v1.0.7)`
 
-- [ ] Ergonomic Classes (designed as a clean, structured abstraction over `Table`):
+- [x] Ergonomic Classes (designed as a clean, structured abstraction over `Table`):
   - [x] Class definition `class Name ... end` with constructor and instance methods
   - [x] Single inheritance `class Sub from Super ... end` with `base(...)` and `base.method(...)`
   - [x] Instance reference (`this`)
@@ -413,9 +413,9 @@ Kuroba/
   - [x] Static class members (`shared ivar`, `shared function`, and `shared then ... end` blocks)
   - [x] Class Method Interception (`hook ClassName.method(args) then ... end`)
   - [x] Namespaces integration & class scoping (`namespace Name ~class ClassName [from SuperClass] then ... end`, qualified paths `Entities.Player`)
-- [ ] Type & Value Constructs:
+- [x] Type & Value Constructs:
   - [x] Runtime type checking operator (`is`, e.g., `if (x is Int) then`, `is NULL`, `is TRUE`, `is List<Int>`, `is Player`, `is Table`)
-  - [ ] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
+  - [x] Native Enumerations (`enum State then IDLE, RUNNING, PAUSED end`)
   - [x] Multi-variable single-line declarations with trailing value propagation (`ivar a, b = 1, 2;`, `ivar c, d = 4;` -> both `4`, `ivar e, f, g = 2, 5;` -> `g` takes `5`)
   - [x] Default parameter values in functions
   - [x] Arbitrary nested member and index assignments (`grid[y][x] = "#";`, `enemies[i].hp -= 10;`, `player.bag[0] = "Bow";`) with `iconst` root immutability protection
@@ -423,6 +423,10 @@ Kuroba/
 
 ### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
 
+- [ ] OOP Contracts & Architectural Interfaces:
+  - [ ] Interface definition (`interface IEntity then ... end`)
+  - [ ] Class implementation contracts (`class Player implements IEntity then ... end`, `class Player from Base with IEntity`)
+  - [ ] Runtime interface conformance checking (`player is IEntity`)
 - [ ] Concurrency & Asynchronous Programming:
   - [ ] Non-blocking async routines (`async` / `await`) and lightweight coroutines (`task` / `yield`)
 - [ ] Built-in `StdE` Package (Standard Extended):

@@ -81,14 +81,19 @@ function evalIs(node, env, evaluate) {
     let { baseType, elemType, isElemNullable } = spec.typeInfo;
 
     if (!KNOWN_TYPES.has(baseType)) {
-        let classObj = resolveQualifiedValue(baseType, env);
-        if (classObj && classObj.kind === 'Class') {
+        let customObj = resolveQualifiedValue(baseType, env);
+
+        if (customObj && customObj.kind === 'Enum') {
+            return customObj.values.has(val);
+        }
+
+        if (customObj && customObj.kind === 'Class') {
             if (!val || val.kind !== 'Table' || !val.isInstance) return false;
 
             let curr = val.classRef;
 
             while (curr) {
-                if (curr === classObj || curr.name === classObj.name) return true;
+                if (curr === customObj || curr.name === customObj.name) return true;
                 curr = curr.superClass;
             }
             

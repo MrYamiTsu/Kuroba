@@ -64,6 +64,7 @@
         <a href="#collections" class="docs-item-link">Typed Collections (List, Stack, Queue, Table)</a>
         <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
         <a href="#classes" class="docs-item-link">Classes &amp; OOP Foundations</a>
+        <a href="#enums" class="docs-item-link">Native Enumerations (<code>enum</code>)</a>
       </div>
 
       <div class="docs-group" data-group="stdlib">
@@ -970,6 +971,41 @@ pasteLn(Player.defaultName());   ~~ "Novice"
 ivar p1 = Player("Kenji");
 ivar p2 = Player("Aoi");
 pasteLn(Player.getCount());     ~~ 2</code></pre>
+      </section>
+
+      <!-- ====================================================================
+           Section : Native Enumerations (enum)
+           ==================================================================== -->
+      <section id="enums">
+        <h2>Native Enumerations (<code>enum</code>)</h2>
+        <p>Kuroba provides native, immutable enumerations for declaring fixed sets of named constants. Members default to their own string identifier for readable diagnostics and logging, or can be assigned custom explicit values (integers, strings):</p>
+
+        <pre><code class="language-kuroba">enum State then
+    IDLE,
+    RUNNING,
+    PAUSED
+end
+
+pasteLn(State.IDLE);    ~~ "IDLE"
+pasteLn(State.RUNNING); ~~ "RUNNING"
+
+~~ Custom explicit values
+enum HttpStatus then
+    OK = 200,
+    NOT_FOUND = 404,
+    SERVER_ERROR = 500
+end
+
+pasteLn(HttpStatus.OK); ~~ 200
+
+~~ Runtime verification with 'is'
+ivar cur = State.IDLE;
+if (cur is State) then
+    pasteLn("Valid state!");
+end
+
+~~ Immutability guarantee
+~~ State.IDLE = "NEW"; ~~ [TypeError] Cannot reassign member of immutable enum 'State'.</code></pre>
       </section>
 
       <!-- ====================================================================

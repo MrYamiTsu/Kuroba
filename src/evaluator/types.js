@@ -47,6 +47,9 @@ function formatKurobaValue(val, isInsideList = false) {
     if (val === false) return 'FALSE';
     if (val === null) return 'NULL';
     if (typeof val === 'string' && isInsideList) return `"${val}"`;
+    if (val && val.kind === 'Enum') {
+        return `<enum ${val.name}>`;
+    }
     if (val && val.kind === 'Table') {
         let keys = Object.keys(val.fields);
         if (keys.length === 0) return '{}';

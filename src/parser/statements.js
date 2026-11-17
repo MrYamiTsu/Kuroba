@@ -80,6 +80,7 @@ class ParserStatements extends ParserControl {
         if (this.match('HOOK'))     return this.parseHookStatement();
         if (this.match('TRY'))      return this.parseTryStatement();
         if (this.match('CLASS'))    return this.parseClassDeclaration();
+        if (this.match('ENUM'))     return this.parseEnumDeclaration();
         
         if (this.match('IVAR', 'ICONST')) {
             stmt = this.parseVarDeclaration();
@@ -448,6 +449,52 @@ class ParserStatements extends ParserControl {
             methods,
             sharedFields,
             sharedMethods,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
+    parseEnumDeclaration() {
+        let startToken = this.previous();
+        let enumName = this.consume('IDENTIFIER', "Expected enum name after 'enum'.").value;
+        this.consume('THEN', `Expected 'then' after enum declaration '${enumName}'.`);
+
+        let members = [];
+        while (!this.check('END') && !this.isAtEnd()) {
+            let memberToken = this.consume('IDENTIFIER', `Expected enum member name in '${enumName}'.`);
+
+            if (members.some(m => m.name === memberToken.value)) {
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Duplicate enum member '${memberToken.value}' in enum '${enumName}'.`,
+                    eLine: memberToken.line,
+                    eCol: memberToken.col
+                });
+            }
+
+            let valueExpr = null;
+            if (this.match('ASSIGN')) {
+                valueExpr = this.parseLogicOr();
+            }
+
+            members.push({
+                name: memberToken.value,
+                value: valueExpr,
+                line: memberToken.line,
+                col: memberToken.col
+            });
+
+            if (!this.match('COMMA')) {
+                break;
+            }
+        }
+
+        this.consume('END', `Expected 'end' to close enum '${enumName}' block.`);
+
+        return {
+            type: 'EnumDeclaration',
+            name: enumName,
+            members,
             line: startToken.line,
             col: startToken.col
         };

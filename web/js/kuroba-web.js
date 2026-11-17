@@ -282,7 +282,8 @@ const KEYWORDS = {
   private: { type: "PRIVATE", value: "private" },
   from: { type: "FROM", value: "from" },
   base: { type: "BASE", value: "base" },
-  shared: { type: "SHARED", value: "shared" }
+  shared: { type: "SHARED", value: "shared" },
+  enum: { type: "ENUM", value: "enum" }
 };
 
 const SYMBOLS = {
@@ -1663,6 +1664,7 @@ class ParserStatements extends ParserControl {
         if (this.match('HOOK'))     return this.parseHookStatement();
         if (this.match('TRY'))      return this.parseTryStatement();
         if (this.match('CLASS'))    return this.parseClassDeclaration();
+        if (this.match('ENUM'))     return this.parseEnumDeclaration();
         
         if (this.match('IVAR', 'ICONST')) {
             stmt = this.parseVarDeclaration();
@@ -2036,6 +2038,52 @@ class ParserStatements extends ParserControl {
         };
     }
 
+    parseEnumDeclaration() {
+        let startToken = this.previous();
+        let enumName = this.consume('IDENTIFIER', "Expected enum name after 'enum'.").value;
+        this.consume('THEN', `Expected 'then' after enum declaration '${enumName}'.`);
+
+        let members = [];
+        while (!this.check('END') && !this.isAtEnd()) {
+            let memberToken = this.consume('IDENTIFIER', `Expected enum member name in '${enumName}'.`);
+
+            if (members.some(m => m.name === memberToken.value)) {
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Duplicate enum member '${memberToken.value}' in enum '${enumName}'.`,
+                    eLine: memberToken.line,
+                    eCol: memberToken.col
+                });
+            }
+
+            let valueExpr = null;
+            if (this.match('ASSIGN')) {
+                valueExpr = this.parseLogicOr();
+            }
+
+            members.push({
+                name: memberToken.value,
+                value: valueExpr,
+                line: memberToken.line,
+                col: memberToken.col
+            });
+
+            if (!this.match('COMMA')) {
+                break;
+            }
+        }
+
+        this.consume('END', `Expected 'end' to close enum '${enumName}' block.`);
+
+        return {
+            type: 'EnumDeclaration',
+            name: enumName,
+            members,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
     parseProgram() {
         let statements = [];
         while (!this.isAtEnd()) {
@@ -2326,6 +2374,9 @@ function formatKurobaValue(val, isInsideList = false) {
     if (val === false) return 'FALSE';
     if (val === null) return 'NULL';
     if (typeof val === 'string' && isInsideList) return `"${val}"`;
+    if (val && val.kind === 'Enum') {
+        return `<enum ${val.name}>`;
+    }
     if (val && val.kind === 'Table') {
         let keys = Object.keys(val.fields);
         if (keys.length === 0) return '{}';
@@ -2431,14 +2482,19 @@ async function evalIs(node, env, evaluate) {
     let { baseType, elemType, isElemNullable } = spec.typeInfo;
 
     if (!KNOWN_TYPES.has(baseType)) {
-        let classObj = resolveQualifiedValue(baseType, env);
-        if (classObj && classObj.kind === 'Class') {
+        let customObj = resolveQualifiedValue(baseType, env);
+
+        if (customObj && customObj.kind === 'Enum') {
+            return customObj.values.has(val);
+        }
+
+        if (customObj && customObj.kind === 'Class') {
             if (!val || val.kind !== 'Table' || !val.isInstance) return false;
 
             let curr = val.classRef;
 
             while (curr) {
-                if (curr === classObj || curr.name === classObj.name) return true;
+                if (curr === customObj || curr.name === customObj.name) return true;
                 curr = curr.superClass;
             }
             
@@ -3221,6 +3277,34 @@ function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false
 
     
 
+async function evalEnumDeclaration(node, env, evaluate) {
+    const enumObj = {
+        kind: 'Enum',
+        name: node.name,
+        members: {},
+        values: new Set()
+    };
+
+    for (const m of node.members) {
+        let val = m.value !== null ? await evaluate(m.value, env) : m.name;
+        enumObj.members[m.name] = val;
+        enumObj.values.add(val);
+    }
+
+    env.values[node.name] = {
+        value: enumObj,
+        type: 'Enum',
+        isConst: true,
+        isNullable: false
+    };
+
+    return enumObj;
+}
+
+
+
+    
+
 
 
 
@@ -3231,6 +3315,17 @@ async function evalListLiteral(node, env, evaluate) {
 
 async function evalIndexAccess(node, env, evaluate) {
     let target = await evaluate(node.target, env);
+
+    if (target && target.kind === 'Enum') {
+        let key = node.index;
+        if (key in target.members) {
+            return target.members[key];
+        }
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Member '${key}' does not exist on enum '${target.name}'.`
+        });
+    }
 
     if (target && target.kind === 'Class') {
         let key = node.index;
@@ -3370,6 +3465,13 @@ async function evalMemberAssign(node, env, evaluate) {
     }
 
     let container = await evaluate(node.target, env);
+
+    if (container && container.kind === 'Enum') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot reassign member of immutable enum '${container.name}'.`
+        });
+    }
 
     if (container && container.kind === 'Class') {
         let key = node.index;
@@ -4636,6 +4738,7 @@ async function evalHook(node, env, evaluate) {
 
 
 
+
 async function evaluate(node, env = createScope()) {
     if (!node || !node.type) return node;
     if (activeRunAborted) throw new KurobaAbortError();
@@ -4725,6 +4828,7 @@ async function evaluate(node, env = createScope()) {
         case 'HookStatement':       return await evalHook(node, env, evaluate);
         case 'ImportStatement':     return await evalImport(node, env, evaluate);
         case 'ClassDeclaration':    return await evalClassDeclaration(node, env);
+        case 'EnumDeclaration':     return await evalEnumDeclaration(node, env, evaluate);
         default:
             printErr({
                 eName: 'RuntimeError',

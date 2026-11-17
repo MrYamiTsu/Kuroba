@@ -11,6 +11,17 @@ function evalListLiteral(node, env, evaluate) {
 function evalIndexAccess(node, env, evaluate) {
     let target = evaluate(node.target, env);
 
+    if (target && target.kind === 'Enum') {
+        let key = node.index;
+        if (key in target.members) {
+            return target.members[key];
+        }
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Member '${key}' does not exist on enum '${target.name}'.`
+        });
+    }
+
     if (target && target.kind === 'Class') {
         let key = node.index;
         checkPrivateSharedAccess(target, key, env, false);
@@ -149,6 +160,13 @@ function evalMemberAssign(node, env, evaluate) {
     }
 
     let container = evaluate(node.target, env);
+
+    if (container && container.kind === 'Enum') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot reassign member of immutable enum '${container.name}'.`
+        });
+    }
 
     if (container && container.kind === 'Class') {
         let key = node.index;
