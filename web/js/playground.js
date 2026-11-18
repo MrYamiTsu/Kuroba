@@ -657,10 +657,10 @@ document.addEventListener('DOMContentLoaded', () => {
   } else if (!workspaceFiles[ENTRY_FILE] || !workspaceFiles[ENTRY_FILE].trim()) {
     workspaceFiles[ENTRY_FILE] = [
       '~~ Welcome to the Kuroba Web Playground!',
-      'import Std ~(Math) alias ~;',
+      'import StdE ~(Random) alias ~;',
       '',
       'ivar hero = "Kenji";',
-      'ivar roll = Math.random(1, 20);',
+      'ivar roll = Random.int(1, 20);',
       '',
       'pasteLn(~"Hello {hero}! You rolled a D20: {roll}");'
     ].join('\n');
