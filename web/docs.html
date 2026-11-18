@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Technical Documentation — Kuroba</title>
   <link rel="icon" type="image/png" href="assets/kuroba.png">
   <link rel="stylesheet" href="css/style.css">
@@ -40,41 +40,66 @@
         <div class="docs-search">
           <input type="text" id="docs-search-input" placeholder="Search docs (press / to focus)..." />
         </div>
+
+        <!-- Scope Switcher: Language Guide vs Dedicated Libraries Reference -->
+        <div class="docs-scope-switcher" role="tablist" aria-label="Documentation section">
+          <button class="docs-scope-btn active" id="btn-scope-guide" data-scope="guide" type="button">
+            <span>Guide</span>
+          </button>
+          <button class="docs-scope-btn" id="btn-scope-libraries" data-scope="libraries" type="button">
+            <span>Libraries</span>
+          </button>
+        </div>
+
         <button id="btn-docs-mobile-menu" class="docs-mobile-menu-btn" type="button" aria-expanded="false">
-          <span>Browse Chapters (17)</span>
+          <span id="docs-mobile-menu-label">Browse Chapters (15)</span>
           <span class="docs-mobile-chevron">▾</span>
         </button>
       </div>
 
-      <div class="docs-group" data-group="setup">
-        <div class="docs-group-label"><span>Architecture &amp; Setup</span><span class="docs-group-toggle">▾</span></div>
-        <a href="#quickstart" class="docs-item-link">Quickstart &amp; Installation</a>
-        <a href="#cli" class="docs-item-link">CLI &amp; Arguments (<code>args</code>)</a>
-        <a href="#repl" class="docs-item-link">Interactive REPL Shell (<code>krb</code>)</a>
+      <!-- Scope 1: Language Guide Curriculum (15 Chapters) -->
+      <div class="docs-sidebar-nav-scope" id="scope-nav-guide">
+        <div class="docs-group" data-group="setup">
+          <div class="docs-group-label"><span>Architecture &amp; Setup</span><span class="docs-group-toggle">▾</span></div>
+          <a href="#quickstart" class="docs-item-link">Quickstart &amp; Installation</a>
+          <a href="#cli" class="docs-item-link">CLI &amp; Arguments (<code>args</code>)</a>
+          <a href="#repl" class="docs-item-link">Interactive REPL Shell (<code>krb</code>)</a>
+        </div>
+
+        <div class="docs-group" data-group="core">
+          <div class="docs-group-label"><span>Language Core &amp; Primitives</span><span class="docs-group-toggle">▾</span></div>
+          <a href="#variables" class="docs-item-link">Variables, Constants &amp; <code>kill</code></a>
+          <a href="#types" class="docs-item-link">Type System &amp; Non-Nullability</a>
+          <a href="#operators" class="docs-item-link">Operators &amp; Precedence Table</a>
+          <a href="#control" class="docs-item-link">Control Flow &amp; Pattern Match</a>
+          <a href="#exceptions" class="docs-item-link">Exceptions (<code>throw</code>, <code>try / catch</code>)</a>
+          <a href="#io-primitives" class="docs-item-link">Console I/O (<code>paste</code>, <code>copyKey</code>)</a>
+          <a href="#collections" class="docs-item-link">Typed Collections (List, Stack, Queue, Table)</a>
+        </div>
+
+        <div class="docs-group" data-group="oop">
+          <div class="docs-group-label"><span>OOP &amp; Modularity</span><span class="docs-group-toggle">▾</span></div>
+          <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
+          <a href="#classes" class="docs-item-link">Classes &amp; OOP Foundations</a>
+          <a href="#enums" class="docs-item-link">Native Enumerations (<code>enum</code>)</a>
+          <a href="#namespaces" class="docs-item-link">Namespaces &amp; Symbol Discovery</a>
+        </div>
+
+        <div class="docs-group" data-group="errors">
+          <div class="docs-group-label"><span>Diagnostics &amp; Conventions</span><span class="docs-group-toggle">▾</span></div>
+          <a href="#errors" class="docs-item-link">Error Diagnostics (All 8 Classes)</a>
+        </div>
       </div>
 
-      <div class="docs-group" data-group="core">
-        <div class="docs-group-label"><span>Language Core</span><span class="docs-group-toggle">▾</span></div>
-        <a href="#variables" class="docs-item-link">Variables, Constants &amp; <code>kill</code></a>
-        <a href="#types" class="docs-item-link">Type System &amp; Non-Nullability</a>
-        <a href="#operators" class="docs-item-link">Operators &amp; Precedence Table</a>
-        <a href="#control" class="docs-item-link">Control Flow &amp; Pattern Match</a>
-        <a href="#exceptions" class="docs-item-link">Exceptions (<code>throw</code>, <code>try / catch</code>)</a>
-        <a href="#io-primitives" class="docs-item-link">Console I/O (<code>paste</code>, <code>copyKey</code>)</a>
-        <a href="#collections" class="docs-item-link">Typed Collections (List, Stack, Queue, Table)</a>
-        <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
-        <a href="#classes" class="docs-item-link">Classes &amp; OOP Foundations</a>
-        <a href="#enums" class="docs-item-link">Native Enumerations (<code>enum</code>)</a>
-      </div>
-
-      <div class="docs-group" data-group="stdlib">
-        <div class="docs-group-label"><span>Namespaces &amp; Standard Library</span><span class="docs-group-toggle">▾</span></div>
-        <a href="#namespaces" class="docs-item-link">Namespaces &amp; Symbol Discovery</a>
-        <a href="#std-math" class="docs-item-link">Std.Math (Constants &amp; Algorithms)</a>
-        <a href="#std-time" class="docs-item-link">Std.Time (Timers &amp; Chronometry)</a>
-        <a href="#std-string" class="docs-item-link">Std.String (Text Processing)</a>
-        <a href="#std-io" class="docs-item-link">Std.IO (Filesystem Persistence)</a>
-        <a href="#errors" class="docs-item-link">Error Diagnostics (All 8 Classes)</a>
+      <!-- Scope 2: Dedicated Standard Libraries Reference (4 Modules) -->
+      <div class="docs-sidebar-nav-scope docs-scope-hidden" id="scope-nav-libraries">
+        <div class="docs-group" data-group="std-core">
+          <div class="docs-group-label"><span>Standard Library (<code>Std</code>)</span><span class="docs-group-toggle">▾</span></div>
+          <a href="#std-math" class="docs-item-link">Std.Math (Algorithms &amp; Constants)</a>
+          <a href="#std-time" class="docs-item-link">Std.Time (Timers &amp; Benchmarking)</a>
+          <a href="#std-string" class="docs-item-link">Std.String (Text Processing)</a>
+          <a href="#std-io" class="docs-item-link">Std.IO (Filesystem Persistence)</a>
+        </div>
       </div>
     </aside>
 
@@ -83,16 +108,20 @@
 
       <!-- Chapter Track Switcher -->
       <div class="docs-track-bar" id="docs-track-bar">
-        <div class="docs-track-pills" role="tablist" aria-label="Documentation chapters">
-          <button class="docs-track-pill active" data-track="setup">Setup &amp; CLI (3)</button>
-          <button class="docs-track-pill" data-track="core">Language Core (9)</button>
-          <button class="docs-track-pill" data-track="stdlib">Namespaces &amp; Stdlib (5)</button>
-          <button class="docs-track-pill" data-track="errors">Diagnostics (1)</button>
+        <div class="docs-track-pills" role="tablist" aria-label="Documentation chapters"></div>
+        <div class="docs-track-hints">
+          <kbd>←</kbd> <kbd>→</kbd>
+          <span>Navigate</span>
         </div>
-        <button id="btn-docs-view-mode" class="docs-roadmap-shortcut" type="button" title="Toggle between single-chapter focus view and full-page scroll">Show All (18)</button>
       </div>
 
-      <div id="docs-chapter-indicator" class="docs-chapter-indicator" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;"></div>
+      <!-- Chapter Metadata Bar -->
+      <div class="docs-chapter-meta-bar" id="docs-chapter-meta-bar">
+        <div class="docs-chapter-meta-left">
+          <span class="docs-chapter-track-badge" id="docs-track-badge">Setup &amp; CLI</span>
+          <span class="docs-chapter-counter" id="docs-chapter-counter">Chapter 1 of 15</span>
+        </div>
+      </div>
 
       <!-- ====================================================================
            Section : Quickstart & Installation
@@ -1030,6 +1059,7 @@ end
           <li><strong><code>Main</code> Namespace:</strong> Single entry point for applications. Strictly indivisible (cannot have <code>~Module</code>) and cannot be imported by other files.</li>
           <li><strong>Direct Namespaces:</strong> Declare a self-contained namespace using <code>namespace Utils then ... end</code> and access its exports directly via <code>Utils.helper()</code>.</li>
           <li><strong>Modular Slices:</strong> Split larger packages across multiple files or subfolders with <code>namespace Game ~Combat then ... end</code>, merging into <code>Game.Combat</code>.</li>
+          <li><strong>Built-in Standard Library:</strong> Kuroba ships with the zero-dependency <code>Std</code> package (Core modules: <code>Math</code>, <code>Time</code>, <code>String</code>, <code>IO</code>).</li>
           <li><strong>Namespace Class Modules:</strong> Declare a class directly as a module of a namespace using <code>namespace Entities ~class Player [from SuperClass] then ... end</code>. When imported, the class is accessible as <code>Entities.Player()</code> or directly as <code>Player()</code> with <code>alias ~</code>.</li>
           <li><strong>Qualified Paths &amp; Typing:</strong> Qualified dotted paths can be used in inheritance (<code>class Warrior from Entities.Player</code>), instance checks (<code>w is Entities.Player</code>), and type annotations (<code>ivar ~Entities.Player p = ...</code>).</li>
           <li><strong>Symbol Discovery &amp; Circular Guard:</strong> Kuroba indexes files by declared symbols (ignoring <code>node_modules</code>, <code>.git</code>, and the entry script) and raises an <code>[ImportError]</code> on circular dependencies.</li>
@@ -1048,7 +1078,7 @@ pasteLn(S.Math.PI);
 import Std alias ~;
 pasteLn(Math.PI);
 
-~~ 4. Selective module slices (preserves built-in Std.Sys)
+~~ 4. Selective module slices
 import Std ~(Math, Time, String, IO) alias ~;
 pasteLn(Math.sqrt(16));
 
@@ -1078,15 +1108,27 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
            Section : Std.Math Reference
            ==================================================================== -->
       <section id="std-math">
-        <h2>Std.Math (Constants &amp; Algorithms)</h2>
-        <p>Hardware-accelerated mathematical calculations, trigonometry, and gamedev helpers.</p>
-        <pre><code class="language-kuroba">import Std ~(Math) alias ~;</code></pre>
+        <div class="doc-module-card">
+          <div class="doc-module-header">
+            <span class="doc-module-badge std">Std Core Module</span>
+            <span class="doc-module-import">import Std ~(Math) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">Std.Math (Constants &amp; Algorithms)</h2>
+          <p class="doc-module-desc">Hardware-accelerated mathematical calculations, trigonometry, and gamedev numerical algorithms.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import Std ~(Math) alias ~;
+
+pasteLn(Math.PI);               ~~ 3.141592653589793
+pasteLn(Math.sqrt(144));        ~~ 12
+pasteLn(Math.clamp(45, 0, 10)); ~~ 10
+pasteLn(Math.degToRad(180));    ~~ 3.141592653589793</code></pre>
 
         <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
           <thead>
             <tr>
-              <th>Member</th>
-              <th>Type / Signature</th>
+              <th>Member / Signature</th>
+              <th>Type &amp; Arguments</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -1105,26 +1147,6 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
               <td><code>Math.E</code></td>
               <td><code>Float</code> (2.71828...)</td>
               <td>Euler's number e</td>
-            </tr>
-            <tr>
-              <td><code>Math.random()</code></td>
-              <td><code>() -&gt; Float</code></td>
-              <td>Random float between 0.0 (inclusive) and 1.0 (exclusive)</td>
-            </tr>
-            <tr>
-              <td><code>Math.random(max)</code></td>
-              <td><code>(ivar max) -&gt; Int</code></td>
-              <td>Random integer between 1 and max (inclusive)</td>
-            </tr>
-            <tr>
-              <td><code>Math.random(min, max)</code></td>
-              <td><code>(min, max) -&gt; Int</code></td>
-              <td>Random integer between min and max (inclusive)</td>
-            </tr>
-            <tr>
-              <td><code>Math.randomItem(list)</code></td>
-              <td><code>(list) -&gt; Any</code></td>
-              <td>Random element chosen from a Kuroba List</td>
             </tr>
             <tr>
               <td><code>Math.floor(x)</code></td>
@@ -1259,15 +1281,30 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
            Section : Std.Time Reference
            ==================================================================== -->
       <section id="std-time">
-        <h2>Std.Time (Timers &amp; Chronometry)</h2>
-        <p>Synchronous timing and sleep operations with <strong>0% CPU burn</strong> (powered by <code>Atomics.wait</code>).</p>
-        <pre><code class="language-kuroba">import Std ~(Time) alias ~;</code></pre>
+        <div class="doc-module-card">
+          <div class="doc-module-header">
+            <span class="doc-module-badge std">Std Core Module</span>
+            <span class="doc-module-import">import Std ~(Time) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">Std.Time (Timers &amp; Chronometry)</h2>
+          <p class="doc-module-desc">Synchronous timing and sleep operations with <strong>0% CPU burn</strong> (powered by <code>Atomics.wait</code>) and stateful benchmarking stopwatches.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import Std ~(Time) alias ~;
+
+ivar t0 = Time.now();
+Time.sleep(50); ~~ Suspend execution without CPU busy-wait
+pasteLn(~"Elapsed: {Time.since(t0)} ms");
+
+ivar sw = Time.stopwatch();
+sw.reset();
+pasteLn(~"ISO date: {Time.iso()}");</code></pre>
 
         <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
           <thead>
             <tr>
-              <th>Function</th>
-              <th>Signature</th>
+              <th>Member / Signature</th>
+              <th>Type &amp; Arguments</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -1335,15 +1372,27 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
            Section : Std.String Reference
            ==================================================================== -->
       <section id="std-string">
-        <h2>Std.String (Text Processing)</h2>
-        <p>Text manipulation, string transformations, splitting, and searching.</p>
-        <pre><code class="language-kuroba">import Std ~(String) alias ~;</code></pre>
+        <div class="doc-module-card">
+          <div class="doc-module-header">
+            <span class="doc-module-badge std">Std Core Module</span>
+            <span class="doc-module-import">import Std ~(String) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">Std.String (Text Processing)</h2>
+          <p class="doc-module-desc">Text manipulation, string transformations, splitting, formatting, and character analysis.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import Std ~(String) alias ~;
+
+ivar words = String.split("warrior,mage,rogue", ",");
+ivar joined = String.join(words, " | ");
+pasteLn(String.upper(joined)); ~~ "WARRIOR | MAGE | ROGUE"
+pasteLn(String.repeat("=", 10)); ~~ "=========="</code></pre>
 
         <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
           <thead>
             <tr>
-              <th>Member</th>
-              <th>Type / Signature</th>
+              <th>Member / Signature</th>
+              <th>Type &amp; Arguments</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -1441,15 +1490,28 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
            Section : Std.IO Reference
            ==================================================================== -->
       <section id="std-io">
-        <h2>Std.IO (Filesystem Persistence)</h2>
-        <p>Synchronous disk file operations with zero third-party dependencies.</p>
-        <pre><code class="language-kuroba">import Std ~(IO) alias ~;</code></pre>
+        <div class="doc-module-card">
+          <div class="doc-module-header">
+            <span class="doc-module-badge std">Std Core Module</span>
+            <span class="doc-module-import">import Std ~(IO) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">Std.IO (Filesystem Persistence)</h2>
+          <p class="doc-module-desc">Synchronous disk file operations with zero third-party dependencies (works in CLI and browser virtualFS).</p>
+        </div>
+
+        <pre><code class="language-kuroba">import Std ~(IO) alias ~;
+
+IO.filePaste("save.txt", "PlayerLevel=10");
+if (IO.fileExists("save.txt")) then
+    ivar content = IO.fileCopy("save.txt");
+    pasteLn(~"Loaded save: {content}");
+end</code></pre>
 
         <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
           <thead>
             <tr>
-              <th>Function</th>
-              <th>Signature</th>
+              <th>Member / Signature</th>
+              <th>Type &amp; Arguments</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -1534,7 +1596,7 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
         <p>Module resolution errors, forbidden <code>Main</code> imports, or circular dependencies:</p>
         <pre><code class="language-output">[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.
 [ImportError] Circular import detected for namespace 'A'.
-[ImportError] Unknown package or namespace 'MissingPkg'. Create a '.krb' file with 'namespace MissingPkg then ... end' or import 'Std'.</code></pre>
+[ImportError] Unknown package or namespace 'MissingPkg'. Create a '.krb' file with 'namespace MissingPkg then ... end' or import 'Std' / 'StdE'.</code></pre>
 
         <h3>8. RecursionError</h3>
         <p>Triggered when nested function calls exceed Kuroba's safe call-stack limit (512 frames). Can be trapped cleanly with <code>try / catch</code>:</p>
@@ -1597,14 +1659,25 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
     </div>
   </footer>
 
-  <!-- Documentation Enhancements: Chapter Tracks, Search, Copy/Run Actions, Pager, ScrollSpy -->
+  <!-- Documentation Enhancements: Scopes (Guide vs Libraries), Tracks, Search, Actions, Pager -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const searchInput = document.getElementById('docs-search-input');
       const navLinks = Array.from(document.querySelectorAll('.docs-item-link'));
       const groups = Array.from(document.querySelectorAll('.docs-group'));
       const sections = Array.from(document.querySelectorAll('main.docs-article-body section'));
-      const trackPills = Array.from(document.querySelectorAll('.docs-track-pill'));
+      const trackPillsContainer = document.querySelector('.docs-track-pills');
+
+      const GUIDE_SECTIONS = [
+        'quickstart', 'cli', 'repl',
+        'variables', 'types', 'operators', 'control', 'exceptions', 'io-primitives', 'collections',
+        'functions', 'classes', 'enums', 'namespaces',
+        'errors'
+      ];
+
+      const LIBRARY_SECTIONS = [
+        'std-math', 'std-time', 'std-string', 'std-io'
+      ];
 
       const SECTION_TRACKS = {
         quickstart: 'setup',
@@ -1617,55 +1690,142 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
         exceptions: 'core',
         'io-primitives': 'core',
         collections: 'core',
-        functions: 'core',
-        classes: 'core',
-        namespaces: 'stdlib',
-        'std-math': 'stdlib',
-        'std-time': 'stdlib',
-        'std-string': 'stdlib',
-        'std-io': 'stdlib',
-        errors: 'errors'
+        functions: 'oop',
+        classes: 'oop',
+        enums: 'oop',
+        namespaces: 'oop',
+        errors: 'errors',
+        'std-math': 'std-core',
+        'std-time': 'std-core',
+        'std-string': 'std-core',
+        'std-io': 'std-core'
       };
 
       const TRACK_LABELS = {
-        setup: 'Setup & CLI',
-        core: 'Language Core',
-        stdlib: 'Namespaces & Stdlib',
-        errors: 'Error Diagnostics'
+        setup: 'Architecture & Setup',
+        core: 'Language Core & Primitives',
+        oop: 'OOP & Modularity',
+        errors: 'Diagnostics & Conventions',
+        'std-core': 'Standard Library (Std)'
       };
 
-      const viewModeBtn = document.getElementById('btn-docs-view-mode');
-      const chapterIndicator = document.getElementById('docs-chapter-indicator');
+      const btnScopeGuide = document.getElementById('btn-scope-guide');
+      const btnScopeLibs = document.getElementById('btn-scope-libraries');
+      const scopeNavGuide = document.getElementById('scope-nav-guide');
+      const scopeNavLibs = document.getElementById('scope-nav-libraries');
+      const mobileMenuLabel = document.getElementById('docs-mobile-menu-label');
+      const trackBadge = document.getElementById('docs-track-badge');
+      const chapterCounter = document.getElementById('docs-chapter-counter');
+
       const sectionById = {};
-      sections.forEach((sec, idx) => {
+      sections.forEach(sec => {
         const id = sec.getAttribute('id');
         sectionById[id] = sec;
         sec.dataset.track = SECTION_TRACKS[id] || 'core';
-        sec.dataset.index = String(idx + 1);
       });
 
-      let viewMode = 'single'; // 'single' (Focus page by page) | 'all' (Full scroll)
-      let currentSectionId = (sections[0] && sections[0].getAttribute('id')) || 'quickstart';
+      let activeScope = 'guide'; // 'guide' | 'libraries'
+      let currentSectionId = 'quickstart';
+      let lastGuideId = 'quickstart';
+      let lastLibId = 'std-math';
 
-      function updateViewModeUI() {
-        if (!viewModeBtn) return;
-        viewModeBtn.textContent = viewMode === 'all' ? 'Focus Mode (1 Page)' : `Show All (${sections.length})`;
+      function renderTrackPills() {
+        if (!trackPillsContainer) return;
+        trackPillsContainer.innerHTML = '';
+
+        if (activeScope === 'guide') {
+          const pills = [
+            { track: 'setup', label: 'Setup & CLI (3)' },
+            { track: 'core', label: 'Language Core (7)' },
+            { track: 'oop', label: 'OOP & Modularity (4)' },
+            { track: 'errors', label: 'Diagnostics (1)' }
+          ];
+          pills.forEach((p, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'docs-track-pill' + (idx === 0 ? ' active' : '');
+            btn.dataset.track = p.track;
+            btn.textContent = p.label;
+            btn.addEventListener('click', () => {
+              if (searchInput && searchInput.value) { searchInput.value = ''; filterSidebar(''); }
+              const target = GUIDE_SECTIONS.find(id => SECTION_TRACKS[id] === p.track);
+              if (target) showSection(target, true, true);
+            });
+            trackPillsContainer.appendChild(btn);
+          });
+        } else {
+          const pills = [
+            { track: 'std-core', label: 'Std Modules (4)' }
+          ];
+          pills.forEach((p, idx) => {
+            const btn = document.createElement('button');
+            const isActive = SECTION_TRACKS[currentSectionId] === p.track;
+            btn.className = 'docs-track-pill' + (isActive ? ' active' : '');
+            btn.dataset.track = p.track;
+            btn.textContent = p.label;
+            btn.addEventListener('click', () => {
+              if (searchInput && searchInput.value) { searchInput.value = ''; filterSidebar(''); }
+              const target = LIBRARY_SECTIONS.find(id => SECTION_TRACKS[id] === p.track);
+              if (target) showSection(target, true, true);
+            });
+            trackPillsContainer.appendChild(btn);
+          });
+        }
       }
+
+      function setScope(scope, switchSection = true) {
+        if (activeScope === scope && !switchSection) return;
+        activeScope = scope;
+
+        if (btnScopeGuide && btnScopeLibs) {
+          btnScopeGuide.classList.toggle('active', scope === 'guide');
+          btnScopeLibs.classList.toggle('active', scope === 'libraries');
+        }
+
+        if (scopeNavGuide && scopeNavLibs) {
+          scopeNavGuide.classList.toggle('docs-scope-hidden', scope !== 'guide');
+          scopeNavLibs.classList.toggle('docs-scope-hidden', scope !== 'libraries');
+        }
+
+        if (mobileMenuLabel) {
+          mobileMenuLabel.textContent = scope === 'guide' ? 'Browse Chapters (15)' : 'Browse Modules (4)';
+        }
+
+        renderTrackPills();
+
+        if (switchSection) {
+          const target = scope === 'guide' ? lastGuideId : lastLibId;
+          showSection(target, true, true);
+        }
+      }
+
+      if (btnScopeGuide) btnScopeGuide.addEventListener('click', () => setScope('guide', true));
+      if (btnScopeLibs) btnScopeLibs.addEventListener('click', () => setScope('libraries', true));
 
       function showSection(id, scrollTop = true, updateHash = true) {
         const sec = sectionById[id] || sections[0];
         if (!sec) return;
         const resolvedId = sec.getAttribute('id');
         currentSectionId = resolvedId;
-        viewMode = 'single';
-        updateViewModeUI();
+
+        const isLib = LIBRARY_SECTIONS.includes(resolvedId);
+        if (isLib && activeScope !== 'libraries') {
+          setScope('libraries', false);
+        } else if (!isLib && activeScope !== 'guide') {
+          setScope('guide', false);
+        }
+
+        if (isLib) lastLibId = resolvedId;
+        else lastGuideId = resolvedId;
 
         sections.forEach(s => {
           s.classList.toggle('docs-section-hidden', s !== sec);
         });
 
         const track = sec.dataset.track || 'core';
-        trackPills.forEach(pill => pill.classList.toggle('active', pill.dataset.track === track));
+        const pills = trackPillsContainer ? trackPillsContainer.querySelectorAll('.docs-track-pill') : [];
+        pills.forEach(pill => {
+          pill.classList.toggle('active', pill.dataset.track === track);
+        });
 
         navLinks.forEach(link => {
           const isMatch = link.getAttribute('href') === `#${resolvedId}`;
@@ -1676,9 +1836,20 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
           }
         });
 
-        if (chapterIndicator) {
-          chapterIndicator.textContent = `${TRACK_LABELS[track] || track}  •  Chapter ${sec.dataset.index} of ${sections.length}`;
-          chapterIndicator.style.display = 'block';
+        if (activeScope === 'guide') {
+          const idx = GUIDE_SECTIONS.indexOf(resolvedId);
+          const total = GUIDE_SECTIONS.length;
+          const curr = (idx !== -1 ? idx : 0) + 1;
+
+          if (trackBadge) trackBadge.textContent = TRACK_LABELS[track] || 'Language Guide';
+          if (chapterCounter) chapterCounter.textContent = `Chapter ${curr} of ${total}`;
+        } else {
+          const idx = LIBRARY_SECTIONS.indexOf(resolvedId);
+          const total = LIBRARY_SECTIONS.length;
+          const curr = (idx !== -1 ? idx : 0) + 1;
+
+          if (trackBadge) trackBadge.textContent = TRACK_LABELS[track] || 'Standard Libraries';
+          if (chapterCounter) chapterCounter.textContent = `Module ${curr} of ${total}`;
         }
 
         if (updateHash && window.location.hash !== `#${resolvedId}`) {
@@ -1690,37 +1861,36 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
         }
       }
 
-      function showAllSections() {
-        viewMode = 'all';
-        updateViewModeUI();
-        sections.forEach(s => s.classList.remove('docs-section-hidden'));
-        trackPills.forEach(pill => pill.classList.remove('active'));
-        if (chapterIndicator) {
-          chapterIndicator.textContent = `Full Reference Mode  •  All ${sections.length} Chapters`;
-          chapterIndicator.style.display = 'block';
+      // Keyboard chapter navigation (Left / Right arrow keys)
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        const currentList = activeScope === 'guide' ? GUIDE_SECTIONS : LIBRARY_SECTIONS;
+        const idx = currentList.indexOf(currentSectionId);
+
+        if (e.key === 'ArrowRight' || (e.altKey && e.key === 'ArrowDown')) {
+          if (idx !== -1 && idx < currentList.length - 1) {
+            e.preventDefault();
+            showSection(currentList[idx + 1], true, true);
+          } else if (activeScope === 'guide') {
+            e.preventDefault();
+            setScope('libraries', true);
+          }
+        } else if (e.key === 'ArrowLeft' || (e.altKey && e.key === 'ArrowUp')) {
+          if (idx !== -1 && idx > 0) {
+            e.preventDefault();
+            showSection(currentList[idx - 1], true, true);
+          } else if (activeScope === 'libraries') {
+            e.preventDefault();
+            setScope('guide', false);
+            showSection(lastGuideId, true, true);
+          }
+        } else if (e.key === '/') {
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.select();
         }
-      }
-
-      if (viewModeBtn) {
-        viewModeBtn.addEventListener('click', () => {
-          if (viewMode === 'single') {
-            showAllSections();
-          } else {
-            showSection(currentSectionId, true, true);
-          }
-        });
-      }
-
-      trackPills.forEach(pill => {
-        pill.addEventListener('click', () => {
-          if (searchInput.value) searchInput.value = '';
-          filterSidebar('');
-          const firstInTrack = sections.find(s => s.dataset.track === pill.dataset.track);
-          if (firstInTrack) {
-            showSection(firstInTrack.getAttribute('id'), true, true);
-          }
-        });
       });
+
 
       const sidebar = document.getElementById('docs-sidebar');
       const mobileMenuBtn = document.getElementById('btn-docs-mobile-menu');
@@ -1761,7 +1931,14 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
       // 1. Live Filter Search across link labels + section headings/content
       function filterSidebar(rawQuery) {
         const q = rawQuery.trim().toLowerCase();
-        if (q) setMobileSidebarOpen(true);
+        if (q) {
+          setMobileSidebarOpen(true);
+          if (scopeNavGuide) scopeNavGuide.classList.remove('docs-scope-hidden');
+          if (scopeNavLibs) scopeNavLibs.classList.remove('docs-scope-hidden');
+        } else {
+          if (scopeNavGuide) scopeNavGuide.classList.toggle('docs-scope-hidden', activeScope !== 'guide');
+          if (scopeNavLibs) scopeNavLibs.classList.toggle('docs-scope-hidden', activeScope !== 'libraries');
+        }
         groups.forEach(group => {
           let visibleCount = 0;
           const links = group.querySelectorAll('.docs-item-link');
@@ -1935,79 +2112,148 @@ pasteLn(w is Entities.Player); ~~ TRUE</code></pre>
         card.appendChild(pre);
       });
 
-      // 3. Chapter Prev / Next Pager + Back to Top at the bottom of each section
+      // 3. Chapter Prev / Next Navigation Cards (Progressive Learning Tour)
       function getSectionTitle(sec) {
         const h = sec.querySelector('h1, h2');
-        return h ? h.textContent.trim() : sec.getAttribute('id');
+        if (!h) return sec.getAttribute('id');
+        const clone = h.cloneNode(true);
+        return clone.textContent.trim();
       }
 
-      sections.forEach((sec, idx) => {
-        const pager = document.createElement('div');
-        pager.className = 'docs-pager';
+      // Build Navigation Cards for Guide Sections (15 Chapters)
+      GUIDE_SECTIONS.forEach((secId, idx) => {
+        const sec = sectionById[secId];
+        if (!sec) return;
+        const nav = document.createElement('nav');
+        nav.className = 'docs-chapter-nav';
 
-        const prevSec = idx > 0 ? sections[idx - 1] : null;
-        const nextSec = idx < sections.length - 1 ? sections[idx + 1] : null;
+        const prevId = idx > 0 ? GUIDE_SECTIONS[idx - 1] : null;
+        const nextId = idx < GUIDE_SECTIONS.length - 1 ? GUIDE_SECTIONS[idx + 1] : null;
 
-        if (prevSec) {
-          const prevBtn = document.createElement('a');
-          prevBtn.className = 'docs-pager-btn';
-          prevBtn.href = `#${prevSec.getAttribute('id')}`;
-          prevBtn.textContent = `← ${getSectionTitle(prevSec)}`;
-          prevBtn.addEventListener('click', (e) => {
+        if (prevId && sectionById[prevId]) {
+          const prevCard = document.createElement('a');
+          prevCard.className = 'docs-nav-card prev';
+          prevCard.href = `#${prevId}`;
+          prevCard.innerHTML = `
+            <span class="docs-nav-sub">← Previous Chapter</span>
+            <span class="docs-nav-title">${getSectionTitle(sectionById[prevId])}</span>
+          `;
+          prevCard.addEventListener('click', (e) => {
             e.preventDefault();
-            showSection(prevSec.getAttribute('id'), true, true);
+            showSection(prevId, true, true);
           });
-          pager.appendChild(prevBtn);
+          nav.appendChild(prevCard);
         } else {
-          pager.appendChild(document.createElement('span'));
+          nav.appendChild(document.createElement('div'));
         }
 
-        const topBtn = document.createElement('button');
-        topBtn.className = 'docs-pager-top';
-        topBtn.type = 'button';
-        topBtn.textContent = '↑ Top';
-        topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-        pager.appendChild(topBtn);
-
-        if (nextSec) {
-          const nextBtn = document.createElement('a');
-          nextBtn.className = 'docs-pager-btn';
-          nextBtn.href = `#${nextSec.getAttribute('id')}`;
-          nextBtn.textContent = `${getSectionTitle(nextSec)} →`;
-          nextBtn.addEventListener('click', (e) => {
+        if (nextId && sectionById[nextId]) {
+          const nextCard = document.createElement('a');
+          nextCard.className = 'docs-nav-card next';
+          nextCard.href = `#${nextId}`;
+          nextCard.innerHTML = `
+            <span class="docs-nav-sub">Next Chapter →</span>
+            <span class="docs-nav-title">${getSectionTitle(sectionById[nextId])}</span>
+          `;
+          nextCard.addEventListener('click', (e) => {
             e.preventDefault();
-            showSection(nextSec.getAttribute('id'), true, true);
+            showSection(nextId, true, true);
           });
-          pager.appendChild(nextBtn);
+          nav.appendChild(nextCard);
         } else {
-          const playLink = document.createElement('a');
-          playLink.className = 'docs-pager-btn';
-          playLink.href = 'playground.html';
-          playLink.textContent = 'Try Live Playground ▶';
-          pager.appendChild(playLink);
+          // At the end of Guide, offer transition into Standard Libraries!
+          const exploreCard = document.createElement('a');
+          exploreCard.className = 'docs-nav-card next';
+          exploreCard.href = '#std-math';
+          exploreCard.innerHTML = `
+            <span class="docs-nav-sub">Next Realm →</span>
+            <span class="docs-nav-title">Explore Standard Library (Std)</span>
+          `;
+          exploreCard.addEventListener('click', (e) => {
+            e.preventDefault();
+            setScope('libraries', true);
+          });
+          nav.appendChild(exploreCard);
         }
 
-        sec.appendChild(pager);
+        sec.appendChild(nav);
       });
 
-      // 4. ScrollSpy (active only in Full Reference Mode)
-      const observer = new IntersectionObserver((entries) => {
-        if (viewMode !== 'all') return;
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const id = entry.target.getAttribute('id');
-            navLinks.forEach(link => {
-              link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
-            });
-          }
-        });
-      }, { rootMargin: '-20% 0px -70% 0px' });
+      // Build Navigation Cards for Library Sections (4 Modules)
+      LIBRARY_SECTIONS.forEach((secId, idx) => {
+        const sec = sectionById[secId];
+        if (!sec) return;
+        const nav = document.createElement('nav');
+        nav.className = 'docs-chapter-nav';
 
-      sections.forEach(sec => observer.observe(sec));
+        const prevId = idx > 0 ? LIBRARY_SECTIONS[idx - 1] : null;
+        const nextId = idx < LIBRARY_SECTIONS.length - 1 ? LIBRARY_SECTIONS[idx + 1] : null;
 
-      // 5. Initialize in Single-Chapter Focus Mode (no giant scroll wall)
+        if (prevId && sectionById[prevId]) {
+          const prevCard = document.createElement('a');
+          prevCard.className = 'docs-nav-card prev';
+          prevCard.href = `#${prevId}`;
+          prevCard.innerHTML = `
+            <span class="docs-nav-sub">← Previous Module</span>
+            <span class="docs-nav-title">${getSectionTitle(sectionById[prevId])}</span>
+          `;
+          prevCard.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(prevId, true, true);
+          });
+          nav.appendChild(prevCard);
+        } else {
+          // At first module, link back to Language Guide
+          const backCard = document.createElement('a');
+          backCard.className = 'docs-nav-card prev';
+          backCard.href = '#quickstart';
+          backCard.innerHTML = `
+            <span class="docs-nav-sub">← Return to Curriculum</span>
+            <span class="docs-nav-title">Language Guide Tour</span>
+          `;
+          backCard.addEventListener('click', (e) => {
+            e.preventDefault();
+            setScope('guide', false);
+            showSection(lastGuideId, true, true);
+          });
+          nav.appendChild(backCard);
+        }
+
+        if (nextId && sectionById[nextId]) {
+          const nextCard = document.createElement('a');
+          nextCard.className = 'docs-nav-card next';
+          nextCard.href = `#${nextId}`;
+          nextCard.innerHTML = `
+            <span class="docs-nav-sub">Next Module →</span>
+            <span class="docs-nav-title">${getSectionTitle(sectionById[nextId])}</span>
+          `;
+          nextCard.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(nextId, true, true);
+          });
+          nav.appendChild(nextCard);
+        } else {
+          const playCard = document.createElement('a');
+          playCard.className = 'docs-nav-card next';
+          playCard.href = 'playground.html';
+          playCard.innerHTML = `
+            <span class="docs-nav-sub">Practice in Interactive IDE →</span>
+            <span class="docs-nav-title">Open Web Playground ▶</span>
+          `;
+          nav.appendChild(playCard);
+        }
+
+        sec.appendChild(nav);
+      });
+
+      // Initialize
+      renderTrackPills();
       const initialHash = (window.location.hash || '').replace('#', '');
-      showSection(sectionById[initialHash] ? initialHash : 'quickstart', false, false);
+      if (initialHash && sectionById[initialHash]) {
+        showSection(initialHash, false, false);
+      } else {
+        showSection('quickstart', false, false);
+      }
 
       window.addEventListener('hashchange', () => {
         const targetId = (window.location.hash || '').replace('#', '');
