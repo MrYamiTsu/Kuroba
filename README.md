@@ -442,33 +442,42 @@ Kuroba/
   - [ ] Server Response & Middleware Pipeline (`res.status`, `res.json`, `res.text`, `res.header`, `res.sendFile`, route dispatching)
   - [ ] Network Security & Fault Tolerance (body size limits, socket timeouts, CORS headers, and `e*` network error tables)
 
-### Phase 9: Native 2D Game Engine (`App`), Developer Tooling & Tour `(v1.0.9)`
+### Phase 9: Native 2D Game Engine (`App`), Integrated Testing & Tour `(v1.0.9)`
 
 - [ ] Built-in `App` Package (Native GUI & 2D Game Engine):
   - [ ] Native window creation with framerate and resolution control (`App.window`, `App.fps`)
   - [ ] 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style Raylib / SDL)
   - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
   - [ ] Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
-- [ ] Developer Tooling & CLI Ergonomics:
-  - [ ] Official code formatter (`krb fmt`)
-  - [ ] Built-in test runner (`krb test`)
-  - [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
-  - [ ] Official VS Code Language Server Protocol (`LSP`) with live diagnostics & autocomplete
+- [ ] Integrated Unit Testing System:
+  - [ ] Built-in test runner CLI (`krb test` with automated test file discovery `*.test.krb`)
+  - [ ] Native test block & assertions (`test "feature" then ... end`, `assert(cond)`, `assertEqual(a, b)`)
+  - [ ] Clean formatted terminal report (passed, failed, duration, error diffs and stack traces)
 - [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
   - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
   - [ ] In-browser code challenges with instant automated grading test suites
 - [ ] Website & Documentation Internationalization (`i18n`):
   - [ ] Multi-language localization across Home, Docs, and Playground (English, French, Spanish, etc.) with dynamic language switcher
 
-### Phase 10: Embedding SDK, Package Manager & Standalone Compiler `(v2.0.0)`
+### Phase 10: High-Performance Engine, Universal Distribution & Ecosystem `(v1.1.0)`
 
-- [ ] Kuroba Embeddable SDK (Lua-inspired Native Integration):
-  - [ ] Bidirectional Host API for embedding Kuroba into C# (Unity), Godot, Node.js, and Browser apps
-- [ ] Bytecode Virtual Machine & Standalone Compilation:
-  - [ ] Bytecode VM optimization pass for high-throughput execution
-  - [ ] Standalone executable builder (`krb build game.krb --out game.exe`) with zero runtime prerequisites
-- [ ] Official Package Manager (`kpm` / `krb install`):
-  - [ ] Project dependency manifest (`kuroba.json`) and community module registry (`krb publish`, `krb install`)
+- [ ] Next-Gen High-Performance Engine (V8-Inspired Architecture):
+  - [ ] Bytecode Compiler (`.kbc`) & Virtual Machine replacing AST tree-walk for 10x-50x faster execution
+  - [ ] Shapes / Hidden Classes optimization for tables and class instances (instant memory offset access)
+  - [ ] High-throughput contiguous memory structures, generational garbage collection, and microsecond startup
+  - [ ] Native standalone runtime (Rust / Zig) with optional JIT pass (Cranelift) for near-C throughput
+- [ ] Universal Distribution & Zero-Setup Installation:
+  - [ ] Single self-contained binary (`kuroba.exe` on Windows, `kuroba` on macOS/Linux) with bundled `Std`/`StdE` (zero Node.js dependency)
+  - [ ] One-liner installation scripts (`irm ... | iex` on Windows PowerShell, `curl ... | bash` on macOS/Linux)
+  - [ ] Official npm global distribution (`npm install -g kuroba`)
+  - [ ] WebAssembly engine (`kuroba.wasm`) running at native speed directly inside web browsers
+- [ ] Full-Stack Web Capabilities (Python / Backend Replacement):
+  - [ ] Production-ready HTTP Server & REST API engine capable of powering full-stack web applications
+  - [ ] Static asset serving for HTML/CSS/JS with sub-millisecond response times
+  - [ ] Full-stack Kuroba: use the same expressive language on the backend server and inside the browser
+- [ ] Package Manager & Developer Tooling:
+  - [ ] Official Kuroba Package Manager (`kpm` / `krb install`, `krb publish`) with `kuroba.json` manifest
+  - [ ] Official code formatter (`krb fmt`) & VS Code Language Server Protocol (`LSP`) for live autocomplete
 
 ---
 
