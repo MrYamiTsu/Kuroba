@@ -44,10 +44,10 @@
         <!-- Scope Switcher: Language Guide vs Dedicated Libraries Reference -->
         <div class="docs-scope-switcher" role="tablist" aria-label="Documentation section">
           <button class="docs-scope-btn active" id="btn-scope-guide" data-scope="guide" type="button">
-            <span>📘 Language Guide</span>
+            <span>Guide</span>
           </button>
           <button class="docs-scope-btn" id="btn-scope-libraries" data-scope="libraries" type="button">
-            <span>📦 Libraries (Std &amp; StdE)</span>
+            <span>Libraries</span>
           </button>
         </div>
 
@@ -1065,6 +1065,7 @@ end
           <li><strong><code>Main</code> Namespace:</strong> Single entry point for applications. Strictly indivisible (cannot have <code>~Module</code>) and cannot be imported by other files.</li>
           <li><strong>Direct Namespaces:</strong> Declare a self-contained namespace using <code>namespace Utils then ... end</code> and access its exports directly via <code>Utils.helper()</code>.</li>
           <li><strong>Modular Slices:</strong> Split larger packages across multiple files or subfolders with <code>namespace Game ~Combat then ... end</code>, merging into <code>Game.Combat</code>.</li>
+          <li><strong>Built-in Standard Libraries:</strong> Kuroba ships with two built-in packages: <code>Std</code> (Core modules: <code>Math</code>, <code>Time</code>, <code>String</code>, <code>IO</code>) and <code>StdE</code> (Standard Extended modules: <code>Random</code>, <code>Json</code>).</li>
           <li><strong>Namespace Class Modules:</strong> Declare a class directly as a module of a namespace using <code>namespace Entities ~class Player [from SuperClass] then ... end</code>. When imported, the class is accessible as <code>Entities.Player()</code> or directly as <code>Player()</code> with <code>alias ~</code>.</li>
           <li><strong>Qualified Paths &amp; Typing:</strong> Qualified dotted paths can be used in inheritance (<code>class Warrior from Entities.Player</code>), instance checks (<code>w is Entities.Player</code>), and type annotations (<code>ivar ~Entities.Player p = ...</code>).</li>
           <li><strong>Symbol Discovery &amp; Circular Guard:</strong> Kuroba indexes files by declared symbols (ignoring <code>node_modules</code>, <code>.git</code>, and the entry script) and raises an <code>[ImportError]</code> on circular dependencies.</li>
@@ -1083,18 +1084,24 @@ pasteLn(S.Math.PI);
 import Std alias ~;
 pasteLn(Math.PI);
 
-~~ 4. Selective module slices (preserves built-in Std.Sys)
+~~ 4. Selective module slices
 import Std ~(Math, Time, String, IO) alias ~;
 pasteLn(Math.sqrt(16));
 
-~~ 5. Importing your own project files (e.g. utils.krb &amp; sub/combat.krb)
+~~ 5. Standard Extended Library (StdE)
+import StdE ~(Random, Json) alias ~;
+Random.seed(42);
+ivar roll = Random.int(1, 20);
+ivar json = Json.stringify({ level: 10, ready: TRUE });
+
+~~ 6. Importing your own project files (e.g. utils.krb &amp; sub/combat.krb)
 ~~ utils.krb:      namespace Utils then function dbl(ivar n) then return n * 2; end end
 ~~ sub/combat.krb: namespace Game ~Combat then import Utils; function crit(ivar d) then return Utils.dbl(d); end end
 import Utils;
 import Game;
 pasteLn(Game.Combat.crit(10)); ~~ 20
 
-~~ 6. Namespace Class Modules &amp; Qualified Paths
+~~ 7. Namespace Class Modules &amp; Qualified Paths
 ~~ entities/player.krb:
 ~~   namespace Entities ~class Player then
 ~~       ivar name = "Hero";
@@ -1391,7 +1398,7 @@ pasteLn(~"ISO date: {Time.iso()}");</code></pre>
 ivar words = String.split("warrior,mage,rogue", ",");
 ivar joined = String.join(words, " | ");
 pasteLn(String.upper(joined)); ~~ "WARRIOR | MAGE | ROGUE"
-pasteLn(String.padLeft("42", 5, "0")); ~~ "00042"</code></pre>
+pasteLn(String.repeat("=", 10)); ~~ "=========="</code></pre>
 
         <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
           <thead>
@@ -1765,7 +1772,7 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
         <p>Module resolution errors, forbidden <code>Main</code> imports, or circular dependencies:</p>
         <pre><code class="language-output">[ImportError] Cannot import namespace 'Main'. 'Main' is the execution root.
 [ImportError] Circular import detected for namespace 'A'.
-[ImportError] Unknown package or namespace 'MissingPkg'. Create a '.krb' file with 'namespace MissingPkg then ... end' or import 'Std'.</code></pre>
+[ImportError] Unknown package or namespace 'MissingPkg'. Create a '.krb' file with 'namespace MissingPkg then ... end' or import 'Std' / 'StdE'.</code></pre>
 
         <h3>8. RecursionError</h3>
         <p>Triggered when nested function calls exceed Kuroba's safe call-stack limit (512 frames). Can be trapped cleanly with <code>try / catch</code>:</p>
@@ -1927,23 +1934,19 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
           });
         } else {
           const pills = [
-            { track: 'all-libs', label: 'All Modules (6)' },
             { track: 'std-core', label: 'Std Core (4)' },
             { track: 'stde-ext', label: 'StdE Extended (2)' }
           ];
           pills.forEach((p, idx) => {
             const btn = document.createElement('button');
-            btn.className = 'docs-track-pill' + (idx === 0 ? ' active' : '');
+            const isActive = SECTION_TRACKS[currentSectionId] === p.track;
+            btn.className = 'docs-track-pill' + (isActive ? ' active' : '');
             btn.dataset.track = p.track;
             btn.textContent = p.label;
             btn.addEventListener('click', () => {
               if (searchInput && searchInput.value) { searchInput.value = ''; filterSidebar(''); }
-              if (p.track === 'all-libs') {
-                showSection('std-math', true, true);
-              } else {
-                const target = LIBRARY_SECTIONS.find(id => SECTION_TRACKS[id] === p.track);
-                if (target) showSection(target, true, true);
-              }
+              const target = LIBRARY_SECTIONS.find(id => SECTION_TRACKS[id] === p.track);
+              if (target) showSection(target, true, true);
             });
             trackPillsContainer.appendChild(btn);
           });
@@ -2002,8 +2005,7 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
         const track = sec.dataset.track || 'core';
         const pills = trackPillsContainer ? trackPillsContainer.querySelectorAll('.docs-track-pill') : [];
         pills.forEach(pill => {
-          const match = (pill.dataset.track === track) || (activeScope === 'libraries' && pill.dataset.track === 'all-libs');
-          pill.classList.toggle('active', match);
+          pill.classList.toggle('active', pill.dataset.track === track);
         });
 
         navLinks.forEach(link => {
@@ -2110,7 +2112,14 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
       // 1. Live Filter Search across link labels + section headings/content
       function filterSidebar(rawQuery) {
         const q = rawQuery.trim().toLowerCase();
-        if (q) setMobileSidebarOpen(true);
+        if (q) {
+          setMobileSidebarOpen(true);
+          if (scopeNavGuide) scopeNavGuide.classList.remove('docs-scope-hidden');
+          if (scopeNavLibs) scopeNavLibs.classList.remove('docs-scope-hidden');
+        } else {
+          if (scopeNavGuide) scopeNavGuide.classList.toggle('docs-scope-hidden', activeScope !== 'guide');
+          if (scopeNavLibs) scopeNavLibs.classList.toggle('docs-scope-hidden', activeScope !== 'libraries');
+        }
         groups.forEach(group => {
           let visibleCount = 0;
           const links = group.querySelectorAll('.docs-item-link');
