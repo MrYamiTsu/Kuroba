@@ -106,6 +106,8 @@
           <a href="#stde-random" class="docs-item-link">StdE.Random (PRNG &amp; Gaming)</a>
           <a href="#stde-json" class="docs-item-link">StdE.Json (Serialization)</a>
           <a href="#stde-path" class="docs-item-link">StdE.Path (Filesystem Paths)</a>
+          <a href="#stde-term" class="docs-item-link">StdE.Term (Terminal &amp; Colors)</a>
+          <a href="#stde-process" class="docs-item-link">StdE.Process (System &amp; Env)</a>
         </div>
       </div>
     </aside>
@@ -1882,6 +1884,216 @@ pasteLn(Path.delimiter); ~~ ";" on Windows, ":" on POSIX/Web</code></pre>
       </section>
 
       <!-- ====================================================================
+           Section : StdE.Term Reference
+           ==================================================================== -->
+      <section id="stde-term">
+        <div class="doc-module-header">
+          <div>
+            <span class="doc-module-badge stde">StdE Extended Module</span>
+            <span class="doc-module-import">import StdE ~(Term) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">StdE.Term (Terminal Styling, ANSI Colors &amp; Cursor Control)</h2>
+          <p class="lead" style="margin-bottom: 0;">Rich terminal text formatting, foreground &amp; background ANSI colors, cursor positioning, screen clearing, and terminal dimensions.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import StdE ~(Term) alias ~;
+
+~~ 1. Text Colors &amp; Styles
+pasteLn(Term.green("Operational Status: OK"));
+pasteLn(Term.bold(Term.red("CRITICAL ERROR DETECTED")));
+pasteLn(Term.cyan("Connecting to host..."));
+pasteLn(Term.underline(Term.yellow("Warning: High CPU Usage")));
+
+~~ 2. Background Colors
+pasteLn(Term.bgRed(Term.white(" ALERT ")));
+pasteLn(Term.bgGreen(Term.black(" SUCCESS ")));
+
+~~ 3. Cursor &amp; Screen Controls
+Term.clearScreen();      ~~ Clears screen (alias: Term.cls())
+Term.cursorTo(10, 5);    ~~ Move to col 10, row 5
+Term.cursorHide();        ~~ Hide cursor
+Term.cursorShow();        ~~ Show cursor
+
+~~ 4. Terminal Metadata
+pasteLn("Columns: " + Term.width());
+pasteLn("Rows:    " + Term.height());
+pasteLn("Is TTY:  " + Term.isTTY());</code></pre>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Function / Constant</th>
+              <th>Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Term.red(s)</code>, <code>Term.green(s)</code>, <code>Term.yellow(s)</code>, <code>Term.blue(s)</code>, <code>Term.magenta(s)</code>, <code>Term.cyan(s)</code>, <code>Term.white(s)</code>, <code>Term.gray(s)</code></td>
+              <td><code>(ivar s: String) -&gt; String</code></td>
+              <td>Wraps string in ANSI foreground color escape codes.</td>
+            </tr>
+            <tr>
+              <td><code>Term.bold(s)</code>, <code>Term.dim(s)</code>, <code>Term.italic(s)</code>, <code>Term.underline(s)</code>, <code>Term.inverse(s)</code></td>
+              <td><code>(ivar s: String) -&gt; String</code></td>
+              <td>Applies ANSI typographic style to string.</td>
+            </tr>
+            <tr>
+              <td><code>Term.bgRed(s)</code>, <code>Term.bgGreen(s)</code>, <code>Term.bgYellow(s)</code>, <code>Term.bgBlue(s)</code>, <code>Term.bgMagenta(s)</code>, <code>Term.bgCyan(s)</code>, <code>Term.bgWhite(s)</code></td>
+              <td><code>(ivar s: String) -&gt; String</code></td>
+              <td>Wraps string in ANSI background color escape codes.</td>
+            </tr>
+            <tr>
+              <td><code>Term.clearScreen()</code> / <code>Term.cls()</code></td>
+              <td><code>() -&gt; Bool</code></td>
+              <td>Clears terminal buffer and resets cursor to top-left.</td>
+            </tr>
+            <tr>
+              <td><code>Term.cursorTo(x, y)</code></td>
+              <td><code>(ivar x: Int, ivar y: Int) -&gt; Bool</code></td>
+              <td>Positions terminal cursor at column <code>x</code> and line <code>y</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Term.cursorUp(n)</code>, <code>Term.cursorDown(n)</code>, <code>Term.cursorLeft(n)</code>, <code>Term.cursorRight(n)</code></td>
+              <td><code>(ivar n?: Int) -&gt; Bool</code></td>
+              <td>Moves cursor in specified direction by <code>n</code> cells (default: 1).</td>
+            </tr>
+            <tr>
+              <td><code>Term.width()</code>, <code>Term.height()</code></td>
+              <td><code>() -&gt; Int</code></td>
+              <td>Returns active terminal column width and row height.</td>
+            </tr>
+            <tr>
+              <td><code>Term.isTTY()</code></td>
+              <td><code>() -&gt; Bool</code></td>
+              <td>Returns whether process is running in an interactive TTY stream.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : StdE.Process Reference
+           ==================================================================== -->
+      <section id="stde-process">
+        <div class="doc-module-header">
+          <div>
+            <span class="doc-module-badge stde">StdE Extended Module</span>
+            <span class="doc-module-import">import StdE ~(Process) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">StdE.Process (Process Execution, Environment &amp; System Control)</h2>
+          <p class="lead" style="margin-bottom: 0;">Synchronous command execution, child process spawning, environment variables, working directory management, and process lifecycle control.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import StdE ~(Process) alias ~;
+
+~~ 1. System Introspection
+pasteLn("Platform: " + Process.platform); ~~ "win32", "linux", "darwin", "web"
+pasteLn("Arch:     " + Process.arch);     ~~ "x64", "arm64", "wasm"
+pasteLn("PID:      " + Process.pid());    ~~ Process ID
+pasteLn("Uptime:   " + Process.uptime()); ~~ Elapsed seconds
+
+~~ 2. Working Directory
+pasteLn("Current directory: " + Process.cwd());
+Process.chdir("..");
+
+~~ 3. Synchronous Command Execution
+ivar res = Process.exec("git --version");
+if (res.ok) then
+    pasteLn("Git found: " + res.stdout);
+else
+    pasteLn("Git failed: " + res.stderr);
+end
+
+~~ 4. Spawning Executable with Arguments List
+ivar runRes = Process.run("node", ["-v"]);
+pasteLn("Node version: " + runRes.stdout);
+
+~~ 5. Environment Variables
+Process.setEnv("GAME_DIFFICULTY", "HARD");
+pasteLn("Difficulty: " + Process.getEnv("GAME_DIFFICULTY", "NORMAL"));
+
+~~ Access full environment Table
+ivar envTable = Process.env();
+pasteLn("User: " + envTable.USERNAME);
+
+~~ 6. Process Termination
+~~ Process.quit(0);      ~~ Terminate with exit code 0 (alias: Process.terminate)</code></pre>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Function / Constant</th>
+              <th>Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Process.platform</code></td>
+              <td><code>String</code></td>
+              <td>Operating system platform identifier (<code>"win32"</code>, <code>"linux"</code>, <code>"darwin"</code>, <code>"web"</code>).</td>
+            </tr>
+            <tr>
+              <td><code>Process.arch</code></td>
+              <td><code>String</code></td>
+              <td>Operating system CPU architecture (<code>"x64"</code>, <code>"arm64"</code>, <code>"wasm"</code>).</td>
+            </tr>
+            <tr>
+              <td><code>Process.pid()</code></td>
+              <td><code>() -&gt; Int</code></td>
+              <td>Returns current OS process ID.</td>
+            </tr>
+            <tr>
+              <td><code>Process.uptime()</code></td>
+              <td><code>() -&gt; Float</code></td>
+              <td>Returns process execution uptime in seconds.</td>
+            </tr>
+            <tr>
+              <td><code>Process.cwd()</code></td>
+              <td><code>() -&gt; String</code></td>
+              <td>Returns active working directory path.</td>
+            </tr>
+            <tr>
+              <td><code>Process.chdir(dir)</code></td>
+              <td><code>(ivar dir: String) -&gt; Bool</code></td>
+              <td>Changes working directory to <code>dir</code>. Raises <code>[IOError]</code> on failure.</td>
+            </tr>
+            <tr>
+              <td><code>Process.exec(command)</code></td>
+              <td><code>(ivar command: String) -&gt; Table</code></td>
+              <td>Executes shell command synchronously. Returns <code>{ code, stdout, stderr, ok }</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Process.run(binary, [args])</code></td>
+              <td><code>(ivar binary: String, ivar args?: List) -&gt; Table</code></td>
+              <td>Spawns binary with arguments list. Returns <code>{ code, stdout, stderr, ok }</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Process.getEnv(key, [default])</code></td>
+              <td><code>(ivar key: String, ivar default?: Any) -&gt; Any</code></td>
+              <td>Retrieves environment variable value or default if undefined.</td>
+            </tr>
+            <tr>
+              <td><code>Process.setEnv(key, val)</code></td>
+              <td><code>(ivar key: String, ivar val: String) -&gt; Bool</code></td>
+              <td>Sets or updates an environment variable for current process and children.</td>
+            </tr>
+            <tr>
+              <td><code>Process.env()</code></td>
+              <td><code>() -&gt; Table</code></td>
+              <td>Returns snapshot Table of all active environment variables.</td>
+            </tr>
+            <tr>
+              <td><code>Process.quit(code)</code> / <code>Process.terminate(code)</code></td>
+              <td><code>(ivar code?: Int) -&gt; Void</code></td>
+              <td>Terminates current process immediately with specified status code (default: 0).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
            Section : Error Diagnostics
            ==================================================================== -->
       <section id="errors">
@@ -2008,7 +2220,7 @@ pasteLn(Path.delimiter); ~~ ";" on Windows, ":" on POSIX/Web</code></pre>
 
       const LIBRARY_SECTIONS = [
         'std-math', 'std-time', 'std-string', 'std-io',
-        'stde-random', 'stde-json', 'stde-path'
+        'stde-random', 'stde-json', 'stde-path', 'stde-term', 'stde-process'
       ];
 
       const SECTION_TRACKS = {
@@ -2033,7 +2245,9 @@ pasteLn(Path.delimiter); ~~ ";" on Windows, ":" on POSIX/Web</code></pre>
         'std-io': 'std-core',
         'stde-random': 'stde-ext',
         'stde-json': 'stde-ext',
-        'stde-path': 'stde-ext'
+        'stde-path': 'stde-ext',
+        'stde-term': 'stde-ext',
+        'stde-process': 'stde-ext'
       };
 
       const TRACK_LABELS = {
@@ -2091,7 +2305,7 @@ pasteLn(Path.delimiter); ~~ ";" on Windows, ":" on POSIX/Web</code></pre>
         } else {
           const pills = [
             { track: 'std-core', label: 'Std Core (4)' },
-            { track: 'stde-ext', label: 'StdE Extended (3)' }
+            { track: 'stde-ext', label: 'StdE Extended (5)' }
           ];
           pills.forEach((p, idx) => {
             const btn = document.createElement('button');

@@ -599,7 +599,54 @@ const bundleCode = `/**
             const base = jsObj.base || ((jsObj.name || '') + (jsObj.ext || ''));
             if (!dir) return base;
             return dir.endsWith('/') ? dir + base : dir + '/' + base;
-        }
+        },
+        // --- StdE.Term (Browser Sandbox) ---
+        term_red: (s) => '\\x1b[31m' + s + '\\x1b[39m',
+        term_green: (s) => '\\x1b[32m' + s + '\\x1b[39m',
+        term_yellow: (s) => '\\x1b[33m' + s + '\\x1b[39m',
+        term_blue: (s) => '\\x1b[34m' + s + '\\x1b[39m',
+        term_magenta: (s) => '\\x1b[35m' + s + '\\x1b[39m',
+        term_cyan: (s) => '\\x1b[36m' + s + '\\x1b[39m',
+        term_white: (s) => '\\x1b[37m' + s + '\\x1b[39m',
+        term_gray: (s) => '\\x1b[90m' + s + '\\x1b[39m',
+        term_bold: (s) => '\\x1b[1m' + s + '\\x1b[22m',
+        term_dim: (s) => '\\x1b[2m' + s + '\\x1b[22m',
+        term_italic: (s) => '\\x1b[3m' + s + '\\x1b[23m',
+        term_underline: (s) => '\\x1b[4m' + s + '\\x1b[24m',
+        term_inverse: (s) => '\\x1b[7m' + s + '\\x1b[27m',
+        term_reset: (s) => '\\x1b[0m' + s + '\\x1b[0m',
+        term_bg_red: (s) => '\\x1b[41m' + s + '\\x1b[49m',
+        term_bg_green: (s) => '\\x1b[42m' + s + '\\x1b[49m',
+        term_bg_yellow: (s) => '\\x1b[43m' + s + '\\x1b[49m',
+        term_bg_blue: (s) => '\\x1b[44m' + s + '\\x1b[49m',
+        term_bg_magenta: (s) => '\\x1b[45m' + s + '\\x1b[49m',
+        term_bg_cyan: (s) => '\\x1b[46m' + s + '\\x1b[49m',
+        term_bg_white: (s) => '\\x1b[47m' + s + '\\x1b[49m',
+        term_clear: () => { activeClearHandler(); return true; },
+        term_cursor_to: () => true,
+        term_cursor_up: () => true,
+        term_cursor_down: () => true,
+        term_cursor_right: () => true,
+        term_cursor_left: () => true,
+        term_cursor_hide: () => true,
+        term_cursor_show: () => true,
+        term_width: () => 80,
+        term_height: () => 24,
+        term_is_tty: () => false,
+
+        // --- StdE.Process (Browser Sandbox) ---
+        process_exec: (command) => jsToKurobaValue({ code: 0, stdout: 'Simulated output in browser for: ' + command, stderr: '', ok: true }),
+        process_run: (binary, argsList = []) => jsToKurobaValue({ code: 0, stdout: 'Simulated execution in browser: ' + binary, stderr: '', ok: true }),
+        process_get_env: (key, defaultVal = null) => defaultVal,
+        process_set_env: () => true,
+        process_env_table: () => jsToKurobaValue({ PLATFORM: 'web', USER: 'kuroba-guest' }),
+        process_cwd: () => '/',
+        process_chdir: () => true,
+        process_exit: (code = 0) => { console.log('Process exited with code ' + code); },
+        process_pid: () => 1,
+        process_platform: () => 'web',
+        process_arch: () => 'wasm',
+        process_uptime: () => (performance.now() / 1000)
     };
 
     // =========================================================================

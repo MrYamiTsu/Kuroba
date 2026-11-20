@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync, spawnSync } = require('child_process');
 const { printErr } = require('../errors');
 const { getType } = require('../evaluator/types');
 
@@ -362,7 +363,100 @@ const natives = {
     path_format: (tableObj) => {
         const jsObj = kurobaValueToJs(tableObj);
         return typeof jsObj === 'object' && jsObj !== null ? path.format(jsObj) : '';
-    }
+    },
+    term_red: (s) => `\x1b[31m${s}\x1b[39m`,
+    term_green: (s) => `\x1b[32m${s}\x1b[39m`,
+    term_yellow: (s) => `\x1b[33m${s}\x1b[39m`,
+    term_blue: (s) => `\x1b[34m${s}\x1b[39m`,
+    term_magenta: (s) => `\x1b[35m${s}\x1b[39m`,
+    term_cyan: (s) => `\x1b[36m${s}\x1b[39m`,
+    term_white: (s) => `\x1b[37m${s}\x1b[39m`,
+    term_gray: (s) => `\x1b[90m${s}\x1b[39m`,
+    term_bold: (s) => `\x1b[1m${s}\x1b[22m`,
+    term_dim: (s) => `\x1b[2m${s}\x1b[22m`,
+    term_italic: (s) => `\x1b[3m${s}\x1b[23m`,
+    term_underline: (s) => `\x1b[4m${s}\x1b[24m`,
+    term_inverse: (s) => `\x1b[7m${s}\x1b[27m`,
+    term_reset: (s) => `\x1b[0m${s}\x1b[0m`,
+    term_bg_red: (s) => `\x1b[41m${s}\x1b[49m`,
+    term_bg_green: (s) => `\x1b[42m${s}\x1b[49m`,
+    term_bg_yellow: (s) => `\x1b[43m${s}\x1b[49m`,
+    term_bg_blue: (s) => `\x1b[44m${s}\x1b[49m`,
+    term_bg_magenta: (s) => `\x1b[45m${s}\x1b[49m`,
+    term_bg_cyan: (s) => `\x1b[46m${s}\x1b[49m`,
+    term_bg_white: (s) => `\x1b[47m${s}\x1b[49m`,
+    term_clear: () => { process.stdout.write('\x1b[2J\x1b[0;0H'); return true; },
+    term_cursor_to: (x, y) => { process.stdout.write(`\x1b[${y};${x}H`); return true; },
+    term_cursor_up: (n = 1) => { process.stdout.write(`\x1b[${n}A`); return true; },
+    term_cursor_down: (n = 1) => { process.stdout.write(`\x1b[${n}B`); return true; },
+    term_cursor_right: (n = 1) => { process.stdout.write(`\x1b[${n}C`); return true; },
+    term_cursor_left: (n = 1) => { process.stdout.write(`\x1b[${n}D`); return true; },
+    term_cursor_hide: () => { process.stdout.write('\x1b[?25l'); return true; },
+    term_cursor_show: () => { process.stdout.write('\x1b[?25h'); return true; },
+    term_width: () => process.stdout.columns || 80,
+    term_height: () => process.stdout.rows || 24,
+    term_is_tty: () => Boolean(process.stdout.isTTY),
+    process_exec: (command) => {
+        try {
+            const out = execSync(command, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+            return jsToKurobaValue({ code: 0, stdout: out, stderr: '', ok: true });
+        } catch (err) {
+            return jsToKurobaValue({
+                code: typeof err.status === 'number' ? err.status : 1,
+                stdout: err.stdout ? String(err.stdout) : '',
+                stderr: err.stderr ? String(err.stderr) : (err.message || ''),
+                ok: false
+            });
+        }
+    },
+    process_run: (binary, argsList = []) => {
+        try {
+            const jsArgs = Array.isArray(argsList) ? argsList.map(String) : [];
+            const res = spawnSync(binary, jsArgs, { encoding: 'utf-8' });
+            return jsToKurobaValue({
+                code: typeof res.status === 'number' ? res.status : 1,
+                stdout: res.stdout || '',
+                stderr: res.stderr || (res.error ? res.error.message : ''),
+                ok: res.status === 0
+            });
+        } catch (err) {
+            return jsToKurobaValue({ code: 1, stdout: '', stderr: err.message || '', ok: false });
+        }
+    },
+    process_get_env: (key, defaultVal = null) => {
+        if (typeof key !== 'string') return defaultVal;
+        return (key in process.env) ? process.env[key] : defaultVal;
+    },
+    process_set_env: (key, val) => {
+        if (typeof key === 'string') {
+            process.env[key] = String(val);
+            return true;
+        }
+        return false;
+    },
+    process_env_table: () => {
+        const envCopy = {};
+        for (const [k, v] of Object.entries(process.env)) {
+            envCopy[k] = v;
+        }
+        return jsToKurobaValue(envCopy);
+    },
+    process_cwd: () => process.cwd(),
+    process_chdir: (dir) => {
+        try {
+            process.chdir(dir);
+            return true;
+        } catch (err) {
+            printErr({ eName: 'IOError', eContext: `Cannot change directory to '${dir}': ${err.message}` });
+        }
+    },
+    process_exit: (code = 0) => {
+        process.exit(Number.isInteger(code) ? code : 0);
+    },
+    process_pid: () => process.pid,
+    process_platform: () => process.platform,
+    process_arch: () => process.arch,
+    process_uptime: () => process.uptime()
 };
 
 module.exports = { natives };

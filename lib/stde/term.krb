@@ -1,0 +1,42 @@
+~~ ============================================================================
+~~ Kuroba StdE Library: Term (Terminal & Styling)
+~~ ============================================================================
+namespace StdE ~Term then
+    iconst red         = __native_term_red;
+    iconst green       = __native_term_green;
+    iconst yellow      = __native_term_yellow;
+    iconst blue        = __native_term_blue;
+    iconst magenta     = __native_term_magenta;
+    iconst cyan        = __native_term_cyan;
+    iconst white       = __native_term_white;
+    iconst gray        = __native_term_gray;
+
+    iconst bold        = __native_term_bold;
+    iconst dim         = __native_term_dim;
+    iconst italic      = __native_term_italic;
+    iconst underline   = __native_term_underline;
+    iconst inverse     = __native_term_inverse;
+    iconst reset       = __native_term_reset;
+
+    iconst bgRed       = __native_term_bg_red;
+    iconst bgGreen     = __native_term_bg_green;
+    iconst bgYellow    = __native_term_bg_yellow;
+    iconst bgBlue      = __native_term_bg_blue;
+    iconst bgMagenta   = __native_term_bg_magenta;
+    iconst bgCyan      = __native_term_bg_cyan;
+    iconst bgWhite     = __native_term_bg_white;
+
+    iconst clearScreen = __native_term_clear;
+    iconst cls         = __native_term_clear;
+    iconst cursorTo    = __native_term_cursor_to;
+    iconst cursorUp    = __native_term_cursor_up;
+    iconst cursorDown  = __native_term_cursor_down;
+    iconst cursorLeft  = __native_term_cursor_left;
+    iconst cursorRight = __native_term_cursor_right;
+    iconst cursorHide  = __native_term_cursor_hide;
+    iconst cursorShow  = __native_term_cursor_show;
+
+    iconst width       = __native_term_width;
+    iconst height      = __native_term_height;
+    iconst isTTY       = __native_term_is_tty;
+end

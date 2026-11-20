@@ -13,7 +13,9 @@
   "time.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Time\n~~ ============================================================================\nnamespace Std ~Time then\n    iconst sleep  = __native_sleep;\n    iconst now    = __native_now;\n    iconst unix   = __native_unix;\n    iconst perf   = __native_perf;\n    iconst hires  = __native_perf;\n    iconst clock  = __native_clock;\n    iconst iso    = __native_iso;\n    iconst format = __native_timeFormat;\n\n    function sleepSec(ivar sec) then\n        sleep(sec * 1000);\n    end\n\n    function since(ivar timestamp) then\n        return now() - timestamp;\n    end\n    \n    function stopwatch() then\n        ivar start = now();\n        return {\n            elapsed: function ~() then\n                return now() - start;\n            end,\n            reset: function ~() then\n                start = now();\n                return start;\n            end\n        };\n    end\nend\n",
   "stde_json.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Json\r\n~~ ============================================================================\r\nnamespace StdE ~Json then\r\n    iconst parse     = __native_json_parse;\r\n    iconst stringify = __native_json_stringify;\r\n    iconst isValid   = __native_json_is_valid;\r\n    iconst read      = __native_json_read;\r\n    iconst write     = __native_json_write;\r\n    iconst minify    = __native_json_minify;\r\n    iconst format    = __native_json_format;\r\nend",
   "stde_path.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Path\r\n~~ ============================================================================\r\nnamespace StdE ~Path then\r\n    iconst sep        = __native_path_sep();\r\n    iconst delimiter  = __native_path_delimiter();\r\n    \r\n    iconst join       = __native_path_join;\r\n    iconst resolve    = __native_path_resolve;\r\n    iconst normalize  = __native_path_normalize;\r\n    iconst dirname    = __native_path_dirname;\r\n    iconst basename   = __native_path_basename;\r\n    iconst extname    = __native_path_extname;\r\n    iconst isAbsolute = __native_path_is_absolute;\r\n    iconst relative   = __native_path_relative;\r\n    iconst parse      = __native_path_parse;\r\n    iconst format     = __native_path_format;\r\nend",
-  "stde_random.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Random\r\n~~ ============================================================================\r\nnamespace StdE ~Random then\r\n    iconst seed    = __native_random_seed;\r\n    iconst float   = __native_random_float;\r\n    iconst int     = __native_random_int;\r\n    iconst chance  = __native_random_chance;\r\n    iconst uuid    = __native_random_uuid;\r\n    iconst token   = __native_random_token;\r\n\r\n    function item(ivar list) then\r\n        if (list.count() == 0) then\r\n            return NULL;\r\n        end\r\n        ivar idx = int(0, list.count() - 1);\r\n        return list[idx];\r\n    end\r\n    \r\n    function shuffle(ivar list) then\r\n        ivar n = list.count();\r\n        if (n <= 1) then\r\n            return list;\r\n        end\r\n        for (ivar i = n - 1; i > 0; i--) then\r\n            ivar j = int(0, i);\r\n            list[i] <-> list[j];\r\n        end\r\n        return list;\r\n    end\r\nend"
+  "stde_process.krb": "~~ ============================================================================\n~~ Kuroba StdE Library: Process\n~~ ============================================================================\nnamespace StdE ~Process then\n    iconst exec      = __native_process_exec;\n    iconst run       = __native_process_run;\n    iconst getEnv    = __native_process_get_env;\n    iconst setEnv    = __native_process_set_env;\n    iconst cwd       = __native_process_cwd;\n    iconst chdir     = __native_process_chdir;\n    iconst quit      = __native_process_exit;\n    iconst terminate = __native_process_exit;\n    iconst uptime    = __native_process_uptime;\n    iconst pid       = __native_process_pid;\n    iconst env       = __native_process_env_table;\n\n    iconst platform  = __native_process_platform();\n    iconst arch      = __native_process_arch();\nend\n",
+  "stde_random.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Random\r\n~~ ============================================================================\r\nnamespace StdE ~Random then\r\n    iconst seed    = __native_random_seed;\r\n    iconst float   = __native_random_float;\r\n    iconst int     = __native_random_int;\r\n    iconst chance  = __native_random_chance;\r\n    iconst uuid    = __native_random_uuid;\r\n    iconst token   = __native_random_token;\r\n\r\n    function item(ivar list) then\r\n        if (list.count() == 0) then\r\n            return NULL;\r\n        end\r\n        ivar idx = int(0, list.count() - 1);\r\n        return list[idx];\r\n    end\r\n    \r\n    function shuffle(ivar list) then\r\n        ivar n = list.count();\r\n        if (n <= 1) then\r\n            return list;\r\n        end\r\n        for (ivar i = n - 1; i > 0; i--) then\r\n            ivar j = int(0, i);\r\n            list[i] <-> list[j];\r\n        end\r\n        return list;\r\n    end\r\nend",
+  "stde_term.krb": "~~ ============================================================================\n~~ Kuroba StdE Library: Term (Terminal & Styling)\n~~ ============================================================================\nnamespace StdE ~Term then\n    ~~ Text colors\n    iconst red         = __native_term_red;\n    iconst green       = __native_term_green;\n    iconst yellow      = __native_term_yellow;\n    iconst blue        = __native_term_blue;\n    iconst magenta     = __native_term_magenta;\n    iconst cyan        = __native_term_cyan;\n    iconst white       = __native_term_white;\n    iconst gray        = __native_term_gray;\n\n    ~~ Styles\n    iconst bold        = __native_term_bold;\n    iconst dim         = __native_term_dim;\n    iconst italic      = __native_term_italic;\n    iconst underline   = __native_term_underline;\n    iconst inverse     = __native_term_inverse;\n    iconst reset       = __native_term_reset;\n\n    ~~ Backgrounds\n    iconst bgRed       = __native_term_bg_red;\n    iconst bgGreen     = __native_term_bg_green;\n    iconst bgYellow    = __native_term_bg_yellow;\n    iconst bgBlue      = __native_term_bg_blue;\n    iconst bgMagenta   = __native_term_bg_magenta;\n    iconst bgCyan      = __native_term_bg_cyan;\n    iconst bgWhite     = __native_term_bg_white;\n\n    ~~ Screen & Cursor\n    iconst clearScreen = __native_term_clear;\n    iconst cls         = __native_term_clear;\n    iconst cursorTo    = __native_term_cursor_to;\n    iconst cursorUp    = __native_term_cursor_up;\n    iconst cursorDown  = __native_term_cursor_down;\n    iconst cursorLeft  = __native_term_cursor_left;\n    iconst cursorRight = __native_term_cursor_right;\n    iconst cursorHide  = __native_term_cursor_hide;\n    iconst cursorShow  = __native_term_cursor_show;\n\n    iconst width       = __native_term_width;\n    iconst height      = __native_term_height;\n    iconst isTTY       = __native_term_is_tty;\nend\n"
 };
     
     // In-memory Virtual Filesystem for Std.IO in the browser
@@ -2706,7 +2708,54 @@ function parse(tokens) {
             const base = jsObj.base || ((jsObj.name || '') + (jsObj.ext || ''));
             if (!dir) return base;
             return dir.endsWith('/') ? dir + base : dir + '/' + base;
-        }
+        },
+        // --- StdE.Term (Browser Sandbox) ---
+        term_red: (s) => '\x1b[31m' + s + '\x1b[39m',
+        term_green: (s) => '\x1b[32m' + s + '\x1b[39m',
+        term_yellow: (s) => '\x1b[33m' + s + '\x1b[39m',
+        term_blue: (s) => '\x1b[34m' + s + '\x1b[39m',
+        term_magenta: (s) => '\x1b[35m' + s + '\x1b[39m',
+        term_cyan: (s) => '\x1b[36m' + s + '\x1b[39m',
+        term_white: (s) => '\x1b[37m' + s + '\x1b[39m',
+        term_gray: (s) => '\x1b[90m' + s + '\x1b[39m',
+        term_bold: (s) => '\x1b[1m' + s + '\x1b[22m',
+        term_dim: (s) => '\x1b[2m' + s + '\x1b[22m',
+        term_italic: (s) => '\x1b[3m' + s + '\x1b[23m',
+        term_underline: (s) => '\x1b[4m' + s + '\x1b[24m',
+        term_inverse: (s) => '\x1b[7m' + s + '\x1b[27m',
+        term_reset: (s) => '\x1b[0m' + s + '\x1b[0m',
+        term_bg_red: (s) => '\x1b[41m' + s + '\x1b[49m',
+        term_bg_green: (s) => '\x1b[42m' + s + '\x1b[49m',
+        term_bg_yellow: (s) => '\x1b[43m' + s + '\x1b[49m',
+        term_bg_blue: (s) => '\x1b[44m' + s + '\x1b[49m',
+        term_bg_magenta: (s) => '\x1b[45m' + s + '\x1b[49m',
+        term_bg_cyan: (s) => '\x1b[46m' + s + '\x1b[49m',
+        term_bg_white: (s) => '\x1b[47m' + s + '\x1b[49m',
+        term_clear: () => { activeClearHandler(); return true; },
+        term_cursor_to: () => true,
+        term_cursor_up: () => true,
+        term_cursor_down: () => true,
+        term_cursor_right: () => true,
+        term_cursor_left: () => true,
+        term_cursor_hide: () => true,
+        term_cursor_show: () => true,
+        term_width: () => 80,
+        term_height: () => 24,
+        term_is_tty: () => false,
+
+        // --- StdE.Process (Browser Sandbox) ---
+        process_exec: (command) => jsToKurobaValue({ code: 0, stdout: 'Simulated output in browser for: ' + command, stderr: '', ok: true }),
+        process_run: (binary, argsList = []) => jsToKurobaValue({ code: 0, stdout: 'Simulated execution in browser: ' + binary, stderr: '', ok: true }),
+        process_get_env: (key, defaultVal = null) => defaultVal,
+        process_set_env: () => true,
+        process_env_table: () => jsToKurobaValue({ PLATFORM: 'web', USER: 'kuroba-guest' }),
+        process_cwd: () => '/',
+        process_chdir: () => true,
+        process_exit: (code = 0) => { console.log('Process exited with code ' + code); },
+        process_pid: () => 1,
+        process_platform: () => 'web',
+        process_arch: () => 'wasm',
+        process_uptime: () => (performance.now() / 1000)
     };
 
     // =========================================================================

@@ -438,8 +438,8 @@ Kuroba/
   - [x] `StdE.Random` (dedicated stochastic engine decoupled from `Std.Math`: `seed`, `int`, `float`, `item`, `shuffle`, `chance`, `uuid`, `token`)
   - [x] `StdE.Json` (native bidirectional parse and stringify of Tables to JSON, formatted read/write, minify)
   - [x] `StdE.Path` (cross-platform path resolution: `join`, `resolve`, `dirname`, `basename`, `extname`, `isAbsolute`, `normalize`, `relative`, `parse`, `format`, `sep`, `delimiter`)
-  - [ ] `StdE.Process` (child process execution, commands, and pipe streaming for CLI)
-  - [ ] `StdE.Term` (ANSI colors, terminal styling, dimensions, and cursor control)
+  - [x] `StdE.Process` (child process execution, commands, environment variables, working directory, and system introspection)
+  - [x] `StdE.Term` (ANSI colors, terminal styling, dimensions, and cursor control)
 - [ ] Next-Gen Pure C High-Performance Engine Transformation (Lua-Inspired Architecture):
   - [ ] Complete native rewrite in pure C (C99/C11) for maximal speed, sub-millisecond startup, and tiny binary footprint (< 400 KB)
   - [ ] Ultra-fast Bytecode Compiler (`.kbc`) & Register-based Virtual Machine replacing AST tree-walk for 20x-50x faster execution
