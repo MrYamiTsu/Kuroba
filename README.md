@@ -439,7 +439,7 @@ Kuroba/
 - [ ] Built-in `StdE` Package (Standard Extended):
   - [x] `StdE.Random` (dedicated stochastic engine decoupled from `Std.Math`: `seed`, `int`, `float`, `item`, `shuffle`, `chance`, `uuid`, `token`)
   - [x] `StdE.Json` (native bidirectional parse and stringify of Tables to JSON, formatted read/write, minify)
-  - [ ] `StdE.Path` (cross-platform path resolution: `join`, `resolve`, `dirname`, `basename`, `extname`)
+  - [x] `StdE.Path` (cross-platform path resolution: `join`, `resolve`, `dirname`, `basename`, `extname`, `isAbsolute`, `normalize`, `relative`, `parse`, `format`, `sep`, `delimiter`)
   - [ ] `StdE.Process` (child process execution, commands, and pipe streaming for CLI)
   - [ ] `StdE.Term` (ANSI colors, terminal styling, dimensions, and cursor control)
 - [ ] Built-in `Web` Package (Networking & HTTP):

@@ -8,6 +8,7 @@ namespace StdE ~Random then
     iconst chance  = __native_random_chance;
     iconst uuid    = __native_random_uuid;
     iconst token   = __native_random_token;
+
     function item(ivar list) then
         if (list.count() == 0) then
             return NULL;
@@ -15,6 +16,7 @@ namespace StdE ~Random then
         ivar idx = int(0, list.count() - 1);
         return list[idx];
     end
+    
     function shuffle(ivar list) then
         ivar n = list.count();
         if (n <= 1) then

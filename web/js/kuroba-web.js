@@ -8,11 +8,12 @@
     // Embedded Standard Library Files
     const VIRTUAL_STD_FILES = {
   "io.krb": "~~ ============================================================================\n~~ Kuroba Std Library: IO\n~~ ============================================================================\nnamespace Std ~IO then\n    iconst fileCopy    = __native_ioCopy;\n    iconst filePaste   = __native_ioPaste;\n    iconst filePasteLn = __native_ioPasteLn;\n    iconst fileAppend  = __native_ioAppend;\n    iconst fileExists  = __native_ioExists;\n    iconst fileKill    = __native_ioKill;\nend",
-  "math.krb": "~~ ============================================================================\r\n~~ Kuroba Std Library: Math\r\n~~ ============================================================================\r\nnamespace Std ~Math then\r\n    iconst PI  = 3.141592653589793;\r\n    iconst TAU = 6.283185307179586;\r\n    iconst E   = 2.718281828459045;\r\n\r\n    iconst sqrt   = __native_sqrt;\r\n    iconst pow    = __native_pow;\r\n    iconst sin    = __native_sin;\r\n    iconst cos    = __native_cos;\r\n    iconst tan    = __native_tan;\r\n    iconst asin   = __native_asin;\r\n    iconst acos   = __native_acos;\r\n    iconst atan   = __native_atan;\r\n    iconst atan2  = __native_atan2;\r\n    iconst log    = __native_log;\r\n    iconst log10  = __native_log10;\r\n    iconst exp    = __native_exp;\r\n\r\n    function abs(ivar x) then\r\n        if (x < 0) then\r\n            return 0 - x;\r\n        end\r\n        return x;\r\n    end\r\n\r\n    function min(ivar a, ivar b) then\r\n        if (a < b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function max(ivar a, ivar b) then\r\n        if (a > b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function clamp(ivar val, ivar minVal, ivar maxVal) then\r\n        if (val < minVal) then\r\n            return minVal;\r\n        end\r\n        if (val > maxVal) then\r\n            return maxVal;\r\n        end\r\n        return val;\r\n    end\r\n\r\n    function trunc(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        return i;\r\n    end\r\n\r\n    function floor(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x < 0 && x != i) then\r\n            return i - 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function ceil(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x > 0 && x != i) then\r\n            return i + 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function round(ivar x) then\r\n        return floor(x + 0.5);\r\n    end\r\n\r\n    function dist(ivar x1, ivar y1, ivar x2, ivar y2) then\r\n        ivar dx = x2 - x1;\r\n        ivar dy = y2 - y1;\r\n        return sqrt((dx * dx) + (dy * dy));\r\n    end\r\n\r\n    function degToRad(ivar deg) then\r\n        return deg * (PI / 180.0);\r\n    end\r\n\r\n    function radToDeg(ivar rad) then\r\n        return rad * (180.0 / PI);\r\n    end\r\n\r\n    function sign(ivar x) then\r\n        if (x > 0) then return 1; end\r\n        if (x < 0) then return 0 - 1; end\r\n        return 0;\r\n    end\r\n\r\n    function lerp(ivar a, ivar b, ivar t) then\r\n        return a + (b - a) * t;\r\n    end\r\nend",
-  "string.krb": "~~ ============================================================================\n~~ Kuroba Std Library: String\n~~ ============================================================================\nnamespace Std ~String then\n    iconst DIGITS      = \"0123456789\";\n    iconst ASCII_LOWER = \"abcdefghijklmnopqrstuvwxyz\";\n    iconst ASCII_UPPER = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";\n\n    iconst upper      = __native_strUpper;\n    iconst lower      = __native_strLower;\n    iconst count      = __native_strCount;\n    iconst trim       = __native_strTrim;\n    iconst split      = __native_strSplit;\n    iconst replace    = __native_strReplace;\n    iconst contains   = __native_strContains;\n    iconst startsWith = __native_strStartsWith;\n    iconst endsWith   = __native_strEndsWith;\n    iconst indexOf    = __native_strIndexOf;\n    iconst slice      = __native_strSlice;\n    iconst repeat     = __native_strRepeat;\n    iconst reverse    = __native_strReverse;\n    iconst join       = __native_strJoin;\nend\n",
+  "math.krb": "~~ ============================================================================\r\n~~ Kuroba Std Library: Math\r\n~~ ============================================================================\r\nnamespace Std ~Math then\r\n    iconst PI  = 3.141592653589793;\r\n    iconst TAU = 6.283185307179586;\r\n    iconst E   = 2.718281828459045;\r\n    \r\n    iconst sqrt   = __native_sqrt;\r\n    iconst pow    = __native_pow;\r\n    iconst sin    = __native_sin;\r\n    iconst cos    = __native_cos;\r\n    iconst tan    = __native_tan;\r\n    iconst asin   = __native_asin;\r\n    iconst acos   = __native_acos;\r\n    iconst atan   = __native_atan;\r\n    iconst atan2  = __native_atan2;\r\n    iconst log    = __native_log;\r\n    iconst log10  = __native_log10;\r\n    iconst exp    = __native_exp;\r\n\r\n    function abs(ivar x) then\r\n        if (x < 0) then\r\n            return 0 - x;\r\n        end\r\n        return x;\r\n    end\r\n\r\n    function min(ivar a, ivar b) then\r\n        if (a < b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function max(ivar a, ivar b) then\r\n        if (a > b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function clamp(ivar val, ivar minVal, ivar maxVal) then\r\n        if (val < minVal) then\r\n            return minVal;\r\n        end\r\n        if (val > maxVal) then\r\n            return maxVal;\r\n        end\r\n        return val;\r\n    end\r\n\r\n    function trunc(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        return i;\r\n    end\r\n\r\n    function floor(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x < 0 && x != i) then\r\n            return i - 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function ceil(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x > 0 && x != i) then\r\n            return i + 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function round(ivar x) then\r\n        return floor(x + 0.5);\r\n    end\r\n\r\n    function dist(ivar x1, ivar y1, ivar x2, ivar y2) then\r\n        ivar dx = x2 - x1;\r\n        ivar dy = y2 - y1;\r\n        return sqrt((dx * dx) + (dy * dy));\r\n    end\r\n\r\n    function degToRad(ivar deg) then\r\n        return deg * (PI / 180.0);\r\n    end\r\n\r\n    function radToDeg(ivar rad) then\r\n        return rad * (180.0 / PI);\r\n    end\r\n\r\n    function sign(ivar x) then\r\n        if (x > 0) then return 1; end\r\n        if (x < 0) then return 0 - 1; end\r\n        return 0;\r\n    end\r\n\r\n    function lerp(ivar a, ivar b, ivar t) then\r\n        return a + (b - a) * t;\r\n    end\r\nend",
+  "string.krb": "~~ ============================================================================\n~~ Kuroba Std Library: String\n~~ ============================================================================\nnamespace Std ~String then\n    iconst DIGITS      = \"0123456789\";\n    iconst ASCII_LOWER = \"abcdefghijklmnopqrstuvwxyz\";\n    iconst ASCII_UPPER = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";\n    \n    iconst upper      = __native_strUpper;\n    iconst lower      = __native_strLower;\n    iconst count      = __native_strCount;\n    iconst trim       = __native_strTrim;\n    iconst split      = __native_strSplit;\n    iconst replace    = __native_strReplace;\n    iconst contains   = __native_strContains;\n    iconst startsWith = __native_strStartsWith;\n    iconst endsWith   = __native_strEndsWith;\n    iconst indexOf    = __native_strIndexOf;\n    iconst slice      = __native_strSlice;\n    iconst repeat     = __native_strRepeat;\n    iconst reverse    = __native_strReverse;\n    iconst join       = __native_strJoin;\nend\n",
   "time.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Time\n~~ ============================================================================\nnamespace Std ~Time then\n    iconst sleep  = __native_sleep;\n    iconst now    = __native_now;\n    iconst unix   = __native_unix;\n    iconst perf   = __native_perf;\n    iconst hires  = __native_perf;\n    iconst clock  = __native_clock;\n    iconst iso    = __native_iso;\n    iconst format = __native_timeFormat;\n\n    function sleepSec(ivar sec) then\n        sleep(sec * 1000);\n    end\n\n    function since(ivar timestamp) then\n        return now() - timestamp;\n    end\n    \n    function stopwatch() then\n        ivar start = now();\n        return {\n            elapsed: function ~() then\n                return now() - start;\n            end,\n            reset: function ~() then\n                start = now();\n                return start;\n            end\n        };\n    end\nend\n",
   "stde_json.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Json\r\n~~ ============================================================================\r\nnamespace StdE ~Json then\r\n    iconst parse     = __native_json_parse;\r\n    iconst stringify = __native_json_stringify;\r\n    iconst isValid   = __native_json_is_valid;\r\n    iconst read      = __native_json_read;\r\n    iconst write     = __native_json_write;\r\n    iconst minify    = __native_json_minify;\r\n    iconst format    = __native_json_format;\r\nend",
-  "stde_random.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Random\r\n~~ ============================================================================\r\nnamespace StdE ~Random then\r\n    iconst seed    = __native_random_seed;\r\n    iconst float   = __native_random_float;\r\n    iconst int     = __native_random_int;\r\n    iconst chance  = __native_random_chance;\r\n    iconst uuid    = __native_random_uuid;\r\n    iconst token   = __native_random_token;\r\n    function item(ivar list) then\r\n        if (list.count() == 0) then\r\n            return NULL;\r\n        end\r\n        ivar idx = int(0, list.count() - 1);\r\n        return list[idx];\r\n    end\r\n    function shuffle(ivar list) then\r\n        ivar n = list.count();\r\n        if (n <= 1) then\r\n            return list;\r\n        end\r\n        for (ivar i = n - 1; i > 0; i--) then\r\n            ivar j = int(0, i);\r\n            list[i] <-> list[j];\r\n        end\r\n        return list;\r\n    end\r\nend"
+  "stde_path.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Path\r\n~~ ============================================================================\r\nnamespace StdE ~Path then\r\n    iconst sep        = __native_path_sep();\r\n    iconst delimiter  = __native_path_delimiter();\r\n    \r\n    iconst join       = __native_path_join;\r\n    iconst resolve    = __native_path_resolve;\r\n    iconst normalize  = __native_path_normalize;\r\n    iconst dirname    = __native_path_dirname;\r\n    iconst basename   = __native_path_basename;\r\n    iconst extname    = __native_path_extname;\r\n    iconst isAbsolute = __native_path_is_absolute;\r\n    iconst relative   = __native_path_relative;\r\n    iconst parse      = __native_path_parse;\r\n    iconst format     = __native_path_format;\r\nend",
+  "stde_random.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Random\r\n~~ ============================================================================\r\nnamespace StdE ~Random then\r\n    iconst seed    = __native_random_seed;\r\n    iconst float   = __native_random_float;\r\n    iconst int     = __native_random_int;\r\n    iconst chance  = __native_random_chance;\r\n    iconst uuid    = __native_random_uuid;\r\n    iconst token   = __native_random_token;\r\n\r\n    function item(ivar list) then\r\n        if (list.count() == 0) then\r\n            return NULL;\r\n        end\r\n        ivar idx = int(0, list.count() - 1);\r\n        return list[idx];\r\n    end\r\n    \r\n    function shuffle(ivar list) then\r\n        ivar n = list.count();\r\n        if (n <= 1) then\r\n            return list;\r\n        end\r\n        for (ivar i = n - 1; i > 0; i--) then\r\n            ivar j = int(0, i);\r\n            list[i] <-> list[j];\r\n        end\r\n        return list;\r\n    end\r\nend"
 };
     
     // In-memory Virtual Filesystem for Std.IO in the browser
@@ -2591,6 +2592,120 @@ function parse(tokens) {
                     eContext: "Failed to format JSON: " + e.message
                 });
             }
+        },
+        path_sep: () => '/',
+        path_delimiter: () => ':',
+        path_join: (...args) => {
+            const parts = args.filter(a => typeof a === 'string');
+            if (parts.length === 0) return '.';
+            const joined = parts.join('/');
+            const segments = joined.split(/[\/\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0 && res[res.length - 1] !== '..') res.pop();
+                    else res.push('..');
+                } else {
+                    res.push(s);
+                }
+            }
+            const prefix = joined.startsWith('/') ? '/' : '';
+            return prefix + (res.join('/') || (prefix ? '' : '.'));
+        },
+        path_resolve: (...args) => {
+            const parts = args.filter(a => typeof a === 'string');
+            const joined = '/' + parts.join('/');
+            const segments = joined.split(/[\/\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0) res.pop();
+                } else {
+                    res.push(s);
+                }
+            }
+            return '/' + res.join('/');
+        },
+        path_normalize: (p) => {
+            if (typeof p !== 'string') return '';
+            const isAbs = p.startsWith('/') || p.startsWith('\\');
+            const segments = p.split(/[\/\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0 && res[res.length - 1] !== '..') res.pop();
+                    else if (!isAbs) res.push('..');
+                } else {
+                    res.push(s);
+                }
+            }
+            return (isAbs ? '/' : '') + (res.join('/') || (isAbs ? '' : '.'));
+        },
+        path_dirname: (p) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\/g, '/').replace(/[/]+$/, '');
+            const lastIdx = normalized.lastIndexOf('/');
+            if (lastIdx === -1) return '.';
+            if (lastIdx === 0) return '/';
+            return normalized.slice(0, lastIdx);
+        },
+        path_basename: (p, ext) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\/g, '/').replace(/[/]+$/, '');
+            const lastIdx = normalized.lastIndexOf('/');
+            let base = lastIdx === -1 ? normalized : normalized.slice(lastIdx + 1);
+            if (typeof ext === 'string' && base.endsWith(ext)) {
+                base = base.slice(0, base.length - ext.length);
+            }
+            return base;
+        },
+        path_extname: (p) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\/g, '/');
+            const base = normalized.slice(normalized.lastIndexOf('/') + 1);
+            const dotIdx = base.lastIndexOf('.');
+            if (dotIdx <= 0) return '';
+            return base.slice(dotIdx);
+        },
+        path_is_absolute: (p) => {
+            if (typeof p !== 'string') return false;
+            return p.startsWith('/') || /^[a-zA-Z]:[\\\/]/.test(p);
+        },
+        path_relative: (from, to) => {
+            if (typeof from !== 'string' || typeof to !== 'string') return '';
+            const fromParts = from.split(/[\/\\]+/).filter(Boolean);
+            const toParts = to.split(/[\/\\]+/).filter(Boolean);
+            let common = 0;
+            while (common < fromParts.length && common < toParts.length && fromParts[common] === toParts[common]) {
+                common++;
+            }
+            const ups = new Array(fromParts.length - common).fill('..');
+            const downs = toParts.slice(common);
+            return ups.concat(downs).join('/') || '.';
+        },
+        path_parse: (p) => {
+            if (typeof p !== 'string') return jsToKurobaValue({ root: '', dir: '', base: '', ext: '', name: '' });
+            const isAbs = p.startsWith('/') || /^[a-zA-Z]:[\\\/]/.test(p);
+            const root = isAbs ? (p.match(/^[a-zA-Z]:[\\\/]/) ? p.match(/^[a-zA-Z]:[\\\/]/)[0] : '/') : '';
+            const normalized = p.replace(/\\/g, '/').replace(/[/]+$/, '');
+            const lastSlash = normalized.lastIndexOf('/');
+            const dir = lastSlash === -1 ? '' : (lastSlash === 0 ? '/' : normalized.slice(0, lastSlash));
+            const base = lastSlash === -1 ? normalized : normalized.slice(lastSlash + 1);
+            const dotIdx = base.lastIndexOf('.');
+            const ext = dotIdx <= 0 ? '' : base.slice(dotIdx);
+            const name = dotIdx <= 0 ? base : base.slice(0, dotIdx);
+            return jsToKurobaValue({ root, dir, base, ext, name });
+        },
+        path_format: (tableObj) => {
+            const jsObj = kurobaValueToJs(tableObj);
+            if (!jsObj || typeof jsObj !== 'object') return '';
+            const dir = jsObj.dir || jsObj.root || '';
+            const base = jsObj.base || ((jsObj.name || '') + (jsObj.ext || ''));
+            if (!dir) return base;
+            return dir.endsWith('/') ? dir + base : dir + '/' + base;
         }
     };
 

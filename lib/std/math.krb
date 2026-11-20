@@ -5,7 +5,7 @@ namespace Std ~Math then
     iconst PI  = 3.141592653589793;
     iconst TAU = 6.283185307179586;
     iconst E   = 2.718281828459045;
-
+    
     iconst sqrt   = __native_sqrt;
     iconst pow    = __native_pow;
     iconst sin    = __native_sin;

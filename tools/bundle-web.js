@@ -485,6 +485,120 @@ const bundleCode = `/**
                     eContext: "Failed to format JSON: " + e.message
                 });
             }
+        },
+        path_sep: () => '/',
+        path_delimiter: () => ':',
+        path_join: (...args) => {
+            const parts = args.filter(a => typeof a === 'string');
+            if (parts.length === 0) return '.';
+            const joined = parts.join('/');
+            const segments = joined.split(/[\\/\\\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0 && res[res.length - 1] !== '..') res.pop();
+                    else res.push('..');
+                } else {
+                    res.push(s);
+                }
+            }
+            const prefix = joined.startsWith('/') ? '/' : '';
+            return prefix + (res.join('/') || (prefix ? '' : '.'));
+        },
+        path_resolve: (...args) => {
+            const parts = args.filter(a => typeof a === 'string');
+            const joined = '/' + parts.join('/');
+            const segments = joined.split(/[\\/\\\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0) res.pop();
+                } else {
+                    res.push(s);
+                }
+            }
+            return '/' + res.join('/');
+        },
+        path_normalize: (p) => {
+            if (typeof p !== 'string') return '';
+            const isAbs = p.startsWith('/') || p.startsWith('\\\\');
+            const segments = p.split(/[\\/\\\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0 && res[res.length - 1] !== '..') res.pop();
+                    else if (!isAbs) res.push('..');
+                } else {
+                    res.push(s);
+                }
+            }
+            return (isAbs ? '/' : '') + (res.join('/') || (isAbs ? '' : '.'));
+        },
+        path_dirname: (p) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\\\/g, '/').replace(/[/]+$/, '');
+            const lastIdx = normalized.lastIndexOf('/');
+            if (lastIdx === -1) return '.';
+            if (lastIdx === 0) return '/';
+            return normalized.slice(0, lastIdx);
+        },
+        path_basename: (p, ext) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\\\/g, '/').replace(/[/]+$/, '');
+            const lastIdx = normalized.lastIndexOf('/');
+            let base = lastIdx === -1 ? normalized : normalized.slice(lastIdx + 1);
+            if (typeof ext === 'string' && base.endsWith(ext)) {
+                base = base.slice(0, base.length - ext.length);
+            }
+            return base;
+        },
+        path_extname: (p) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\\\/g, '/');
+            const base = normalized.slice(normalized.lastIndexOf('/') + 1);
+            const dotIdx = base.lastIndexOf('.');
+            if (dotIdx <= 0) return '';
+            return base.slice(dotIdx);
+        },
+        path_is_absolute: (p) => {
+            if (typeof p !== 'string') return false;
+            return p.startsWith('/') || /^[a-zA-Z]:[\\\\\\/]/.test(p);
+        },
+        path_relative: (from, to) => {
+            if (typeof from !== 'string' || typeof to !== 'string') return '';
+            const fromParts = from.split(/[\\/\\\\]+/).filter(Boolean);
+            const toParts = to.split(/[\\/\\\\]+/).filter(Boolean);
+            let common = 0;
+            while (common < fromParts.length && common < toParts.length && fromParts[common] === toParts[common]) {
+                common++;
+            }
+            const ups = new Array(fromParts.length - common).fill('..');
+            const downs = toParts.slice(common);
+            return ups.concat(downs).join('/') || '.';
+        },
+        path_parse: (p) => {
+            if (typeof p !== 'string') return jsToKurobaValue({ root: '', dir: '', base: '', ext: '', name: '' });
+            const isAbs = p.startsWith('/') || /^[a-zA-Z]:[\\\\\\/]/.test(p);
+            const root = isAbs ? (p.match(/^[a-zA-Z]:[\\\\\\/]/) ? p.match(/^[a-zA-Z]:[\\\\\\/]/)[0] : '/') : '';
+            const normalized = p.replace(/\\\\/g, '/').replace(/[/]+$/, '');
+            const lastSlash = normalized.lastIndexOf('/');
+            const dir = lastSlash === -1 ? '' : (lastSlash === 0 ? '/' : normalized.slice(0, lastSlash));
+            const base = lastSlash === -1 ? normalized : normalized.slice(lastSlash + 1);
+            const dotIdx = base.lastIndexOf('.');
+            const ext = dotIdx <= 0 ? '' : base.slice(dotIdx);
+            const name = dotIdx <= 0 ? base : base.slice(0, dotIdx);
+            return jsToKurobaValue({ root, dir, base, ext, name });
+        },
+        path_format: (tableObj) => {
+            const jsObj = kurobaValueToJs(tableObj);
+            if (!jsObj || typeof jsObj !== 'object') return '';
+            const dir = jsObj.dir || jsObj.root || '';
+            const base = jsObj.base || ((jsObj.name || '') + (jsObj.ext || ''));
+            if (!dir) return base;
+            return dir.endsWith('/') ? dir + base : dir + '/' + base;
         }
     };
 

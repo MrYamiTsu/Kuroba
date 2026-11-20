@@ -5,7 +5,7 @@ namespace Std ~String then
     iconst DIGITS      = "0123456789";
     iconst ASCII_LOWER = "abcdefghijklmnopqrstuvwxyz";
     iconst ASCII_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
+    
     iconst upper      = __native_strUpper;
     iconst lower      = __native_strLower;
     iconst count      = __native_strCount;

@@ -105,6 +105,7 @@
           <div class="docs-group-label"><span>Extended Library (<code>StdE</code>)</span><span class="docs-group-toggle">▾</span></div>
           <a href="#stde-random" class="docs-item-link">StdE.Random (PRNG &amp; Gaming)</a>
           <a href="#stde-json" class="docs-item-link">StdE.Json (Serialization)</a>
+          <a href="#stde-path" class="docs-item-link">StdE.Path (Filesystem Paths)</a>
         </div>
       </div>
     </aside>
@@ -1769,6 +1770,118 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
       </section>
 
       <!-- ====================================================================
+           Section : StdE.Path Reference
+           ==================================================================== -->
+      <section id="stde-path">
+        <div class="doc-module-header">
+          <div>
+            <span class="doc-module-badge stde">StdE Extended Module</span>
+            <span class="doc-module-import">import StdE ~(Path) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">StdE.Path (Cross-Platform Path Resolution)</h2>
+          <p class="lead" style="margin-bottom: 0;">Cross-platform path resolution, directory traversal, extension extraction, and structured path table serialization for CLI and native workflows.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import StdE ~(Path) alias ~;
+
+~~ 1. Joining &amp; Resolving Paths
+ivar savePath = Path.join("saves", "slot1", "hero.dat");
+ivar absPath  = Path.resolve("saves", "slot1.dat");
+
+~~ 2. Inspecting Segments
+ivar dir  = Path.dirname("saves/slot1/hero.dat");      ~~ "saves/slot1"
+ivar file = Path.basename("saves/slot1/hero.dat");     ~~ "hero.dat"
+ivar name = Path.basename("saves/slot1/hero.dat", ".dat"); ~~ "hero"
+ivar ext  = Path.extname("saves/slot1/hero.dat");      ~~ ".dat"
+
+~~ 3. Normalization &amp; Relative Paths
+ivar clean = Path.normalize("saves/../saves/slot1/./hero.dat");
+ivar rel   = Path.relative("/game/saves", "/game/saves/slot1/hero.dat");
+
+~~ 4. Parsing into Structured Tables
+ivar info = Path.parse("saves/slot1/hero.dat");
+pasteLn(info.name); ~~ "hero"
+pasteLn(info.ext);  ~~ ".dat"
+pasteLn(info.dir);  ~~ "saves/slot1"
+
+~~ 5. Platform Constants
+pasteLn(Path.sep);       ~~ "\" on Windows, "/" on POSIX/Web
+pasteLn(Path.delimiter); ~~ ";" on Windows, ":" on POSIX/Web</code></pre>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Function / Constant</th>
+              <th>Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Path.sep</code></td>
+              <td><code>String</code></td>
+              <td>Platform-specific path segment separator (<code>\</code> on Windows, <code>/</code> on POSIX/Web).</td>
+            </tr>
+            <tr>
+              <td><code>Path.delimiter</code></td>
+              <td><code>String</code></td>
+              <td>Platform-specific path list delimiter (<code>;</code> on Windows, <code>:</code> on POSIX/Web).</td>
+            </tr>
+            <tr>
+              <td><code>Path.join(...segments)</code></td>
+              <td><code>(ivar ...parts: String) -&gt; String</code></td>
+              <td>Joins all given path segments together using the platform-specific separator.</td>
+            </tr>
+            <tr>
+              <td><code>Path.resolve(...segments)</code></td>
+              <td><code>(ivar ...parts: String) -&gt; String</code></td>
+              <td>Resolves a sequence of paths or path segments into an absolute path.</td>
+            </tr>
+            <tr>
+              <td><code>Path.normalize(path)</code></td>
+              <td><code>(ivar path: String) -&gt; String</code></td>
+              <td>Normalizes the given path, resolving <code>..</code> and <code>.</code> segments.</td>
+            </tr>
+            <tr>
+              <td><code>Path.dirname(path)</code></td>
+              <td><code>(ivar path: String) -&gt; String</code></td>
+              <td>Returns the directory name of a path.</td>
+            </tr>
+            <tr>
+              <td><code>Path.basename(path, [ext])</code></td>
+              <td><code>(ivar path: String, ivar ext?: String) -&gt; String</code></td>
+              <td>Returns the last portion of a path, optionally stripping trailing extension.</td>
+            </tr>
+            <tr>
+              <td><code>Path.extname(path)</code></td>
+              <td><code>(ivar path: String) -&gt; String</code></td>
+              <td>Returns the extension of the path (from the last <code>.</code> to end of string).</td>
+            </tr>
+            <tr>
+              <td><code>Path.isAbsolute(path)</code></td>
+              <td><code>(ivar path: String) -&gt; Bool</code></td>
+              <td>Determines if path is an absolute path.</td>
+            </tr>
+            <tr>
+              <td><code>Path.relative(from, to)</code></td>
+              <td><code>(ivar from: String, ivar to: String) -&gt; String</code></td>
+              <td>Returns the relative path from <code>from</code> to <code>to</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Path.parse(path)</code></td>
+              <td><code>(ivar path: String) -&gt; Table</code></td>
+              <td>Returns a Table containing <code>{ root, dir, base, ext, name }</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Path.format(table)</code></td>
+              <td><code>(ivar table: Table) -&gt; String</code></td>
+              <td>Returns a path string reconstructed from a path Table object.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
            Section : Error Diagnostics
            ==================================================================== -->
       <section id="errors">
@@ -1895,7 +2008,7 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
 
       const LIBRARY_SECTIONS = [
         'std-math', 'std-time', 'std-string', 'std-io',
-        'stde-random', 'stde-json'
+        'stde-random', 'stde-json', 'stde-path'
       ];
 
       const SECTION_TRACKS = {
@@ -1919,7 +2032,8 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
         'std-string': 'std-core',
         'std-io': 'std-core',
         'stde-random': 'stde-ext',
-        'stde-json': 'stde-ext'
+        'stde-json': 'stde-ext',
+        'stde-path': 'stde-ext'
       };
 
       const TRACK_LABELS = {
@@ -1977,7 +2091,7 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
         } else {
           const pills = [
             { track: 'std-core', label: 'Std Core (4)' },
-            { track: 'stde-ext', label: 'StdE Extended (2)' }
+            { track: 'stde-ext', label: 'StdE Extended (3)' }
           ];
           pills.forEach((p, idx) => {
             const btn = document.createElement('button');

@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const { printErr } = require('../errors');
 const { getType } = require('../evaluator/types');
 
@@ -331,6 +332,36 @@ const natives = {
                 eContext: `Failed to format JSON: ${e.message}`
             });
         }
+    },
+    path_sep: () => path.sep,
+    path_delimiter: () => path.delimiter,
+    path_join: (...args) => {
+        const parts = args.filter(a => typeof a === 'string');
+        return parts.length === 0 ? '.' : path.join(...parts);
+    },
+    path_resolve: (...args) => {
+        const parts = args.filter(a => typeof a === 'string');
+        return path.resolve(...parts);
+    },
+    path_normalize: (p) => (typeof p === 'string' ? path.normalize(p) : ''),
+    path_dirname: (p) => (typeof p === 'string' ? path.dirname(p) : ''),
+    path_basename: (p, ext) => {
+        if (typeof p !== 'string') return '';
+        return typeof ext === 'string' ? path.basename(p, ext) : path.basename(p);
+    },
+    path_extname: (p) => (typeof p === 'string' ? path.extname(p) : ''),
+    path_is_absolute: (p) => (typeof p === 'string' ? path.isAbsolute(p) : false),
+    path_relative: (from, to) => {
+        if (typeof from !== 'string' || typeof to !== 'string') return '';
+        return path.relative(from, to);
+    },
+    path_parse: (p) => {
+        if (typeof p !== 'string') return jsToKurobaValue({ root: '', dir: '', base: '', ext: '', name: '' });
+        return jsToKurobaValue(path.parse(p));
+    },
+    path_format: (tableObj) => {
+        const jsObj = kurobaValueToJs(tableObj);
+        return typeof jsObj === 'object' && jsObj !== null ? path.format(jsObj) : '';
     }
 };
 
