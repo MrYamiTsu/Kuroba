@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.7-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.8-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Website](https://img.shields.io/badge/website-live-success.svg?style=for-the-badge&logo=githubpages)](https://mryamitsu.github.io/Kuroba/)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
@@ -421,51 +421,68 @@ Kuroba/
   - [x] Arbitrary nested member and index assignments (`grid[y][x] = "#";`, `enemies[i].hp -= 10;`, `player.bag[0] = "Bow";`) with `iconst` root immutability protection
   - [x] Recursive multi-file project imports in CLI (`namespace Utils`, `namespace Game ~Combat`, subfolder `.krb` discovery, and `[ImportError]` circular import guards)
 
-### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
+### Phase 8: OOP Finalization & Modular StdE `(Completed - v1.0.8)`
 
-- [ ] OOP Contracts & Architectural Interfaces:
-  - [ ] Interface definition (`interface IEntity then ... end`)
-  - [ ] Class implementation contracts (`class Player implements IEntity then ... end`, `class Player from Base with IEntity`)
-  - [ ] Runtime interface conformance checking (`player is IEntity`)
-  - [ ] Inherited Private / Protected Visibility (`protected ivar/iconst/function` accessible by descendant subclasses, but encapsulated from external access)
-- [ ] Concurrency & Asynchronous Programming:
-  - [ ] Non-blocking async routines (`async` / `await`) and lightweight coroutines (`task` / `yield`)
-- [ ] Built-in `StdE` Package (Standard Extended):
-  - [ ] `StdE.Json` (native parse and stringify of Tables to JSON)
-  - [ ] `StdE.Path` (join, resolve, dirname, basename, extname)
-  - [ ] `StdE.Process` (spawning child processes, command execution, pipes)
-  - [ ] `StdE.Term` (ANSI text colors & styles, terminal dimensions, cursor positioning)
-- [ ] Built-in `Web` Package (Networking & HTTP):
-  - [ ] HTTP client fetcher (`Web.fetch` for REST API queries)
-  - [ ] Native HTTP web server (`Web.serve`, `Web.listen`)
+- [x] OOP Contracts, Visibility & Ergonomics:
+  - [x] Extended Visibility Modifiers (`protected`, `isolated`, `exclusive`):
+    - [x] `protected ivar/iconst/function`: accessible across class hierarchies (parent and subclasses), hidden from external consumers
+    - [x] `isolated ivar/iconst/function`: strictly exclusive to the declaring class, completely uninherited and inaccessible by child classes
+    - [x] `exclusive ivar/iconst/function`: publicly accessible on declaring class, strictly uninherited and absent from child classes
+  - [x] Custom Property Accessors (`get` / `set`):
+    - [x] Property interceptor syntax (`get prop then ... end`, `set prop(val) then ... end`) with raw backing storage access via `value`
+    - [x] Immutability protection (`iconst` read-only getters, syntax rejection on setters)
+  - [x] Interface contracts (`interface IEntity then ... end`, `class Player from Super as IEntity`) & runtime conformance (`player is IEntity`)
+- [x] Built-in `StdE` Package (Standard Extended):
+  - [x] `StdE.Random` (dedicated stochastic engine decoupled from `Std.Math`: `seed`, `int`, `float`, `item`, `shuffle`, `chance`, `uuid`, `token`)
+  - [x] `StdE.Json` (native bidirectional parse and stringify of Tables to JSON, formatted read/write, minify)
+  - [x] `StdE.Path` (cross-platform path resolution: `join`, `resolve`, `dirname`, `basename`, `extname`, `isAbsolute`, `normalize`, `relative`, `parse`, `format`, `sep`, `delimiter`)
+  - [x] `StdE.Process` (child process execution, commands, environment variables, working directory, and system introspection)
+  - [x] `StdE.Term` (ANSI colors, terminal styling, dimensions, and cursor control)
 
-### Phase 9: Native 2D Game Engine (`App`), Developer Tooling & Tour `(v1.0.9)`
+### Phase 9: Pure C Native Engine Transformation `(v1.1.0)`
 
-- [ ] Built-in `App` Package (Native GUI & 2D Game Engine):
+- [ ] Next-Gen Pure C High-Performance Engine Transformation (Lua-Inspired Architecture):
+  - [ ] Complete native rewrite in pure C (C99/C11) for maximal speed, sub-millisecond startup, and tiny binary footprint (< 400 KB)
+  - [ ] Ultra-fast Bytecode Compiler (`.kbc`) & Register-based Virtual Machine replacing AST tree-walk for 20x-50x faster execution
+  - [ ] Direct Threaded Code (Computed Gotos) for zero branch-misprediction opcode dispatching
+  - [ ] Compact object models, memory arena allocators, and generational garbage collection
+  - [ ] First-class WebAssembly target (`kuroba.wasm` compiled directly via Emscripten) running at native speed in web browsers
+
+### Phase 10: Advanced OOP & Language Extensions `(v1.1.1)`
+
+- [ ] OOP Refinements & Language Ergonomics:
+  - [ ] Textual representation & string inspection protocol (`toString()` auto-invoked by `paste` and `~` string interpolation)
+  - [ ] Basic operator overloading for vectors, games, and math (`operator +`, `operator -`, `operator *`, etc.)
+- [ ] Integrated Unit Testing System:
+  - [ ] Built-in test runner CLI (`krb test` with automated test file discovery `*.test.krb`)
+  - [ ] Native test block & assertions (`test "feature" then ... end`, `assert(cond)`, `assertEqual(a, b)`)
+  - [ ] Clean formatted terminal report (passed, failed, duration, error diffs and stack traces)
+- [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
+  - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
+  - [ ] In-browser code challenges with instant automated grading test suites
+
+### Phase 11: Native Asynchronism, Full-Stack Web & Universal Tooling `(v1.1.2)`
+
+- [ ] Native Concurrency & Asynchronous Programming:
+  - [ ] Event loop integration & cooperative coroutines / fibers in C (`async function`, `await expr`, `yield`)
+  - [ ] Non-blocking native I/O (epoll / IOCP / kqueue) replacing synchronous blocking primitives
+  - [ ] Asynchronous exception handling and timeout cancellation within `try / catch`
+- [ ] Full-Stack `Web` Package (Native HTTP & Networking):
+  - [ ] High-performance HTTP Client (`Web.fetch`, `Web.get`, `Web.post` with query params, headers, JSON conversion)
+  - [ ] Native HTTP Server (`Web.serve`, `Web.listen`) with request routing (`req.method`, `req.url`, `req.headers`, `req.body`, `req.query`)
+  - [ ] Server Response & Middleware Pipeline (`res.status`, `res.json`, `res.text`, `res.header`, `res.sendFile`, route dispatching)
+  - [ ] Static asset serving for HTML/CSS/JS with sub-millisecond response times
+- [ ] Built-in `App` Package (Native 2D Game Engine):
   - [ ] Native window creation with framerate and resolution control (`App.window`, `App.fps`)
   - [ ] 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style Raylib / SDL)
   - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
   - [ ] Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
-- [ ] Developer Tooling & CLI Ergonomics:
-  - [ ] Official code formatter (`krb fmt`)
-  - [ ] Built-in test runner (`krb test`)
-  - [ ] Interactive CLI Debugger (`--debug` flag with step execution and AST inspector)
-  - [ ] Official VS Code Language Server Protocol (`LSP`) with live diagnostics & autocomplete
-- [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
-  - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
-  - [ ] In-browser code challenges with instant automated grading test suites
-- [ ] Website & Documentation Internationalization (`i18n`):
-  - [ ] Multi-language localization across Home, Docs, and Playground (English, French, Spanish, etc.) with dynamic language switcher
-
-### Phase 10: Embedding SDK, Package Manager & Standalone Compiler `(v2.0.0)`
-
-- [ ] Kuroba Embeddable SDK (Lua-inspired Native Integration):
-  - [ ] Bidirectional Host API for embedding Kuroba into C# (Unity), Godot, Node.js, and Browser apps
-- [ ] Bytecode Virtual Machine & Standalone Compilation:
-  - [ ] Bytecode VM optimization pass for high-throughput execution
-  - [ ] Standalone executable builder (`krb build game.krb --out game.exe`) with zero runtime prerequisites
-- [ ] Official Package Manager (`kpm` / `krb install`):
-  - [ ] Project dependency manifest (`kuroba.json`) and community module registry (`krb publish`, `krb install`)
+- [ ] Universal Distribution, Tooling & Ecosystem:
+  - [ ] Single self-contained binary (`kuroba.exe` on Windows, `kuroba` on macOS/Linux) with bundled `Std`/`StdE` (zero Node.js dependency)
+  - [ ] One-liner installation scripts (`irm ... | iex` on Windows PowerShell, `curl ... | bash` on macOS/Linux)
+  - [ ] Official npm global distribution (`npm install -g kuroba`)
+  - [ ] Package Manager & Developer Tooling (`kpm` / `krb install`, `krb publish`, `krb fmt`, VS Code LSP)
+  - [ ] Website & Documentation Internationalization (`i18n`)
 
 ---
 

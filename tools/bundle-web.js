@@ -8,6 +8,14 @@ for (const file of fs.readdirSync(stdDir)) {
         stdFiles[file] = fs.readFileSync(path.join(stdDir, file), 'utf-8');
     }
 }
+const stdeDir = path.join(__dirname, '../lib/stde');
+if (fs.existsSync(stdeDir)) {
+    for (const file of fs.readdirSync(stdeDir)) {
+        if (file.endsWith('.krb')) {
+            stdFiles['stde_' + file] = fs.readFileSync(path.join(stdeDir, file), 'utf-8');
+        }
+    }
+}
 
 function readSource(relPath) {
     return fs.readFileSync(path.join(__dirname, relPath), 'utf-8')
@@ -33,11 +41,11 @@ function readAsyncEvaluator(relPath) {
     );
 
     code = code.replace(
-        /\bfunction (evaluate|executeBlock|instantiateClass|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MemberAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is|ClassDeclaration|EnumDeclaration|Swap))\(/g,
+        /\bfunction (evaluate|executeBlock|instantiateClass|invokeGetter|invokeSetter|eval(?:VarDeclar|VarAssign|VarRetype|ListLiteral|IndexAccess|IndexAssign|MemberAssign|MethodCall|TableLiteral|PropertyAssign|If|For|While|DoWhile|Given|ForIn|Throw|Try|Return|Call|Hook|Math|Unary|Logical|Is|ClassDeclaration|InterfaceDeclaration|EnumDeclaration|Swap))\(/g,
         'async function $1('
     );
 
-    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall|instantiateClass|evalClassDeclaration|evalEnumDeclaration|evalSwap)\(/g, 'await $1(');
+    code = code.replace(/(?<!async\s+function\s)\b(evaluate|executeBlock|evalCall|instantiateClass|evalClassDeclaration|evalInterfaceDeclaration|evalEnumDeclaration|evalSwap|invokeGetter|invokeSetter)\(/g, 'await $1(');
     code = code.replace(/\b(caller\.fn|fnObj\.fn)\(/g, 'await $1(');
     code = code.replace(/\bconst baseFn = \(([^)]*)\) => \{/g, 'const baseFn = async ($1) => {');
 
@@ -59,7 +67,7 @@ function readAsyncEvaluator(relPath) {
 
 // Generate self-contained bundle for browser
 const bundleCode = `/**
- * Kuroba — In-Browser Runtime Engine v1.0.7
+ * Kuroba — In-Browser Runtime Engine v1.0.8
  * Zero External Dependencies • Pure Vanilla JavaScript
  */
 (function(global) {
@@ -187,12 +195,82 @@ const bundleCode = `/**
     // =========================================================================
     // 3. RUNTIME NATIVES
     // =========================================================================
+    let prngInstance = null;
+
+    function mulberry32(a) {
+        return function() {
+            let t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function nextRandom() {
+        return prngInstance ? prngInstance() : Math.random();
+    }
+
+    function jsToKurobaValue(json) {
+        if (json === null || json === undefined) return null;
+        if (typeof json === 'boolean' || typeof json === 'number' || typeof json === 'string') {
+            return json;
+        }
+        if (Array.isArray(json)) {
+            return json.map(jsToKurobaValue);
+        }
+        if (typeof json === 'object') {
+            const fields = {};
+            for (const [k, v] of Object.entries(json)) {
+                const val = jsToKurobaValue(v);
+                fields[k] = {
+                    value: val,
+                    type: getType(val),
+                    isNullable: true
+                };
+            }
+            return { kind: 'Table', fields };
+        }
+        return json;
+    }
+
+    function kurobaValueToJs(val) {
+        if (val === null || val === undefined) return null;
+        if (typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string') {
+            return val;
+        }
+        if (Array.isArray(val)) {
+            return val.map(kurobaValueToJs);
+        }
+        if (val && typeof val === 'object') {
+            if (val.kind === 'List' || val.kind === 'Stack' || val.kind === 'Queue') {
+                return val.items.map(kurobaValueToJs);
+            }
+            if (val.kind === 'Table') {
+                const obj = {};
+                for (const [k, fieldDef] of Object.entries(val.fields)) {
+                    obj[k] = kurobaValueToJs(fieldDef.value);
+                }
+                return obj;
+            }
+            if (val.kind === 'Enum') {
+                return val.name;
+            }
+        }
+        return val;
+    }
+
     const natives = {
         random: (...args) => {
-            if (args.length === 0) return Math.random();
-            if (args.length === 1) return Math.floor(Math.random() * Math.floor(args[0])) + 1;
-            const min = Math.ceil(args[0]), max = Math.floor(args[1]);
-            return Math.floor(Math.random() * (max - min + 1)) + min;
+            if (args.length === 0) return nextRandom();
+            if (args.length === 1) {
+                const max = Math.floor(args[0]);
+                return Math.floor(nextRandom() * max) + 1;
+            }
+            if (args.length >= 2) {
+                const min = Math.ceil(args[0]);
+                const max = Math.floor(args[1]);
+                return Math.floor(nextRandom() * (max - min + 1)) + min;
+            }
         },
         sqrt: (x) => Math.sqrt(x),
         pow: (b, e) => Math.pow(b, e),
@@ -285,7 +363,290 @@ const bundleCode = `/**
                 return true;
             }
             return false;
-        }
+        },
+        random_seed: (seed) => {
+            prngInstance = mulberry32(Math.floor(seed));
+            return null;
+        },
+        random_float: (...args) => {
+            if (args.length === 0) return nextRandom();
+            if (args.length === 1) return nextRandom() * args[0];
+            const min = args[0], max = args[1];
+            return min + nextRandom() * (max - min);
+        },
+        random_int: (...args) => {
+            if (args.length === 0) return Math.floor(nextRandom() * 100);
+            if (args.length === 1) return Math.floor(nextRandom() * args[0]) + 1;
+            const min = Math.ceil(args[0]);
+            const max = Math.floor(args[1]);
+            return Math.floor(nextRandom() * (max - min + 1)) + min;
+        },
+        random_chance: (prob) => nextRandom() < (typeof prob === 'number' ? prob : 0.5),
+        random_uuid: () => {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = Math.floor(nextRandom() * 16);
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        },
+        random_token: (len = 16) => {
+            const count = typeof len === 'number' ? len : 16;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let res = '';
+            for (let i = 0; i < count; i++) {
+                res += chars[Math.floor(nextRandom() * chars.length)];
+            }
+            return res;
+        },
+        json_parse: (str) => {
+            if (typeof str !== 'string') {
+                printErr({
+                    eName: 'TypeError',
+                    eContext: "Expected String argument in Json.parse(), but received '" + getType(str) + "'."
+                });
+            }
+            try {
+                return jsToKurobaValue(JSON.parse(str));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to parse JSON string: " + e.message
+                });
+            }
+        },
+        json_stringify: (val, indent = 0) => {
+            try {
+                const jsVal = kurobaValueToJs(val);
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : undefined;
+                return JSON.stringify(jsVal, null, spaces);
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to stringify value to JSON: " + e.message
+                });
+            }
+        },
+        json_is_valid: (str) => {
+            if (typeof str !== 'string') return false;
+            try {
+                JSON.parse(str);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        json_read: (filePath) => {
+            const p = String(filePath);
+            if (!(p in virtualFS)) {
+                printErr({
+                    eName: 'IOError',
+                    eContext: "File not found in Json.read(): '" + p + "'."
+                });
+            }
+            try {
+                return jsToKurobaValue(JSON.parse(virtualFS[p]));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to read/parse JSON file '" + p + "': " + e.message
+                });
+            }
+        },
+        json_write: (filePath, val, indent = 4) => {
+            try {
+                const jsVal = kurobaValueToJs(val);
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : undefined;
+                virtualFS[String(filePath)] = JSON.stringify(jsVal, null, spaces);
+                persistVirtualFS();
+                return true;
+            } catch (e) {
+                printErr({
+                    eName: 'IOError',
+                    eContext: "Failed to write JSON file '" + filePath + "': " + e.message
+                });
+            }
+        },
+        json_minify: (str) => {
+            try {
+                return JSON.stringify(JSON.parse(str));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to minify JSON: " + e.message
+                });
+            }
+        },
+        json_format: (str, indent = 4) => {
+            try {
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : 4;
+                return JSON.stringify(JSON.parse(str), null, spaces);
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to format JSON: " + e.message
+                });
+            }
+        },
+        path_sep: () => '/',
+        path_delimiter: () => ':',
+        path_join: (...args) => {
+            const parts = args.filter(a => typeof a === 'string');
+            if (parts.length === 0) return '.';
+            const joined = parts.join('/');
+            const segments = joined.split(/[\\/\\\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0 && res[res.length - 1] !== '..') res.pop();
+                    else res.push('..');
+                } else {
+                    res.push(s);
+                }
+            }
+            const prefix = joined.startsWith('/') ? '/' : '';
+            return prefix + (res.join('/') || (prefix ? '' : '.'));
+        },
+        path_resolve: (...args) => {
+            const parts = args.filter(a => typeof a === 'string');
+            const joined = '/' + parts.join('/');
+            const segments = joined.split(/[\\/\\\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0) res.pop();
+                } else {
+                    res.push(s);
+                }
+            }
+            return '/' + res.join('/');
+        },
+        path_normalize: (p) => {
+            if (typeof p !== 'string') return '';
+            const isAbs = p.startsWith('/') || p.startsWith('\\\\');
+            const segments = p.split(/[\\/\\\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0 && res[res.length - 1] !== '..') res.pop();
+                    else if (!isAbs) res.push('..');
+                } else {
+                    res.push(s);
+                }
+            }
+            return (isAbs ? '/' : '') + (res.join('/') || (isAbs ? '' : '.'));
+        },
+        path_dirname: (p) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\\\/g, '/').replace(/[/]+$/, '');
+            const lastIdx = normalized.lastIndexOf('/');
+            if (lastIdx === -1) return '.';
+            if (lastIdx === 0) return '/';
+            return normalized.slice(0, lastIdx);
+        },
+        path_basename: (p, ext) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\\\/g, '/').replace(/[/]+$/, '');
+            const lastIdx = normalized.lastIndexOf('/');
+            let base = lastIdx === -1 ? normalized : normalized.slice(lastIdx + 1);
+            if (typeof ext === 'string' && base.endsWith(ext)) {
+                base = base.slice(0, base.length - ext.length);
+            }
+            return base;
+        },
+        path_extname: (p) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\\\/g, '/');
+            const base = normalized.slice(normalized.lastIndexOf('/') + 1);
+            const dotIdx = base.lastIndexOf('.');
+            if (dotIdx <= 0) return '';
+            return base.slice(dotIdx);
+        },
+        path_is_absolute: (p) => {
+            if (typeof p !== 'string') return false;
+            return p.startsWith('/') || /^[a-zA-Z]:[\\\\\\/]/.test(p);
+        },
+        path_relative: (from, to) => {
+            if (typeof from !== 'string' || typeof to !== 'string') return '';
+            const fromParts = from.split(/[\\/\\\\]+/).filter(Boolean);
+            const toParts = to.split(/[\\/\\\\]+/).filter(Boolean);
+            let common = 0;
+            while (common < fromParts.length && common < toParts.length && fromParts[common] === toParts[common]) {
+                common++;
+            }
+            const ups = new Array(fromParts.length - common).fill('..');
+            const downs = toParts.slice(common);
+            return ups.concat(downs).join('/') || '.';
+        },
+        path_parse: (p) => {
+            if (typeof p !== 'string') return jsToKurobaValue({ root: '', dir: '', base: '', ext: '', name: '' });
+            const isAbs = p.startsWith('/') || /^[a-zA-Z]:[\\\\\\/]/.test(p);
+            const root = isAbs ? (p.match(/^[a-zA-Z]:[\\\\\\/]/) ? p.match(/^[a-zA-Z]:[\\\\\\/]/)[0] : '/') : '';
+            const normalized = p.replace(/\\\\/g, '/').replace(/[/]+$/, '');
+            const lastSlash = normalized.lastIndexOf('/');
+            const dir = lastSlash === -1 ? '' : (lastSlash === 0 ? '/' : normalized.slice(0, lastSlash));
+            const base = lastSlash === -1 ? normalized : normalized.slice(lastSlash + 1);
+            const dotIdx = base.lastIndexOf('.');
+            const ext = dotIdx <= 0 ? '' : base.slice(dotIdx);
+            const name = dotIdx <= 0 ? base : base.slice(0, dotIdx);
+            return jsToKurobaValue({ root, dir, base, ext, name });
+        },
+        path_format: (tableObj) => {
+            const jsObj = kurobaValueToJs(tableObj);
+            if (!jsObj || typeof jsObj !== 'object') return '';
+            const dir = jsObj.dir || jsObj.root || '';
+            const base = jsObj.base || ((jsObj.name || '') + (jsObj.ext || ''));
+            if (!dir) return base;
+            return dir.endsWith('/') ? dir + base : dir + '/' + base;
+        },
+        // --- StdE.Term (Browser Sandbox) ---
+        term_red: (s) => '\\x1b[31m' + s + '\\x1b[39m',
+        term_green: (s) => '\\x1b[32m' + s + '\\x1b[39m',
+        term_yellow: (s) => '\\x1b[33m' + s + '\\x1b[39m',
+        term_blue: (s) => '\\x1b[34m' + s + '\\x1b[39m',
+        term_magenta: (s) => '\\x1b[35m' + s + '\\x1b[39m',
+        term_cyan: (s) => '\\x1b[36m' + s + '\\x1b[39m',
+        term_white: (s) => '\\x1b[37m' + s + '\\x1b[39m',
+        term_gray: (s) => '\\x1b[90m' + s + '\\x1b[39m',
+        term_bold: (s) => '\\x1b[1m' + s + '\\x1b[22m',
+        term_dim: (s) => '\\x1b[2m' + s + '\\x1b[22m',
+        term_italic: (s) => '\\x1b[3m' + s + '\\x1b[23m',
+        term_underline: (s) => '\\x1b[4m' + s + '\\x1b[24m',
+        term_inverse: (s) => '\\x1b[7m' + s + '\\x1b[27m',
+        term_reset: (s) => '\\x1b[0m' + s + '\\x1b[0m',
+        term_bg_red: (s) => '\\x1b[41m' + s + '\\x1b[49m',
+        term_bg_green: (s) => '\\x1b[42m' + s + '\\x1b[49m',
+        term_bg_yellow: (s) => '\\x1b[43m' + s + '\\x1b[49m',
+        term_bg_blue: (s) => '\\x1b[44m' + s + '\\x1b[49m',
+        term_bg_magenta: (s) => '\\x1b[45m' + s + '\\x1b[49m',
+        term_bg_cyan: (s) => '\\x1b[46m' + s + '\\x1b[49m',
+        term_bg_white: (s) => '\\x1b[47m' + s + '\\x1b[49m',
+        term_clear: () => { activeClearHandler(); return true; },
+        term_cursor_to: () => true,
+        term_cursor_up: () => true,
+        term_cursor_down: () => true,
+        term_cursor_right: () => true,
+        term_cursor_left: () => true,
+        term_cursor_hide: () => true,
+        term_cursor_show: () => true,
+        term_width: () => 80,
+        term_height: () => 24,
+        term_is_tty: () => false,
+
+        // --- StdE.Process (Browser Sandbox) ---
+        process_exec: (command) => jsToKurobaValue({ code: 0, stdout: 'Simulated output in browser for: ' + command, stderr: '', ok: true }),
+        process_run: (binary, argsList = []) => jsToKurobaValue({ code: 0, stdout: 'Simulated execution in browser: ' + binary, stderr: '', ok: true }),
+        process_get_env: (key, defaultVal = null) => defaultVal,
+        process_set_env: () => true,
+        process_env_table: () => jsToKurobaValue({ PLATFORM: 'web', USER: 'kuroba-guest' }),
+        process_cwd: () => '/',
+        process_chdir: () => true,
+        process_exit: (code = 0) => { console.log('Process exited with code ' + code); },
+        process_pid: () => 1,
+        process_platform: () => 'web',
+        process_arch: () => 'wasm',
+        process_uptime: () => (performance.now() / 1000)
     };
 
     // =========================================================================
@@ -399,7 +760,7 @@ const bundleCode = `/**
     async function discoverNamespaceModules(pkgName) {
         const discovered = {};
 
-        if (pkgName === 'Std') {
+        if (pkgName === 'Std' || pkgName === 'StdE') {
             for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
                 const ast = parse(tokenize(source));
                 const topImports = ast.body.filter(s => s.type === 'ImportStatement');
@@ -477,7 +838,7 @@ const bundleCode = `/**
             for (const [modName, entry] of Object.entries(modulesToBind)) {
                 if (entry.isRoot) {
                     for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                        if (fieldName !== 'args' && fieldName !== 'Std') {
+                        if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                             env.values[fieldName] = {
                                 value: fieldDef.value,
                                 type: fieldDef.type,
@@ -511,7 +872,7 @@ const bundleCode = `/**
         for (const [modName, entry] of Object.entries(modulesToBind)) {
             if (entry.isRoot) {
                 for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                    if (fieldName !== 'args' && fieldName !== 'Std') {
+                    if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                         pkgTable.fields[fieldName] = fieldDef;
                     }
                 }
@@ -540,7 +901,7 @@ const bundleCode = `/**
 
     // Expose Kuroba API on global window
     global.Kuroba = {
-        version: '1.0.7',
+        version: '1.0.8',
         run: async function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });

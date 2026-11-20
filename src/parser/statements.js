@@ -80,6 +80,7 @@ class ParserStatements extends ParserControl {
         if (this.match('HOOK'))     return this.parseHookStatement();
         if (this.match('TRY'))      return this.parseTryStatement();
         if (this.match('CLASS'))    return this.parseClassDeclaration();
+        if (this.match('INTERFACE'))return this.parseInterfaceDeclaration();
         if (this.match('ENUM'))     return this.parseEnumDeclaration();
         
         if (this.match('IVAR', 'ICONST')) {
@@ -151,18 +152,41 @@ class ParserStatements extends ParserControl {
                         superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
                     }
 
+                    let interfaces = [];
+                    if (this.match('AS')) {
+                        while (true) {
+                            interfaces.push(this.parseDottedIdentifier(`Expected interface name after 'as' in class '${className}'.`));
+                            if (!this.match('COMMA')) break;
+                        }
+                    }
+
+                    if (this.check('FROM')) {
+                        let tok = this.peek();
+                        printErr({
+                            eName: 'SyntaxError',
+                            eContext: `'from' must be placed before 'as' in class '${className}' (e.g. '~class ${className} from Super as Interface').`,
+                            eLine: tok ? tok.line : null,
+                            eCol: tok ? tok.col : null
+                        });
+                    }
+
                     this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
-                    let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
+                    let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
 
                     let classDecl = {
                         type: 'ClassDeclaration',
                         name: className,
                         superClass,
+                        interfaces,
                         fields,
                         methods,
                         sharedFields,
                         sharedMethods,
+                        getters,
+                        setters,
+                        sharedGetters,
+                        sharedSetters,
                         line: classTok.line,
                         col: classTok.col
                     };
@@ -174,6 +198,21 @@ class ParserStatements extends ParserControl {
                         isClassModule: true,
                         classDecl,
                         body: [classDecl],
+                        line: startToken.line,
+                        col: startToken.col
+                    };
+                }
+
+                if (this.match('INTERFACE')) {
+                    let ifaceDecl = this.parseInterfaceDeclaration();
+                    modName = ifaceDecl.name;
+                    return {
+                        type: 'NamespaceStatement',
+                        namespace: nsName,
+                        module: modName,
+                        isInterfaceModule: true,
+                        interfaceDecl: ifaceDecl,
+                        body: [ifaceDecl],
                         line: startToken.line,
                         col: startToken.col
                     };
@@ -323,6 +362,10 @@ class ParserStatements extends ParserControl {
         let methods = [];
         let sharedFields = [];
         let sharedMethods = [];
+        let getters = [];
+        let setters = [];
+        let sharedGetters = [];
+        let sharedSetters = [];
 
         while (!this.check('END') && !this.isAtEnd()) {
             let isShared = false;
@@ -343,6 +386,39 @@ class ParserStatements extends ParserControl {
                                 });
                             }
                             innerAccess = 'private';
+                        } else if (this.match('PROTECTED')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared protected ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'protected';
+                        } else if (this.match('ISOLATED')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared isolated ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'isolated';
+                        } else if (this.match('EXCLUSIVE')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared exclusive ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'exclusive';
                         } else if (this.match('PUBLIC')) {
                             if (this.check('SHARED')) {
                                 let tok = this.peek();
@@ -354,6 +430,52 @@ class ParserStatements extends ParserControl {
                                 });
                             }
                             innerAccess = 'public';
+                        } else if (this.match('GET')) {
+                            let propToken = this.consume('IDENTIFIER', "Expected property name after 'get'.");
+                            this.consume('THEN', `Expected 'then' after 'get ${propToken.value}'.`);
+
+                            let body = [];
+                            while (!this.check('END') && !this.isAtEnd()) {
+                                body.push(this.parseStatement());
+                            }
+
+                            this.consume('END', `Expected 'end' to close 'get ${propToken.value}' block.`);
+
+                            const targetGetters = isShared ? sharedGetters : getters;
+                            targetGetters.push({
+                                type: 'GetterDeclaration',
+                                name: propToken.value,
+                                body,
+                                access,
+                                isShared,
+                                line: propToken.line,
+                                col: propToken.col
+                            });
+                        } else if (this.match('SET')) {
+                            let propToken = this.consume('IDENTIFIER', "Expected property name after 'set'.");
+                            this.consume('LPAREN', `Expected '(' after 'set ${propToken.value}'.`);
+                            let paramToken = this.consume('IDENTIFIER', `Expected parameter name in 'set ${propToken.value}(...)'.`);
+                            this.consume('RPAREN', `Expected ')' after parameter in 'set ${propToken.value}'.`);
+                            this.consume('THEN', `Expected 'then' after 'set ${propToken.value}(${paramToken.value})'.`);
+
+                            let body = [];
+                            while (!this.check('END') && !this.isAtEnd()) {
+                                body.push(this.parseStatement());
+                            }
+
+                            this.consume('END', `Expected 'end' to close 'set ${propToken.value}' block.`);
+
+                            const targetSetters = isShared ? sharedSetters : setters;
+                            targetSetters.push({
+                                type: 'SetterDeclaration',
+                                name: propToken.value,
+                                param: paramToken.value,
+                                body,
+                                access,
+                                isShared,
+                                line: propToken.line,
+                                col: propToken.col
+                            });
                         }
 
                         if (this.match('IVAR', 'ICONST')) {
@@ -385,6 +507,12 @@ class ParserStatements extends ParserControl {
                     isShared = true;
                     if (this.match('PRIVATE')) {
                         access = 'private';
+                    } else if (this.match('PROTECTED')) {
+                        access = 'protected';
+                    } else if (this.match('ISOLATED')) {
+                        access = 'isolated';
+                    } else if (this.match('EXCLUSIVE')) {
+                        access = 'exclusive';
                     } else if (this.match('PUBLIC')) {
                         access = 'public';
                     }
@@ -400,6 +528,39 @@ class ParserStatements extends ParserControl {
                     });
                 }
                 access = 'private';
+            } else if (this.match('PROTECTED')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared protected ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'protected';
+            } else if (this.match('ISOLATED')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared isolated ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'isolated';
+            } else if (this.match('EXCLUSIVE')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared exclusive ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'exclusive';
             } else if (this.match('PUBLIC')) {
                 if (this.check('SHARED')) {
                     let tok = this.peek();
@@ -428,6 +589,46 @@ class ParserStatements extends ParserControl {
                 let method = this.parseFunctionDeclaration(false);
                 const targetMethods = isShared ? sharedMethods : methods;
                 targetMethods.push({ ...method, access, isShared });
+            } else if (this.match('GET')) {
+                let propToken = this.consume('IDENTIFIER', "Expected property name after 'get'.");
+                this.consume('THEN', `Expected 'then' after 'get ${propToken.value}'.`);
+                let body = [];
+                while (!this.check('END') && !this.isAtEnd()) {
+                    body.push(this.parseStatement());
+                }
+                this.consume('END', `Expected 'end' to close 'get ${propToken.value}' block.`);
+                const targetGetters = isShared ? sharedGetters : getters;
+                targetGetters.push({
+                    type: 'GetterDeclaration',
+                    name: propToken.value,
+                    body,
+                    access,
+                    isShared,
+                    line: propToken.line,
+                    col: propToken.col
+                });
+            } else if (this.match('SET')) {
+                let propToken = this.consume('IDENTIFIER', "Expected property name after 'set'.");
+                this.consume('LPAREN', `Expected '(' after 'set ${propToken.value}'.`);
+                let paramToken = this.consume('IDENTIFIER', `Expected parameter name in 'set ${propToken.value}(...)'.`);
+                this.consume('RPAREN', `Expected ')' after parameter in 'set ${propToken.value}'.`);
+                this.consume('THEN', `Expected 'then' after 'set ${propToken.value}(${paramToken.value})'.`);
+                let body = [];
+                while (!this.check('END') && !this.isAtEnd()) {
+                    body.push(this.parseStatement());
+                }
+                this.consume('END', `Expected 'end' to close 'set ${propToken.value}' block.`);
+                const targetSetters = isShared ? sharedSetters : setters;
+                targetSetters.push({
+                    type: 'SetterDeclaration',
+                    name: propToken.value,
+                    param: paramToken.value,
+                    body,
+                    access,
+                    isShared,
+                    line: propToken.line,
+                    col: propToken.col
+                });
             } else {
                 let tok = this.peek();
                 printErr({
@@ -441,7 +642,7 @@ class ParserStatements extends ParserControl {
 
         this.consume('END', `Expected 'end' to close class '${className}' block.`);
 
-        return { fields, methods, sharedFields, sharedMethods };
+        return { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters };
     }
 
     parseClassDeclaration() {
@@ -453,18 +654,126 @@ class ParserStatements extends ParserControl {
             superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
         }
 
+        let interfaces = [];
+        if (this.match('AS')) {
+            while (true) {
+                interfaces.push(this.parseDottedIdentifier(`Expected interface name after 'as' in class '${className}'.`));
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        if (this.check('FROM')) {
+            let tok = this.peek();
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `'from' must be placed before 'as' in class '${className}' (e.g. 'class ${className} from Super as Interface').`,
+                eLine: tok ? tok.line : null,
+                eCol: tok ? tok.col : null
+            });
+        }
+
         this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
-        let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
-
+        let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
         return {
             type: 'ClassDeclaration',
             name: className,
             superClass,
+            interfaces,
             fields,
             methods,
             sharedFields,
             sharedMethods,
+            getters,
+            setters,
+            sharedGetters,
+            sharedSetters,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
+    parseInterfaceDeclaration() {
+        let startToken = this.previous();
+        let interfaceName = this.consume('IDENTIFIER', "Expected interface name after 'interface'.").value;
+
+        let superInterfaces = [];
+        if (this.match('FROM')) {
+            while (true) {
+                superInterfaces.push(this.parseDottedIdentifier(`Expected super-interface name after 'from' in interface '${interfaceName}'.`));
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        this.consume('THEN', `Expected 'then' after interface declaration '${interfaceName}'.`);
+
+        let methods = [];
+        let getters = [];
+        let setters = [];
+        let fields = [];
+
+        while (!this.check('END') && !this.isAtEnd()) {
+            if (this.match('FUNCTION')) {
+                let funcTok = this.previous();
+                let funcName = this.consume('IDENTIFIER', `Expected method name in interface '${interfaceName}'.`).value;
+                this.consume('LPAREN', `Expected '(' after method name '${funcName}' in interface '${interfaceName}'.`);
+                let params = this.parseParameterList();
+                this.consume('RPAREN', `Expected ')' after parameters for '${funcName}' in interface '${interfaceName}'.`);
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface method '${funcName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after method signature '${funcName}' in interface '${interfaceName}'.`);
+                }
+                methods.push({ name: funcName, params, line: funcTok.line, col: funcTok.col });
+            } else if (this.match('GET')) {
+                let getTok = this.previous();
+                let propName = this.consume('IDENTIFIER', `Expected property name after 'get' in interface '${interfaceName}'.`).value;
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface getter '${propName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after getter signature '${propName}' in interface '${interfaceName}'.`);
+                }
+                getters.push({ name: propName, line: getTok.line, col: getTok.col });
+            } else if (this.match('SET')) {
+                let setTok = this.previous();
+                let propName = this.consume('IDENTIFIER', `Expected property name after 'set' in interface '${interfaceName}'.`).value;
+                this.consume('LPAREN', `Expected '(' after 'set' in interface '${interfaceName}'.`);
+                this.match('IVAR');
+                let paramName = this.consume('IDENTIFIER', `Expected parameter name in setter '${propName}' in interface '${interfaceName}'.`).value;
+                this.consume('RPAREN', `Expected ')' after parameter in setter '${propName}'.`);
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface setter '${propName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after setter signature '${propName}' in interface '${interfaceName}'.`);
+                }
+                setters.push({ name: propName, param: paramName, line: setTok.line, col: setTok.col });
+            } else if (this.match('IVAR', 'ICONST')) {
+                let fieldTok = this.previous();
+                let isConst = fieldTok.type === 'ICONST';
+                let fieldName = this.consume('IDENTIFIER', `Expected field name in interface '${interfaceName}'.`).value;
+                this.consume('SEMICOLON', `Expected ';' after field '${fieldName}' in interface '${interfaceName}'.`);
+                fields.push({ name: fieldName, isConst, line: fieldTok.line, col: fieldTok.col });
+            } else {
+                let tok = this.peek();
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Unexpected token '${tok ? tok.value : 'EOF'}' inside interface '${interfaceName}'. Expected method, getter, setter, or field declaration.`,
+                    eLine: tok ? tok.line : null,
+                    eCol: tok ? tok.col : null
+                });
+            }
+        }
+
+        this.consume('END', `Expected 'end' to close interface '${interfaceName}' block.`);
+
+        return {
+            type: 'InterfaceDeclaration',
+            name: interfaceName,
+            superInterfaces,
+            methods,
+            getters,
+            setters,
+            fields,
             line: startToken.line,
             col: startToken.col
         };

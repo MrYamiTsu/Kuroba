@@ -121,6 +121,36 @@ for (const filePath of files) {
                                     }
                                 }
                             };
+                        } else if (stmt.isInterfaceModule) {
+                            const nsScope = createScope();
+                            for (const [name, fn] of Object.entries(natives)) {
+                                nsScope.values[`__native_${name}`] = {
+                                    value: { kind: 'Function', isNative: true, fn },
+                                    type: 'Function',
+                                    isConst: true,
+                                    isNullable: false
+                                };
+                            }
+                            for (const imp of topImports) {
+                                evaluate(imp, nsScope);
+                            }
+                            const ifaceObj = evaluate(stmt.interfaceDecl, nsScope);
+                            moduleCache[cacheKey] = {
+                                isRoot: false,
+                                isInterfaceModule: true,
+                                ifaceObj,
+                                table: {
+                                    kind: 'Table',
+                                    fields: {
+                                        [modName]: {
+                                            value: ifaceObj,
+                                            type: 'Interface',
+                                            isConst: true,
+                                            isNullable: false
+                                        }
+                                    }
+                                }
+                            };
                         } else {
                             moduleCache[cacheKey] = {
                                 isRoot: !stmt.module,
@@ -152,6 +182,10 @@ function evalImport(node, env, evaluate) {
     if (node.package === 'Std') {
         const stdLibDir = path.join(__dirname, '../../lib/std');
         Object.assign(availableModules, discoverNamespaceModules('Std', stdLibDir, evaluate));
+    }
+    if (node.package === 'StdE') {
+        const stdELibDir = path.join(__dirname, '../../lib/stde');
+        Object.assign(availableModules, discoverNamespaceModules('StdE', stdELibDir, evaluate));
     }
 
     const { baseDir, entryFilePath } = getProjectContext();
@@ -193,7 +227,7 @@ function evalImport(node, env, evaluate) {
                 };
             } else if (entry.isRoot) {
                 for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                    if (fieldName !== 'args' && fieldName !== 'Std') {
+                    if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                         env.values[fieldName] = {
                             value: fieldDef.value,
                             type: fieldDef.type,
@@ -234,7 +268,7 @@ function evalImport(node, env, evaluate) {
             };
         } else if (entry.isRoot) {
             for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                if (fieldName !== 'args' && fieldName !== 'Std') {
+                if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                     env.values[targetNamespace].value.fields[fieldName] = fieldDef;
                 }
             }

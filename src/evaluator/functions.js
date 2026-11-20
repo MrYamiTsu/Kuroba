@@ -45,6 +45,14 @@ function evalCall(node, env, evaluate) {
 
     let caller = evaluate(node.caller, env);
     
+    if (caller && caller.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot instantiate or call interface '${caller.name}'.`,
+            eLine: node.line
+        });
+    }
+
     if (caller && caller.kind === 'Class') {
         const { instantiateClass } = require('./classes');
         return instantiateClass(caller, node.args, env, evaluate);
@@ -223,7 +231,16 @@ function evalHook(node, env, evaluate) {
         }
 
         if (container && container.kind === 'Table') {
-            if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
+            if (container.isInstance && container.memberAccess) {
+                const acc = container.memberAccess.get(key);
+                if (acc === 'private' || acc === 'isolated') {
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot hook ${acc} method '${key}' of class '${container.className}'.`,
+                        eLine: node.line
+                    });
+                }
+            } else if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
                 printErr({
                     eName: 'TypeError',
                     eContext: `Cannot hook private method '${key}' of class '${container.className}'.`,

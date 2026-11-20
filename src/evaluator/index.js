@@ -8,7 +8,7 @@ const { evalPaste, evalCopy, evalClear, evalExit } = require('./io');
 const { evalMath, evalUnary, evalLogical, evalIs } = require('./operations');
 const { evalFunctionDeclaration, evalReturn, evalCall, evalHook } = require('./functions');
 const { evalImport } = require('./packages');
-const { evalClassDeclaration } = require('./classes');
+const { evalClassDeclaration, evalInterfaceDeclaration } = require('./classes');
 const { evalEnumDeclaration } = require('./enums');
 
 function evaluate(node, env = createScope()) {
@@ -38,6 +38,26 @@ function evaluate(node, env = createScope()) {
                     isNullable: false
                 };
                 return classObj;
+            }
+            if (node.isInterfaceModule) {
+                const ifaceObj = evalInterfaceDeclaration(node.interfaceDecl, env, false);
+                if (!env.values[node.namespace]) {
+                    env.values[node.namespace] = {
+                        value: { kind: 'Table', fields: {} },
+                        type: 'Table',
+                        isConst: true,
+                        isNullable: false
+                    };
+                }
+                const nsTable = env.values[node.namespace].value;
+                if (!nsTable.fields) nsTable.fields = {};
+                nsTable.fields[node.module] = {
+                    value: ifaceObj,
+                    type: 'Interface',
+                    isConst: true,
+                    isNullable: false
+                };
+                return ifaceObj;
             }
             for (const stmt of node.body) {
                 let res = evaluate(stmt, env);
@@ -95,6 +115,7 @@ function evaluate(node, env = createScope()) {
         case 'HookStatement':       return evalHook(node, env, evaluate);
         case 'ImportStatement':     return evalImport(node, env, evaluate);
         case 'ClassDeclaration':    return evalClassDeclaration(node, env);
+        case 'InterfaceDeclaration':return evalInterfaceDeclaration(node, env);
         case 'EnumDeclaration':     return evalEnumDeclaration(node, env, evaluate);
         default:
             printErr({

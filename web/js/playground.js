@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     terminalScreen.innerHTML = `
-      <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.7</div>
+      <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.8</div>
       <div class="term-line sys">Terminal output cleared. Ready for execution.</div>
     `;
     timingBadge.style.display = 'none';
@@ -657,10 +657,10 @@ document.addEventListener('DOMContentLoaded', () => {
   } else if (!workspaceFiles[ENTRY_FILE] || !workspaceFiles[ENTRY_FILE].trim()) {
     workspaceFiles[ENTRY_FILE] = [
       '~~ Welcome to the Kuroba Web Playground!',
-      'import Std ~(Math) alias ~;',
+      'import StdE ~(Random) alias ~;',
       '',
       'ivar hero = "Kenji";',
-      'ivar roll = Math.random(1, 20);',
+      'ivar roll = Random.int(1, 20);',
       '',
       'pasteLn(~"Hello {hero}! You rolled a D20: {roll}");'
     ].join('\n');

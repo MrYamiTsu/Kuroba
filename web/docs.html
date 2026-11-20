@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.7</span>
+      <span class="version-badge">v1.0.8</span>
     </a>
 
     <nav class="main-nav">
@@ -81,6 +81,7 @@
           <div class="docs-group-label"><span>OOP &amp; Modularity</span><span class="docs-group-toggle">▾</span></div>
           <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
           <a href="#classes" class="docs-item-link">Classes &amp; OOP Foundations</a>
+          <a href="#interfaces" class="docs-item-link">Interfaces &amp; Contracts (<code>as</code>)</a>
           <a href="#enums" class="docs-item-link">Native Enumerations (<code>enum</code>)</a>
           <a href="#namespaces" class="docs-item-link">Namespaces &amp; Symbol Discovery</a>
         </div>
@@ -91,14 +92,23 @@
         </div>
       </div>
 
-      <!-- Scope 2: Dedicated Standard Libraries Reference (4 Modules) -->
+      <!-- Scope 2: Dedicated Standard Libraries Reference (6 Modules) -->
       <div class="docs-sidebar-nav-scope docs-scope-hidden" id="scope-nav-libraries">
         <div class="docs-group" data-group="std-core">
-          <div class="docs-group-label"><span>Standard Library (<code>Std</code>)</span><span class="docs-group-toggle">▾</span></div>
+          <div class="docs-group-label"><span>Core Standard Library (<code>Std</code>)</span><span class="docs-group-toggle">▾</span></div>
           <a href="#std-math" class="docs-item-link">Std.Math (Algorithms &amp; Constants)</a>
           <a href="#std-time" class="docs-item-link">Std.Time (Timers &amp; Benchmarking)</a>
           <a href="#std-string" class="docs-item-link">Std.String (Text Processing)</a>
           <a href="#std-io" class="docs-item-link">Std.IO (Filesystem Persistence)</a>
+        </div>
+
+        <div class="docs-group" data-group="stde-ext">
+          <div class="docs-group-label"><span>Extended Library (<code>StdE</code>)</span><span class="docs-group-toggle">▾</span></div>
+          <a href="#stde-random" class="docs-item-link">StdE.Random (PRNG &amp; Gaming)</a>
+          <a href="#stde-json" class="docs-item-link">StdE.Json (Serialization)</a>
+          <a href="#stde-path" class="docs-item-link">StdE.Path (Filesystem Paths)</a>
+          <a href="#stde-term" class="docs-item-link">StdE.Term (Terminal &amp; Colors)</a>
+          <a href="#stde-process" class="docs-item-link">StdE.Process (System &amp; Env)</a>
         </div>
       </div>
     </aside>
@@ -810,8 +820,11 @@ ivar invoice = processPayment(250, 15);</code></pre>
         <h3>1. Class Declaration &amp; Fields</h3>
         <p>A class is declared with <code>class Name then ... end</code>. Inside the class body, you can declare instance fields using <code>ivar</code> or <code>iconst</code>, optionally prefixed with an access modifier:</p>
         <ul>
-          <li><strong><code>public</code> (Default):</strong> Accessible and mutable from both inside and outside the instance. If no access modifier is specified, fields and methods are automatically public.</li>
-          <li><strong><code>private</code>:</strong> Encapsulated member strictly restricted to the class's own methods and constructor. External reads or writes trigger a descriptive <code>[TypeError]</code>.</li>
+          <li><strong><code>public</code> (Default):</strong> Accessible and mutable from both inside and outside the instance, fully inherited across subclasses. If no access modifier is specified, fields and methods are automatically public.</li>
+          <li><strong><code>protected</code>:</strong> Hidden from external consumers, but fully inherited and directly accessible within subclasses (via <code>this.member</code>).</li>
+          <li><strong><code>private</code>:</strong> Encapsulated member strictly restricted to the declaring class's own methods. Subclasses inherit the state in memory, but direct access in subclass methods raises a <code>[TypeError]</code>.</li>
+          <li><strong><code>isolated</code>:</strong> Strictly exclusive and private to the declaring class. Subclasses do not inherit it at all (uninherited and absent from child instances).</li>
+          <li><strong><code>exclusive</code>:</strong> Publicly accessible on instances of the declaring class, but strictly uninherited by child classes (absent from child instances).</li>
         </ul>
 
         <h3>2. Constructors &amp; Direct Instantiation</h3>
@@ -1010,6 +1023,86 @@ pasteLn(Player.defaultName());   ~~ "Novice"
 ivar p1 = Player("Kenji");
 ivar p2 = Player("Aoi");
 pasteLn(Player.getCount());     ~~ 2</code></pre>
+
+        <h3>6. Custom Property Accessors (<code>get</code> / <code>set</code>)</h3>
+        <p>Kuroba supports custom property interceptors on class variables. Instead of manual getter and setter methods, you can define declarative <code>get</code> and <code>set</code> blocks that seamlessly intercept member read and write operations:</p>
+        <ul>
+          <li><strong>The <code>value</code> Binding:</strong> Inside both <code>get</code> and <code>set</code>, the special <code>value</code> variable gives direct access to the underlying raw field stored in memory, avoiding infinite recursive loops.</li>
+          <li><strong>Permissive Layering:</strong> If only a <code>get</code> is defined, reading is intercepted while writing updates the underlying variable directly. If only a <code>set</code> is defined, writing is validated while reading retrieves the raw value.</li>
+          <li><strong>Constant Immutability:</strong> Constants (<code>iconst</code>) can have a <code>get</code> accessor, but defining a <code>set</code> on an <code>iconst</code> raises an intentional <code>[SyntaxError]</code>.</li>
+        </ul>
+
+        <pre><code class="language-kuroba">class Character then
+    ivar hp = 100;
+    iconst maxHp = 100;
+
+    ~~ Getter interceptor on maxHp
+    get maxHp then
+        return value;
+    end
+
+    ~~ Setter interceptor with automatic clamping
+    set hp(newVal) then
+        if (newVal &lt; 0) then
+            value = 0;
+        elif (newVal &gt; this.maxHp) then
+            value = this.maxHp;
+        else
+            value = newVal;
+        end
+    end
+
+    function Character(ivar initialHp) then
+        this.hp = initialHp; ~~ Runs through the setter!
+    end
+end
+
+ivar hero = Character(150);
+pasteLn(hero.hp); ~~ 100 (clamped by setter)
+
+hero.hp -= 200;
+pasteLn(hero.hp); ~~ 0 (clamped to zero)</code></pre>
+
+        <h3 id="interfaces">7. Interface Contracts (<code>interface</code> &amp; <code>as</code>)</h3>
+        <p>Interfaces in Kuroba serve as pure contracts. They define the required methods, property accessors (<code>get</code> / <code>set</code>), and fields that an implementing class must provide, without containing any implementation details:</p>
+        <ul>
+          <li><strong>Pure Structural Contracts:</strong> Interfaces cannot be instantiated directly (e.g., <code>IEntity()</code> raises <code>[TypeError]</code>) and cannot have their members accessed directly (<code>IEntity.member</code> raises <code>[TypeError]</code>).</li>
+          <li><strong>Implementation Syntax:</strong> Classes implement interfaces using the <code>as</code> keyword: <code>class Name [from SuperClass] [as Interface1, Interface2] then ... end</code>.</li>
+          <li><strong>Strict Ordering:</strong> When both inheritance and interfaces are used, <code>from</code> must always precede <code>as</code> (e.g. <code>class Dog from Animal as Canine</code>). Writing <code>class Dog as Canine from Animal</code> triggers a strict <code>[SyntaxError]</code>.</li>
+          <li><strong>Visibility Freedom:</strong> The interface guarantees that the member exists with the expected signature. However, the implementing class has complete freedom to define the member's visibility modifier (<code>public</code>, <code>protected</code>, etc.).</li>
+          <li><strong>Interface Inheritance:</strong> Interfaces can extend other interfaces using <code>interface Canine from Mammal then ... end</code>.</li>
+          <li><strong>Runtime Conformance (<code>is</code>):</strong> The <code>is</code> operator evaluates whether an instance conforms to an interface, inspecting direct implementations, superclass implementations, and inherited interfaces: <code>dog is Canine</code>.</li>
+        </ul>
+
+        <pre><code class="language-kuroba">~~ Define pure interface contracts
+interface IMammal then
+    function breathe();
+    get warmBlooded;
+end
+
+interface ICanine from IMammal then
+    function bark();
+end
+
+~~ Implement interface with freedom of member visibility
+class Wolf as ICanine then
+    iconst warmBlooded = TRUE;
+
+    function breathe() then
+        return "inhale / exhale";
+    end
+
+    ~~ Class chooses public or protected visibility
+    function bark() then
+        return "Howl!";
+    end
+end
+
+ivar w = Wolf();
+pasteLn(w.bark());           ~~ "Howl!"
+pasteLn(w is Wolf);          ~~ TRUE
+pasteLn(w is ICanine);       ~~ TRUE
+pasteLn(w is IMammal);       ~~ TRUE (inherited interface)</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -1059,7 +1152,7 @@ end
           <li><strong><code>Main</code> Namespace:</strong> Single entry point for applications. Strictly indivisible (cannot have <code>~Module</code>) and cannot be imported by other files.</li>
           <li><strong>Direct Namespaces:</strong> Declare a self-contained namespace using <code>namespace Utils then ... end</code> and access its exports directly via <code>Utils.helper()</code>.</li>
           <li><strong>Modular Slices:</strong> Split larger packages across multiple files or subfolders with <code>namespace Game ~Combat then ... end</code>, merging into <code>Game.Combat</code>.</li>
-          <li><strong>Built-in Standard Library:</strong> Kuroba ships with the zero-dependency <code>Std</code> package (Core modules: <code>Math</code>, <code>Time</code>, <code>String</code>, <code>IO</code>).</li>
+          <li><strong>Built-in Standard Libraries:</strong> Kuroba ships with two built-in packages: <code>Std</code> (Core modules: <code>Math</code>, <code>Time</code>, <code>String</code>, <code>IO</code>) and <code>StdE</code> (Standard Extended modules: <code>Random</code>, <code>Json</code>).</li>
           <li><strong>Namespace Class Modules:</strong> Declare a class directly as a module of a namespace using <code>namespace Entities ~class Player [from SuperClass] then ... end</code>. When imported, the class is accessible as <code>Entities.Player()</code> or directly as <code>Player()</code> with <code>alias ~</code>.</li>
           <li><strong>Qualified Paths &amp; Typing:</strong> Qualified dotted paths can be used in inheritance (<code>class Warrior from Entities.Player</code>), instance checks (<code>w is Entities.Player</code>), and type annotations (<code>ivar ~Entities.Player p = ...</code>).</li>
           <li><strong>Symbol Discovery &amp; Circular Guard:</strong> Kuroba indexes files by declared symbols (ignoring <code>node_modules</code>, <code>.git</code>, and the entry script) and raises an <code>[ImportError]</code> on circular dependencies.</li>
@@ -1082,14 +1175,20 @@ pasteLn(Math.PI);
 import Std ~(Math, Time, String, IO) alias ~;
 pasteLn(Math.sqrt(16));
 
-~~ 5. Importing your own project files (e.g. utils.krb &amp; sub/combat.krb)
+~~ 5. Standard Extended Library (StdE)
+import StdE ~(Random, Json) alias ~;
+Random.seed(42);
+ivar roll = Random.int(1, 20);
+ivar json = Json.stringify({ level: 10, ready: TRUE });
+
+~~ 6. Importing your own project files (e.g. utils.krb &amp; sub/combat.krb)
 ~~ utils.krb:      namespace Utils then function dbl(ivar n) then return n * 2; end end
 ~~ sub/combat.krb: namespace Game ~Combat then import Utils; function crit(ivar d) then return Utils.dbl(d); end end
 import Utils;
 import Game;
 pasteLn(Game.Combat.crit(10)); ~~ 20
 
-~~ 6. Namespace Class Modules &amp; Qualified Paths
+~~ 7. Namespace Class Modules &amp; Qualified Paths
 ~~ entities/player.krb:
 ~~   namespace Entities ~class Player then
 ~~       ivar name = "Hero";
@@ -1551,6 +1650,492 @@ end</code></pre>
       </section>
 
       <!-- ====================================================================
+           Section : StdE.Random Reference
+           ==================================================================== -->
+      <section id="stde-random">
+        <div class="doc-module-card">
+          <div class="doc-module-header">
+            <span class="doc-module-badge stde">StdE Extended Module</span>
+            <span class="doc-module-import">import StdE ~(Random) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">StdE.Random (Deterministic PRNG &amp; Gaming Engine)</h2>
+          <p class="doc-module-desc">A high-performance stochastic module decoupled from <code>Std.Math</code>, powered by a 32-bit Mulberry32 pseudo-random number generator with full seed reproducibility.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import StdE ~(Random) alias ~;
+
+~~ Seedable PRNG for procedural generation
+Random.seed(42);
+ivar roll = Random.int(1, 20);
+ivar odds = Random.float();
+
+~~ Collection utilities (in-place shuffle via native swap <->)
+ivar deck = ["Fire", "Ice", "Lightning", "Earth"];
+ivar card = Random.item(deck);
+Random.shuffle(deck);
+
+~~ Unique IDs & cryptographic tokens
+ivar id = Random.uuid();
+ivar key = Random.token(16);</code></pre>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Member / Signature</th>
+              <th>Type &amp; Arguments</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Random.seed(s)</code></td>
+              <td><code>(ivar s: Int) -&gt; Null</code></td>
+              <td>Initializes the Mulberry32 PRNG with a deterministic seed integer.</td>
+            </tr>
+            <tr>
+              <td><code>Random.float()</code></td>
+              <td><code>() -&gt; Float</code></td>
+              <td>Returns a pseudo-random floating point number in <code>[0.0, 1.0)</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Random.int(min, max)</code></td>
+              <td><code>(ivar min: Int, ivar max: Int) -&gt; Int</code></td>
+              <td>Returns a random integer inclusive between <code>min</code> and <code>max</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Random.chance(p)</code></td>
+              <td><code>(ivar p: Float) -&gt; Bool</code></td>
+              <td>Returns <code>TRUE</code> with probability <code>p</code> (between <code>0.0</code> and <code>1.0</code>).</td>
+            </tr>
+            <tr>
+              <td><code>Random.item(list)</code></td>
+              <td><code>(ivar list: List) -&gt; Any</code></td>
+              <td>Returns a random element from <code>list</code> (or <code>NULL</code> if empty).</td>
+            </tr>
+            <tr>
+              <td><code>Random.shuffle(list)</code></td>
+              <td><code>(ivar list: List) -&gt; List</code></td>
+              <td>Fisher-Yates in-place shuffle of <code>list</code> using native <code>&lt;-&gt;</code> swap.</td>
+            </tr>
+            <tr>
+              <td><code>Random.uuid()</code></td>
+              <td><code>() -&gt; String</code></td>
+              <td>Generates a standardized RFC4122 v4 UUID string.</td>
+            </tr>
+            <tr>
+              <td><code>Random.token(len)</code></td>
+              <td><code>(ivar len: Int) -&gt; String</code></td>
+              <td>Generates a secure random alphanumeric token string of length <code>len</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : StdE.Json Reference
+           ==================================================================== -->
+      <section id="stde-json">
+        <div class="doc-module-card">
+          <div class="doc-module-header">
+            <span class="doc-module-badge stde">StdE Extended Module</span>
+            <span class="doc-module-import">import StdE ~(Json) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">StdE.Json (Serialization, Storage &amp; Formatting)</h2>
+          <p class="doc-module-desc">Comprehensive JSON parser and serializer with seamless bidirectional translation between Kuroba Tables/Lists and JSON data.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import StdE ~(Json) alias ~;
+
+ivar data = {
+    player: "Kenji",
+    level: 42,
+    inventory: ["Blade", "Potion"]
+};
+
+~~ Serialize to JSON string
+ivar raw = Json.stringify(data);
+pasteLn(Json.isValid(raw)); ~~ TRUE
+
+~~ Format (pretty-print) & Minify
+ivar formatted = Json.format(data, 2);
+ivar minified = Json.minify(formatted);
+
+~~ Filesystem JSON read / write (CLI & Web virtualFS)
+Json.write("save.json", data, 2);
+ivar loaded = Json.read("save.json");
+pasteLn(loaded.player); ~~ "Kenji"</code></pre>
+
+        <table class="syntax-table" style="margin: 1.2rem 0 1.8rem;">
+          <thead>
+            <tr>
+              <th>Member / Signature</th>
+              <th>Type &amp; Arguments</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Json.parse(text)</code></td>
+              <td><code>(ivar text: String) -&gt; Any</code></td>
+              <td>Parses a JSON string into a Kuroba Table, List, or primitive value.</td>
+            </tr>
+            <tr>
+              <td><code>Json.stringify(val)</code></td>
+              <td><code>(ivar val: Any) -&gt; String</code></td>
+              <td>Serializes a Kuroba Table, List, or primitive into a compact JSON string.</td>
+            </tr>
+            <tr>
+              <td><code>Json.isValid(text)</code></td>
+              <td><code>(ivar text: String) -&gt; Bool</code></td>
+              <td>Validates whether <code>text</code> is valid JSON without throwing errors.</td>
+            </tr>
+            <tr>
+              <td><code>Json.format(val, indent)</code></td>
+              <td><code>(ivar val: Any, ivar indent: Int) -&gt; String</code></td>
+              <td>Formats value into pretty-printed JSON string with given indentation spaces.</td>
+            </tr>
+            <tr>
+              <td><code>Json.minify(text)</code></td>
+              <td><code>(ivar text: String) -&gt; String</code></td>
+              <td>Minifies a formatted JSON string by stripping whitespace and newlines.</td>
+            </tr>
+            <tr>
+              <td><code>Json.read(path)</code></td>
+              <td><code>(ivar path: String) -&gt; Any</code></td>
+              <td>Reads a file from disk and parses its contents as JSON.</td>
+            </tr>
+            <tr>
+              <td><code>Json.write(path, val, indent)</code></td>
+              <td><code>(ivar path, ivar val, ivar indent) -&gt; Bool</code></td>
+              <td>Serializes and writes JSON value to <code>path</code> with optional indentation.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : StdE.Path Reference
+           ==================================================================== -->
+      <section id="stde-path">
+        <div class="doc-module-header">
+          <div>
+            <span class="doc-module-badge stde">StdE Extended Module</span>
+            <span class="doc-module-import">import StdE ~(Path) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">StdE.Path (Cross-Platform Path Resolution)</h2>
+          <p class="lead" style="margin-bottom: 0;">Cross-platform path resolution, directory traversal, extension extraction, and structured path table serialization for CLI and native workflows.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import StdE ~(Path) alias ~;
+
+~~ 1. Joining &amp; Resolving Paths
+ivar savePath = Path.join("saves", "slot1", "hero.dat");
+ivar absPath  = Path.resolve("saves", "slot1.dat");
+
+~~ 2. Inspecting Segments
+ivar dir  = Path.dirname("saves/slot1/hero.dat");      ~~ "saves/slot1"
+ivar file = Path.basename("saves/slot1/hero.dat");     ~~ "hero.dat"
+ivar name = Path.basename("saves/slot1/hero.dat", ".dat"); ~~ "hero"
+ivar ext  = Path.extname("saves/slot1/hero.dat");      ~~ ".dat"
+
+~~ 3. Normalization &amp; Relative Paths
+ivar clean = Path.normalize("saves/../saves/slot1/./hero.dat");
+ivar rel   = Path.relative("/game/saves", "/game/saves/slot1/hero.dat");
+
+~~ 4. Parsing into Structured Tables
+ivar info = Path.parse("saves/slot1/hero.dat");
+pasteLn(info.name); ~~ "hero"
+pasteLn(info.ext);  ~~ ".dat"
+pasteLn(info.dir);  ~~ "saves/slot1"
+
+~~ 5. Platform Constants
+pasteLn(Path.sep);       ~~ "\" on Windows, "/" on POSIX/Web
+pasteLn(Path.delimiter); ~~ ";" on Windows, ":" on POSIX/Web</code></pre>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Function / Constant</th>
+              <th>Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Path.sep</code></td>
+              <td><code>String</code></td>
+              <td>Platform-specific path segment separator (<code>\</code> on Windows, <code>/</code> on POSIX/Web).</td>
+            </tr>
+            <tr>
+              <td><code>Path.delimiter</code></td>
+              <td><code>String</code></td>
+              <td>Platform-specific path list delimiter (<code>;</code> on Windows, <code>:</code> on POSIX/Web).</td>
+            </tr>
+            <tr>
+              <td><code>Path.join(...segments)</code></td>
+              <td><code>(ivar ...parts: String) -&gt; String</code></td>
+              <td>Joins all given path segments together using the platform-specific separator.</td>
+            </tr>
+            <tr>
+              <td><code>Path.resolve(...segments)</code></td>
+              <td><code>(ivar ...parts: String) -&gt; String</code></td>
+              <td>Resolves a sequence of paths or path segments into an absolute path.</td>
+            </tr>
+            <tr>
+              <td><code>Path.normalize(path)</code></td>
+              <td><code>(ivar path: String) -&gt; String</code></td>
+              <td>Normalizes the given path, resolving <code>..</code> and <code>.</code> segments.</td>
+            </tr>
+            <tr>
+              <td><code>Path.dirname(path)</code></td>
+              <td><code>(ivar path: String) -&gt; String</code></td>
+              <td>Returns the directory name of a path.</td>
+            </tr>
+            <tr>
+              <td><code>Path.basename(path, [ext])</code></td>
+              <td><code>(ivar path: String, ivar ext?: String) -&gt; String</code></td>
+              <td>Returns the last portion of a path, optionally stripping trailing extension.</td>
+            </tr>
+            <tr>
+              <td><code>Path.extname(path)</code></td>
+              <td><code>(ivar path: String) -&gt; String</code></td>
+              <td>Returns the extension of the path (from the last <code>.</code> to end of string).</td>
+            </tr>
+            <tr>
+              <td><code>Path.isAbsolute(path)</code></td>
+              <td><code>(ivar path: String) -&gt; Bool</code></td>
+              <td>Determines if path is an absolute path.</td>
+            </tr>
+            <tr>
+              <td><code>Path.relative(from, to)</code></td>
+              <td><code>(ivar from: String, ivar to: String) -&gt; String</code></td>
+              <td>Returns the relative path from <code>from</code> to <code>to</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Path.parse(path)</code></td>
+              <td><code>(ivar path: String) -&gt; Table</code></td>
+              <td>Returns a Table containing <code>{ root, dir, base, ext, name }</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Path.format(table)</code></td>
+              <td><code>(ivar table: Table) -&gt; String</code></td>
+              <td>Returns a path string reconstructed from a path Table object.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : StdE.Term Reference
+           ==================================================================== -->
+      <section id="stde-term">
+        <div class="doc-module-header">
+          <div>
+            <span class="doc-module-badge stde">StdE Extended Module</span>
+            <span class="doc-module-import">import StdE ~(Term) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">StdE.Term (Terminal Styling, ANSI Colors &amp; Cursor Control)</h2>
+          <p class="lead" style="margin-bottom: 0;">Rich terminal text formatting, foreground &amp; background ANSI colors, cursor positioning, screen clearing, and terminal dimensions.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import StdE ~(Term) alias ~;
+
+~~ 1. Text Colors &amp; Styles
+pasteLn(Term.green("Operational Status: OK"));
+pasteLn(Term.bold(Term.red("CRITICAL ERROR DETECTED")));
+pasteLn(Term.cyan("Connecting to host..."));
+pasteLn(Term.underline(Term.yellow("Warning: High CPU Usage")));
+
+~~ 2. Background Colors
+pasteLn(Term.bgRed(Term.white(" ALERT ")));
+pasteLn(Term.bgGreen(Term.black(" SUCCESS ")));
+
+~~ 3. Cursor &amp; Screen Controls
+Term.clearScreen();      ~~ Clears screen (alias: Term.cls())
+Term.cursorTo(10, 5);    ~~ Move to col 10, row 5
+Term.cursorHide();        ~~ Hide cursor
+Term.cursorShow();        ~~ Show cursor
+
+~~ 4. Terminal Metadata
+pasteLn("Columns: " + Term.width());
+pasteLn("Rows:    " + Term.height());
+pasteLn("Is TTY:  " + Term.isTTY());</code></pre>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Function / Constant</th>
+              <th>Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Term.red(s)</code>, <code>Term.green(s)</code>, <code>Term.yellow(s)</code>, <code>Term.blue(s)</code>, <code>Term.magenta(s)</code>, <code>Term.cyan(s)</code>, <code>Term.white(s)</code>, <code>Term.gray(s)</code></td>
+              <td><code>(ivar s: String) -&gt; String</code></td>
+              <td>Wraps string in ANSI foreground color escape codes.</td>
+            </tr>
+            <tr>
+              <td><code>Term.bold(s)</code>, <code>Term.dim(s)</code>, <code>Term.italic(s)</code>, <code>Term.underline(s)</code>, <code>Term.inverse(s)</code></td>
+              <td><code>(ivar s: String) -&gt; String</code></td>
+              <td>Applies ANSI typographic style to string.</td>
+            </tr>
+            <tr>
+              <td><code>Term.bgRed(s)</code>, <code>Term.bgGreen(s)</code>, <code>Term.bgYellow(s)</code>, <code>Term.bgBlue(s)</code>, <code>Term.bgMagenta(s)</code>, <code>Term.bgCyan(s)</code>, <code>Term.bgWhite(s)</code></td>
+              <td><code>(ivar s: String) -&gt; String</code></td>
+              <td>Wraps string in ANSI background color escape codes.</td>
+            </tr>
+            <tr>
+              <td><code>Term.clearScreen()</code> / <code>Term.cls()</code></td>
+              <td><code>() -&gt; Bool</code></td>
+              <td>Clears terminal buffer and resets cursor to top-left.</td>
+            </tr>
+            <tr>
+              <td><code>Term.cursorTo(x, y)</code></td>
+              <td><code>(ivar x: Int, ivar y: Int) -&gt; Bool</code></td>
+              <td>Positions terminal cursor at column <code>x</code> and line <code>y</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Term.cursorUp(n)</code>, <code>Term.cursorDown(n)</code>, <code>Term.cursorLeft(n)</code>, <code>Term.cursorRight(n)</code></td>
+              <td><code>(ivar n?: Int) -&gt; Bool</code></td>
+              <td>Moves cursor in specified direction by <code>n</code> cells (default: 1).</td>
+            </tr>
+            <tr>
+              <td><code>Term.width()</code>, <code>Term.height()</code></td>
+              <td><code>() -&gt; Int</code></td>
+              <td>Returns active terminal column width and row height.</td>
+            </tr>
+            <tr>
+              <td><code>Term.isTTY()</code></td>
+              <td><code>() -&gt; Bool</code></td>
+              <td>Returns whether process is running in an interactive TTY stream.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
+           Section : StdE.Process Reference
+           ==================================================================== -->
+      <section id="stde-process">
+        <div class="doc-module-header">
+          <div>
+            <span class="doc-module-badge stde">StdE Extended Module</span>
+            <span class="doc-module-import">import StdE ~(Process) alias ~;</span>
+          </div>
+          <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">StdE.Process (Process Execution, Environment &amp; System Control)</h2>
+          <p class="lead" style="margin-bottom: 0;">Synchronous command execution, child process spawning, environment variables, working directory management, and process lifecycle control.</p>
+        </div>
+
+        <pre><code class="language-kuroba">import StdE ~(Process) alias ~;
+
+~~ 1. System Introspection
+pasteLn("Platform: " + Process.platform); ~~ "win32", "linux", "darwin", "web"
+pasteLn("Arch:     " + Process.arch);     ~~ "x64", "arm64", "wasm"
+pasteLn("PID:      " + Process.pid());    ~~ Process ID
+pasteLn("Uptime:   " + Process.uptime()); ~~ Elapsed seconds
+
+~~ 2. Working Directory
+pasteLn("Current directory: " + Process.cwd());
+Process.chdir("..");
+
+~~ 3. Synchronous Command Execution
+ivar res = Process.exec("git --version");
+if (res.ok) then
+    pasteLn("Git found: " + res.stdout);
+else
+    pasteLn("Git failed: " + res.stderr);
+end
+
+~~ 4. Spawning Executable with Arguments List
+ivar runRes = Process.run("node", ["-v"]);
+pasteLn("Node version: " + runRes.stdout);
+
+~~ 5. Environment Variables
+Process.setEnv("GAME_DIFFICULTY", "HARD");
+pasteLn("Difficulty: " + Process.getEnv("GAME_DIFFICULTY", "NORMAL"));
+
+~~ Access full environment Table
+ivar envTable = Process.env();
+pasteLn("User: " + envTable.USERNAME);
+
+~~ 6. Process Termination
+~~ Process.quit(0);      ~~ Terminate with exit code 0 (alias: Process.terminate)</code></pre>
+
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Function / Constant</th>
+              <th>Signature</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Process.platform</code></td>
+              <td><code>String</code></td>
+              <td>Operating system platform identifier (<code>"win32"</code>, <code>"linux"</code>, <code>"darwin"</code>, <code>"web"</code>).</td>
+            </tr>
+            <tr>
+              <td><code>Process.arch</code></td>
+              <td><code>String</code></td>
+              <td>Operating system CPU architecture (<code>"x64"</code>, <code>"arm64"</code>, <code>"wasm"</code>).</td>
+            </tr>
+            <tr>
+              <td><code>Process.pid()</code></td>
+              <td><code>() -&gt; Int</code></td>
+              <td>Returns current OS process ID.</td>
+            </tr>
+            <tr>
+              <td><code>Process.uptime()</code></td>
+              <td><code>() -&gt; Float</code></td>
+              <td>Returns process execution uptime in seconds.</td>
+            </tr>
+            <tr>
+              <td><code>Process.cwd()</code></td>
+              <td><code>() -&gt; String</code></td>
+              <td>Returns active working directory path.</td>
+            </tr>
+            <tr>
+              <td><code>Process.chdir(dir)</code></td>
+              <td><code>(ivar dir: String) -&gt; Bool</code></td>
+              <td>Changes working directory to <code>dir</code>. Raises <code>[IOError]</code> on failure.</td>
+            </tr>
+            <tr>
+              <td><code>Process.exec(command)</code></td>
+              <td><code>(ivar command: String) -&gt; Table</code></td>
+              <td>Executes shell command synchronously. Returns <code>{ code, stdout, stderr, ok }</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Process.run(binary, [args])</code></td>
+              <td><code>(ivar binary: String, ivar args?: List) -&gt; Table</code></td>
+              <td>Spawns binary with arguments list. Returns <code>{ code, stdout, stderr, ok }</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Process.getEnv(key, [default])</code></td>
+              <td><code>(ivar key: String, ivar default?: Any) -&gt; Any</code></td>
+              <td>Retrieves environment variable value or default if undefined.</td>
+            </tr>
+            <tr>
+              <td><code>Process.setEnv(key, val)</code></td>
+              <td><code>(ivar key: String, ivar val: String) -&gt; Bool</code></td>
+              <td>Sets or updates an environment variable for current process and children.</td>
+            </tr>
+            <tr>
+              <td><code>Process.env()</code></td>
+              <td><code>() -&gt; Table</code></td>
+              <td>Returns snapshot Table of all active environment variables.</td>
+            </tr>
+            <tr>
+              <td><code>Process.quit(code)</code> / <code>Process.terminate(code)</code></td>
+              <td><code>(ivar code?: Int) -&gt; Void</code></td>
+              <td>Terminates current process immediately with specified status code (default: 0).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ====================================================================
            Section : Error Diagnostics
            ==================================================================== -->
       <section id="errors">
@@ -1614,7 +2199,7 @@ end</code></pre>
           <div class="footer-brand-row">
             <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
             <span class="footer-brand-name">Kuroba</span>
-            <span class="version-badge">v1.0.7</span>
+            <span class="version-badge">v1.0.8</span>
           </div>
           <p class="footer-tagline">
             A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
@@ -1676,7 +2261,8 @@ end</code></pre>
       ];
 
       const LIBRARY_SECTIONS = [
-        'std-math', 'std-time', 'std-string', 'std-io'
+        'std-math', 'std-time', 'std-string', 'std-io',
+        'stde-random', 'stde-json', 'stde-path', 'stde-term', 'stde-process'
       ];
 
       const SECTION_TRACKS = {
@@ -1698,7 +2284,12 @@ end</code></pre>
         'std-math': 'std-core',
         'std-time': 'std-core',
         'std-string': 'std-core',
-        'std-io': 'std-core'
+        'std-io': 'std-core',
+        'stde-random': 'stde-ext',
+        'stde-json': 'stde-ext',
+        'stde-path': 'stde-ext',
+        'stde-term': 'stde-ext',
+        'stde-process': 'stde-ext'
       };
 
       const TRACK_LABELS = {
@@ -1706,7 +2297,8 @@ end</code></pre>
         core: 'Language Core & Primitives',
         oop: 'OOP & Modularity',
         errors: 'Diagnostics & Conventions',
-        'std-core': 'Standard Library (Std)'
+        'std-core': 'Core Standard Library (Std)',
+        'stde-ext': 'Extended Library (StdE)'
       };
 
       const btnScopeGuide = document.getElementById('btn-scope-guide');
@@ -1754,7 +2346,8 @@ end</code></pre>
           });
         } else {
           const pills = [
-            { track: 'std-core', label: 'Std Modules (4)' }
+            { track: 'std-core', label: 'Std Core (4)' },
+            { track: 'stde-ext', label: 'StdE Extended (5)' }
           ];
           pills.forEach((p, idx) => {
             const btn = document.createElement('button');
@@ -1787,7 +2380,7 @@ end</code></pre>
         }
 
         if (mobileMenuLabel) {
-          mobileMenuLabel.textContent = scope === 'guide' ? 'Browse Chapters (15)' : 'Browse Modules (4)';
+          mobileMenuLabel.textContent = scope === 'guide' ? 'Browse Chapters (15)' : 'Browse Modules (6)';
         }
 
         renderTrackPills();
@@ -1974,7 +2567,7 @@ end</code></pre>
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'class', 'public', 'private', 'from', 'base', 'orig', 'shared',
+        'class', 'interface', 'as', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared', 'get', 'set',
         'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 
@@ -2071,14 +2664,18 @@ end</code></pre>
         }
 
         const card = document.createElement('div');
-        card.className = 'doc-code-card';
+        card.className = isBash ? 'doc-code-card doc-terminal-card' : 'doc-code-card';
 
         const header = document.createElement('div');
         header.className = 'doc-code-header';
 
         const title = document.createElement('div');
         title.className = 'doc-code-title';
-        title.innerHTML = `<span class="badge-dot"></span><span>${langLabel}</span>`;
+        if (isBash) {
+          title.innerHTML = `<span class="term-dot"></span><span class="term-title">terminal</span>`;
+        } else {
+          title.innerHTML = `<span class="badge-dot"></span><span>${langLabel}</span>`;
+        }
 
         const actions = document.createElement('div');
         actions.className = 'doc-code-actions';
@@ -2167,7 +2764,7 @@ end</code></pre>
           exploreCard.href = '#std-math';
           exploreCard.innerHTML = `
             <span class="docs-nav-sub">Next Realm →</span>
-            <span class="docs-nav-title">Explore Standard Library (Std)</span>
+            <span class="docs-nav-title">Explore Standard Libraries (Std &amp; StdE)</span>
           `;
           exploreCard.addEventListener('click', (e) => {
             e.preventDefault();
@@ -2179,7 +2776,7 @@ end</code></pre>
         sec.appendChild(nav);
       });
 
-      // Build Navigation Cards for Library Sections (4 Modules)
+      // Build Navigation Cards for Library Sections (6 Modules)
       LIBRARY_SECTIONS.forEach((secId, idx) => {
         const sec = sectionById[secId];
         if (!sec) return;

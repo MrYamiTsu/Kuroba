@@ -1,0 +1,18 @@
+~~ ============================================================================
+~~ Kuroba StdE Library: Path
+~~ ============================================================================
+namespace StdE ~Path then
+    iconst sep        = __native_path_sep();
+    iconst delimiter  = __native_path_delimiter();
+    
+    iconst join       = __native_path_join;
+    iconst resolve    = __native_path_resolve;
+    iconst normalize  = __native_path_normalize;
+    iconst dirname    = __native_path_dirname;
+    iconst basename   = __native_path_basename;
+    iconst extname    = __native_path_extname;
+    iconst isAbsolute = __native_path_is_absolute;
+    iconst relative   = __native_path_relative;
+    iconst parse      = __native_path_parse;
+    iconst format     = __native_path_format;
+end

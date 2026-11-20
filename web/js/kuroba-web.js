@@ -1,5 +1,5 @@
 /**
- * Kuroba — In-Browser Runtime Engine v1.0.7
+ * Kuroba — In-Browser Runtime Engine v1.0.8
  * Zero External Dependencies • Pure Vanilla JavaScript
  */
 (function(global) {
@@ -8,9 +8,14 @@
     // Embedded Standard Library Files
     const VIRTUAL_STD_FILES = {
   "io.krb": "~~ ============================================================================\n~~ Kuroba Std Library: IO\n~~ ============================================================================\nnamespace Std ~IO then\n    iconst fileCopy    = __native_ioCopy;\n    iconst filePaste   = __native_ioPaste;\n    iconst filePasteLn = __native_ioPasteLn;\n    iconst fileAppend  = __native_ioAppend;\n    iconst fileExists  = __native_ioExists;\n    iconst fileKill    = __native_ioKill;\nend",
-  "math.krb": "~~ ============================================================================\r\n~~ Kuroba Std Library: Math\r\n~~ ============================================================================\r\nnamespace Std ~Math then\r\n    iconst PI  = 3.141592653589793;\r\n    iconst TAU = 6.283185307179586;\r\n    iconst E   = 2.718281828459045;\r\n\r\n    iconst random = __native_random;\r\n    iconst sqrt   = __native_sqrt;\r\n    iconst pow    = __native_pow;\r\n    iconst sin    = __native_sin;\r\n    iconst cos    = __native_cos;\r\n    iconst tan    = __native_tan;\r\n    iconst asin   = __native_asin;\r\n    iconst acos   = __native_acos;\r\n    iconst atan   = __native_atan;\r\n    iconst atan2  = __native_atan2;\r\n    iconst log    = __native_log;\r\n    iconst log10  = __native_log10;\r\n    iconst exp    = __native_exp;\r\n\r\n    function randomItem(ivar list) then\r\n        if (list.count() == 0) then\r\n            return NULL;\r\n        end\r\n        ivar idx = random(0, list.count() - 1);\r\n        return list[idx];\r\n    end\r\n\r\n    function abs(ivar x) then\r\n        if (x < 0) then\r\n            return 0 - x;\r\n        end\r\n        return x;\r\n    end\r\n\r\n    function min(ivar a, ivar b) then\r\n        if (a < b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function max(ivar a, ivar b) then\r\n        if (a > b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function clamp(ivar val, ivar minVal, ivar maxVal) then\r\n        if (val < minVal) then\r\n            return minVal;\r\n        end\r\n        if (val > maxVal) then\r\n            return maxVal;\r\n        end\r\n        return val;\r\n    end\r\n\r\n    function trunc(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        return i;\r\n    end\r\n\r\n    function floor(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x < 0 && x != i) then\r\n            return i - 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function ceil(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x > 0 && x != i) then\r\n            return i + 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function round(ivar x) then\r\n        return floor(x + 0.5);\r\n    end\r\n\r\n    function dist(ivar x1, ivar y1, ivar x2, ivar y2) then\r\n        ivar dx = x2 - x1;\r\n        ivar dy = y2 - y1;\r\n        return sqrt((dx * dx) + (dy * dy));\r\n    end\r\n\r\n    function degToRad(ivar deg) then\r\n        return deg * (PI / 180.0);\r\n    end\r\n\r\n    function radToDeg(ivar rad) then\r\n        return rad * (180.0 / PI);\r\n    end\r\n\r\n    function sign(ivar x) then\r\n        if (x > 0) then return 1; end\r\n        if (x < 0) then return 0 - 1; end\r\n        return 0;\r\n    end\r\n\r\n    function lerp(ivar a, ivar b, ivar t) then\r\n        return a + (b - a) * t;\r\n    end\r\nend",
-  "string.krb": "~~ ============================================================================\n~~ Kuroba Std Library: String\n~~ ============================================================================\nnamespace Std ~String then\n    iconst DIGITS      = \"0123456789\";\n    iconst ASCII_LOWER = \"abcdefghijklmnopqrstuvwxyz\";\n    iconst ASCII_UPPER = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";\n\n    iconst upper      = __native_strUpper;\n    iconst lower      = __native_strLower;\n    iconst count      = __native_strCount;\n    iconst trim       = __native_strTrim;\n    iconst split      = __native_strSplit;\n    iconst replace    = __native_strReplace;\n    iconst contains   = __native_strContains;\n    iconst startsWith = __native_strStartsWith;\n    iconst endsWith   = __native_strEndsWith;\n    iconst indexOf    = __native_strIndexOf;\n    iconst slice      = __native_strSlice;\n    iconst repeat     = __native_strRepeat;\n    iconst reverse    = __native_strReverse;\n    iconst join       = __native_strJoin;\nend\n",
-  "time.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Time\n~~ ============================================================================\nnamespace Std ~Time then\n    iconst sleep  = __native_sleep;\n    iconst now    = __native_now;\n    iconst unix   = __native_unix;\n    iconst perf   = __native_perf;\n    iconst hires  = __native_perf;\n    iconst clock  = __native_clock;\n    iconst iso    = __native_iso;\n    iconst format = __native_timeFormat;\n\n    function sleepSec(ivar sec) then\n        sleep(sec * 1000);\n    end\n\n    function since(ivar timestamp) then\n        return now() - timestamp;\n    end\n    \n    function stopwatch() then\n        ivar start = now();\n        return {\n            elapsed: function ~() then\n                return now() - start;\n            end,\n            reset: function ~() then\n                start = now();\n                return start;\n            end\n        };\n    end\nend\n"
+  "math.krb": "~~ ============================================================================\r\n~~ Kuroba Std Library: Math\r\n~~ ============================================================================\r\nnamespace Std ~Math then\r\n    iconst PI  = 3.141592653589793;\r\n    iconst TAU = 6.283185307179586;\r\n    iconst E   = 2.718281828459045;\r\n    \r\n    iconst sqrt   = __native_sqrt;\r\n    iconst pow    = __native_pow;\r\n    iconst sin    = __native_sin;\r\n    iconst cos    = __native_cos;\r\n    iconst tan    = __native_tan;\r\n    iconst asin   = __native_asin;\r\n    iconst acos   = __native_acos;\r\n    iconst atan   = __native_atan;\r\n    iconst atan2  = __native_atan2;\r\n    iconst log    = __native_log;\r\n    iconst log10  = __native_log10;\r\n    iconst exp    = __native_exp;\r\n\r\n    function abs(ivar x) then\r\n        if (x < 0) then\r\n            return 0 - x;\r\n        end\r\n        return x;\r\n    end\r\n\r\n    function min(ivar a, ivar b) then\r\n        if (a < b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function max(ivar a, ivar b) then\r\n        if (a > b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function clamp(ivar val, ivar minVal, ivar maxVal) then\r\n        if (val < minVal) then\r\n            return minVal;\r\n        end\r\n        if (val > maxVal) then\r\n            return maxVal;\r\n        end\r\n        return val;\r\n    end\r\n\r\n    function trunc(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        return i;\r\n    end\r\n\r\n    function floor(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x < 0 && x != i) then\r\n            return i - 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function ceil(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x > 0 && x != i) then\r\n            return i + 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function round(ivar x) then\r\n        return floor(x + 0.5);\r\n    end\r\n\r\n    function dist(ivar x1, ivar y1, ivar x2, ivar y2) then\r\n        ivar dx = x2 - x1;\r\n        ivar dy = y2 - y1;\r\n        return sqrt((dx * dx) + (dy * dy));\r\n    end\r\n\r\n    function degToRad(ivar deg) then\r\n        return deg * (PI / 180.0);\r\n    end\r\n\r\n    function radToDeg(ivar rad) then\r\n        return rad * (180.0 / PI);\r\n    end\r\n\r\n    function sign(ivar x) then\r\n        if (x > 0) then return 1; end\r\n        if (x < 0) then return 0 - 1; end\r\n        return 0;\r\n    end\r\n\r\n    function lerp(ivar a, ivar b, ivar t) then\r\n        return a + (b - a) * t;\r\n    end\r\nend",
+  "string.krb": "~~ ============================================================================\n~~ Kuroba Std Library: String\n~~ ============================================================================\nnamespace Std ~String then\n    iconst DIGITS      = \"0123456789\";\n    iconst ASCII_LOWER = \"abcdefghijklmnopqrstuvwxyz\";\n    iconst ASCII_UPPER = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";\n    \n    iconst upper      = __native_strUpper;\n    iconst lower      = __native_strLower;\n    iconst count      = __native_strCount;\n    iconst trim       = __native_strTrim;\n    iconst split      = __native_strSplit;\n    iconst replace    = __native_strReplace;\n    iconst contains   = __native_strContains;\n    iconst startsWith = __native_strStartsWith;\n    iconst endsWith   = __native_strEndsWith;\n    iconst indexOf    = __native_strIndexOf;\n    iconst slice      = __native_strSlice;\n    iconst repeat     = __native_strRepeat;\n    iconst reverse    = __native_strReverse;\n    iconst join       = __native_strJoin;\nend\n",
+  "time.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Time\n~~ ============================================================================\nnamespace Std ~Time then\n    iconst sleep  = __native_sleep;\n    iconst now    = __native_now;\n    iconst unix   = __native_unix;\n    iconst perf   = __native_perf;\n    iconst hires  = __native_perf;\n    iconst clock  = __native_clock;\n    iconst iso    = __native_iso;\n    iconst format = __native_timeFormat;\n\n    function sleepSec(ivar sec) then\n        sleep(sec * 1000);\n    end\n\n    function since(ivar timestamp) then\n        return now() - timestamp;\n    end\n    \n    function stopwatch() then\n        ivar start = now();\n        return {\n            elapsed: function ~() then\n                return now() - start;\n            end,\n            reset: function ~() then\n                start = now();\n                return start;\n            end\n        };\n    end\nend\n",
+  "stde_json.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Json\r\n~~ ============================================================================\r\nnamespace StdE ~Json then\r\n    iconst parse     = __native_json_parse;\r\n    iconst stringify = __native_json_stringify;\r\n    iconst isValid   = __native_json_is_valid;\r\n    iconst read      = __native_json_read;\r\n    iconst write     = __native_json_write;\r\n    iconst minify    = __native_json_minify;\r\n    iconst format    = __native_json_format;\r\nend",
+  "stde_path.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Path\r\n~~ ============================================================================\r\nnamespace StdE ~Path then\r\n    iconst sep        = __native_path_sep();\r\n    iconst delimiter  = __native_path_delimiter();\r\n    \r\n    iconst join       = __native_path_join;\r\n    iconst resolve    = __native_path_resolve;\r\n    iconst normalize  = __native_path_normalize;\r\n    iconst dirname    = __native_path_dirname;\r\n    iconst basename   = __native_path_basename;\r\n    iconst extname    = __native_path_extname;\r\n    iconst isAbsolute = __native_path_is_absolute;\r\n    iconst relative   = __native_path_relative;\r\n    iconst parse      = __native_path_parse;\r\n    iconst format     = __native_path_format;\r\nend",
+  "stde_process.krb": "~~ ============================================================================\n~~ Kuroba StdE Library: Process\n~~ ============================================================================\nnamespace StdE ~Process then\n    iconst exec      = __native_process_exec;\n    iconst run       = __native_process_run;\n    iconst getEnv    = __native_process_get_env;\n    iconst setEnv    = __native_process_set_env;\n    iconst cwd       = __native_process_cwd;\n    iconst chdir     = __native_process_chdir;\n    iconst quit      = __native_process_exit;\n    iconst terminate = __native_process_exit;\n    iconst uptime    = __native_process_uptime;\n    iconst pid       = __native_process_pid;\n    iconst env       = __native_process_env_table;\n\n    iconst platform  = __native_process_platform();\n    iconst arch      = __native_process_arch();\nend\n",
+  "stde_random.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Random\r\n~~ ============================================================================\r\nnamespace StdE ~Random then\r\n    iconst seed    = __native_random_seed;\r\n    iconst float   = __native_random_float;\r\n    iconst int     = __native_random_int;\r\n    iconst chance  = __native_random_chance;\r\n    iconst uuid    = __native_random_uuid;\r\n    iconst token   = __native_random_token;\r\n\r\n    function item(ivar list) then\r\n        if (list.count() == 0) then\r\n            return NULL;\r\n        end\r\n        ivar idx = int(0, list.count() - 1);\r\n        return list[idx];\r\n    end\r\n    \r\n    function shuffle(ivar list) then\r\n        ivar n = list.count();\r\n        if (n <= 1) then\r\n            return list;\r\n        end\r\n        for (ivar i = n - 1; i > 0; i--) then\r\n            ivar j = int(0, i);\r\n            list[i] <-> list[j];\r\n        end\r\n        return list;\r\n    end\r\nend",
+  "stde_term.krb": "~~ ============================================================================\n~~ Kuroba StdE Library: Term (Terminal & Styling)\n~~ ============================================================================\nnamespace StdE ~Term then\n    iconst red         = __native_term_red;\n    iconst green       = __native_term_green;\n    iconst yellow      = __native_term_yellow;\n    iconst blue        = __native_term_blue;\n    iconst magenta     = __native_term_magenta;\n    iconst cyan        = __native_term_cyan;\n    iconst white       = __native_term_white;\n    iconst gray        = __native_term_gray;\n\n    iconst bold        = __native_term_bold;\n    iconst dim         = __native_term_dim;\n    iconst italic      = __native_term_italic;\n    iconst underline   = __native_term_underline;\n    iconst inverse     = __native_term_inverse;\n    iconst reset       = __native_term_reset;\n\n    iconst bgRed       = __native_term_bg_red;\n    iconst bgGreen     = __native_term_bg_green;\n    iconst bgYellow    = __native_term_bg_yellow;\n    iconst bgBlue      = __native_term_bg_blue;\n    iconst bgMagenta   = __native_term_bg_magenta;\n    iconst bgCyan      = __native_term_bg_cyan;\n    iconst bgWhite     = __native_term_bg_white;\n\n    iconst clearScreen = __native_term_clear;\n    iconst cls         = __native_term_clear;\n    iconst cursorTo    = __native_term_cursor_to;\n    iconst cursorUp    = __native_term_cursor_up;\n    iconst cursorDown  = __native_term_cursor_down;\n    iconst cursorLeft  = __native_term_cursor_left;\n    iconst cursorRight = __native_term_cursor_right;\n    iconst cursorHide  = __native_term_cursor_hide;\n    iconst cursorShow  = __native_term_cursor_show;\n\n    iconst width       = __native_term_width;\n    iconst height      = __native_term_height;\n    iconst isTTY       = __native_term_is_tty;\nend\n"
 };
     
     // In-memory Virtual Filesystem for Std.IO in the browser
@@ -279,11 +284,18 @@ const KEYWORDS = {
   is: { type: "IS", value: "is" },
   class: { type: "CLASS", value: "class" },
   public: { type: "PUBLIC", value: "public" },
+  protected: { type: "PROTECTED", value: "protected" },
   private: { type: "PRIVATE", value: "private" },
+  isolated: { type: "ISOLATED", value: "isolated" },
+  exclusive: { type: "EXCLUSIVE", value: "exclusive" },
   from: { type: "FROM", value: "from" },
   base: { type: "BASE", value: "base" },
   shared: { type: "SHARED", value: "shared" },
-  enum: { type: "ENUM", value: "enum" }
+  enum: { type: "ENUM", value: "enum" },
+  get: { type: "GET", value: "get" },
+  set: { type: "SET", value: "set" },
+  interface: { type: "INTERFACE", value: "interface" },
+  as: { type: "AS", value: "as" }
 };
 
 const SYMBOLS = {
@@ -1665,6 +1677,7 @@ class ParserStatements extends ParserControl {
         if (this.match('HOOK'))     return this.parseHookStatement();
         if (this.match('TRY'))      return this.parseTryStatement();
         if (this.match('CLASS'))    return this.parseClassDeclaration();
+        if (this.match('INTERFACE'))return this.parseInterfaceDeclaration();
         if (this.match('ENUM'))     return this.parseEnumDeclaration();
         
         if (this.match('IVAR', 'ICONST')) {
@@ -1736,18 +1749,41 @@ class ParserStatements extends ParserControl {
                         superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
                     }
 
+                    let interfaces = [];
+                    if (this.match('AS')) {
+                        while (true) {
+                            interfaces.push(this.parseDottedIdentifier(`Expected interface name after 'as' in class '${className}'.`));
+                            if (!this.match('COMMA')) break;
+                        }
+                    }
+
+                    if (this.check('FROM')) {
+                        let tok = this.peek();
+                        printErr({
+                            eName: 'SyntaxError',
+                            eContext: `'from' must be placed before 'as' in class '${className}' (e.g. '~class ${className} from Super as Interface').`,
+                            eLine: tok ? tok.line : null,
+                            eCol: tok ? tok.col : null
+                        });
+                    }
+
                     this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
-                    let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
+                    let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
 
                     let classDecl = {
                         type: 'ClassDeclaration',
                         name: className,
                         superClass,
+                        interfaces,
                         fields,
                         methods,
                         sharedFields,
                         sharedMethods,
+                        getters,
+                        setters,
+                        sharedGetters,
+                        sharedSetters,
                         line: classTok.line,
                         col: classTok.col
                     };
@@ -1759,6 +1795,21 @@ class ParserStatements extends ParserControl {
                         isClassModule: true,
                         classDecl,
                         body: [classDecl],
+                        line: startToken.line,
+                        col: startToken.col
+                    };
+                }
+
+                if (this.match('INTERFACE')) {
+                    let ifaceDecl = this.parseInterfaceDeclaration();
+                    modName = ifaceDecl.name;
+                    return {
+                        type: 'NamespaceStatement',
+                        namespace: nsName,
+                        module: modName,
+                        isInterfaceModule: true,
+                        interfaceDecl: ifaceDecl,
+                        body: [ifaceDecl],
                         line: startToken.line,
                         col: startToken.col
                     };
@@ -1908,6 +1959,10 @@ class ParserStatements extends ParserControl {
         let methods = [];
         let sharedFields = [];
         let sharedMethods = [];
+        let getters = [];
+        let setters = [];
+        let sharedGetters = [];
+        let sharedSetters = [];
 
         while (!this.check('END') && !this.isAtEnd()) {
             let isShared = false;
@@ -1928,6 +1983,39 @@ class ParserStatements extends ParserControl {
                                 });
                             }
                             innerAccess = 'private';
+                        } else if (this.match('PROTECTED')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared protected ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'protected';
+                        } else if (this.match('ISOLATED')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared isolated ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'isolated';
+                        } else if (this.match('EXCLUSIVE')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared exclusive ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'exclusive';
                         } else if (this.match('PUBLIC')) {
                             if (this.check('SHARED')) {
                                 let tok = this.peek();
@@ -1939,6 +2027,52 @@ class ParserStatements extends ParserControl {
                                 });
                             }
                             innerAccess = 'public';
+                        } else if (this.match('GET')) {
+                            let propToken = this.consume('IDENTIFIER', "Expected property name after 'get'.");
+                            this.consume('THEN', `Expected 'then' after 'get ${propToken.value}'.`);
+
+                            let body = [];
+                            while (!this.check('END') && !this.isAtEnd()) {
+                                body.push(this.parseStatement());
+                            }
+
+                            this.consume('END', `Expected 'end' to close 'get ${propToken.value}' block.`);
+
+                            const targetGetters = isShared ? sharedGetters : getters;
+                            targetGetters.push({
+                                type: 'GetterDeclaration',
+                                name: propToken.value,
+                                body,
+                                access,
+                                isShared,
+                                line: propToken.line,
+                                col: propToken.col
+                            });
+                        } else if (this.match('SET')) {
+                            let propToken = this.consume('IDENTIFIER', "Expected property name after 'set'.");
+                            this.consume('LPAREN', `Expected '(' after 'set ${propToken.value}'.`);
+                            let paramToken = this.consume('IDENTIFIER', `Expected parameter name in 'set ${propToken.value}(...)'.`);
+                            this.consume('RPAREN', `Expected ')' after parameter in 'set ${propToken.value}'.`);
+                            this.consume('THEN', `Expected 'then' after 'set ${propToken.value}(${paramToken.value})'.`);
+
+                            let body = [];
+                            while (!this.check('END') && !this.isAtEnd()) {
+                                body.push(this.parseStatement());
+                            }
+
+                            this.consume('END', `Expected 'end' to close 'set ${propToken.value}' block.`);
+
+                            const targetSetters = isShared ? sharedSetters : setters;
+                            targetSetters.push({
+                                type: 'SetterDeclaration',
+                                name: propToken.value,
+                                param: paramToken.value,
+                                body,
+                                access,
+                                isShared,
+                                line: propToken.line,
+                                col: propToken.col
+                            });
                         }
 
                         if (this.match('IVAR', 'ICONST')) {
@@ -1970,6 +2104,12 @@ class ParserStatements extends ParserControl {
                     isShared = true;
                     if (this.match('PRIVATE')) {
                         access = 'private';
+                    } else if (this.match('PROTECTED')) {
+                        access = 'protected';
+                    } else if (this.match('ISOLATED')) {
+                        access = 'isolated';
+                    } else if (this.match('EXCLUSIVE')) {
+                        access = 'exclusive';
                     } else if (this.match('PUBLIC')) {
                         access = 'public';
                     }
@@ -1985,6 +2125,39 @@ class ParserStatements extends ParserControl {
                     });
                 }
                 access = 'private';
+            } else if (this.match('PROTECTED')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared protected ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'protected';
+            } else if (this.match('ISOLATED')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared isolated ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'isolated';
+            } else if (this.match('EXCLUSIVE')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared exclusive ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'exclusive';
             } else if (this.match('PUBLIC')) {
                 if (this.check('SHARED')) {
                     let tok = this.peek();
@@ -2013,6 +2186,46 @@ class ParserStatements extends ParserControl {
                 let method = this.parseFunctionDeclaration(false);
                 const targetMethods = isShared ? sharedMethods : methods;
                 targetMethods.push({ ...method, access, isShared });
+            } else if (this.match('GET')) {
+                let propToken = this.consume('IDENTIFIER', "Expected property name after 'get'.");
+                this.consume('THEN', `Expected 'then' after 'get ${propToken.value}'.`);
+                let body = [];
+                while (!this.check('END') && !this.isAtEnd()) {
+                    body.push(this.parseStatement());
+                }
+                this.consume('END', `Expected 'end' to close 'get ${propToken.value}' block.`);
+                const targetGetters = isShared ? sharedGetters : getters;
+                targetGetters.push({
+                    type: 'GetterDeclaration',
+                    name: propToken.value,
+                    body,
+                    access,
+                    isShared,
+                    line: propToken.line,
+                    col: propToken.col
+                });
+            } else if (this.match('SET')) {
+                let propToken = this.consume('IDENTIFIER', "Expected property name after 'set'.");
+                this.consume('LPAREN', `Expected '(' after 'set ${propToken.value}'.`);
+                let paramToken = this.consume('IDENTIFIER', `Expected parameter name in 'set ${propToken.value}(...)'.`);
+                this.consume('RPAREN', `Expected ')' after parameter in 'set ${propToken.value}'.`);
+                this.consume('THEN', `Expected 'then' after 'set ${propToken.value}(${paramToken.value})'.`);
+                let body = [];
+                while (!this.check('END') && !this.isAtEnd()) {
+                    body.push(this.parseStatement());
+                }
+                this.consume('END', `Expected 'end' to close 'set ${propToken.value}' block.`);
+                const targetSetters = isShared ? sharedSetters : setters;
+                targetSetters.push({
+                    type: 'SetterDeclaration',
+                    name: propToken.value,
+                    param: paramToken.value,
+                    body,
+                    access,
+                    isShared,
+                    line: propToken.line,
+                    col: propToken.col
+                });
             } else {
                 let tok = this.peek();
                 printErr({
@@ -2026,7 +2239,7 @@ class ParserStatements extends ParserControl {
 
         this.consume('END', `Expected 'end' to close class '${className}' block.`);
 
-        return { fields, methods, sharedFields, sharedMethods };
+        return { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters };
     }
 
     parseClassDeclaration() {
@@ -2038,18 +2251,126 @@ class ParserStatements extends ParserControl {
             superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
         }
 
+        let interfaces = [];
+        if (this.match('AS')) {
+            while (true) {
+                interfaces.push(this.parseDottedIdentifier(`Expected interface name after 'as' in class '${className}'.`));
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        if (this.check('FROM')) {
+            let tok = this.peek();
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `'from' must be placed before 'as' in class '${className}' (e.g. 'class ${className} from Super as Interface').`,
+                eLine: tok ? tok.line : null,
+                eCol: tok ? tok.col : null
+            });
+        }
+
         this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
-        let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
-
+        let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
         return {
             type: 'ClassDeclaration',
             name: className,
             superClass,
+            interfaces,
             fields,
             methods,
             sharedFields,
             sharedMethods,
+            getters,
+            setters,
+            sharedGetters,
+            sharedSetters,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
+    parseInterfaceDeclaration() {
+        let startToken = this.previous();
+        let interfaceName = this.consume('IDENTIFIER', "Expected interface name after 'interface'.").value;
+
+        let superInterfaces = [];
+        if (this.match('FROM')) {
+            while (true) {
+                superInterfaces.push(this.parseDottedIdentifier(`Expected super-interface name after 'from' in interface '${interfaceName}'.`));
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        this.consume('THEN', `Expected 'then' after interface declaration '${interfaceName}'.`);
+
+        let methods = [];
+        let getters = [];
+        let setters = [];
+        let fields = [];
+
+        while (!this.check('END') && !this.isAtEnd()) {
+            if (this.match('FUNCTION')) {
+                let funcTok = this.previous();
+                let funcName = this.consume('IDENTIFIER', `Expected method name in interface '${interfaceName}'.`).value;
+                this.consume('LPAREN', `Expected '(' after method name '${funcName}' in interface '${interfaceName}'.`);
+                let params = this.parseParameterList();
+                this.consume('RPAREN', `Expected ')' after parameters for '${funcName}' in interface '${interfaceName}'.`);
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface method '${funcName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after method signature '${funcName}' in interface '${interfaceName}'.`);
+                }
+                methods.push({ name: funcName, params, line: funcTok.line, col: funcTok.col });
+            } else if (this.match('GET')) {
+                let getTok = this.previous();
+                let propName = this.consume('IDENTIFIER', `Expected property name after 'get' in interface '${interfaceName}'.`).value;
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface getter '${propName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after getter signature '${propName}' in interface '${interfaceName}'.`);
+                }
+                getters.push({ name: propName, line: getTok.line, col: getTok.col });
+            } else if (this.match('SET')) {
+                let setTok = this.previous();
+                let propName = this.consume('IDENTIFIER', `Expected property name after 'set' in interface '${interfaceName}'.`).value;
+                this.consume('LPAREN', `Expected '(' after 'set' in interface '${interfaceName}'.`);
+                this.match('IVAR');
+                let paramName = this.consume('IDENTIFIER', `Expected parameter name in setter '${propName}' in interface '${interfaceName}'.`).value;
+                this.consume('RPAREN', `Expected ')' after parameter in setter '${propName}'.`);
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface setter '${propName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after setter signature '${propName}' in interface '${interfaceName}'.`);
+                }
+                setters.push({ name: propName, param: paramName, line: setTok.line, col: setTok.col });
+            } else if (this.match('IVAR', 'ICONST')) {
+                let fieldTok = this.previous();
+                let isConst = fieldTok.type === 'ICONST';
+                let fieldName = this.consume('IDENTIFIER', `Expected field name in interface '${interfaceName}'.`).value;
+                this.consume('SEMICOLON', `Expected ';' after field '${fieldName}' in interface '${interfaceName}'.`);
+                fields.push({ name: fieldName, isConst, line: fieldTok.line, col: fieldTok.col });
+            } else {
+                let tok = this.peek();
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Unexpected token '${tok ? tok.value : 'EOF'}' inside interface '${interfaceName}'. Expected method, getter, setter, or field declaration.`,
+                    eLine: tok ? tok.line : null,
+                    eCol: tok ? tok.col : null
+                });
+            }
+        }
+
+        this.consume('END', `Expected 'end' to close interface '${interfaceName}' block.`);
+
+        return {
+            type: 'InterfaceDeclaration',
+            name: interfaceName,
+            superInterfaces,
+            methods,
+            getters,
+            setters,
+            fields,
             line: startToken.line,
             col: startToken.col
         };
@@ -2129,12 +2450,82 @@ function parse(tokens) {
     // =========================================================================
     // 3. RUNTIME NATIVES
     // =========================================================================
+    let prngInstance = null;
+
+    function mulberry32(a) {
+        return function() {
+            let t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function nextRandom() {
+        return prngInstance ? prngInstance() : Math.random();
+    }
+
+    function jsToKurobaValue(json) {
+        if (json === null || json === undefined) return null;
+        if (typeof json === 'boolean' || typeof json === 'number' || typeof json === 'string') {
+            return json;
+        }
+        if (Array.isArray(json)) {
+            return json.map(jsToKurobaValue);
+        }
+        if (typeof json === 'object') {
+            const fields = {};
+            for (const [k, v] of Object.entries(json)) {
+                const val = jsToKurobaValue(v);
+                fields[k] = {
+                    value: val,
+                    type: getType(val),
+                    isNullable: true
+                };
+            }
+            return { kind: 'Table', fields };
+        }
+        return json;
+    }
+
+    function kurobaValueToJs(val) {
+        if (val === null || val === undefined) return null;
+        if (typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string') {
+            return val;
+        }
+        if (Array.isArray(val)) {
+            return val.map(kurobaValueToJs);
+        }
+        if (val && typeof val === 'object') {
+            if (val.kind === 'List' || val.kind === 'Stack' || val.kind === 'Queue') {
+                return val.items.map(kurobaValueToJs);
+            }
+            if (val.kind === 'Table') {
+                const obj = {};
+                for (const [k, fieldDef] of Object.entries(val.fields)) {
+                    obj[k] = kurobaValueToJs(fieldDef.value);
+                }
+                return obj;
+            }
+            if (val.kind === 'Enum') {
+                return val.name;
+            }
+        }
+        return val;
+    }
+
     const natives = {
         random: (...args) => {
-            if (args.length === 0) return Math.random();
-            if (args.length === 1) return Math.floor(Math.random() * Math.floor(args[0])) + 1;
-            const min = Math.ceil(args[0]), max = Math.floor(args[1]);
-            return Math.floor(Math.random() * (max - min + 1)) + min;
+            if (args.length === 0) return nextRandom();
+            if (args.length === 1) {
+                const max = Math.floor(args[0]);
+                return Math.floor(nextRandom() * max) + 1;
+            }
+            if (args.length >= 2) {
+                const min = Math.ceil(args[0]);
+                const max = Math.floor(args[1]);
+                return Math.floor(nextRandom() * (max - min + 1)) + min;
+            }
         },
         sqrt: (x) => Math.sqrt(x),
         pow: (b, e) => Math.pow(b, e),
@@ -2227,7 +2618,290 @@ function parse(tokens) {
                 return true;
             }
             return false;
-        }
+        },
+        random_seed: (seed) => {
+            prngInstance = mulberry32(Math.floor(seed));
+            return null;
+        },
+        random_float: (...args) => {
+            if (args.length === 0) return nextRandom();
+            if (args.length === 1) return nextRandom() * args[0];
+            const min = args[0], max = args[1];
+            return min + nextRandom() * (max - min);
+        },
+        random_int: (...args) => {
+            if (args.length === 0) return Math.floor(nextRandom() * 100);
+            if (args.length === 1) return Math.floor(nextRandom() * args[0]) + 1;
+            const min = Math.ceil(args[0]);
+            const max = Math.floor(args[1]);
+            return Math.floor(nextRandom() * (max - min + 1)) + min;
+        },
+        random_chance: (prob) => nextRandom() < (typeof prob === 'number' ? prob : 0.5),
+        random_uuid: () => {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = Math.floor(nextRandom() * 16);
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        },
+        random_token: (len = 16) => {
+            const count = typeof len === 'number' ? len : 16;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let res = '';
+            for (let i = 0; i < count; i++) {
+                res += chars[Math.floor(nextRandom() * chars.length)];
+            }
+            return res;
+        },
+        json_parse: (str) => {
+            if (typeof str !== 'string') {
+                printErr({
+                    eName: 'TypeError',
+                    eContext: "Expected String argument in Json.parse(), but received '" + getType(str) + "'."
+                });
+            }
+            try {
+                return jsToKurobaValue(JSON.parse(str));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to parse JSON string: " + e.message
+                });
+            }
+        },
+        json_stringify: (val, indent = 0) => {
+            try {
+                const jsVal = kurobaValueToJs(val);
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : undefined;
+                return JSON.stringify(jsVal, null, spaces);
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to stringify value to JSON: " + e.message
+                });
+            }
+        },
+        json_is_valid: (str) => {
+            if (typeof str !== 'string') return false;
+            try {
+                JSON.parse(str);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        json_read: (filePath) => {
+            const p = String(filePath);
+            if (!(p in virtualFS)) {
+                printErr({
+                    eName: 'IOError',
+                    eContext: "File not found in Json.read(): '" + p + "'."
+                });
+            }
+            try {
+                return jsToKurobaValue(JSON.parse(virtualFS[p]));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to read/parse JSON file '" + p + "': " + e.message
+                });
+            }
+        },
+        json_write: (filePath, val, indent = 4) => {
+            try {
+                const jsVal = kurobaValueToJs(val);
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : undefined;
+                virtualFS[String(filePath)] = JSON.stringify(jsVal, null, spaces);
+                persistVirtualFS();
+                return true;
+            } catch (e) {
+                printErr({
+                    eName: 'IOError',
+                    eContext: "Failed to write JSON file '" + filePath + "': " + e.message
+                });
+            }
+        },
+        json_minify: (str) => {
+            try {
+                return JSON.stringify(JSON.parse(str));
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to minify JSON: " + e.message
+                });
+            }
+        },
+        json_format: (str, indent = 4) => {
+            try {
+                const spaces = (typeof indent === 'number' && indent > 0) ? indent : 4;
+                return JSON.stringify(JSON.parse(str), null, spaces);
+            } catch (e) {
+                printErr({
+                    eName: 'JsonError',
+                    eContext: "Failed to format JSON: " + e.message
+                });
+            }
+        },
+        path_sep: () => '/',
+        path_delimiter: () => ':',
+        path_join: (...args) => {
+            const parts = args.filter(a => typeof a === 'string');
+            if (parts.length === 0) return '.';
+            const joined = parts.join('/');
+            const segments = joined.split(/[\/\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0 && res[res.length - 1] !== '..') res.pop();
+                    else res.push('..');
+                } else {
+                    res.push(s);
+                }
+            }
+            const prefix = joined.startsWith('/') ? '/' : '';
+            return prefix + (res.join('/') || (prefix ? '' : '.'));
+        },
+        path_resolve: (...args) => {
+            const parts = args.filter(a => typeof a === 'string');
+            const joined = '/' + parts.join('/');
+            const segments = joined.split(/[\/\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0) res.pop();
+                } else {
+                    res.push(s);
+                }
+            }
+            return '/' + res.join('/');
+        },
+        path_normalize: (p) => {
+            if (typeof p !== 'string') return '';
+            const isAbs = p.startsWith('/') || p.startsWith('\\');
+            const segments = p.split(/[\/\\]+/).filter(Boolean);
+            const res = [];
+            for (const s of segments) {
+                if (s === '.') continue;
+                if (s === '..') {
+                    if (res.length > 0 && res[res.length - 1] !== '..') res.pop();
+                    else if (!isAbs) res.push('..');
+                } else {
+                    res.push(s);
+                }
+            }
+            return (isAbs ? '/' : '') + (res.join('/') || (isAbs ? '' : '.'));
+        },
+        path_dirname: (p) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\/g, '/').replace(/[/]+$/, '');
+            const lastIdx = normalized.lastIndexOf('/');
+            if (lastIdx === -1) return '.';
+            if (lastIdx === 0) return '/';
+            return normalized.slice(0, lastIdx);
+        },
+        path_basename: (p, ext) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\/g, '/').replace(/[/]+$/, '');
+            const lastIdx = normalized.lastIndexOf('/');
+            let base = lastIdx === -1 ? normalized : normalized.slice(lastIdx + 1);
+            if (typeof ext === 'string' && base.endsWith(ext)) {
+                base = base.slice(0, base.length - ext.length);
+            }
+            return base;
+        },
+        path_extname: (p) => {
+            if (typeof p !== 'string') return '';
+            const normalized = p.replace(/\\/g, '/');
+            const base = normalized.slice(normalized.lastIndexOf('/') + 1);
+            const dotIdx = base.lastIndexOf('.');
+            if (dotIdx <= 0) return '';
+            return base.slice(dotIdx);
+        },
+        path_is_absolute: (p) => {
+            if (typeof p !== 'string') return false;
+            return p.startsWith('/') || /^[a-zA-Z]:[\\\/]/.test(p);
+        },
+        path_relative: (from, to) => {
+            if (typeof from !== 'string' || typeof to !== 'string') return '';
+            const fromParts = from.split(/[\/\\]+/).filter(Boolean);
+            const toParts = to.split(/[\/\\]+/).filter(Boolean);
+            let common = 0;
+            while (common < fromParts.length && common < toParts.length && fromParts[common] === toParts[common]) {
+                common++;
+            }
+            const ups = new Array(fromParts.length - common).fill('..');
+            const downs = toParts.slice(common);
+            return ups.concat(downs).join('/') || '.';
+        },
+        path_parse: (p) => {
+            if (typeof p !== 'string') return jsToKurobaValue({ root: '', dir: '', base: '', ext: '', name: '' });
+            const isAbs = p.startsWith('/') || /^[a-zA-Z]:[\\\/]/.test(p);
+            const root = isAbs ? (p.match(/^[a-zA-Z]:[\\\/]/) ? p.match(/^[a-zA-Z]:[\\\/]/)[0] : '/') : '';
+            const normalized = p.replace(/\\/g, '/').replace(/[/]+$/, '');
+            const lastSlash = normalized.lastIndexOf('/');
+            const dir = lastSlash === -1 ? '' : (lastSlash === 0 ? '/' : normalized.slice(0, lastSlash));
+            const base = lastSlash === -1 ? normalized : normalized.slice(lastSlash + 1);
+            const dotIdx = base.lastIndexOf('.');
+            const ext = dotIdx <= 0 ? '' : base.slice(dotIdx);
+            const name = dotIdx <= 0 ? base : base.slice(0, dotIdx);
+            return jsToKurobaValue({ root, dir, base, ext, name });
+        },
+        path_format: (tableObj) => {
+            const jsObj = kurobaValueToJs(tableObj);
+            if (!jsObj || typeof jsObj !== 'object') return '';
+            const dir = jsObj.dir || jsObj.root || '';
+            const base = jsObj.base || ((jsObj.name || '') + (jsObj.ext || ''));
+            if (!dir) return base;
+            return dir.endsWith('/') ? dir + base : dir + '/' + base;
+        },
+        // --- StdE.Term (Browser Sandbox) ---
+        term_red: (s) => '\x1b[31m' + s + '\x1b[39m',
+        term_green: (s) => '\x1b[32m' + s + '\x1b[39m',
+        term_yellow: (s) => '\x1b[33m' + s + '\x1b[39m',
+        term_blue: (s) => '\x1b[34m' + s + '\x1b[39m',
+        term_magenta: (s) => '\x1b[35m' + s + '\x1b[39m',
+        term_cyan: (s) => '\x1b[36m' + s + '\x1b[39m',
+        term_white: (s) => '\x1b[37m' + s + '\x1b[39m',
+        term_gray: (s) => '\x1b[90m' + s + '\x1b[39m',
+        term_bold: (s) => '\x1b[1m' + s + '\x1b[22m',
+        term_dim: (s) => '\x1b[2m' + s + '\x1b[22m',
+        term_italic: (s) => '\x1b[3m' + s + '\x1b[23m',
+        term_underline: (s) => '\x1b[4m' + s + '\x1b[24m',
+        term_inverse: (s) => '\x1b[7m' + s + '\x1b[27m',
+        term_reset: (s) => '\x1b[0m' + s + '\x1b[0m',
+        term_bg_red: (s) => '\x1b[41m' + s + '\x1b[49m',
+        term_bg_green: (s) => '\x1b[42m' + s + '\x1b[49m',
+        term_bg_yellow: (s) => '\x1b[43m' + s + '\x1b[49m',
+        term_bg_blue: (s) => '\x1b[44m' + s + '\x1b[49m',
+        term_bg_magenta: (s) => '\x1b[45m' + s + '\x1b[49m',
+        term_bg_cyan: (s) => '\x1b[46m' + s + '\x1b[49m',
+        term_bg_white: (s) => '\x1b[47m' + s + '\x1b[49m',
+        term_clear: () => { activeClearHandler(); return true; },
+        term_cursor_to: () => true,
+        term_cursor_up: () => true,
+        term_cursor_down: () => true,
+        term_cursor_right: () => true,
+        term_cursor_left: () => true,
+        term_cursor_hide: () => true,
+        term_cursor_show: () => true,
+        term_width: () => 80,
+        term_height: () => 24,
+        term_is_tty: () => false,
+
+        // --- StdE.Process (Browser Sandbox) ---
+        process_exec: (command) => jsToKurobaValue({ code: 0, stdout: 'Simulated output in browser for: ' + command, stderr: '', ok: true }),
+        process_run: (binary, argsList = []) => jsToKurobaValue({ code: 0, stdout: 'Simulated execution in browser: ' + binary, stderr: '', ok: true }),
+        process_get_env: (key, defaultVal = null) => defaultVal,
+        process_set_env: () => true,
+        process_env_table: () => jsToKurobaValue({ PLATFORM: 'web', USER: 'kuroba-guest' }),
+        process_cwd: () => '/',
+        process_chdir: () => true,
+        process_exit: (code = 0) => { console.log('Process exited with code ' + code); },
+        process_pid: () => 1,
+        process_platform: () => 'web',
+        process_arch: () => 'wasm',
+        process_uptime: () => (performance.now() / 1000)
     };
 
     // =========================================================================
@@ -2394,6 +3068,12 @@ function formatKurobaValue(val, isInsideList = false) {
     if (val && val.kind === 'Enum') {
         return `<enum ${val.name}>`;
     }
+    if (val && val.kind === 'Interface') {
+        return `<interface ${val.name}>`;
+    }
+    if (val && val.kind === 'Class') {
+        return `<class ${val.name}>`;
+    }
     if (val && val.kind === 'Table') {
         let keys = Object.keys(val.fields);
         if (keys.length === 0) return '{}';
@@ -2515,6 +3195,30 @@ async function evalIs(node, env, evaluate) {
                 curr = curr.superClass;
             }
             
+            return false;
+        }
+
+        if (customObj && customObj.kind === 'Interface') {
+            if (!val || val.kind !== 'Table' || !val.isInstance) return false;
+
+            function matchesInterface(targetIface, ifaceToCheck) {
+                if (targetIface === ifaceToCheck || targetIface.name === ifaceToCheck.name) return true;
+                for (const sup of (ifaceToCheck.superInterfaces || [])) {
+                    if (matchesInterface(targetIface, sup)) return true;
+                }
+                return false;
+            }
+
+            let curr = val.classRef;
+            while (curr) {
+                if (curr.interfaces) {
+                    for (const iface of curr.interfaces) {
+                        if (matchesInterface(customObj, iface)) return true;
+                    }
+                }
+                curr = curr.superClass;
+            }
+
             return false;
         }
         
@@ -2765,6 +3469,208 @@ function evalKill(node, env) {
 
 
 
+async function evalInterfaceDeclaration(node, env, shouldBind = true) {
+    let superInterfaces = [];
+    if (node.superInterfaces && node.superInterfaces.length > 0) {
+        for (const parentName of node.superInterfaces) {
+            const parentObj = resolveQualifiedValue(parentName, env);
+            if (!parentObj || parentObj.kind !== 'Interface') {
+                printErr({
+                    eName: 'ReferenceError',
+                    eContext: `Cannot extend undefined or invalid interface '${parentName}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+            superInterfaces.push(parentObj);
+        }
+    }
+
+    const interfaceObj = {
+        kind: 'Interface',
+        name: node.name,
+        superInterfaces,
+        methods: node.methods || [],
+        getters: node.getters || [],
+        setters: node.setters || [],
+        fields: node.fields || [],
+        line: node.line,
+        col: node.col
+    };
+
+    if (shouldBind) {
+        env.values[node.name] = {
+            value: interfaceObj,
+            type: 'Interface',
+            isConst: true,
+            isNullable: false
+        };
+    }
+
+    return interfaceObj;
+}
+
+function getAllClassMethods(classObj) {
+    const methods = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.methods) {
+            for (const [mName, mAst] of Object.entries(curr.methods)) {
+                if (!methods.has(mName)) {
+                    methods.set(mName, mAst);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return methods;
+}
+
+function getAllClassGetters(classObj) {
+    const getters = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.getters) {
+            for (const g of curr.getters) {
+                if (!getters.has(g.name)) {
+                    getters.set(g.name, g);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return getters;
+}
+
+function getAllClassSetters(classObj) {
+    const setters = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.setters) {
+            for (const s of curr.setters) {
+                if (!setters.has(s.name)) {
+                    setters.set(s.name, s);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return setters;
+}
+
+function getAllClassFields(classObj) {
+    const fields = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.fields) {
+            for (const f of curr.fields) {
+                if (!fields.has(f.name)) {
+                    fields.set(f.name, f);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return fields;
+}
+
+function collectInterfaceRequirements(ifaceObj, visited = new Set()) {
+    if (visited.has(ifaceObj)) return { methods: [], getters: [], setters: [], fields: [] };
+    visited.add(ifaceObj);
+
+    let methods = [...(ifaceObj.methods || [])];
+    let getters = [...(ifaceObj.getters || [])];
+    let setters = [...(ifaceObj.setters || [])];
+    let fields = [...(ifaceObj.fields || [])];
+
+    for (const sup of (ifaceObj.superInterfaces || [])) {
+        const subReq = collectInterfaceRequirements(sup, visited);
+        methods.push(...subReq.methods);
+        getters.push(...subReq.getters);
+        setters.push(...subReq.setters);
+        fields.push(...subReq.fields);
+    }
+
+    return { methods, getters, setters, fields };
+}
+
+function verifyInterfaceContract(classObj, ifaceObj, node) {
+    const reqs = collectInterfaceRequirements(ifaceObj);
+    const classMethods = getAllClassMethods(classObj);
+    const classGetters = getAllClassGetters(classObj);
+    const classSetters = getAllClassSetters(classObj);
+    const classFields = getAllClassFields(classObj);
+
+    for (const reqMethod of reqs.methods) {
+        if (!classMethods.has(reqMethod.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement method '${reqMethod.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+        const classM = classMethods.get(reqMethod.name);
+        const reqMinParams = (reqMethod.params || []).filter(p => !p.defaultValue).length;
+        const classMaxParams = (classM.params || []).length;
+        if (reqMinParams > classMaxParams) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Method '${reqMethod.name}' in class '${classObj.name}' expects fewer parameters than required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqGetter of reqs.getters) {
+        if (!classGetters.has(reqGetter.name) && !classFields.has(reqGetter.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement getter or field '${reqGetter.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqSetter of reqs.setters) {
+        const hasSetter = classSetters.has(reqSetter.name);
+        const field = classFields.get(reqSetter.name);
+        const hasMutableField = field && !field.isConst && field.type !== 'ConstDeclar';
+        if (!hasSetter && !hasMutableField) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement setter '${reqSetter.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqField of reqs.fields) {
+        if (!classFields.has(reqField.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement field '${reqField.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+        if (reqField.isConst) {
+            const field = classFields.get(reqField.name);
+            if (!field.isConst && field.type !== 'ConstDeclar') {
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Field '${reqField.name}' in class '${classObj.name}' must be constant (iconst) as required by interface '${ifaceObj.name}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+        }
+    }
+}
+
 async function evalClassDeclaration(node, env, shouldBind = true) {
     let superClassObj = null;
     if (node.superClass) {
@@ -2779,29 +3685,78 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
         superClassObj = val;
     }
 
+    const interfaces = [];
+    if (node.interfaces && node.interfaces.length > 0) {
+        for (const ifaceName of node.interfaces) {
+            const ifaceObj = resolveQualifiedValue(ifaceName, env);
+            if (!ifaceObj || ifaceObj.kind !== 'Interface') {
+                printErr({
+                    eName: 'ReferenceError',
+                    eContext: `Cannot implement undefined or invalid interface '${ifaceName}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+            interfaces.push(ifaceObj);
+        }
+    }
+
     const classObj = {
         kind: 'Class',
         name: node.name,
         superClass: superClassObj,
+        interfaces,
         fields: node.fields,
         methods: {},
         sharedFields: {},
         sharedMethods: {},
         constructor: null,
         privateMembers: new Set(),
+        protectedMembers: new Set(),
+        isolatedMembers: new Set(),
+        exclusiveMembers: new Set(),
         privateSharedMembers: new Set(),
+        protectedSharedMembers: new Set(),
+        isolatedSharedMembers: new Set(),
+        exclusiveSharedMembers: new Set(),
         instances: new Set()
     };
+
+    classObj.getters = node.getters || [];
+    classObj.setters = node.setters || [];
 
     for (const f of node.fields) {
         if (f.access === 'private') {
             classObj.privateMembers.add(f.name);
+        } else if (f.access === 'protected') {
+            classObj.protectedMembers.add(f.name);
+        } else if (f.access === 'isolated') {
+            classObj.isolatedMembers.add(f.name);
+        } else if (f.access === 'exclusive') {
+            classObj.exclusiveMembers.add(f.name);
+        }
+    }
+
+    for (const s of (node.setters || [])) {
+        const constField = (node.fields || []).find(f => f.name === s.name && (f.isConst || f.type === 'ConstDeclar'));
+        if (constField) {
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `Cannot define setter for constant '${s.name}' in class '${node.name}'.`,
+                eLine: s.line
+            });
         }
     }
 
     for (const m of node.methods) {
         if (m.access === 'private') {
             classObj.privateMembers.add(m.name);
+        } else if (m.access === 'protected') {
+            classObj.protectedMembers.add(m.name);
+        } else if (m.access === 'isolated') {
+            classObj.isolatedMembers.add(m.name);
+        } else if (m.access === 'exclusive') {
+            classObj.exclusiveMembers.add(m.name);
         }
         if (m.name === node.name) {
             classObj.constructor = m;
@@ -2815,6 +3770,12 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
         for (const f of node.sharedFields) {
             if (f.access === 'private') {
                 classObj.privateSharedMembers.add(f.name);
+            } else if (f.access === 'protected') {
+                classObj.protectedSharedMembers.add(f.name);
+            } else if (f.access === 'isolated') {
+                classObj.isolatedSharedMembers.add(f.name);
+            } else if (f.access === 'exclusive') {
+                classObj.exclusiveSharedMembers.add(f.name);
             }
             let val = null;
             if (f.value !== undefined && f.value !== null) {
@@ -2855,6 +3816,12 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
         for (const m of node.sharedMethods) {
             if (m.access === 'private') {
                 classObj.privateSharedMembers.add(m.name);
+            } else if (m.access === 'protected') {
+                classObj.protectedSharedMembers.add(m.name);
+            } else if (m.access === 'isolated') {
+                classObj.isolatedSharedMembers.add(m.name);
+            } else if (m.access === 'exclusive') {
+                classObj.exclusiveSharedMembers.add(m.name);
             }
             const methodClosure = createScope(env);
             methodClosure.values['__declaringClass'] = {
@@ -2870,9 +3837,14 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
                 body: m.body,
                 closure: methodClosure,
                 isShared: true,
+                access: m.access || 'public',
                 declaringClass: node.name
             };
         }
+    }
+
+    for (const iface of interfaces) {
+        verifyInterfaceContract(classObj, iface, node);
     }
 
     if (shouldBind) {
@@ -2910,6 +3882,12 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
             ctorClosure.values['this'] = {
                 value: instance,
                 type: 'Table',
+                isConst: true,
+                isNullable: false
+            };
+            ctorClosure.values['__declaringClass'] = {
+                value: superClass.name,
+                type: 'String',
                 isConst: true,
                 isNullable: false
             };
@@ -2951,6 +3929,10 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
     const superChain = getHierarchy(superClass);
     for (const ancestor of superChain) {
         for (const [mName, mAst] of Object.entries(ancestor.methods)) {
+            const acc = mAst.access || 'public';
+            if (acc === 'private' || acc === 'isolated' || acc === 'exclusive') {
+                continue;
+            }
             const methodFn = buildBoundMethod(mAst, instance, ancestor, env, evaluate);
             baseObj.fields[mName] = {
                 value: methodFn,
@@ -3055,10 +4037,12 @@ function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
         });
     }
 
-    if (origMethodAst.access === 'private' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName))) {
+    const origAcc = origMethodAst.access || 'public';
+    if (origAcc === 'private' || origAcc === 'isolated' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName)) || (targetClass.isolatedMembers && targetClass.isolatedMembers.has(methodName))) {
+        const accLabel = (origAcc === 'isolated' || (targetClass.isolatedMembers && targetClass.isolatedMembers.has(methodName))) ? 'isolated' : 'private';
         printErr({
             eName: 'TypeError',
-            eContext: `Cannot hook private method '${methodName}' of class '${targetClass.name}'.`,
+            eContext: `Cannot hook ${accLabel} method '${methodName}' of class '${targetClass.name}'.`,
             eLine: hookNode.line
         });
     }
@@ -3087,15 +4071,13 @@ function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
 
 async function instantiateClass(classObj, rawArgs, env, evaluate) {
     const chain = getHierarchy(classObj);
+    const memberAccess = new Map();
+    const memberOwners = new Map();
     const privateMembers = new Set();
     const privateOwners = new Map();
-
-    for (const c of chain) {
-        for (const pm of c.privateMembers) {
-            privateMembers.add(pm);
-            privateOwners.set(pm, c.name);
-        }
-    }
+    const protectedMembers = new Set();
+    const isolatedMembers = new Set();
+    const exclusiveMembers = new Set();
 
     const instance = {
         kind: 'Table',
@@ -3103,17 +4085,39 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
         isInstance: true,
         classRef: classObj,
         fields: {},
+        getters: {},
+        setters: {},
+        memberAccess,
+        memberOwners,
         privateMembers,
-        privateOwners
+        privateOwners,
+        protectedMembers,
+        isolatedMembers,
+        exclusiveMembers
     };
 
     classObj.instances.add(instance);
 
     for (const c of chain) {
+        const isSelf = (c === classObj);
+
+        for (const g of (c.getters || [])) {
+            instance.getters[g.name] = { ast: g, declaringClass: c.name };
+        }
+        for (const s of (c.setters || [])) {
+            instance.setters[s.name] = { ast: s, declaringClass: c.name };
+        }
+
         const initEnv = createScope(env);
         initEnv.values['this'] = {
             value: instance,
             type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+        initEnv.values['__declaringClass'] = {
+            value: c.name,
+            type: 'String',
             isConst: true,
             isNullable: false
         };
@@ -3127,6 +4131,33 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
         }
 
         for (const field of c.fields) {
+            const acc = field.access || 'public';
+            if (!isSelf && acc === 'exclusive') {
+                continue;
+            }
+
+            const isPrivateOrIsolated = (acc === 'private' || acc === 'isolated');
+            const storageKey = isPrivateOrIsolated ? `__${c.name}__${field.name}` : field.name;
+
+            if (isSelf || !isPrivateOrIsolated) {
+                memberAccess.set(field.name, acc);
+                memberOwners.set(field.name, c.name);
+            }
+            if (isPrivateOrIsolated) {
+                memberAccess.set(storageKey, acc);
+                memberOwners.set(storageKey, c.name);
+            }
+            if (acc === 'private') {
+                privateMembers.add(field.name);
+                privateOwners.set(field.name, c.name);
+            } else if (acc === 'protected') {
+                protectedMembers.add(field.name);
+            } else if (acc === 'isolated') {
+                isolatedMembers.add(field.name);
+            } else if (acc === 'exclusive') {
+                exclusiveMembers.add(field.name);
+            }
+
             let val = null;
             if (field.value !== undefined && field.value !== null) {
                 val = await evaluate(field.value, initEnv);
@@ -3153,24 +4184,66 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
                 });
             }
 
-            instance.fields[field.name] = {
+            const fieldDef = {
                 value: val,
                 type: fieldType,
                 isNullable: field.isNullable !== false,
-                isConst: !!field.isConst
+                isConst: !!field.isConst,
+                access: acc,
+                declaringClass: c.name
             };
+            instance.fields[storageKey] = fieldDef;
+            if (isSelf) {
+                if (!isPrivateOrIsolated || !(field.name in instance.fields)) {
+                    instance.fields[field.name] = fieldDef;
+                }
+            } else if (!isPrivateOrIsolated) {
+                instance.fields[field.name] = fieldDef;
+            }
         }
     }
 
     for (const c of chain) {
+        const isSelf = (c === classObj);
         for (const [methodName, methodAst] of Object.entries(c.methods)) {
+            const acc = methodAst.access || 'public';
+            if (!isSelf && (acc === 'isolated' || acc === 'exclusive')) {
+                continue;
+            }
+
+            const isPrivateOrIsolated = (acc === 'private' || acc === 'isolated');
+            const storageKey = isPrivateOrIsolated ? `__${c.name}__${methodName}` : methodName;
+
+            memberAccess.set(methodName, acc);
+            memberOwners.set(methodName, c.name);
+            if (isPrivateOrIsolated) {
+                memberAccess.set(storageKey, acc);
+                memberOwners.set(storageKey, c.name);
+            }
+            if (acc === 'private') {
+                privateMembers.add(methodName);
+                privateOwners.set(methodName, c.name);
+            } else if (acc === 'protected') {
+                protectedMembers.add(methodName);
+            } else if (acc === 'isolated') {
+                isolatedMembers.add(methodName);
+            } else if (acc === 'exclusive') {
+                exclusiveMembers.add(methodName);
+            }
+
             const fnObj = buildBoundMethod(methodAst, instance, c, env, evaluate);
-            instance.fields[methodName] = {
+            const methodDef = {
                 value: fnObj,
                 type: 'Function',
                 isNullable: false,
-                isConst: true
+                isConst: true,
+                access: acc,
+                declaringClass: c.name
             };
+            instance.fields[storageKey] = methodDef;
+            if (!isPrivateOrIsolated || !(methodName in instance.fields)) {
+                instance.fields[methodName] = methodDef;
+            }
         }
     }
 
@@ -3180,6 +4253,12 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
         ctorClosure.values['this'] = {
             value: instance,
             type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+        ctorClosure.values['__declaringClass'] = {
+            value: classObj.name,
+            type: 'String',
             isConst: true,
             isNullable: false
         };
@@ -3213,57 +4292,211 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
     return instance;
 }
 
-function checkPrivateAccess(target, memberName, env, isMethod = false) {
-    if (!target || !target.isInstance || !target.privateMembers || !target.privateMembers.has(memberName)) {
+function checkMemberAccess(target, memberName, env, isMethod = false) {
+    if (!target || !target.isInstance) {
         return;
     }
 
-    const activeThis = findScope('this', env);
-    const callerThis = activeThis ? activeThis.values['this'].value : null;
+    let access = 'public';
+    let ownerClass = target.className;
 
-    if (!callerThis || callerThis !== target) {
-        const kind = isMethod ? 'method' : 'member';
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot access private ${kind} '${memberName}' of class '${target.className}'.`
-        });
+    if (target.memberAccess && target.memberAccess.has(memberName)) {
+        access = target.memberAccess.get(memberName);
+        ownerClass = target.memberOwners.get(memberName) || target.className;
+    } else if (target.privateMembers && target.privateMembers.has(memberName)) {
+        access = 'private';
+        ownerClass = target.privateOwners ? target.privateOwners.get(memberName) : target.className;
     }
 
-    if (target.privateOwners && target.privateOwners.has(memberName)) {
-        const ownerClass = target.privateOwners.get(memberName);
-        const activeFnScope = findScope('__currentFunction', env);
-        const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
-        if (currentFn && currentFn.declaringClass && currentFn.declaringClass !== ownerClass) {
-            const kind = isMethod ? 'method' : 'member';
-            printErr({
-                eName: 'TypeError',
-                eContext: `Cannot access private ${kind} '${memberName}' of parent class '${ownerClass}'.`
-            });
-        }
-    }
-}
-
-function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false) {
-    if (!targetClass || targetClass.kind !== 'Class') return;
-    if (!targetClass.privateSharedMembers || !targetClass.privateSharedMembers.has(memberName)) return;
-
-    const activeThis = findScope('this', env);
-    const callerThis = activeThis ? activeThis.values['this'].value : null;
-    if (callerThis && (callerThis.className === targetClass.name || (callerThis.classRef && callerThis.classRef.name === targetClass.name))) {
-        return;
-    }
-
-    const declaringScope = findScope('__declaringClass', env);
-    const declaringClass = declaringScope ? declaringScope.values['__declaringClass'].value : null;
-    if (declaringClass === targetClass.name) {
+    if (access === 'public' || access === 'exclusive') {
         return;
     }
 
     const kind = isMethod ? 'method' : 'member';
-    printErr({
-        eName: 'TypeError',
-        eContext: `Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`
-    });
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+
+    if (!callerThis || callerThis !== target) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} ${kind} '${memberName}' of class '${target.className}'.`
+        });
+    }
+
+    if (access === 'protected') {
+        return;
+    }
+
+    const activeFnScope = findScope('__currentFunction', env);
+    const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
+    let callerDeclaringClass = currentFn ? currentFn.declaringClass : null;
+    if (!callerDeclaringClass) {
+        const declScope = findScope('__declaringClass', env);
+        callerDeclaringClass = declScope ? declScope.values['__declaringClass'].value : null;
+    }
+
+    if (callerDeclaringClass && callerDeclaringClass !== ownerClass) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} ${kind} '${memberName}' of parent class '${ownerClass}'.`
+        });
+    }
+}
+
+function checkSharedMemberAccess(targetClass, memberName, env, isMethod = false) {
+    if (!targetClass || targetClass.kind !== 'Class') return;
+
+    let curr = targetClass;
+    let access = 'public';
+    let ownerClass = targetClass.name;
+
+    while (curr) {
+        if (curr.sharedFields && memberName in curr.sharedFields) {
+            access = curr.sharedFields[memberName].access || 'public';
+            ownerClass = curr.name;
+            break;
+        }
+        if (curr.sharedMethods && memberName in curr.sharedMethods) {
+            const m = curr.sharedMethods[memberName];
+            access = m.access || 'public';
+            ownerClass = curr.name;
+            break;
+        }
+        curr = curr.superClass;
+    }
+
+    if (access === 'public') return;
+
+    const kind = isMethod ? 'method' : 'member';
+
+    if (ownerClass !== targetClass.name && (access === 'isolated' || access === 'exclusive')) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Shared ${kind} '${memberName}' does not exist on class '${targetClass.name}'.`
+        });
+    }
+
+    if (access === 'exclusive') {
+        return;
+    }
+
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+    const declaringScope = findScope('__declaringClass', env);
+    const declaringClass = declaringScope ? declaringScope.values['__declaringClass'].value : null;
+
+    let callerClassName = null;
+    let callerClassRef = null;
+    if (callerThis && callerThis.isInstance) {
+        callerClassName = callerThis.className;
+        callerClassRef = callerThis.classRef;
+    } else if (declaringClass) {
+        callerClassName = declaringClass;
+    }
+
+    if (!callerClassName) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} shared ${kind} '${memberName}' of class '${targetClass.name}'.`
+        });
+    }
+
+    if (access === 'protected') {
+        let isDescendant = false;
+        let c = targetClass;
+        while (c) {
+            if (c.name === ownerClass) { isDescendant = true; break; }
+            c = c.superClass;
+        }
+        if (!isDescendant) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot access protected shared ${kind} '${memberName}' of class '${ownerClass}'.`
+            });
+        }
+        return;
+    }
+
+    if (callerClassName !== ownerClass) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} shared ${kind} '${memberName}' of parent class '${ownerClass}'.`
+        });
+    }
+}
+
+function resolveMemberKey(instance, memberName, env) {
+    if (!instance || !instance.isInstance || !instance.fields) return memberName;
+
+    const activeFnScope = findScope('__currentFunction', env);
+    const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
+    let callerClass = currentFn ? currentFn.declaringClass : null;
+    if (!callerClass) {
+        const declScope = findScope('__declaringClass', env);
+        callerClass = declScope ? declScope.values['__declaringClass'].value : null;
+    }
+
+    if (callerClass) {
+        const mangledKey = `__${callerClass}__${memberName}`;
+        if (mangledKey in instance.fields) {
+            return mangledKey;
+        }
+    }
+
+    return memberName;
+}
+
+async function invokeGetter(getterAst, instance, rawValue, declaringClass, env, evaluate) {
+    const scope = createScope(env);
+    scope.values['this'] = { value: instance, type: 'Table', isConst: true, isNullable: false };
+    scope.values['value'] = { value: rawValue, type: getType(rawValue), isConst: false, isNullable: true };
+    scope.values['__declaringClass'] = { value: declaringClass, type: 'String', isConst: true, isNullable: false };
+
+    try {
+        for (const stmt of getterAst.body) {
+            const res = await evaluate(stmt, scope);
+            if (res && res.isReturn) {
+                return res.value;
+            }
+            if (res && res.__returnValue !== undefined) {
+                return res.__returnValue;
+            }
+        }
+    } catch (e) {
+        throw e;
+    }
+    return scope.values['value'] ? scope.values['value'].value : rawValue;
+}
+
+async function invokeSetter(setterAst, instance, rawValue, newVal, declaringClass, env, evaluate) {
+    const scope = createScope(env);
+    scope.values['this'] = { value: instance, type: 'Table', isConst: true, isNullable: false };
+    scope.values[setterAst.param] = { value: newVal, type: getType(newVal), isConst: false, isNullable: true };
+    scope.values['value'] = { value: rawValue, type: getType(rawValue), isConst: false, isNullable: true };
+    scope.values['__declaringClass'] = { value: declaringClass, type: 'String', isConst: true, isNullable: false };
+
+    try {
+        for (const stmt of setterAst.body) {
+            const res = await evaluate(stmt, scope);
+            if (res && res.isReturn) {
+                break;
+            }
+            if (res && res.__returnValue !== undefined) {
+                break;
+            }
+        }
+    } catch (e) {
+        throw e;
+    }
+    return scope.values['value'] ? scope.values['value'].value : newVal;
+}
+
+function checkPrivateAccess(target, memberName, env, isMethod = false) {
+    return checkMemberAccess(target, memberName, env, isMethod);
+}
+
+function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false) {
+    return checkSharedMemberAccess(targetClass, memberName, env, isMethod);
 }
 
 
@@ -3309,6 +4542,13 @@ async function evalListLiteral(node, env, evaluate) {
 async function evalIndexAccess(node, env, evaluate) {
     let target = await evaluate(node.target, env);
 
+    if (target && target.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access members directly on interface '${target.name}'.`
+        });
+    }
+
     if (target && target.kind === 'Enum') {
         let key = node.index;
         if (key in target.members) {
@@ -3327,9 +4567,18 @@ async function evalIndexAccess(node, env, evaluate) {
         let curr = target;
         while (curr) {
             if (curr.sharedFields && key in curr.sharedFields) {
+                if (curr !== target && (curr.sharedFields[key].access === 'isolated' || curr.sharedFields[key].access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return curr.sharedFields[key].value;
             }
             if (curr.sharedMethods && key in curr.sharedMethods) {
+                const m = curr.sharedMethods[key];
+                if (curr !== target && (m.access === 'isolated' || m.access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return curr.sharedMethods[key];
             }
             curr = curr.superClass;
@@ -3349,9 +4598,15 @@ async function evalIndexAccess(node, env, evaluate) {
             });
         }
 
-        let key = node.index;
+        let key = (typeof resolveMemberKey === 'function') ? resolveMemberKey(target, node.index, env) : node.index;
 
         checkPrivateAccess(target, key, env, false);
+
+        if (target.getters && (target.getters[key] || target.getters[node.index])) {
+            const g = target.getters[key] || target.getters[node.index];
+            const rawVal = (key in target.fields) ? target.fields[key].value : null;
+            return await invokeGetter(g.ast, target, rawVal, g.declaringClass, env, evaluate);
+        }
 
         if (key in target.fields) {
             return target.fields[key].value;
@@ -3459,6 +4714,13 @@ async function evalMemberAssign(node, env, evaluate) {
 
     let container = await evaluate(node.target, env);
 
+    if (container && container.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot assign property '${node.index}' on interface '${container.name}'.`
+        });
+    }
+
     if (container && container.kind === 'Enum') {
         printErr({
             eName: 'TypeError',
@@ -3474,6 +4736,10 @@ async function evalMemberAssign(node, env, evaluate) {
         let fieldEntry = null;
         while (curr) {
             if (curr.sharedFields && key in curr.sharedFields) {
+                if (curr !== container && (curr.sharedFields[key].access === 'isolated' || curr.sharedFields[key].access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 fieldEntry = curr.sharedFields[key];
                 break;
             }
@@ -3512,14 +4778,28 @@ async function evalMemberAssign(node, env, evaluate) {
             });
         }
 
-        checkPrivateAccess(container, node.index, env, false);
+        let key = (typeof resolveMemberKey === 'function') ? resolveMemberKey(container, node.index, env) : node.index;
 
-        let key = node.index;
+        checkPrivateAccess(container, key, env, false);
+
         let newVal = await evaluate(node.value, env);
 
         if (node.operator) {
             let currVal = (key in container.fields) ? container.fields[key].value : 0;
             newVal = applyCompoundOp(currVal, newVal, node.operator);
+        }
+
+        if (container.setters && (key in container.setters || node.index in container.setters)) {
+            const sKey = (key in container.setters) ? key : node.index;
+            const s = container.setters[sKey];
+            const currRaw = (key in container.fields) ? container.fields[key].value : null;
+            
+            const computedNewVal = await invokeSetter(s.ast, container, currRaw, newVal, s.declaringClass, env, evaluate);
+            
+            if (key in container.fields) {
+                container.fields[key].value = computedNewVal;
+            }
+            return computedNewVal;
         }
 
         if (node.typeInfo) {
@@ -3633,6 +4913,13 @@ async function evalMethodCall(node, env, evaluate) {
     let target = await evaluate(node.target, env);
     let targetType = getType(target);
 
+    if (target && target.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot call method '${node.method}' on interface '${target.name}'.`
+        });
+    }
+
     if (target && target.kind === 'Class') {
         let methodName = node.method;
         checkPrivateSharedAccess(target, methodName, env, true);
@@ -3641,6 +4928,10 @@ async function evalMethodCall(node, env, evaluate) {
         while (curr) {
             if (curr.sharedMethods && methodName in curr.sharedMethods) {
                 let fnObj = curr.sharedMethods[methodName];
+                if (curr !== target && (fnObj.access === 'isolated' || fnObj.access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return await evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
             curr = curr.superClass;
@@ -3653,7 +4944,7 @@ async function evalMethodCall(node, env, evaluate) {
     }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
-        let methodName = node.method;
+        let methodName = (typeof resolveMemberKey === 'function') ? resolveMemberKey(target, node.method, env) : node.method;
 
         checkPrivateAccess(target, methodName, env, true);
 
@@ -4260,6 +5551,14 @@ async function evalCall(node, env, evaluate) {
 
     let caller = await evaluate(node.caller, env);
     
+    if (caller && caller.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot instantiate or call interface '${caller.name}'.`,
+            eLine: node.line
+        });
+    }
+
     if (caller && caller.kind === 'Class') {
         
         return await instantiateClass(caller, node.args, env, evaluate);
@@ -4438,7 +5737,16 @@ async function evalHook(node, env, evaluate) {
         }
 
         if (container && container.kind === 'Table') {
-            if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
+            if (container.isInstance && container.memberAccess) {
+                const acc = container.memberAccess.get(key);
+                if (acc === 'private' || acc === 'isolated') {
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot hook ${acc} method '${key}' of class '${container.className}'.`,
+                        eLine: node.line
+                    });
+                }
+            } else if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
                 printErr({
                     eName: 'TypeError',
                     eContext: `Cannot hook private method '${key}' of class '${container.className}'.`,
@@ -4582,7 +5890,7 @@ async function evalHook(node, env, evaluate) {
     async function discoverNamespaceModules(pkgName) {
         const discovered = {};
 
-        if (pkgName === 'Std') {
+        if (pkgName === 'Std' || pkgName === 'StdE') {
             for (const [fileName, source] of Object.entries(VIRTUAL_STD_FILES)) {
                 const ast = parse(tokenize(source));
                 const topImports = ast.body.filter(s => s.type === 'ImportStatement');
@@ -4660,7 +5968,7 @@ async function evalHook(node, env, evaluate) {
             for (const [modName, entry] of Object.entries(modulesToBind)) {
                 if (entry.isRoot) {
                     for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                        if (fieldName !== 'args' && fieldName !== 'Std') {
+                        if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                             env.values[fieldName] = {
                                 value: fieldDef.value,
                                 type: fieldDef.type,
@@ -4694,7 +6002,7 @@ async function evalHook(node, env, evaluate) {
         for (const [modName, entry] of Object.entries(modulesToBind)) {
             if (entry.isRoot) {
                 for (const [fieldName, fieldDef] of Object.entries(entry.table.fields)) {
-                    if (fieldName !== 'args' && fieldName !== 'Std') {
+                    if (fieldName !== 'args' && fieldName !== 'Std' && fieldName !== 'StdE') {
                         pkgTable.fields[fieldName] = fieldDef;
                     }
                 }
@@ -4765,6 +6073,26 @@ async function evaluate(node, env = createScope()) {
                 };
                 return classObj;
             }
+            if (node.isInterfaceModule) {
+                const ifaceObj = await evalInterfaceDeclaration(node.interfaceDecl, env, false);
+                if (!env.values[node.namespace]) {
+                    env.values[node.namespace] = {
+                        value: { kind: 'Table', fields: {} },
+                        type: 'Table',
+                        isConst: true,
+                        isNullable: false
+                    };
+                }
+                const nsTable = env.values[node.namespace].value;
+                if (!nsTable.fields) nsTable.fields = {};
+                nsTable.fields[node.module] = {
+                    value: ifaceObj,
+                    type: 'Interface',
+                    isConst: true,
+                    isNullable: false
+                };
+                return ifaceObj;
+            }
             for (const stmt of node.body) {
                 let res = await evaluate(stmt, env);
                 if (res && (res.isReturn || res.isBreak || res.isSkip)) return res;
@@ -4821,6 +6149,7 @@ async function evaluate(node, env = createScope()) {
         case 'HookStatement':       return await evalHook(node, env, evaluate);
         case 'ImportStatement':     return await evalImport(node, env, evaluate);
         case 'ClassDeclaration':    return await evalClassDeclaration(node, env);
+        case 'InterfaceDeclaration':return await evalInterfaceDeclaration(node, env);
         case 'EnumDeclaration':     return await evalEnumDeclaration(node, env, evaluate);
         default:
             printErr({
@@ -4834,7 +6163,7 @@ async function evaluate(node, env = createScope()) {
 
     // Expose Kuroba API on global window
     global.Kuroba = {
-        version: '1.0.7',
+        version: '1.0.8',
         run: async function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });

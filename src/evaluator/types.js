@@ -50,6 +50,12 @@ function formatKurobaValue(val, isInsideList = false) {
     if (val && val.kind === 'Enum') {
         return `<enum ${val.name}>`;
     }
+    if (val && val.kind === 'Interface') {
+        return `<interface ${val.name}>`;
+    }
+    if (val && val.kind === 'Class') {
+        return `<class ${val.name}>`;
+    }
     if (val && val.kind === 'Table') {
         let keys = Object.keys(val.fields);
         if (keys.length === 0) return '{}';

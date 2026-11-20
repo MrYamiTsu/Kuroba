@@ -1,0 +1,19 @@
+~~ ============================================================================
+~~ Kuroba StdE Library: Process
+~~ ============================================================================
+namespace StdE ~Process then
+    iconst exec      = __native_process_exec;
+    iconst run       = __native_process_run;
+    iconst getEnv    = __native_process_get_env;
+    iconst setEnv    = __native_process_set_env;
+    iconst cwd       = __native_process_cwd;
+    iconst chdir     = __native_process_chdir;
+    iconst quit      = __native_process_exit;
+    iconst terminate = __native_process_exit;
+    iconst uptime    = __native_process_uptime;
+    iconst pid       = __native_process_pid;
+    iconst env       = __native_process_env_table;
+
+    iconst platform  = __native_process_platform();
+    iconst arch      = __native_process_arch();
+end

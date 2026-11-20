@@ -2,7 +2,7 @@ const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
 const { findScope } = require('./scope');
 const { evalCall } = require('./functions');
-const { checkPrivateAccess, checkPrivateSharedAccess, instantiateClass } = require('./classes');
+const { checkPrivateAccess, checkPrivateSharedAccess, instantiateClass, resolveMemberKey, invokeGetter, invokeSetter } = require('./classes');
 
 function evalListLiteral(node, env, evaluate) {
     return node.elements.map(el => evaluate(el, env));
@@ -10,6 +10,13 @@ function evalListLiteral(node, env, evaluate) {
 
 function evalIndexAccess(node, env, evaluate) {
     let target = evaluate(node.target, env);
+
+    if (target && target.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access members directly on interface '${target.name}'.`
+        });
+    }
 
     if (target && target.kind === 'Enum') {
         let key = node.index;
@@ -29,9 +36,18 @@ function evalIndexAccess(node, env, evaluate) {
         let curr = target;
         while (curr) {
             if (curr.sharedFields && key in curr.sharedFields) {
+                if (curr !== target && (curr.sharedFields[key].access === 'isolated' || curr.sharedFields[key].access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return curr.sharedFields[key].value;
             }
             if (curr.sharedMethods && key in curr.sharedMethods) {
+                const m = curr.sharedMethods[key];
+                if (curr !== target && (m.access === 'isolated' || m.access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return curr.sharedMethods[key];
             }
             curr = curr.superClass;
@@ -51,9 +67,15 @@ function evalIndexAccess(node, env, evaluate) {
             });
         }
 
-        let key = node.index;
+        let key = (typeof resolveMemberKey === 'function') ? resolveMemberKey(target, node.index, env) : node.index;
 
         checkPrivateAccess(target, key, env, false);
+
+        if (target.getters && (target.getters[key] || target.getters[node.index])) {
+            const g = target.getters[key] || target.getters[node.index];
+            const rawVal = (key in target.fields) ? target.fields[key].value : null;
+            return invokeGetter(g.ast, target, rawVal, g.declaringClass, env, evaluate);
+        }
 
         if (key in target.fields) {
             return target.fields[key].value;
@@ -161,6 +183,13 @@ function evalMemberAssign(node, env, evaluate) {
 
     let container = evaluate(node.target, env);
 
+    if (container && container.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot assign property '${node.index}' on interface '${container.name}'.`
+        });
+    }
+
     if (container && container.kind === 'Enum') {
         printErr({
             eName: 'TypeError',
@@ -176,6 +205,10 @@ function evalMemberAssign(node, env, evaluate) {
         let fieldEntry = null;
         while (curr) {
             if (curr.sharedFields && key in curr.sharedFields) {
+                if (curr !== container && (curr.sharedFields[key].access === 'isolated' || curr.sharedFields[key].access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 fieldEntry = curr.sharedFields[key];
                 break;
             }
@@ -214,14 +247,28 @@ function evalMemberAssign(node, env, evaluate) {
             });
         }
 
-        checkPrivateAccess(container, node.index, env, false);
+        let key = (typeof resolveMemberKey === 'function') ? resolveMemberKey(container, node.index, env) : node.index;
 
-        let key = node.index;
+        checkPrivateAccess(container, key, env, false);
+
         let newVal = evaluate(node.value, env);
 
         if (node.operator) {
             let currVal = (key in container.fields) ? container.fields[key].value : 0;
             newVal = applyCompoundOp(currVal, newVal, node.operator);
+        }
+
+        if (container.setters && (key in container.setters || node.index in container.setters)) {
+            const sKey = (key in container.setters) ? key : node.index;
+            const s = container.setters[sKey];
+            const currRaw = (key in container.fields) ? container.fields[key].value : null;
+            
+            const computedNewVal = invokeSetter(s.ast, container, currRaw, newVal, s.declaringClass, env, evaluate);
+            
+            if (key in container.fields) {
+                container.fields[key].value = computedNewVal;
+            }
+            return computedNewVal;
         }
 
         if (node.typeInfo) {
@@ -335,6 +382,13 @@ function evalMethodCall(node, env, evaluate) {
     let target = evaluate(node.target, env);
     let targetType = getType(target);
 
+    if (target && target.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot call method '${node.method}' on interface '${target.name}'.`
+        });
+    }
+
     if (target && target.kind === 'Class') {
         let methodName = node.method;
         checkPrivateSharedAccess(target, methodName, env, true);
@@ -343,6 +397,10 @@ function evalMethodCall(node, env, evaluate) {
         while (curr) {
             if (curr.sharedMethods && methodName in curr.sharedMethods) {
                 let fnObj = curr.sharedMethods[methodName];
+                if (curr !== target && (fnObj.access === 'isolated' || fnObj.access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
             curr = curr.superClass;
@@ -355,7 +413,7 @@ function evalMethodCall(node, env, evaluate) {
     }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
-        let methodName = node.method;
+        let methodName = (typeof resolveMemberKey === 'function') ? resolveMemberKey(target, node.method, env) : node.method;
 
         checkPrivateAccess(target, methodName, env, true);
 

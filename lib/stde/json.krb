@@ -1,0 +1,12 @@
+~~ ============================================================================
+~~ Kuroba StdE Library: Json
+~~ ============================================================================
+namespace StdE ~Json then
+    iconst parse     = __native_json_parse;
+    iconst stringify = __native_json_stringify;
+    iconst isValid   = __native_json_is_valid;
+    iconst read      = __native_json_read;
+    iconst write     = __native_json_write;
+    iconst minify    = __native_json_minify;
+    iconst format    = __native_json_format;
+end
