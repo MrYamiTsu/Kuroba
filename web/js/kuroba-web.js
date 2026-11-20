@@ -15,7 +15,7 @@
   "stde_path.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Path\r\n~~ ============================================================================\r\nnamespace StdE ~Path then\r\n    iconst sep        = __native_path_sep();\r\n    iconst delimiter  = __native_path_delimiter();\r\n    \r\n    iconst join       = __native_path_join;\r\n    iconst resolve    = __native_path_resolve;\r\n    iconst normalize  = __native_path_normalize;\r\n    iconst dirname    = __native_path_dirname;\r\n    iconst basename   = __native_path_basename;\r\n    iconst extname    = __native_path_extname;\r\n    iconst isAbsolute = __native_path_is_absolute;\r\n    iconst relative   = __native_path_relative;\r\n    iconst parse      = __native_path_parse;\r\n    iconst format     = __native_path_format;\r\nend",
   "stde_process.krb": "~~ ============================================================================\n~~ Kuroba StdE Library: Process\n~~ ============================================================================\nnamespace StdE ~Process then\n    iconst exec      = __native_process_exec;\n    iconst run       = __native_process_run;\n    iconst getEnv    = __native_process_get_env;\n    iconst setEnv    = __native_process_set_env;\n    iconst cwd       = __native_process_cwd;\n    iconst chdir     = __native_process_chdir;\n    iconst quit      = __native_process_exit;\n    iconst terminate = __native_process_exit;\n    iconst uptime    = __native_process_uptime;\n    iconst pid       = __native_process_pid;\n    iconst env       = __native_process_env_table;\n\n    iconst platform  = __native_process_platform();\n    iconst arch      = __native_process_arch();\nend\n",
   "stde_random.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Random\r\n~~ ============================================================================\r\nnamespace StdE ~Random then\r\n    iconst seed    = __native_random_seed;\r\n    iconst float   = __native_random_float;\r\n    iconst int     = __native_random_int;\r\n    iconst chance  = __native_random_chance;\r\n    iconst uuid    = __native_random_uuid;\r\n    iconst token   = __native_random_token;\r\n\r\n    function item(ivar list) then\r\n        if (list.count() == 0) then\r\n            return NULL;\r\n        end\r\n        ivar idx = int(0, list.count() - 1);\r\n        return list[idx];\r\n    end\r\n    \r\n    function shuffle(ivar list) then\r\n        ivar n = list.count();\r\n        if (n <= 1) then\r\n            return list;\r\n        end\r\n        for (ivar i = n - 1; i > 0; i--) then\r\n            ivar j = int(0, i);\r\n            list[i] <-> list[j];\r\n        end\r\n        return list;\r\n    end\r\nend",
-  "stde_term.krb": "~~ ============================================================================\n~~ Kuroba StdE Library: Term (Terminal & Styling)\n~~ ============================================================================\nnamespace StdE ~Term then\n    ~~ Text colors\n    iconst red         = __native_term_red;\n    iconst green       = __native_term_green;\n    iconst yellow      = __native_term_yellow;\n    iconst blue        = __native_term_blue;\n    iconst magenta     = __native_term_magenta;\n    iconst cyan        = __native_term_cyan;\n    iconst white       = __native_term_white;\n    iconst gray        = __native_term_gray;\n\n    ~~ Styles\n    iconst bold        = __native_term_bold;\n    iconst dim         = __native_term_dim;\n    iconst italic      = __native_term_italic;\n    iconst underline   = __native_term_underline;\n    iconst inverse     = __native_term_inverse;\n    iconst reset       = __native_term_reset;\n\n    ~~ Backgrounds\n    iconst bgRed       = __native_term_bg_red;\n    iconst bgGreen     = __native_term_bg_green;\n    iconst bgYellow    = __native_term_bg_yellow;\n    iconst bgBlue      = __native_term_bg_blue;\n    iconst bgMagenta   = __native_term_bg_magenta;\n    iconst bgCyan      = __native_term_bg_cyan;\n    iconst bgWhite     = __native_term_bg_white;\n\n    ~~ Screen & Cursor\n    iconst clearScreen = __native_term_clear;\n    iconst cls         = __native_term_clear;\n    iconst cursorTo    = __native_term_cursor_to;\n    iconst cursorUp    = __native_term_cursor_up;\n    iconst cursorDown  = __native_term_cursor_down;\n    iconst cursorLeft  = __native_term_cursor_left;\n    iconst cursorRight = __native_term_cursor_right;\n    iconst cursorHide  = __native_term_cursor_hide;\n    iconst cursorShow  = __native_term_cursor_show;\n\n    iconst width       = __native_term_width;\n    iconst height      = __native_term_height;\n    iconst isTTY       = __native_term_is_tty;\nend\n"
+  "stde_term.krb": "~~ ============================================================================\n~~ Kuroba StdE Library: Term (Terminal & Styling)\n~~ ============================================================================\nnamespace StdE ~Term then\n    iconst red         = __native_term_red;\n    iconst green       = __native_term_green;\n    iconst yellow      = __native_term_yellow;\n    iconst blue        = __native_term_blue;\n    iconst magenta     = __native_term_magenta;\n    iconst cyan        = __native_term_cyan;\n    iconst white       = __native_term_white;\n    iconst gray        = __native_term_gray;\n\n    iconst bold        = __native_term_bold;\n    iconst dim         = __native_term_dim;\n    iconst italic      = __native_term_italic;\n    iconst underline   = __native_term_underline;\n    iconst inverse     = __native_term_inverse;\n    iconst reset       = __native_term_reset;\n\n    iconst bgRed       = __native_term_bg_red;\n    iconst bgGreen     = __native_term_bg_green;\n    iconst bgYellow    = __native_term_bg_yellow;\n    iconst bgBlue      = __native_term_bg_blue;\n    iconst bgMagenta   = __native_term_bg_magenta;\n    iconst bgCyan      = __native_term_bg_cyan;\n    iconst bgWhite     = __native_term_bg_white;\n\n    iconst clearScreen = __native_term_clear;\n    iconst cls         = __native_term_clear;\n    iconst cursorTo    = __native_term_cursor_to;\n    iconst cursorUp    = __native_term_cursor_up;\n    iconst cursorDown  = __native_term_cursor_down;\n    iconst cursorLeft  = __native_term_cursor_left;\n    iconst cursorRight = __native_term_cursor_right;\n    iconst cursorHide  = __native_term_cursor_hide;\n    iconst cursorShow  = __native_term_cursor_show;\n\n    iconst width       = __native_term_width;\n    iconst height      = __native_term_height;\n    iconst isTTY       = __native_term_is_tty;\nend\n"
 };
     
     // In-memory Virtual Filesystem for Std.IO in the browser
@@ -293,7 +293,9 @@ const KEYWORDS = {
   shared: { type: "SHARED", value: "shared" },
   enum: { type: "ENUM", value: "enum" },
   get: { type: "GET", value: "get" },
-  set: { type: "SET", value: "set" }
+  set: { type: "SET", value: "set" },
+  interface: { type: "INTERFACE", value: "interface" },
+  as: { type: "AS", value: "as" }
 };
 
 const SYMBOLS = {
@@ -1675,6 +1677,7 @@ class ParserStatements extends ParserControl {
         if (this.match('HOOK'))     return this.parseHookStatement();
         if (this.match('TRY'))      return this.parseTryStatement();
         if (this.match('CLASS'))    return this.parseClassDeclaration();
+        if (this.match('INTERFACE'))return this.parseInterfaceDeclaration();
         if (this.match('ENUM'))     return this.parseEnumDeclaration();
         
         if (this.match('IVAR', 'ICONST')) {
@@ -1746,18 +1749,41 @@ class ParserStatements extends ParserControl {
                         superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
                     }
 
+                    let interfaces = [];
+                    if (this.match('AS')) {
+                        while (true) {
+                            interfaces.push(this.parseDottedIdentifier(`Expected interface name after 'as' in class '${className}'.`));
+                            if (!this.match('COMMA')) break;
+                        }
+                    }
+
+                    if (this.check('FROM')) {
+                        let tok = this.peek();
+                        printErr({
+                            eName: 'SyntaxError',
+                            eContext: `'from' must be placed before 'as' in class '${className}' (e.g. '~class ${className} from Super as Interface').`,
+                            eLine: tok ? tok.line : null,
+                            eCol: tok ? tok.col : null
+                        });
+                    }
+
                     this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
-                    let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
+                    let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
 
                     let classDecl = {
                         type: 'ClassDeclaration',
                         name: className,
                         superClass,
+                        interfaces,
                         fields,
                         methods,
                         sharedFields,
                         sharedMethods,
+                        getters,
+                        setters,
+                        sharedGetters,
+                        sharedSetters,
                         line: classTok.line,
                         col: classTok.col
                     };
@@ -1769,6 +1795,21 @@ class ParserStatements extends ParserControl {
                         isClassModule: true,
                         classDecl,
                         body: [classDecl],
+                        line: startToken.line,
+                        col: startToken.col
+                    };
+                }
+
+                if (this.match('INTERFACE')) {
+                    let ifaceDecl = this.parseInterfaceDeclaration();
+                    modName = ifaceDecl.name;
+                    return {
+                        type: 'NamespaceStatement',
+                        namespace: nsName,
+                        module: modName,
+                        isInterfaceModule: true,
+                        interfaceDecl: ifaceDecl,
+                        body: [ifaceDecl],
                         line: startToken.line,
                         col: startToken.col
                     };
@@ -2210,6 +2251,24 @@ class ParserStatements extends ParserControl {
             superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
         }
 
+        let interfaces = [];
+        if (this.match('AS')) {
+            while (true) {
+                interfaces.push(this.parseDottedIdentifier(`Expected interface name after 'as' in class '${className}'.`));
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        if (this.check('FROM')) {
+            let tok = this.peek();
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `'from' must be placed before 'as' in class '${className}' (e.g. 'class ${className} from Super as Interface').`,
+                eLine: tok ? tok.line : null,
+                eCol: tok ? tok.col : null
+            });
+        }
+
         this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
         let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
@@ -2217,6 +2276,7 @@ class ParserStatements extends ParserControl {
             type: 'ClassDeclaration',
             name: className,
             superClass,
+            interfaces,
             fields,
             methods,
             sharedFields,
@@ -2225,6 +2285,92 @@ class ParserStatements extends ParserControl {
             setters,
             sharedGetters,
             sharedSetters,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
+    parseInterfaceDeclaration() {
+        let startToken = this.previous();
+        let interfaceName = this.consume('IDENTIFIER', "Expected interface name after 'interface'.").value;
+
+        let superInterfaces = [];
+        if (this.match('FROM')) {
+            while (true) {
+                superInterfaces.push(this.parseDottedIdentifier(`Expected super-interface name after 'from' in interface '${interfaceName}'.`));
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        this.consume('THEN', `Expected 'then' after interface declaration '${interfaceName}'.`);
+
+        let methods = [];
+        let getters = [];
+        let setters = [];
+        let fields = [];
+
+        while (!this.check('END') && !this.isAtEnd()) {
+            if (this.match('FUNCTION')) {
+                let funcTok = this.previous();
+                let funcName = this.consume('IDENTIFIER', `Expected method name in interface '${interfaceName}'.`).value;
+                this.consume('LPAREN', `Expected '(' after method name '${funcName}' in interface '${interfaceName}'.`);
+                let params = this.parseParameterList();
+                this.consume('RPAREN', `Expected ')' after parameters for '${funcName}' in interface '${interfaceName}'.`);
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface method '${funcName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after method signature '${funcName}' in interface '${interfaceName}'.`);
+                }
+                methods.push({ name: funcName, params, line: funcTok.line, col: funcTok.col });
+            } else if (this.match('GET')) {
+                let getTok = this.previous();
+                let propName = this.consume('IDENTIFIER', `Expected property name after 'get' in interface '${interfaceName}'.`).value;
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface getter '${propName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after getter signature '${propName}' in interface '${interfaceName}'.`);
+                }
+                getters.push({ name: propName, line: getTok.line, col: getTok.col });
+            } else if (this.match('SET')) {
+                let setTok = this.previous();
+                let propName = this.consume('IDENTIFIER', `Expected property name after 'set' in interface '${interfaceName}'.`).value;
+                this.consume('LPAREN', `Expected '(' after 'set' in interface '${interfaceName}'.`);
+                this.match('IVAR');
+                let paramName = this.consume('IDENTIFIER', `Expected parameter name in setter '${propName}' in interface '${interfaceName}'.`).value;
+                this.consume('RPAREN', `Expected ')' after parameter in setter '${propName}'.`);
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface setter '${propName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after setter signature '${propName}' in interface '${interfaceName}'.`);
+                }
+                setters.push({ name: propName, param: paramName, line: setTok.line, col: setTok.col });
+            } else if (this.match('IVAR', 'ICONST')) {
+                let fieldTok = this.previous();
+                let isConst = fieldTok.type === 'ICONST';
+                let fieldName = this.consume('IDENTIFIER', `Expected field name in interface '${interfaceName}'.`).value;
+                this.consume('SEMICOLON', `Expected ';' after field '${fieldName}' in interface '${interfaceName}'.`);
+                fields.push({ name: fieldName, isConst, line: fieldTok.line, col: fieldTok.col });
+            } else {
+                let tok = this.peek();
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Unexpected token '${tok ? tok.value : 'EOF'}' inside interface '${interfaceName}'. Expected method, getter, setter, or field declaration.`,
+                    eLine: tok ? tok.line : null,
+                    eCol: tok ? tok.col : null
+                });
+            }
+        }
+
+        this.consume('END', `Expected 'end' to close interface '${interfaceName}' block.`);
+
+        return {
+            type: 'InterfaceDeclaration',
+            name: interfaceName,
+            superInterfaces,
+            methods,
+            getters,
+            setters,
+            fields,
             line: startToken.line,
             col: startToken.col
         };
@@ -2922,6 +3068,12 @@ function formatKurobaValue(val, isInsideList = false) {
     if (val && val.kind === 'Enum') {
         return `<enum ${val.name}>`;
     }
+    if (val && val.kind === 'Interface') {
+        return `<interface ${val.name}>`;
+    }
+    if (val && val.kind === 'Class') {
+        return `<class ${val.name}>`;
+    }
     if (val && val.kind === 'Table') {
         let keys = Object.keys(val.fields);
         if (keys.length === 0) return '{}';
@@ -3043,6 +3195,30 @@ async function evalIs(node, env, evaluate) {
                 curr = curr.superClass;
             }
             
+            return false;
+        }
+
+        if (customObj && customObj.kind === 'Interface') {
+            if (!val || val.kind !== 'Table' || !val.isInstance) return false;
+
+            function matchesInterface(targetIface, ifaceToCheck) {
+                if (targetIface === ifaceToCheck || targetIface.name === ifaceToCheck.name) return true;
+                for (const sup of (ifaceToCheck.superInterfaces || [])) {
+                    if (matchesInterface(targetIface, sup)) return true;
+                }
+                return false;
+            }
+
+            let curr = val.classRef;
+            while (curr) {
+                if (curr.interfaces) {
+                    for (const iface of curr.interfaces) {
+                        if (matchesInterface(customObj, iface)) return true;
+                    }
+                }
+                curr = curr.superClass;
+            }
+
             return false;
         }
         
@@ -3293,6 +3469,208 @@ function evalKill(node, env) {
 
 
 
+async function evalInterfaceDeclaration(node, env, shouldBind = true) {
+    let superInterfaces = [];
+    if (node.superInterfaces && node.superInterfaces.length > 0) {
+        for (const parentName of node.superInterfaces) {
+            const parentObj = resolveQualifiedValue(parentName, env);
+            if (!parentObj || parentObj.kind !== 'Interface') {
+                printErr({
+                    eName: 'ReferenceError',
+                    eContext: `Cannot extend undefined or invalid interface '${parentName}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+            superInterfaces.push(parentObj);
+        }
+    }
+
+    const interfaceObj = {
+        kind: 'Interface',
+        name: node.name,
+        superInterfaces,
+        methods: node.methods || [],
+        getters: node.getters || [],
+        setters: node.setters || [],
+        fields: node.fields || [],
+        line: node.line,
+        col: node.col
+    };
+
+    if (shouldBind) {
+        env.values[node.name] = {
+            value: interfaceObj,
+            type: 'Interface',
+            isConst: true,
+            isNullable: false
+        };
+    }
+
+    return interfaceObj;
+}
+
+function getAllClassMethods(classObj) {
+    const methods = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.methods) {
+            for (const [mName, mAst] of Object.entries(curr.methods)) {
+                if (!methods.has(mName)) {
+                    methods.set(mName, mAst);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return methods;
+}
+
+function getAllClassGetters(classObj) {
+    const getters = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.getters) {
+            for (const g of curr.getters) {
+                if (!getters.has(g.name)) {
+                    getters.set(g.name, g);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return getters;
+}
+
+function getAllClassSetters(classObj) {
+    const setters = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.setters) {
+            for (const s of curr.setters) {
+                if (!setters.has(s.name)) {
+                    setters.set(s.name, s);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return setters;
+}
+
+function getAllClassFields(classObj) {
+    const fields = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.fields) {
+            for (const f of curr.fields) {
+                if (!fields.has(f.name)) {
+                    fields.set(f.name, f);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return fields;
+}
+
+function collectInterfaceRequirements(ifaceObj, visited = new Set()) {
+    if (visited.has(ifaceObj)) return { methods: [], getters: [], setters: [], fields: [] };
+    visited.add(ifaceObj);
+
+    let methods = [...(ifaceObj.methods || [])];
+    let getters = [...(ifaceObj.getters || [])];
+    let setters = [...(ifaceObj.setters || [])];
+    let fields = [...(ifaceObj.fields || [])];
+
+    for (const sup of (ifaceObj.superInterfaces || [])) {
+        const subReq = collectInterfaceRequirements(sup, visited);
+        methods.push(...subReq.methods);
+        getters.push(...subReq.getters);
+        setters.push(...subReq.setters);
+        fields.push(...subReq.fields);
+    }
+
+    return { methods, getters, setters, fields };
+}
+
+function verifyInterfaceContract(classObj, ifaceObj, node) {
+    const reqs = collectInterfaceRequirements(ifaceObj);
+    const classMethods = getAllClassMethods(classObj);
+    const classGetters = getAllClassGetters(classObj);
+    const classSetters = getAllClassSetters(classObj);
+    const classFields = getAllClassFields(classObj);
+
+    for (const reqMethod of reqs.methods) {
+        if (!classMethods.has(reqMethod.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement method '${reqMethod.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+        const classM = classMethods.get(reqMethod.name);
+        const reqMinParams = (reqMethod.params || []).filter(p => !p.defaultValue).length;
+        const classMaxParams = (classM.params || []).length;
+        if (reqMinParams > classMaxParams) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Method '${reqMethod.name}' in class '${classObj.name}' expects fewer parameters than required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqGetter of reqs.getters) {
+        if (!classGetters.has(reqGetter.name) && !classFields.has(reqGetter.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement getter or field '${reqGetter.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqSetter of reqs.setters) {
+        const hasSetter = classSetters.has(reqSetter.name);
+        const field = classFields.get(reqSetter.name);
+        const hasMutableField = field && !field.isConst && field.type !== 'ConstDeclar';
+        if (!hasSetter && !hasMutableField) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement setter '${reqSetter.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqField of reqs.fields) {
+        if (!classFields.has(reqField.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement field '${reqField.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+        if (reqField.isConst) {
+            const field = classFields.get(reqField.name);
+            if (!field.isConst && field.type !== 'ConstDeclar') {
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Field '${reqField.name}' in class '${classObj.name}' must be constant (iconst) as required by interface '${ifaceObj.name}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+        }
+    }
+}
+
 async function evalClassDeclaration(node, env, shouldBind = true) {
     let superClassObj = null;
     if (node.superClass) {
@@ -3307,10 +3685,27 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
         superClassObj = val;
     }
 
+    const interfaces = [];
+    if (node.interfaces && node.interfaces.length > 0) {
+        for (const ifaceName of node.interfaces) {
+            const ifaceObj = resolveQualifiedValue(ifaceName, env);
+            if (!ifaceObj || ifaceObj.kind !== 'Interface') {
+                printErr({
+                    eName: 'ReferenceError',
+                    eContext: `Cannot implement undefined or invalid interface '${ifaceName}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+            interfaces.push(ifaceObj);
+        }
+    }
+
     const classObj = {
         kind: 'Class',
         name: node.name,
         superClass: superClassObj,
+        interfaces,
         fields: node.fields,
         methods: {},
         sharedFields: {},
@@ -3446,6 +3841,10 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
                 declaringClass: node.name
             };
         }
+    }
+
+    for (const iface of interfaces) {
+        verifyInterfaceContract(classObj, iface, node);
     }
 
     if (shouldBind) {
@@ -4056,6 +4455,9 @@ async function invokeGetter(getterAst, instance, rawValue, declaringClass, env, 
     try {
         for (const stmt of getterAst.body) {
             const res = await evaluate(stmt, scope);
+            if (res && res.isReturn) {
+                return res.value;
+            }
             if (res && res.__returnValue !== undefined) {
                 return res.__returnValue;
             }
@@ -4076,6 +4478,9 @@ async function invokeSetter(setterAst, instance, rawValue, newVal, declaringClas
     try {
         for (const stmt of setterAst.body) {
             const res = await evaluate(stmt, scope);
+            if (res && res.isReturn) {
+                break;
+            }
             if (res && res.__returnValue !== undefined) {
                 break;
             }
@@ -4137,6 +4542,13 @@ async function evalListLiteral(node, env, evaluate) {
 async function evalIndexAccess(node, env, evaluate) {
     let target = await evaluate(node.target, env);
 
+    if (target && target.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access members directly on interface '${target.name}'.`
+        });
+    }
+
     if (target && target.kind === 'Enum') {
         let key = node.index;
         if (key in target.members) {
@@ -4190,14 +4602,14 @@ async function evalIndexAccess(node, env, evaluate) {
 
         checkPrivateAccess(target, key, env, false);
 
-        if (key in target.fields) {
-            const rawVal = target.fields[key].value;
+        if (target.getters && (target.getters[key] || target.getters[node.index])) {
+            const g = target.getters[key] || target.getters[node.index];
+            const rawVal = (key in target.fields) ? target.fields[key].value : null;
+            return await invokeGetter(g.ast, target, rawVal, g.declaringClass, env, evaluate);
+        }
 
-            if (target.getters && target.getters[key]) {
-                const g = target.getters[key];
-                return await invokeGetter(g.ast, target, rawVal, g.declaringClass, env, evaluate);
-            }
-            return rawVal;
+        if (key in target.fields) {
+            return target.fields[key].value;
         }
         
         return null;
@@ -4301,6 +4713,13 @@ async function evalMemberAssign(node, env, evaluate) {
     }
 
     let container = await evaluate(node.target, env);
+
+    if (container && container.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot assign property '${node.index}' on interface '${container.name}'.`
+        });
+    }
 
     if (container && container.kind === 'Enum') {
         printErr({
@@ -4493,6 +4912,13 @@ async function evalMemberAssign(node, env, evaluate) {
 async function evalMethodCall(node, env, evaluate) {
     let target = await evaluate(node.target, env);
     let targetType = getType(target);
+
+    if (target && target.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot call method '${node.method}' on interface '${target.name}'.`
+        });
+    }
 
     if (target && target.kind === 'Class') {
         let methodName = node.method;
@@ -5125,6 +5551,14 @@ async function evalCall(node, env, evaluate) {
 
     let caller = await evaluate(node.caller, env);
     
+    if (caller && caller.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot instantiate or call interface '${caller.name}'.`,
+            eLine: node.line
+        });
+    }
+
     if (caller && caller.kind === 'Class') {
         
         return await instantiateClass(caller, node.args, env, evaluate);
@@ -5639,6 +6073,26 @@ async function evaluate(node, env = createScope()) {
                 };
                 return classObj;
             }
+            if (node.isInterfaceModule) {
+                const ifaceObj = await evalInterfaceDeclaration(node.interfaceDecl, env, false);
+                if (!env.values[node.namespace]) {
+                    env.values[node.namespace] = {
+                        value: { kind: 'Table', fields: {} },
+                        type: 'Table',
+                        isConst: true,
+                        isNullable: false
+                    };
+                }
+                const nsTable = env.values[node.namespace].value;
+                if (!nsTable.fields) nsTable.fields = {};
+                nsTable.fields[node.module] = {
+                    value: ifaceObj,
+                    type: 'Interface',
+                    isConst: true,
+                    isNullable: false
+                };
+                return ifaceObj;
+            }
             for (const stmt of node.body) {
                 let res = await evaluate(stmt, env);
                 if (res && (res.isReturn || res.isBreak || res.isSkip)) return res;
@@ -5695,6 +6149,7 @@ async function evaluate(node, env = createScope()) {
         case 'HookStatement':       return await evalHook(node, env, evaluate);
         case 'ImportStatement':     return await evalImport(node, env, evaluate);
         case 'ClassDeclaration':    return await evalClassDeclaration(node, env);
+        case 'InterfaceDeclaration':return await evalInterfaceDeclaration(node, env);
         case 'EnumDeclaration':     return await evalEnumDeclaration(node, env, evaluate);
         default:
             printErr({

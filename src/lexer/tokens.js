@@ -52,7 +52,9 @@ const KEYWORDS = {
   shared: { type: "SHARED", value: "shared" },
   enum: { type: "ENUM", value: "enum" },
   get: { type: "GET", value: "get" },
-  set: { type: "SET", value: "set" }
+  set: { type: "SET", value: "set" },
+  interface: { type: "INTERFACE", value: "interface" },
+  as: { type: "AS", value: "as" }
 };
 
 const SYMBOLS = {

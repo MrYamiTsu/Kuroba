@@ -80,6 +80,7 @@ class ParserStatements extends ParserControl {
         if (this.match('HOOK'))     return this.parseHookStatement();
         if (this.match('TRY'))      return this.parseTryStatement();
         if (this.match('CLASS'))    return this.parseClassDeclaration();
+        if (this.match('INTERFACE'))return this.parseInterfaceDeclaration();
         if (this.match('ENUM'))     return this.parseEnumDeclaration();
         
         if (this.match('IVAR', 'ICONST')) {
@@ -151,18 +152,41 @@ class ParserStatements extends ParserControl {
                         superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
                     }
 
+                    let interfaces = [];
+                    if (this.match('AS')) {
+                        while (true) {
+                            interfaces.push(this.parseDottedIdentifier(`Expected interface name after 'as' in class '${className}'.`));
+                            if (!this.match('COMMA')) break;
+                        }
+                    }
+
+                    if (this.check('FROM')) {
+                        let tok = this.peek();
+                        printErr({
+                            eName: 'SyntaxError',
+                            eContext: `'from' must be placed before 'as' in class '${className}' (e.g. '~class ${className} from Super as Interface').`,
+                            eLine: tok ? tok.line : null,
+                            eCol: tok ? tok.col : null
+                        });
+                    }
+
                     this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
-                    let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
+                    let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
 
                     let classDecl = {
                         type: 'ClassDeclaration',
                         name: className,
                         superClass,
+                        interfaces,
                         fields,
                         methods,
                         sharedFields,
                         sharedMethods,
+                        getters,
+                        setters,
+                        sharedGetters,
+                        sharedSetters,
                         line: classTok.line,
                         col: classTok.col
                     };
@@ -174,6 +198,21 @@ class ParserStatements extends ParserControl {
                         isClassModule: true,
                         classDecl,
                         body: [classDecl],
+                        line: startToken.line,
+                        col: startToken.col
+                    };
+                }
+
+                if (this.match('INTERFACE')) {
+                    let ifaceDecl = this.parseInterfaceDeclaration();
+                    modName = ifaceDecl.name;
+                    return {
+                        type: 'NamespaceStatement',
+                        namespace: nsName,
+                        module: modName,
+                        isInterfaceModule: true,
+                        interfaceDecl: ifaceDecl,
+                        body: [ifaceDecl],
                         line: startToken.line,
                         col: startToken.col
                     };
@@ -615,6 +654,24 @@ class ParserStatements extends ParserControl {
             superClass = this.parseDottedIdentifier(`Expected superclass name after 'from' in class '${className}'.`);
         }
 
+        let interfaces = [];
+        if (this.match('AS')) {
+            while (true) {
+                interfaces.push(this.parseDottedIdentifier(`Expected interface name after 'as' in class '${className}'.`));
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        if (this.check('FROM')) {
+            let tok = this.peek();
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `'from' must be placed before 'as' in class '${className}' (e.g. 'class ${className} from Super as Interface').`,
+                eLine: tok ? tok.line : null,
+                eCol: tok ? tok.col : null
+            });
+        }
+
         this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
         let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
@@ -622,6 +679,7 @@ class ParserStatements extends ParserControl {
             type: 'ClassDeclaration',
             name: className,
             superClass,
+            interfaces,
             fields,
             methods,
             sharedFields,
@@ -630,6 +688,92 @@ class ParserStatements extends ParserControl {
             setters,
             sharedGetters,
             sharedSetters,
+            line: startToken.line,
+            col: startToken.col
+        };
+    }
+
+    parseInterfaceDeclaration() {
+        let startToken = this.previous();
+        let interfaceName = this.consume('IDENTIFIER', "Expected interface name after 'interface'.").value;
+
+        let superInterfaces = [];
+        if (this.match('FROM')) {
+            while (true) {
+                superInterfaces.push(this.parseDottedIdentifier(`Expected super-interface name after 'from' in interface '${interfaceName}'.`));
+                if (!this.match('COMMA')) break;
+            }
+        }
+
+        this.consume('THEN', `Expected 'then' after interface declaration '${interfaceName}'.`);
+
+        let methods = [];
+        let getters = [];
+        let setters = [];
+        let fields = [];
+
+        while (!this.check('END') && !this.isAtEnd()) {
+            if (this.match('FUNCTION')) {
+                let funcTok = this.previous();
+                let funcName = this.consume('IDENTIFIER', `Expected method name in interface '${interfaceName}'.`).value;
+                this.consume('LPAREN', `Expected '(' after method name '${funcName}' in interface '${interfaceName}'.`);
+                let params = this.parseParameterList();
+                this.consume('RPAREN', `Expected ')' after parameters for '${funcName}' in interface '${interfaceName}'.`);
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface method '${funcName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after method signature '${funcName}' in interface '${interfaceName}'.`);
+                }
+                methods.push({ name: funcName, params, line: funcTok.line, col: funcTok.col });
+            } else if (this.match('GET')) {
+                let getTok = this.previous();
+                let propName = this.consume('IDENTIFIER', `Expected property name after 'get' in interface '${interfaceName}'.`).value;
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface getter '${propName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after getter signature '${propName}' in interface '${interfaceName}'.`);
+                }
+                getters.push({ name: propName, line: getTok.line, col: getTok.col });
+            } else if (this.match('SET')) {
+                let setTok = this.previous();
+                let propName = this.consume('IDENTIFIER', `Expected property name after 'set' in interface '${interfaceName}'.`).value;
+                this.consume('LPAREN', `Expected '(' after 'set' in interface '${interfaceName}'.`);
+                this.match('IVAR');
+                let paramName = this.consume('IDENTIFIER', `Expected parameter name in setter '${propName}' in interface '${interfaceName}'.`).value;
+                this.consume('RPAREN', `Expected ')' after parameter in setter '${propName}'.`);
+                if (this.match('THEN')) {
+                    this.consume('END', `Expected 'end' for interface setter '${propName}'.`);
+                } else {
+                    this.consume('SEMICOLON', `Expected ';' after setter signature '${propName}' in interface '${interfaceName}'.`);
+                }
+                setters.push({ name: propName, param: paramName, line: setTok.line, col: setTok.col });
+            } else if (this.match('IVAR', 'ICONST')) {
+                let fieldTok = this.previous();
+                let isConst = fieldTok.type === 'ICONST';
+                let fieldName = this.consume('IDENTIFIER', `Expected field name in interface '${interfaceName}'.`).value;
+                this.consume('SEMICOLON', `Expected ';' after field '${fieldName}' in interface '${interfaceName}'.`);
+                fields.push({ name: fieldName, isConst, line: fieldTok.line, col: fieldTok.col });
+            } else {
+                let tok = this.peek();
+                printErr({
+                    eName: 'SyntaxError',
+                    eContext: `Unexpected token '${tok ? tok.value : 'EOF'}' inside interface '${interfaceName}'. Expected method, getter, setter, or field declaration.`,
+                    eLine: tok ? tok.line : null,
+                    eCol: tok ? tok.col : null
+                });
+            }
+        }
+
+        this.consume('END', `Expected 'end' to close interface '${interfaceName}' block.`);
+
+        return {
+            type: 'InterfaceDeclaration',
+            name: interfaceName,
+            superInterfaces,
+            methods,
+            getters,
+            setters,
+            fields,
             line: startToken.line,
             col: startToken.col
         };

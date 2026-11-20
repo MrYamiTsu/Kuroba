@@ -431,7 +431,7 @@ Kuroba/
   - [x] Custom Property Accessors (`get` / `set`):
     - [x] Property interceptor syntax (`get prop then ... end`, `set prop(val) then ... end`) with raw backing storage access via `value`
     - [x] Immutability protection (`iconst` read-only getters, syntax rejection on setters)
-  - [ ] Interface contracts (`interface IEntity then ... end`, `class Player implements IEntity`) & runtime conformance (`player is IEntity`)
+  - [x] Interface contracts (`interface IEntity then ... end`, `class Player from Super as IEntity`) & runtime conformance (`player is IEntity`)
   - [ ] Textual representation & string inspection protocol (`toString()` auto-invoked by `print` and `~` string interpolation)
   - [ ] Basic operator overloading for vectors, games, and math (`operator +`, `operator -`, `operator *`, etc.)
 - [ ] Built-in `StdE` Package (Standard Extended):

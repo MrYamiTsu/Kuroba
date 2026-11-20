@@ -99,6 +99,30 @@ function evalIs(node, env, evaluate) {
             
             return false;
         }
+
+        if (customObj && customObj.kind === 'Interface') {
+            if (!val || val.kind !== 'Table' || !val.isInstance) return false;
+
+            function matchesInterface(targetIface, ifaceToCheck) {
+                if (targetIface === ifaceToCheck || targetIface.name === ifaceToCheck.name) return true;
+                for (const sup of (ifaceToCheck.superInterfaces || [])) {
+                    if (matchesInterface(targetIface, sup)) return true;
+                }
+                return false;
+            }
+
+            let curr = val.classRef;
+            while (curr) {
+                if (curr.interfaces) {
+                    for (const iface of curr.interfaces) {
+                        if (matchesInterface(customObj, iface)) return true;
+                    }
+                }
+                curr = curr.superClass;
+            }
+
+            return false;
+        }
         
         printErr({
             eName: 'TypeError',

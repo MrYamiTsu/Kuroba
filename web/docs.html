@@ -1061,6 +1061,47 @@ pasteLn(hero.hp); ~~ 100 (clamped by setter)
 
 hero.hp -= 200;
 pasteLn(hero.hp); ~~ 0 (clamped to zero)</code></pre>
+
+        <h3>7. Interface Contracts (<code>interface</code> &amp; <code>as</code>)</h3>
+        <p>Interfaces in Kuroba serve as pure contracts. They define the required methods, property accessors (<code>get</code> / <code>set</code>), and fields that an implementing class must provide, without containing any implementation details:</p>
+        <ul>
+          <li><strong>Pure Structural Contracts:</strong> Interfaces cannot be instantiated directly (e.g., <code>IEntity()</code> raises <code>[TypeError]</code>) and cannot have their members accessed directly (<code>IEntity.member</code> raises <code>[TypeError]</code>).</li>
+          <li><strong>Implementation Syntax:</strong> Classes implement interfaces using the <code>as</code> keyword: <code>class Name [from SuperClass] [as Interface1, Interface2] then ... end</code>.</li>
+          <li><strong>Strict Ordering:</strong> When both inheritance and interfaces are used, <code>from</code> must always precede <code>as</code> (e.g. <code>class Dog from Animal as Canine</code>). Writing <code>class Dog as Canine from Animal</code> triggers a strict <code>[SyntaxError]</code>.</li>
+          <li><strong>Visibility Freedom:</strong> The interface guarantees that the member exists with the expected signature. However, the implementing class has complete freedom to define the member's visibility modifier (<code>public</code>, <code>protected</code>, etc.).</li>
+          <li><strong>Interface Inheritance:</strong> Interfaces can extend other interfaces using <code>interface Canine from Mammal then ... end</code>.</li>
+          <li><strong>Runtime Conformance (<code>is</code>):</strong> The <code>is</code> operator evaluates whether an instance conforms to an interface, inspecting direct implementations, superclass implementations, and inherited interfaces: <code>dog is Canine</code>.</li>
+        </ul>
+
+        <pre><code class="language-kuroba">~~ Define pure interface contracts
+interface IMammal then
+    function breathe();
+    get warmBlooded;
+end
+
+interface ICanine from IMammal then
+    function bark();
+end
+
+~~ Implement interface with freedom of member visibility
+class Wolf as ICanine then
+    iconst warmBlooded = TRUE;
+
+    function breathe() then
+        return "inhale / exhale";
+    end
+
+    ~~ Class chooses public or protected visibility
+    function bark() then
+        return "Howl!";
+    end
+end
+
+ivar w = Wolf();
+pasteLn(w.bark());           ~~ "Howl!"
+pasteLn(w is Wolf);          ~~ TRUE
+pasteLn(w is ICanine);       ~~ TRUE
+pasteLn(w is IMammal);       ~~ TRUE (inherited interface)</code></pre>
       </section>
 
       <!-- ====================================================================

@@ -11,6 +11,13 @@ function evalListLiteral(node, env, evaluate) {
 function evalIndexAccess(node, env, evaluate) {
     let target = evaluate(node.target, env);
 
+    if (target && target.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access members directly on interface '${target.name}'.`
+        });
+    }
+
     if (target && target.kind === 'Enum') {
         let key = node.index;
         if (key in target.members) {
@@ -64,14 +71,14 @@ function evalIndexAccess(node, env, evaluate) {
 
         checkPrivateAccess(target, key, env, false);
 
-        if (key in target.fields) {
-            const rawVal = target.fields[key].value;
+        if (target.getters && (target.getters[key] || target.getters[node.index])) {
+            const g = target.getters[key] || target.getters[node.index];
+            const rawVal = (key in target.fields) ? target.fields[key].value : null;
+            return invokeGetter(g.ast, target, rawVal, g.declaringClass, env, evaluate);
+        }
 
-            if (target.getters && target.getters[key]) {
-                const g = target.getters[key];
-                return invokeGetter(g.ast, target, rawVal, g.declaringClass, env, evaluate);
-            }
-            return rawVal;
+        if (key in target.fields) {
+            return target.fields[key].value;
         }
         
         return null;
@@ -175,6 +182,13 @@ function evalMemberAssign(node, env, evaluate) {
     }
 
     let container = evaluate(node.target, env);
+
+    if (container && container.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot assign property '${node.index}' on interface '${container.name}'.`
+        });
+    }
 
     if (container && container.kind === 'Enum') {
         printErr({
@@ -367,6 +381,13 @@ function evalMemberAssign(node, env, evaluate) {
 function evalMethodCall(node, env, evaluate) {
     let target = evaluate(node.target, env);
     let targetType = getType(target);
+
+    if (target && target.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot call method '${node.method}' on interface '${target.name}'.`
+        });
+    }
 
     if (target && target.kind === 'Class') {
         let methodName = node.method;

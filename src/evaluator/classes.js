@@ -3,6 +3,208 @@ const { getType, castToType } = require('./types');
 const { createScope, findScope, resolveQualifiedValue } = require('./scope');
 const { evalCall } = require('./functions');
 
+function evalInterfaceDeclaration(node, env, shouldBind = true) {
+    let superInterfaces = [];
+    if (node.superInterfaces && node.superInterfaces.length > 0) {
+        for (const parentName of node.superInterfaces) {
+            const parentObj = resolveQualifiedValue(parentName, env);
+            if (!parentObj || parentObj.kind !== 'Interface') {
+                printErr({
+                    eName: 'ReferenceError',
+                    eContext: `Cannot extend undefined or invalid interface '${parentName}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+            superInterfaces.push(parentObj);
+        }
+    }
+
+    const interfaceObj = {
+        kind: 'Interface',
+        name: node.name,
+        superInterfaces,
+        methods: node.methods || [],
+        getters: node.getters || [],
+        setters: node.setters || [],
+        fields: node.fields || [],
+        line: node.line,
+        col: node.col
+    };
+
+    if (shouldBind) {
+        env.values[node.name] = {
+            value: interfaceObj,
+            type: 'Interface',
+            isConst: true,
+            isNullable: false
+        };
+    }
+
+    return interfaceObj;
+}
+
+function getAllClassMethods(classObj) {
+    const methods = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.methods) {
+            for (const [mName, mAst] of Object.entries(curr.methods)) {
+                if (!methods.has(mName)) {
+                    methods.set(mName, mAst);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return methods;
+}
+
+function getAllClassGetters(classObj) {
+    const getters = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.getters) {
+            for (const g of curr.getters) {
+                if (!getters.has(g.name)) {
+                    getters.set(g.name, g);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return getters;
+}
+
+function getAllClassSetters(classObj) {
+    const setters = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.setters) {
+            for (const s of curr.setters) {
+                if (!setters.has(s.name)) {
+                    setters.set(s.name, s);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return setters;
+}
+
+function getAllClassFields(classObj) {
+    const fields = new Map();
+    let curr = classObj;
+    while (curr) {
+        if (curr.fields) {
+            for (const f of curr.fields) {
+                if (!fields.has(f.name)) {
+                    fields.set(f.name, f);
+                }
+            }
+        }
+        curr = curr.superClass;
+    }
+    return fields;
+}
+
+function collectInterfaceRequirements(ifaceObj, visited = new Set()) {
+    if (visited.has(ifaceObj)) return { methods: [], getters: [], setters: [], fields: [] };
+    visited.add(ifaceObj);
+
+    let methods = [...(ifaceObj.methods || [])];
+    let getters = [...(ifaceObj.getters || [])];
+    let setters = [...(ifaceObj.setters || [])];
+    let fields = [...(ifaceObj.fields || [])];
+
+    for (const sup of (ifaceObj.superInterfaces || [])) {
+        const subReq = collectInterfaceRequirements(sup, visited);
+        methods.push(...subReq.methods);
+        getters.push(...subReq.getters);
+        setters.push(...subReq.setters);
+        fields.push(...subReq.fields);
+    }
+
+    return { methods, getters, setters, fields };
+}
+
+function verifyInterfaceContract(classObj, ifaceObj, node) {
+    const reqs = collectInterfaceRequirements(ifaceObj);
+    const classMethods = getAllClassMethods(classObj);
+    const classGetters = getAllClassGetters(classObj);
+    const classSetters = getAllClassSetters(classObj);
+    const classFields = getAllClassFields(classObj);
+
+    for (const reqMethod of reqs.methods) {
+        if (!classMethods.has(reqMethod.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement method '${reqMethod.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+        const classM = classMethods.get(reqMethod.name);
+        const reqMinParams = (reqMethod.params || []).filter(p => !p.defaultValue).length;
+        const classMaxParams = (classM.params || []).length;
+        if (reqMinParams > classMaxParams) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Method '${reqMethod.name}' in class '${classObj.name}' expects fewer parameters than required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqGetter of reqs.getters) {
+        if (!classGetters.has(reqGetter.name) && !classFields.has(reqGetter.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement getter or field '${reqGetter.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqSetter of reqs.setters) {
+        const hasSetter = classSetters.has(reqSetter.name);
+        const field = classFields.get(reqSetter.name);
+        const hasMutableField = field && !field.isConst && field.type !== 'ConstDeclar';
+        if (!hasSetter && !hasMutableField) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement setter '${reqSetter.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+    }
+
+    for (const reqField of reqs.fields) {
+        if (!classFields.has(reqField.name)) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Class '${classObj.name}' does not implement field '${reqField.name}' required by interface '${ifaceObj.name}'.`,
+                eLine: node.line,
+                eCol: node.col
+            });
+        }
+        if (reqField.isConst) {
+            const field = classFields.get(reqField.name);
+            if (!field.isConst && field.type !== 'ConstDeclar') {
+                printErr({
+                    eName: 'TypeError',
+                    eContext: `Field '${reqField.name}' in class '${classObj.name}' must be constant (iconst) as required by interface '${ifaceObj.name}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+        }
+    }
+}
+
 function evalClassDeclaration(node, env, shouldBind = true) {
     let superClassObj = null;
     if (node.superClass) {
@@ -17,10 +219,27 @@ function evalClassDeclaration(node, env, shouldBind = true) {
         superClassObj = val;
     }
 
+    const interfaces = [];
+    if (node.interfaces && node.interfaces.length > 0) {
+        for (const ifaceName of node.interfaces) {
+            const ifaceObj = resolveQualifiedValue(ifaceName, env);
+            if (!ifaceObj || ifaceObj.kind !== 'Interface') {
+                printErr({
+                    eName: 'ReferenceError',
+                    eContext: `Cannot implement undefined or invalid interface '${ifaceName}'.`,
+                    eLine: node.line,
+                    eCol: node.col
+                });
+            }
+            interfaces.push(ifaceObj);
+        }
+    }
+
     const classObj = {
         kind: 'Class',
         name: node.name,
         superClass: superClassObj,
+        interfaces,
         fields: node.fields,
         methods: {},
         sharedFields: {},
@@ -156,6 +375,10 @@ function evalClassDeclaration(node, env, shouldBind = true) {
                 declaringClass: node.name
             };
         }
+    }
+
+    for (const iface of interfaces) {
+        verifyInterfaceContract(classObj, iface, node);
     }
 
     if (shouldBind) {
@@ -766,6 +989,9 @@ function invokeGetter(getterAst, instance, rawValue, declaringClass, env, evalua
     try {
         for (const stmt of getterAst.body) {
             const res = evaluate(stmt, scope);
+            if (res && res.isReturn) {
+                return res.value;
+            }
             if (res && res.__returnValue !== undefined) {
                 return res.__returnValue;
             }
@@ -786,6 +1012,9 @@ function invokeSetter(setterAst, instance, rawValue, newVal, declaringClass, env
     try {
         for (const stmt of setterAst.body) {
             const res = evaluate(stmt, scope);
+            if (res && res.isReturn) {
+                break;
+            }
             if (res && res.__returnValue !== undefined) {
                 break;
             }
@@ -806,6 +1035,7 @@ function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false
 
 module.exports = { 
     evalClassDeclaration, 
+    evalInterfaceDeclaration,
     instantiateClass, 
     checkMemberAccess,
     checkPrivateAccess,

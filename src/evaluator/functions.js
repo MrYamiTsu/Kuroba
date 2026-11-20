@@ -45,6 +45,14 @@ function evalCall(node, env, evaluate) {
 
     let caller = evaluate(node.caller, env);
     
+    if (caller && caller.kind === 'Interface') {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot instantiate or call interface '${caller.name}'.`,
+            eLine: node.line
+        });
+    }
+
     if (caller && caller.kind === 'Class') {
         const { instantiateClass } = require('./classes');
         return instantiateClass(caller, node.args, env, evaluate);
