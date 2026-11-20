@@ -1041,7 +1041,7 @@ pasteLn(Player.getCount());     ~~ 2</code></pre>
     set hp(newVal) then
         if (newVal &lt; 0) then
             value = 0;
-        else if (newVal &gt; this.maxHp) then
+        elif (newVal &gt; this.maxHp) then
             value = this.maxHp;
         else
             value = newVal;
@@ -2294,14 +2294,18 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
         }
 
         const card = document.createElement('div');
-        card.className = 'doc-code-card';
+        card.className = isBash ? 'doc-code-card doc-terminal-card' : 'doc-code-card';
 
         const header = document.createElement('div');
         header.className = 'doc-code-header';
 
         const title = document.createElement('div');
         title.className = 'doc-code-title';
-        title.innerHTML = `<span class="badge-dot"></span><span>${langLabel}</span>`;
+        if (isBash) {
+          title.innerHTML = `<span class="term-dot"></span><span class="term-title">terminal</span>`;
+        } else {
+          title.innerHTML = `<span class="badge-dot"></span><span>${langLabel}</span>`;
+        }
 
         const actions = document.createElement('div');
         actions.className = 'doc-code-actions';

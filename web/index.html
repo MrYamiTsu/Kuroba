@@ -50,11 +50,6 @@
           <a href="playground.html" class="btn-primary">Open Live Playground ▶</a>
           <a href="docs.html" class="btn-secondary">Read Documentation</a>
         </div>
-
-        <div class="quick-install-box">
-          <code>git clone https://github.com/MrYamiTsu/Kuroba.git &amp;&amp; cd Kuroba</code>
-          <button id="btn-copy-install" class="copy-btn-inline" title="Copy command">Copy</button>
-        </div>
       </div>
 
       <!-- Interactive Hero Code Preview Card -->
@@ -83,65 +78,113 @@
   </section>
 
   <!-- ========================================================================
-       Section : Core Engineering Principles
+       Section : Quickstart Strip (Direct Setup below Hero)
+       ======================================================================== -->
+  <section class="quickstart-section">
+    <div class="quickstart-strip">
+      <div class="quickstart-info">
+        <span class="quickstart-badge">ZERO-INSTALL RUNTIME</span>
+        <h2 class="quickstart-title">Start in seconds on your machine.</h2>
+        <p class="quickstart-desc">
+          Zero dependencies, no build steps. Clone the repository and run scripts directly with pure Node.js v16+.
+        </p>
+      </div>
+
+      <div class="quickstart-terminal">
+        <div class="quickstart-term-header">
+          <span class="term-dot"></span>
+          <span class="term-title">terminal</span>
+        </div>
+        <div class="quickstart-term-body">
+          <code>git clone https://github.com/MrYamiTsu/Kuroba.git &amp;&amp; cd Kuroba</code>
+          <button id="btn-quickstart-copy" class="term-copy-btn" title="Copy command">Copy</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section : Core Engineering Principles (8 Pillars)
        ======================================================================== -->
   <section class="pillars-section">
-    <div class="section-label">CORE DESIGN</div>
-    <h2 class="section-heading">Practical features, clear syntax.</h2>
+    <div class="section-label">CORE ARCHITECTURE</div>
+    <h2 class="section-heading">Designed for clarity, built from scratch.</h2>
 
     <div class="pillars-grid">
       <div class="pillar-card">
-        <h3>1. Zero External Dependencies</h3>
-        <p>No <code>node_modules</code>, no transpilers, and no build tools. The lexer, parser, evaluator, and standard library live in plain JavaScript files you can read directly.</p>
-        <pre><code>package.json:
-"dependencies": {} ~~ 0 packages</code></pre>
+        <span class="pillar-tag">ARCHITECTURE</span>
+        <h3>Zero Dependencies</h3>
+        <p>No <code>node_modules</code>, no transpilers, and zero build steps. The lexer, parser, evaluator, and standard libraries run natively in Node.js and inside web browsers.</p>
+        <pre><code>~~ Pure Node.js &amp; browser runtime
+pasteLn("Zero external dependencies!");</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>2. Hybrid Typing &amp; Non-Nullability</h3>
-        <p>Skip type annotations while prototyping (<code>ivar x = 10;</code>), or enforce coercion (<code>ivar~Int n = "42";</code>) and non-null contracts (<code>ivar~(String) u = "...";</code>) when values need guarantees.</p>
-        <pre><code>ivar~Int count = "50";    ~~ Coerced to Int 50
-ivar~(String) id = NULL;  ~~ [TypeError] Rejected</code></pre>
+        <span class="pillar-tag">TYPE SAFETY</span>
+        <h3>Gradual &amp; Strict Types</h3>
+        <p>Type inference for rapid prototyping (<code>ivar</code>), or enforce automatic coercion (<code>ivar~Int</code>) and strict non-nullable contracts (<code>ivar~(String)</code>) to prevent bugs.</p>
+        <pre><code>ivar~Int count = "42";      ~~ Coerced
+ivar~(String) user = "Yami"; ~~ Non-null</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>3. Native Variable Swap (<code>&lt;-&gt;</code>)</h3>
-        <p>Swap two variables in place without declaring a temporary variable. Type compatibility and <code>iconst</code> immutability are verified automatically at runtime.</p>
+        <span class="pillar-tag">ERGONOMICS</span>
+        <h3>Atomic Value Swap</h3>
+        <p>Swap values between two variables, list elements, or table properties atomically in a single statement without declaring temporary variables.</p>
         <pre><code>ivar a = 1; ivar b = 2;
-a &lt;-&gt; b; ~~ a is now 2, b is now 1</code></pre>
+a &lt;-&gt; b;             ~~ a=2, b=1
+list[i] &lt;-&gt; list[j]; ~~ In-place</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>4. Synchronous I/O</h3>
-        <p>Read terminal lines (<code>copy</code>), capture single keypresses (<code>copyKey</code>), and read or write files (<code>Std.IO</code>) synchronously—ideal for CLI tools and terminal games without async boilerplate.</p>
-        <pre><code>IO.filePaste("save.dat", data);
-ivar content = IO.fileCopy("save.dat");</code></pre>
-      </div>
-
-      <div class="pillar-card">
-        <h3>5. Function Hooks</h3>
-        <p>Intercept any existing function with <code>hook</code> and call the original implementation via <code>this(...)</code>. Built for logging, runtime patching, or game modifiers without altering source functions.</p>
-        <pre><code>hook compute(ivar x) then
-    pasteLn("Compute called with: " + x);
-    return this(x);
+        <span class="pillar-tag">OBJECT-ORIENTED</span>
+        <h3>Classes &amp; Accessors</h3>
+        <p>C#-style constructors without <code>new</code>, property interceptors (<code>get</code> / <code>set</code>) with direct <code>value</code> binding, and strict visibility (<code>protected</code>, <code>isolated</code>, <code>exclusive</code>).</p>
+        <pre><code>class Player then
+  get hp then return value; end
+  set hp(v) then
+    value = Math.max(0, v);
+  end
 end</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>6. Symbol-Based Modules</h3>
-        <p>Organize code with <code>namespace Pkg ~Module</code> blocks independent of physical file names. Import full packages or expose specific modules directly into scope with <code>alias ~</code>.</p>
-        <pre><code>import Std ~(Math, Time, String, IO) alias ~;
-namespace Main then ... end</code></pre>
+        <span class="pillar-tag">METAPROGRAMMING</span>
+        <h3>Non-Invasive Hooks</h3>
+        <p>Intercept any existing function or class method at runtime with <code>hook</code> and delegate through <code>this(...)</code> or <code>orig(...)</code>. Built for logging, profiling, and game mods.</p>
+        <pre><code>hook compute(ivar x) then
+  pasteLn(~"Hooked: {x}");
+  return this(x);
+end</code></pre>
       </div>
 
       <div class="pillar-card">
-        <h3>7. Classes &amp; Encapsulation</h3>
-        <p>Declarative OOP structured over Tables. C#-style constructors without <code>new</code>, automatic default constructors, <code>public</code> / <code>private</code> visibility guards, and the runtime <code>is</code> operator.</p>
-        <pre><code>class Hero then
-    public ivar name = "Kenji";
-    private ivar hp = 100;
-end
-ivar h = Hero(); ~~ h is Hero -&gt; TRUE</code></pre>
+        <span class="pillar-tag">LANGUAGE CORE</span>
+        <h3>Enums &amp; Pattern Matching</h3>
+        <p>Type-safe immutable enumerations with optional custom values, verified at runtime with the <code>is</code> operator and branched via concise <code>given ... case</code> statements.</p>
+        <pre><code>enum Role then ADMIN, GUEST end
+given role then
+  case Role.ADMIN then
+    pasteLn("Admin access");
+end</code></pre>
+      </div>
+
+      <div class="pillar-card">
+        <span class="pillar-tag">GAMING &amp; MATH</span>
+        <h3>Deterministic PRNG</h3>
+        <p>Decoupled from <code>Std.Math</code>, <code>StdE.Random</code> provides a 32-bit Mulberry32 pseudo-random engine with seed reproducibility, Fisher-Yates shuffle, and RFC4122 UUID generation.</p>
+        <pre><code>import StdE ~(Random) alias ~;
+Random.seed(42);
+ivar roll = Random.int(1, 20);</code></pre>
+      </div>
+
+      <div class="pillar-card">
+        <span class="pillar-tag">PERSISTENCE &amp; I/O</span>
+        <h3>Synchronous I/O &amp; JSON</h3>
+        <p>Read terminal prompts (<code>copy</code>, <code>copyKey</code>), sleep with 0% CPU burn (<code>Atomics.wait</code>), and read/write files or JSON structures with zero async callback overhead.</p>
+        <pre><code>import StdE ~(Json) alias ~;
+Json.write("save.json", data);
+ivar save = Json.read("save.json");</code></pre>
       </div>
     </div>
   </section>
@@ -150,76 +193,142 @@ ivar h = Hero(); ~~ h is Hero -&gt; TRUE</code></pre>
        Section : Syntax Reference Table
        ======================================================================== -->
   <section class="syntax-table-section">
-    <div class="section-label">SYNTAX AT A GLANCE</div>
-    <h2 class="section-heading">Core Syntax</h2>
+    <div class="section-label">SYNTAX CHEAT SHEET</div>
+    <h2 class="section-heading">Expressive, readable, concise.</h2>
 
-    <table class="kuroba-table">
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Kuroba Syntax</th>
-          <th>Behavior</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Console Output</strong></td>
-          <td><code>paste(x);</code> / <code>pasteLn(x);</code></td>
-          <td>Prints to stdout without a newline (<code>paste</code>) or with a trailing newline (<code>pasteLn</code>).</td>
-        </tr>
-        <tr>
-          <td><strong>Console Input</strong></td>
-          <td><code>copy("Prompt: ");</code> / <code>copyKey();</code></td>
-          <td>Blocking line input or instant single-character keypress capture in raw terminal mode.</td>
-        </tr>
-        <tr>
-          <td><strong>Variables &amp; Constants</strong></td>
-          <td><code>ivar x = 10;</code> / <code>iconst MAX = 100;</code></td>
-          <td>Type-inferred variables (with multi-var propagation) and read-only constants.</td>
-        </tr>
-        <tr>
-          <td><strong>String Interpolation</strong></td>
-          <td><code>~"Score: {x}/{max}"</code></td>
-          <td>Evaluates embedded Kuroba expressions directly inside strings using the <code>~</code> prefix.</td>
-        </tr>
-        <tr>
-          <td><strong>Pattern Matching</strong></td>
-          <td><code>given x then case 1 then ... break; case ~ then ... end</code></td>
-          <td>Value-based branching with explicit <code>break;</code> and a default fallback branch (<code>case ~ then</code>).</td>
-        </tr>
-        <tr>
-          <td><strong>Typed Collections</strong></td>
-          <td><code>List&lt;T&gt;</code>, <code>Stack&lt;T&gt;</code>, <code>Queue&lt;T&gt;</code>, <code>Table</code></td>
-          <td>Built-in collections with <code>.push()</code>, <code>.pop()</code>, <code>.peek()</code>, <code>.count()</code>, and dot-access fields.</td>
-        </tr>
-        <tr>
-          <td><strong>Classes &amp; OOP</strong></td>
-          <td><code>class Name then ... end</code></td>
-          <td>C#-style constructors, <code>public</code>/<code>private</code> fields, <code>this</code> method binding, and no <code>new</code> keyword required.</td>
-        </tr>
-        <tr>
-          <td><strong>Type Verification</strong></td>
-          <td><code>val is Type</code></td>
-          <td>Runtime type checking across primitives, nullables, collections, and classes (e.g. <code>p is Player</code>).</td>
-        </tr>
-        <tr>
-          <td><strong>Exception Handling</strong></td>
-          <td><code>try ... catch (ivar e) ... finally ... end</code></td>
-          <td>Structured exception safety with rich error metadata tables (<code>eName</code>, <code>eContext</code>).</td>
-        </tr>
-        <tr>
-          <td><strong>Memory Lifecycle</strong></td>
-          <td><code>kill variable;</code></td>
-          <td>Removes a variable from memory and its active lexical scope.</td>
-        </tr>
-        <tr>
-          <td><strong>Disk Persistence</strong></td>
-          <td><code>IO.fileCopy()</code>, <code>IO.filePaste()</code></td>
-          <td>Synchronous file read, write, append, existence check, and deletion via <code>Std.IO</code>.</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="syntax-filters">
+      <button class="syntax-filter-pill active" data-filter="all">All Features (22)</button>
+      <button class="syntax-filter-pill" data-filter="basics">Basics &amp; Control</button>
+      <button class="syntax-filter-pill" data-filter="oop">OOP &amp; Types</button>
+      <button class="syntax-filter-pill" data-filter="collections">Collections &amp; Data</button>
+      <button class="syntax-filter-pill" data-filter="stdlib">Std &amp; StdE Modules</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="syntax-table">
+        <thead>
+          <tr>
+            <th style="width: 22%;">Category / Concept</th>
+            <th style="width: 38%;">Kuroba Syntax</th>
+            <th style="width: 40%;">Runtime Behavior &amp; Semantics</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-category="basics">
+            <td><strong>Console Output</strong></td>
+            <td><code>paste(x);</code> / <code>pasteLn(x);</code></td>
+            <td>Prints to stdout without a newline (<code>paste</code>) or with trailing newline (<code>pasteLn</code>). Supports template interpolation.</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Console Input</strong></td>
+            <td><code>copy("Prompt: ");</code> / <code>copyKey();</code></td>
+            <td>Blocking interactive line input or instant single-character capture in terminal raw mode.</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Variables &amp; Constants</strong></td>
+            <td><code>ivar x = 10;</code> / <code>iconst MAX = 100;</code></td>
+            <td>Type-inferred mutable variables and immutable constants with re-assignment rejection.</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Gradual Coercion</strong></td>
+            <td><code>ivar~Int count = "42";</code></td>
+            <td>Enforces automatic type coercion on declaration and subsequent assignments.</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Strict Non-Nullability</strong></td>
+            <td><code>ivar~(String) name = "Kenji";</code></td>
+            <td>Strict contract rejecting <code>NULL</code> assignments with immediate <code>[TypeError]</code> diagnostics.</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Atomic Swap</strong></td>
+            <td><code>a &lt;-&gt; b;</code> / <code>list[i] &lt;-&gt; list[j];</code></td>
+            <td>In-place atomic value exchange across variables, lists, or table properties without temporary vars.</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>String Interpolation</strong></td>
+            <td><code>~"Score: {pts}/{max}"</code></td>
+            <td>Evaluates embedded Kuroba expressions directly inside strings using the <code>~</code> prefix.</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Pattern Matching</strong></td>
+            <td><code>given x then case 1 then ... break; case ~ then ... end</code></td>
+            <td>Value branching with explicit fallthrough control (<code>break;</code>) and default fallback branch (<code>case ~</code>).</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Iteration &amp; Loops</strong></td>
+            <td><code>for (item in list) then ... end</code> / <code>do ... while</code></td>
+            <td>Collection traversal with <code>skip</code> (continue) and <code>break;</code>, plus pre/post-test conditional loops.</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Exception Safety</strong></td>
+            <td><code>try ... catch (ivar e) then ... finally ... end</code></td>
+            <td>Structured exception safety trapping all 8 error classes with metadata tables (<code>eName</code>, <code>eContext</code>).</td>
+          </tr>
+          <tr data-category="basics">
+            <td><strong>Memory Lifecycle</strong></td>
+            <td><code>kill variable;</code></td>
+            <td>Destroys variable bindings from the active scope and releases references from memory.</td>
+          </tr>
+          <tr data-category="oop">
+            <td><strong>Classes &amp; Constructors</strong></td>
+            <td><code>class Player then function Player(...) then ... end end</code></td>
+            <td>C#-style constructors without <code>new</code> keyword; automatic default constructor if omitted.</td>
+          </tr>
+          <tr data-category="oop">
+            <td><strong>Custom Accessors</strong></td>
+            <td><code>get hp then return value; end</code> / <code>set hp(v) then ... end</code></td>
+            <td>Property interceptors with raw storage access via <code>value</code>, avoiding recursive loops.</td>
+          </tr>
+          <tr data-category="oop">
+            <td><strong>Encapsulation Guards</strong></td>
+            <td><code>public</code>, <code>protected</code>, <code>private</code>, <code>isolated</code>, <code>exclusive</code></td>
+            <td>Granular access modifiers with private name mangling across inheritance hierarchies.</td>
+          </tr>
+          <tr data-category="oop">
+            <td><strong>Inheritance &amp; Base</strong></td>
+            <td><code>class Child from Parent then function Child() then base(); end end</code></td>
+            <td>Single class inheritance with <code>from</code> and superclass delegation via <code>base(...)</code>.</td>
+          </tr>
+          <tr data-category="oop">
+            <td><strong>Type Verification</strong></td>
+            <td><code>obj is Player</code> / <code>val is Int</code></td>
+            <td>Runtime type checking operator verifying primitives, collections, custom classes, and enums.</td>
+          </tr>
+          <tr data-category="oop">
+            <td><strong>Native Enums</strong></td>
+            <td><code>enum Status then ACTIVE, IDLE end</code></td>
+            <td>Named immutable enumerations with optional custom explicit values (e.g. <code>OK = 200</code>).</td>
+          </tr>
+          <tr data-category="oop">
+            <td><strong>Function &amp; Method Hooks</strong></td>
+            <td><code>hook target(x) then return this(x); end</code> / <code>orig(...)</code></td>
+            <td>Non-invasive runtime interception for standalone functions (<code>this</code>) and class methods (<code>orig</code>).</td>
+          </tr>
+          <tr data-category="collections">
+            <td><strong>Typed Collections</strong></td>
+            <td><code>List&lt;T&gt;</code>, <code>Stack&lt;T&gt;</code>, <code>Queue&lt;T&gt;</code>, <code>Table</code></td>
+            <td>Built-in collections with <code>.push()</code>, <code>.pop()</code>, <code>.peek()</code>, <code>.count()</code>, and bracket/dot access.</td>
+          </tr>
+          <tr data-category="stdlib">
+            <td><strong>Filesystem (Std.IO)</strong></td>
+            <td><code>IO.fileCopy()</code> / <code>IO.filePaste()</code> / <code>IO.fileKill()</code></td>
+            <td>Synchronous file reading, writing, appending, existence checks, and deletion.</td>
+          </tr>
+          <tr data-category="stdlib">
+            <td><strong>Deterministic PRNG (StdE.Random)</strong></td>
+            <td><code>Random.seed(42);</code> / <code>Random.int(1, 20);</code> / <code>Random.shuffle(d);</code></td>
+            <td>Mulberry32 PRNG with seed reproducibility, Fisher-Yates shuffle, and RFC4122 UUIDs.</td>
+          </tr>
+          <tr data-category="stdlib">
+            <td><strong>JSON Storage (StdE.Json)</strong></td>
+            <td><code>Json.stringify()</code> / <code>Json.parse()</code> / <code>Json.read()</code> / <code>Json.write()</code></td>
+            <td>Seamless bidirectional translation between Kuroba Tables/Lists and JSON data.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
+
 
   <!-- ========================================================================
        Footer
@@ -231,7 +340,7 @@ ivar h = Hero(); ~~ h is Hero -&gt; TRUE</code></pre>
           <div class="footer-brand-row">
             <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
             <span class="footer-brand-name">Kuroba</span>
-            <span class="version-badge">v1.0.7</span>
+            <span class="version-badge">v1.0.8</span>
           </div>
           <p class="footer-tagline">
             A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
@@ -445,8 +554,9 @@ pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
       const FLOW_KEYWORDS = new Set([
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
-        'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'class', 'public', 'private', 'is', 'TRUE', 'FALSE', 'NULL'
+        'function', 'return', 'hook', 'this', 'orig', 'import', 'alias', 'namespace',
+        'class', 'public', 'private', 'protected', 'isolated', 'exclusive',
+        'get', 'set', 'enum', 'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 
       function escHtml(str) {
@@ -610,12 +720,38 @@ pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
         });
       });
 
-      btnCopyInstall.addEventListener('click', () => {
-        const cmd = 'git clone https://github.com/MrYamiTsu/Kuroba.git && cd Kuroba && node index.js main.krb';
-        navigator.clipboard.writeText(cmd).then(() => {
-          btnCopyInstall.textContent = '✓ Copied';
-          setTimeout(() => { btnCopyInstall.textContent = 'Copy'; }, 1800);
+      // Quickstart Terminal Command Copy
+      const btnQuickstartCopy = document.getElementById('btn-quickstart-copy');
+      if (btnQuickstartCopy) {
+        btnQuickstartCopy.addEventListener('click', () => {
+          const cmd = 'git clone https://github.com/MrYamiTsu/Kuroba.git && cd Kuroba';
+          navigator.clipboard.writeText(cmd).then(() => {
+            btnQuickstartCopy.textContent = '✓ Copied';
+            setTimeout(() => { btnQuickstartCopy.textContent = 'Copy'; }, 1800);
+          });
         });
+      }
+
+      // Syntax Cheat Sheet Category Filter
+      const syntaxFilterPills = document.querySelectorAll('.syntax-filter-pill');
+      const syntaxRows = document.querySelectorAll('.syntax-table tbody tr');
+
+      syntaxFilterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          syntaxFilterPills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          const category = pill.dataset.filter;
+
+          syntaxRows.forEach(row => {
+            const matches = (category === 'all') || (row.dataset.category === category);
+            row.style.display = matches ? '' : 'none';
+          });
+        });
+      });
+
+      // Highlight code snippets in Architecture Pillars
+      document.querySelectorAll('.pillar-card pre code').forEach(el => {
+        el.innerHTML = highlightKuroba(el.textContent.trim());
       });
 
       startSnippetTyping(0);
