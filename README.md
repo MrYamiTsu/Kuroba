@@ -421,10 +421,9 @@ Kuroba/
   - [x] Arbitrary nested member and index assignments (`grid[y][x] = "#";`, `enemies[i].hp -= 10;`, `player.bag[0] = "Bow";`) with `iconst` root immutability protection
   - [x] Recursive multi-file project imports in CLI (`namespace Utils`, `namespace Game ~Combat`, subfolder `.krb` discovery, and `[ImportError]` circular import guards)
 
-### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
+### Phase 8: OOP Finalization, Modular StdE & Pure C Engine Transformation `(v1.0.8)`
 
-- [ ] OOP Contracts, Visibility & Custom Accessors:
-  - [ ] Interface contracts (`interface IEntity then ... end`, `class Player implements IEntity`) & runtime conformance (`player is IEntity`)
+- [ ] OOP Contracts, Visibility & Ergonomics:
   - [x] Extended Visibility Modifiers (`protected`, `isolated`, `exclusive`):
     - [x] `protected ivar/iconst/function`: accessible across class hierarchies (parent and subclasses), hidden from external consumers
     - [x] `isolated ivar/iconst/function`: strictly exclusive to the declaring class, completely uninherited and inaccessible by child classes
@@ -432,25 +431,34 @@ Kuroba/
   - [x] Custom Property Accessors (`get` / `set`):
     - [x] Property interceptor syntax (`get prop then ... end`, `set prop(val) then ... end`) with raw backing storage access via `value`
     - [x] Immutability protection (`iconst` read-only getters, syntax rejection on setters)
-- [ ] Concurrency & Asynchronous Programming:
-  - [ ] Async/Await syntax and runtime semantics (`async function`, `await expr`) integrated with event loop
-  - [ ] Lightweight coroutines and cooperative multitasking (`task`, `yield`)
-  - [ ] Asynchronous exception handling and timeout cancellation within `try / catch`
+  - [ ] Interface contracts (`interface IEntity then ... end`, `class Player implements IEntity`) & runtime conformance (`player is IEntity`)
+  - [ ] Textual representation & string inspection protocol (`toString()` auto-invoked by `print` and `~` string interpolation)
+  - [ ] Basic operator overloading for vectors, games, and math (`operator +`, `operator -`, `operator *`, etc.)
 - [ ] Built-in `StdE` Package (Standard Extended):
   - [x] `StdE.Random` (dedicated stochastic engine decoupled from `Std.Math`: `seed`, `int`, `float`, `item`, `shuffle`, `chance`, `uuid`, `token`)
   - [x] `StdE.Json` (native bidirectional parse and stringify of Tables to JSON, formatted read/write, minify)
   - [x] `StdE.Path` (cross-platform path resolution: `join`, `resolve`, `dirname`, `basename`, `extname`, `isAbsolute`, `normalize`, `relative`, `parse`, `format`, `sep`, `delimiter`)
   - [ ] `StdE.Process` (child process execution, commands, and pipe streaming for CLI)
   - [ ] `StdE.Term` (ANSI colors, terminal styling, dimensions, and cursor control)
-- [ ] Built-in `Web` Package (Networking & HTTP):
-  - [ ] HTTP Client (`Web.fetch`, `Web.get`, `Web.post` with query params, custom headers, timeouts, and JSON conversion)
-  - [ ] Native HTTP Server (`Web.serve`, `Web.listen`) with incoming request parser (`req.method`, `req.url`, `req.headers`, `req.body`, `req.query`)
+- [ ] Next-Gen Pure C High-Performance Engine Transformation (Lua-Inspired Architecture):
+  - [ ] Complete native rewrite in pure C (C99/C11) for maximal speed, sub-millisecond startup, and tiny binary footprint (< 400 KB)
+  - [ ] Ultra-fast Bytecode Compiler (`.kbc`) & Register-based Virtual Machine replacing AST tree-walk for 20x-50x faster execution
+  - [ ] Direct Threaded Code (Computed Gotos) for zero branch-misprediction opcode dispatching
+  - [ ] Compact object models, memory arena allocators, and generational garbage collection
+  - [ ] First-class WebAssembly target (`kuroba.wasm` compiled directly via Emscripten) running at native speed in web browsers
+
+### Phase 9: Native Asynchronism, Full-Stack Web & 2D Game Engine `(v1.0.9)`
+
+- [ ] Native Concurrency & Asynchronous Programming:
+  - [ ] Event loop integration & cooperative coroutines / fibers in C (`async function`, `await expr`, `yield`)
+  - [ ] Non-blocking native I/O (epoll / IOCP / kqueue) replacing synchronous blocking primitives
+  - [ ] Asynchronous exception handling and timeout cancellation within `try / catch`
+- [ ] Full-Stack `Web` Package (Native HTTP & Networking):
+  - [ ] High-performance HTTP Client (`Web.fetch`, `Web.get`, `Web.post` with query params, headers, JSON conversion)
+  - [ ] Native HTTP Server (`Web.serve`, `Web.listen`) with request routing (`req.method`, `req.url`, `req.headers`, `req.body`, `req.query`)
   - [ ] Server Response & Middleware Pipeline (`res.status`, `res.json`, `res.text`, `res.header`, `res.sendFile`, route dispatching)
-  - [ ] Network Security & Fault Tolerance (body size limits, socket timeouts, CORS headers, and `e*` network error tables)
-
-### Phase 9: Native 2D Game Engine (`App`), Integrated Testing & Tour `(v1.0.9)`
-
-- [ ] Built-in `App` Package (Native GUI & 2D Game Engine):
+  - [ ] Static asset serving for HTML/CSS/JS with sub-millisecond response times
+- [ ] Built-in `App` Package (Native 2D Game Engine):
   - [ ] Native window creation with framerate and resolution control (`App.window`, `App.fps`)
   - [ ] 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style Raylib / SDL)
   - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
@@ -462,29 +470,19 @@ Kuroba/
 - [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
   - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
   - [ ] In-browser code challenges with instant automated grading test suites
-- [ ] Website & Documentation Internationalization (`i18n`):
-  - [ ] Multi-language localization across Home, Docs, and Playground (English, French, Spanish, etc.) with dynamic language switcher
 
-### Phase 10: Pure C Native High-Performance Engine, Universal Distribution & Ecosystem `(v1.1.0)`
+### Phase 10: Universal Distribution, Tooling & Ecosystem `(v1.1.0)`
 
-- [ ] Next-Gen Pure C High-Performance Engine (Lua-Inspired Architecture):
-  - [ ] Complete native rewrite in pure C (C99/C11) for maximal execution speed, instant startup (~1ms), and tiny binary size (< 400 KB)
-  - [ ] Ultra-fast Bytecode Compiler (`.kbc`) & Register-based Virtual Machine replacing AST tree-walk for 20x-50x faster execution
-  - [ ] Direct Threaded Code (Computed Gotos) for zero branch-misprediction opcode dispatching
-  - [ ] Contiguous memory structures, compact object representations, and custom generational garbage collection
-  - [ ] First-class WebAssembly target (`kuroba.wasm` compiled directly via Emscripten) running at native speed in web browsers
 - [ ] Universal Distribution & Zero-Setup Installation:
   - [ ] Single self-contained binary (`kuroba.exe` on Windows, `kuroba` on macOS/Linux) with bundled `Std`/`StdE` (zero Node.js dependency)
   - [ ] One-liner installation scripts (`irm ... | iex` on Windows PowerShell, `curl ... | bash` on macOS/Linux)
   - [ ] Official npm global distribution (`npm install -g kuroba`)
   - [ ] WebAssembly engine (`kuroba.wasm`) running at native speed directly inside web browsers
-- [ ] Full-Stack Web Capabilities (Python / Backend Replacement):
-  - [ ] Production-ready HTTP Server & REST API engine capable of powering full-stack web applications
-  - [ ] Static asset serving for HTML/CSS/JS with sub-millisecond response times
-  - [ ] Full-stack Kuroba: use the same expressive language on the backend server and inside the browser
 - [ ] Package Manager & Developer Tooling:
   - [ ] Official Kuroba Package Manager (`kpm` / `krb install`, `krb publish`) with `kuroba.json` manifest
   - [ ] Official code formatter (`krb fmt`) & VS Code Language Server Protocol (`LSP`) for live autocomplete
+- [ ] Website & Documentation Internationalization (`i18n`):
+  - [ ] Multi-language localization across Home, Docs, and Playground (English, French, Spanish, etc.) with dynamic language switcher
 
 ---
 
