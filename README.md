@@ -423,9 +423,14 @@ Kuroba/
 
 ### Phase 8: Asynchronism, Modular Ecosystem & Web `(v1.0.8)`
 
-- [ ] OOP Contracts & Architectural Interfaces:
+- [ ] OOP Contracts, Visibility & Custom Accessors:
   - [ ] Interface contracts (`interface IEntity then ... end`, `class Player implements IEntity`) & runtime conformance (`player is IEntity`)
-  - [ ] Protected visibility modifier (`protected ivar/iconst/function`) accessible across class hierarchies
+  - [x] Extended Visibility Modifiers (`protected`, `isolated`, `exclusive`):
+    - [x] `protected ivar/iconst/function`: accessible across class hierarchies (parent and subclasses), hidden from external consumers
+    - [x] `isolated ivar/iconst/function`: strictly exclusive to the declaring class, completely uninherited and inaccessible by child classes
+    - [x] `exclusive ivar/iconst/function`: publicly accessible on declaring class, strictly uninherited and absent from child classes
+  - [ ] Custom Property Accessors (`get` / `set`):
+    - Getter / Setter syntax (`get prop then ... end`, `set prop(val) then ... end`) for computed values and validated assignments
 - [ ] Concurrency & Asynchronous Programming:
   - [ ] Async/Await syntax and runtime semantics (`async function`, `await expr`) integrated with event loop
   - [ ] Lightweight coroutines and cooperative multitasking (`task`, `yield`)

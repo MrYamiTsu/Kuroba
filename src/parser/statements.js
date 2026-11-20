@@ -343,6 +343,39 @@ class ParserStatements extends ParserControl {
                                 });
                             }
                             innerAccess = 'private';
+                        } else if (this.match('PROTECTED')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared protected ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'protected';
+                        } else if (this.match('ISOLATED')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared isolated ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'isolated';
+                        } else if (this.match('EXCLUSIVE')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared exclusive ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'exclusive';
                         } else if (this.match('PUBLIC')) {
                             if (this.check('SHARED')) {
                                 let tok = this.peek();
@@ -385,6 +418,12 @@ class ParserStatements extends ParserControl {
                     isShared = true;
                     if (this.match('PRIVATE')) {
                         access = 'private';
+                    } else if (this.match('PROTECTED')) {
+                        access = 'protected';
+                    } else if (this.match('ISOLATED')) {
+                        access = 'isolated';
+                    } else if (this.match('EXCLUSIVE')) {
+                        access = 'exclusive';
                     } else if (this.match('PUBLIC')) {
                         access = 'public';
                     }
@@ -400,6 +439,39 @@ class ParserStatements extends ParserControl {
                     });
                 }
                 access = 'private';
+            } else if (this.match('PROTECTED')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared protected ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'protected';
+            } else if (this.match('ISOLATED')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared isolated ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'isolated';
+            } else if (this.match('EXCLUSIVE')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared exclusive ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'exclusive';
             } else if (this.match('PUBLIC')) {
                 if (this.check('SHARED')) {
                     let tok = this.peek();

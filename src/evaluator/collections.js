@@ -2,7 +2,7 @@ const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
 const { findScope } = require('./scope');
 const { evalCall } = require('./functions');
-const { checkPrivateAccess, checkPrivateSharedAccess, instantiateClass } = require('./classes');
+const { checkPrivateAccess, checkPrivateSharedAccess, instantiateClass, resolveMemberKey } = require('./classes');
 
 function evalListLiteral(node, env, evaluate) {
     return node.elements.map(el => evaluate(el, env));
@@ -29,9 +29,18 @@ function evalIndexAccess(node, env, evaluate) {
         let curr = target;
         while (curr) {
             if (curr.sharedFields && key in curr.sharedFields) {
+                if (curr !== target && (curr.sharedFields[key].access === 'isolated' || curr.sharedFields[key].access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return curr.sharedFields[key].value;
             }
             if (curr.sharedMethods && key in curr.sharedMethods) {
+                const m = curr.sharedMethods[key];
+                if (curr !== target && (m.access === 'isolated' || m.access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return curr.sharedMethods[key];
             }
             curr = curr.superClass;
@@ -51,7 +60,7 @@ function evalIndexAccess(node, env, evaluate) {
             });
         }
 
-        let key = node.index;
+        let key = (typeof resolveMemberKey === 'function') ? resolveMemberKey(target, node.index, env) : node.index;
 
         checkPrivateAccess(target, key, env, false);
 
@@ -176,6 +185,10 @@ function evalMemberAssign(node, env, evaluate) {
         let fieldEntry = null;
         while (curr) {
             if (curr.sharedFields && key in curr.sharedFields) {
+                if (curr !== container && (curr.sharedFields[key].access === 'isolated' || curr.sharedFields[key].access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 fieldEntry = curr.sharedFields[key];
                 break;
             }
@@ -214,9 +227,10 @@ function evalMemberAssign(node, env, evaluate) {
             });
         }
 
-        checkPrivateAccess(container, node.index, env, false);
+        let key = (typeof resolveMemberKey === 'function') ? resolveMemberKey(container, node.index, env) : node.index;
 
-        let key = node.index;
+        checkPrivateAccess(container, key, env, false);
+
         let newVal = evaluate(node.value, env);
 
         if (node.operator) {
@@ -343,6 +357,10 @@ function evalMethodCall(node, env, evaluate) {
         while (curr) {
             if (curr.sharedMethods && methodName in curr.sharedMethods) {
                 let fnObj = curr.sharedMethods[methodName];
+                if (curr !== target && (fnObj.access === 'isolated' || fnObj.access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
             curr = curr.superClass;
@@ -355,7 +373,7 @@ function evalMethodCall(node, env, evaluate) {
     }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
-        let methodName = node.method;
+        let methodName = (typeof resolveMemberKey === 'function') ? resolveMemberKey(target, node.method, env) : node.method;
 
         checkPrivateAccess(target, methodName, env, true);
 

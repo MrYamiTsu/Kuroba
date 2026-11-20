@@ -816,8 +816,11 @@ ivar invoice = processPayment(250, 15);</code></pre>
         <h3>1. Class Declaration &amp; Fields</h3>
         <p>A class is declared with <code>class Name then ... end</code>. Inside the class body, you can declare instance fields using <code>ivar</code> or <code>iconst</code>, optionally prefixed with an access modifier:</p>
         <ul>
-          <li><strong><code>public</code> (Default):</strong> Accessible and mutable from both inside and outside the instance. If no access modifier is specified, fields and methods are automatically public.</li>
-          <li><strong><code>private</code>:</strong> Encapsulated member strictly restricted to the class's own methods and constructor. External reads or writes trigger a descriptive <code>[TypeError]</code>.</li>
+          <li><strong><code>public</code> (Default):</strong> Accessible and mutable from both inside and outside the instance, fully inherited across subclasses. If no access modifier is specified, fields and methods are automatically public.</li>
+          <li><strong><code>protected</code>:</strong> Hidden from external consumers, but fully inherited and directly accessible within subclasses (via <code>this.member</code>).</li>
+          <li><strong><code>private</code>:</strong> Encapsulated member strictly restricted to the declaring class's own methods. Subclasses inherit the state in memory, but direct access in subclass methods raises a <code>[TypeError]</code>.</li>
+          <li><strong><code>isolated</code>:</strong> Strictly exclusive and private to the declaring class. Subclasses do not inherit it at all (uninherited and absent from child instances).</li>
+          <li><strong><code>exclusive</code>:</strong> Publicly accessible on instances of the declaring class, but strictly uninherited by child classes (absent from child instances).</li>
         </ul>
 
         <h3>2. Constructors &amp; Direct Instantiation</h3>
@@ -2155,7 +2158,7 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'class', 'public', 'private', 'from', 'base', 'orig', 'shared',
+        'class', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared',
         'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 

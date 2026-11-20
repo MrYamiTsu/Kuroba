@@ -8,7 +8,7 @@
     // Embedded Standard Library Files
     const VIRTUAL_STD_FILES = {
   "io.krb": "~~ ============================================================================\n~~ Kuroba Std Library: IO\n~~ ============================================================================\nnamespace Std ~IO then\n    iconst fileCopy    = __native_ioCopy;\n    iconst filePaste   = __native_ioPaste;\n    iconst filePasteLn = __native_ioPasteLn;\n    iconst fileAppend  = __native_ioAppend;\n    iconst fileExists  = __native_ioExists;\n    iconst fileKill    = __native_ioKill;\nend",
-  "math.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Math\n~~ ============================================================================\nnamespace Std ~Math then\n    iconst PI  = 3.141592653589793;\n    iconst TAU = 6.283185307179586;\n    iconst E   = 2.718281828459045;\n\n    iconst sqrt   = __native_sqrt;\n    iconst pow    = __native_pow;\n    iconst sin    = __native_sin;\n    iconst cos    = __native_cos;\n    iconst tan    = __native_tan;\n    iconst asin   = __native_asin;\n    iconst acos   = __native_acos;\n    iconst atan   = __native_atan;\n    iconst atan2  = __native_atan2;\n    iconst log    = __native_log;\n    iconst log10  = __native_log10;\n    iconst exp    = __native_exp;\n\n    function abs(ivar x) then\n        if (x < 0) then\n            return 0 - x;\n        end\n        return x;\n    end\n\n    function min(ivar a, ivar b) then\n        if (a < b) then\n            return a;\n        end\n        return b;\n    end\n\n    function max(ivar a, ivar b) then\n        if (a > b) then\n            return a;\n        end\n        return b;\n    end\n\n    function clamp(ivar val, ivar minVal, ivar maxVal) then\n        if (val < minVal) then\n            return minVal;\n        end\n        if (val > maxVal) then\n            return maxVal;\n        end\n        return val;\n    end\n\n    function trunc(ivar x) then\n        ivar i = 0;\n        i~Int = x;\n        return i;\n    end\n\n    function floor(ivar x) then\n        ivar i = 0;\n        i~Int = x;\n        if (x < 0 && x != i) then\n            return i - 1;\n        end\n        return i;\n    end\n\n    function ceil(ivar x) then\n        ivar i = 0;\n        i~Int = x;\n        if (x > 0 && x != i) then\n            return i + 1;\n        end\n        return i;\n    end\n\n    function round(ivar x) then\n        return floor(x + 0.5);\n    end\n\n    function dist(ivar x1, ivar y1, ivar x2, ivar y2) then\n        ivar dx = x2 - x1;\n        ivar dy = y2 - y1;\n        return sqrt((dx * dx) + (dy * dy));\n    end\n\n    function degToRad(ivar deg) then\n        return deg * (PI / 180.0);\n    end\n\n    function radToDeg(ivar rad) then\n        return rad * (180.0 / PI);\n    end\n\n    function sign(ivar x) then\n        if (x > 0) then return 1; end\n        if (x < 0) then return 0 - 1; end\n        return 0;\n    end\n\n    function lerp(ivar a, ivar b, ivar t) then\n        return a + (b - a) * t;\n    end\nend",
+  "math.krb": "~~ ============================================================================\r\n~~ Kuroba Std Library: Math\r\n~~ ============================================================================\r\nnamespace Std ~Math then\r\n    iconst PI  = 3.141592653589793;\r\n    iconst TAU = 6.283185307179586;\r\n    iconst E   = 2.718281828459045;\r\n\r\n    iconst sqrt   = __native_sqrt;\r\n    iconst pow    = __native_pow;\r\n    iconst sin    = __native_sin;\r\n    iconst cos    = __native_cos;\r\n    iconst tan    = __native_tan;\r\n    iconst asin   = __native_asin;\r\n    iconst acos   = __native_acos;\r\n    iconst atan   = __native_atan;\r\n    iconst atan2  = __native_atan2;\r\n    iconst log    = __native_log;\r\n    iconst log10  = __native_log10;\r\n    iconst exp    = __native_exp;\r\n\r\n    function abs(ivar x) then\r\n        if (x < 0) then\r\n            return 0 - x;\r\n        end\r\n        return x;\r\n    end\r\n\r\n    function min(ivar a, ivar b) then\r\n        if (a < b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function max(ivar a, ivar b) then\r\n        if (a > b) then\r\n            return a;\r\n        end\r\n        return b;\r\n    end\r\n\r\n    function clamp(ivar val, ivar minVal, ivar maxVal) then\r\n        if (val < minVal) then\r\n            return minVal;\r\n        end\r\n        if (val > maxVal) then\r\n            return maxVal;\r\n        end\r\n        return val;\r\n    end\r\n\r\n    function trunc(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        return i;\r\n    end\r\n\r\n    function floor(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x < 0 && x != i) then\r\n            return i - 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function ceil(ivar x) then\r\n        ivar i = 0;\r\n        i~Int = x;\r\n        if (x > 0 && x != i) then\r\n            return i + 1;\r\n        end\r\n        return i;\r\n    end\r\n\r\n    function round(ivar x) then\r\n        return floor(x + 0.5);\r\n    end\r\n\r\n    function dist(ivar x1, ivar y1, ivar x2, ivar y2) then\r\n        ivar dx = x2 - x1;\r\n        ivar dy = y2 - y1;\r\n        return sqrt((dx * dx) + (dy * dy));\r\n    end\r\n\r\n    function degToRad(ivar deg) then\r\n        return deg * (PI / 180.0);\r\n    end\r\n\r\n    function radToDeg(ivar rad) then\r\n        return rad * (180.0 / PI);\r\n    end\r\n\r\n    function sign(ivar x) then\r\n        if (x > 0) then return 1; end\r\n        if (x < 0) then return 0 - 1; end\r\n        return 0;\r\n    end\r\n\r\n    function lerp(ivar a, ivar b, ivar t) then\r\n        return a + (b - a) * t;\r\n    end\r\nend",
   "string.krb": "~~ ============================================================================\n~~ Kuroba Std Library: String\n~~ ============================================================================\nnamespace Std ~String then\n    iconst DIGITS      = \"0123456789\";\n    iconst ASCII_LOWER = \"abcdefghijklmnopqrstuvwxyz\";\n    iconst ASCII_UPPER = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";\n\n    iconst upper      = __native_strUpper;\n    iconst lower      = __native_strLower;\n    iconst count      = __native_strCount;\n    iconst trim       = __native_strTrim;\n    iconst split      = __native_strSplit;\n    iconst replace    = __native_strReplace;\n    iconst contains   = __native_strContains;\n    iconst startsWith = __native_strStartsWith;\n    iconst endsWith   = __native_strEndsWith;\n    iconst indexOf    = __native_strIndexOf;\n    iconst slice      = __native_strSlice;\n    iconst repeat     = __native_strRepeat;\n    iconst reverse    = __native_strReverse;\n    iconst join       = __native_strJoin;\nend\n",
   "time.krb": "~~ ============================================================================\n~~ Kuroba Std Library: Time\n~~ ============================================================================\nnamespace Std ~Time then\n    iconst sleep  = __native_sleep;\n    iconst now    = __native_now;\n    iconst unix   = __native_unix;\n    iconst perf   = __native_perf;\n    iconst hires  = __native_perf;\n    iconst clock  = __native_clock;\n    iconst iso    = __native_iso;\n    iconst format = __native_timeFormat;\n\n    function sleepSec(ivar sec) then\n        sleep(sec * 1000);\n    end\n\n    function since(ivar timestamp) then\n        return now() - timestamp;\n    end\n    \n    function stopwatch() then\n        ivar start = now();\n        return {\n            elapsed: function ~() then\n                return now() - start;\n            end,\n            reset: function ~() then\n                start = now();\n                return start;\n            end\n        };\n    end\nend\n",
   "stde_json.krb": "~~ ============================================================================\r\n~~ Kuroba StdE Library: Json\r\n~~ ============================================================================\r\nnamespace StdE ~Json then\r\n    iconst parse     = __native_json_parse;\r\n    iconst stringify = __native_json_stringify;\r\n    iconst isValid   = __native_json_is_valid;\r\n    iconst read      = __native_json_read;\r\n    iconst write     = __native_json_write;\r\n    iconst minify    = __native_json_minify;\r\n    iconst format    = __native_json_format;\r\nend",
@@ -281,7 +281,10 @@ const KEYWORDS = {
   is: { type: "IS", value: "is" },
   class: { type: "CLASS", value: "class" },
   public: { type: "PUBLIC", value: "public" },
+  protected: { type: "PROTECTED", value: "protected" },
   private: { type: "PRIVATE", value: "private" },
+  isolated: { type: "ISOLATED", value: "isolated" },
+  exclusive: { type: "EXCLUSIVE", value: "exclusive" },
   from: { type: "FROM", value: "from" },
   base: { type: "BASE", value: "base" },
   shared: { type: "SHARED", value: "shared" },
@@ -1930,6 +1933,39 @@ class ParserStatements extends ParserControl {
                                 });
                             }
                             innerAccess = 'private';
+                        } else if (this.match('PROTECTED')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared protected ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'protected';
+                        } else if (this.match('ISOLATED')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared isolated ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'isolated';
+                        } else if (this.match('EXCLUSIVE')) {
+                            if (this.check('SHARED')) {
+                                let tok = this.peek();
+                                printErr({
+                                    eName: 'SyntaxError',
+                                    eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared exclusive ...').",
+                                    eLine: tok ? tok.line : null,
+                                    eCol: tok ? tok.col : null
+                                });
+                            }
+                            innerAccess = 'exclusive';
                         } else if (this.match('PUBLIC')) {
                             if (this.check('SHARED')) {
                                 let tok = this.peek();
@@ -1972,6 +2008,12 @@ class ParserStatements extends ParserControl {
                     isShared = true;
                     if (this.match('PRIVATE')) {
                         access = 'private';
+                    } else if (this.match('PROTECTED')) {
+                        access = 'protected';
+                    } else if (this.match('ISOLATED')) {
+                        access = 'isolated';
+                    } else if (this.match('EXCLUSIVE')) {
+                        access = 'exclusive';
                     } else if (this.match('PUBLIC')) {
                         access = 'public';
                     }
@@ -1987,6 +2029,39 @@ class ParserStatements extends ParserControl {
                     });
                 }
                 access = 'private';
+            } else if (this.match('PROTECTED')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared protected ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'protected';
+            } else if (this.match('ISOLATED')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared isolated ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'isolated';
+            } else if (this.match('EXCLUSIVE')) {
+                if (this.check('SHARED')) {
+                    let tok = this.peek();
+                    printErr({
+                        eName: 'SyntaxError',
+                        eContext: "'shared' modifier must be placed before the visibility modifier (e.g. 'shared exclusive ...').",
+                        eLine: tok ? tok.line : null,
+                        eCol: tok ? tok.col : null
+                    });
+                }
+                access = 'exclusive';
             } else if (this.match('PUBLIC')) {
                 if (this.check('SHARED')) {
                     let tok = this.peek();
@@ -2983,19 +3058,37 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
         sharedMethods: {},
         constructor: null,
         privateMembers: new Set(),
+        protectedMembers: new Set(),
+        isolatedMembers: new Set(),
+        exclusiveMembers: new Set(),
         privateSharedMembers: new Set(),
+        protectedSharedMembers: new Set(),
+        isolatedSharedMembers: new Set(),
+        exclusiveSharedMembers: new Set(),
         instances: new Set()
     };
 
     for (const f of node.fields) {
         if (f.access === 'private') {
             classObj.privateMembers.add(f.name);
+        } else if (f.access === 'protected') {
+            classObj.protectedMembers.add(f.name);
+        } else if (f.access === 'isolated') {
+            classObj.isolatedMembers.add(f.name);
+        } else if (f.access === 'exclusive') {
+            classObj.exclusiveMembers.add(f.name);
         }
     }
 
     for (const m of node.methods) {
         if (m.access === 'private') {
             classObj.privateMembers.add(m.name);
+        } else if (m.access === 'protected') {
+            classObj.protectedMembers.add(m.name);
+        } else if (m.access === 'isolated') {
+            classObj.isolatedMembers.add(m.name);
+        } else if (m.access === 'exclusive') {
+            classObj.exclusiveMembers.add(m.name);
         }
         if (m.name === node.name) {
             classObj.constructor = m;
@@ -3009,6 +3102,12 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
         for (const f of node.sharedFields) {
             if (f.access === 'private') {
                 classObj.privateSharedMembers.add(f.name);
+            } else if (f.access === 'protected') {
+                classObj.protectedSharedMembers.add(f.name);
+            } else if (f.access === 'isolated') {
+                classObj.isolatedSharedMembers.add(f.name);
+            } else if (f.access === 'exclusive') {
+                classObj.exclusiveSharedMembers.add(f.name);
             }
             let val = null;
             if (f.value !== undefined && f.value !== null) {
@@ -3049,6 +3148,12 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
         for (const m of node.sharedMethods) {
             if (m.access === 'private') {
                 classObj.privateSharedMembers.add(m.name);
+            } else if (m.access === 'protected') {
+                classObj.protectedSharedMembers.add(m.name);
+            } else if (m.access === 'isolated') {
+                classObj.isolatedSharedMembers.add(m.name);
+            } else if (m.access === 'exclusive') {
+                classObj.exclusiveSharedMembers.add(m.name);
             }
             const methodClosure = createScope(env);
             methodClosure.values['__declaringClass'] = {
@@ -3064,6 +3169,7 @@ async function evalClassDeclaration(node, env, shouldBind = true) {
                 body: m.body,
                 closure: methodClosure,
                 isShared: true,
+                access: m.access || 'public',
                 declaringClass: node.name
             };
         }
@@ -3107,6 +3213,12 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
                 isConst: true,
                 isNullable: false
             };
+            ctorClosure.values['__declaringClass'] = {
+                value: superClass.name,
+                type: 'String',
+                isConst: true,
+                isNullable: false
+            };
             if (superClass.superClass) {
                 ctorClosure.values['base'] = {
                     value: createBaseBinding(instance, superClass, env, activeEval),
@@ -3145,6 +3257,10 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
     const superChain = getHierarchy(superClass);
     for (const ancestor of superChain) {
         for (const [mName, mAst] of Object.entries(ancestor.methods)) {
+            const acc = mAst.access || 'public';
+            if (acc === 'private' || acc === 'isolated' || acc === 'exclusive') {
+                continue;
+            }
             const methodFn = buildBoundMethod(mAst, instance, ancestor, env, evaluate);
             baseObj.fields[mName] = {
                 value: methodFn,
@@ -3249,10 +3365,12 @@ function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
         });
     }
 
-    if (origMethodAst.access === 'private' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName))) {
+    const origAcc = origMethodAst.access || 'public';
+    if (origAcc === 'private' || origAcc === 'isolated' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName)) || (targetClass.isolatedMembers && targetClass.isolatedMembers.has(methodName))) {
+        const accLabel = (origAcc === 'isolated' || (targetClass.isolatedMembers && targetClass.isolatedMembers.has(methodName))) ? 'isolated' : 'private';
         printErr({
             eName: 'TypeError',
-            eContext: `Cannot hook private method '${methodName}' of class '${targetClass.name}'.`,
+            eContext: `Cannot hook ${accLabel} method '${methodName}' of class '${targetClass.name}'.`,
             eLine: hookNode.line
         });
     }
@@ -3281,15 +3399,13 @@ function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
 
 async function instantiateClass(classObj, rawArgs, env, evaluate) {
     const chain = getHierarchy(classObj);
+    const memberAccess = new Map();
+    const memberOwners = new Map();
     const privateMembers = new Set();
     const privateOwners = new Map();
-
-    for (const c of chain) {
-        for (const pm of c.privateMembers) {
-            privateMembers.add(pm);
-            privateOwners.set(pm, c.name);
-        }
-    }
+    const protectedMembers = new Set();
+    const isolatedMembers = new Set();
+    const exclusiveMembers = new Set();
 
     const instance = {
         kind: 'Table',
@@ -3297,17 +3413,30 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
         isInstance: true,
         classRef: classObj,
         fields: {},
+        memberAccess,
+        memberOwners,
         privateMembers,
-        privateOwners
+        privateOwners,
+        protectedMembers,
+        isolatedMembers,
+        exclusiveMembers
     };
 
     classObj.instances.add(instance);
 
     for (const c of chain) {
+        const isSelf = (c === classObj);
+
         const initEnv = createScope(env);
         initEnv.values['this'] = {
             value: instance,
             type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+        initEnv.values['__declaringClass'] = {
+            value: c.name,
+            type: 'String',
             isConst: true,
             isNullable: false
         };
@@ -3321,6 +3450,33 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
         }
 
         for (const field of c.fields) {
+            const acc = field.access || 'public';
+            if (!isSelf && acc === 'exclusive') {
+                continue;
+            }
+
+            const isPrivateOrIsolated = (acc === 'private' || acc === 'isolated');
+            const storageKey = isPrivateOrIsolated ? `__${c.name}__${field.name}` : field.name;
+
+            if (isSelf || !isPrivateOrIsolated) {
+                memberAccess.set(field.name, acc);
+                memberOwners.set(field.name, c.name);
+            }
+            if (isPrivateOrIsolated) {
+                memberAccess.set(storageKey, acc);
+                memberOwners.set(storageKey, c.name);
+            }
+            if (acc === 'private') {
+                privateMembers.add(field.name);
+                privateOwners.set(field.name, c.name);
+            } else if (acc === 'protected') {
+                protectedMembers.add(field.name);
+            } else if (acc === 'isolated') {
+                isolatedMembers.add(field.name);
+            } else if (acc === 'exclusive') {
+                exclusiveMembers.add(field.name);
+            }
+
             let val = null;
             if (field.value !== undefined && field.value !== null) {
                 val = await evaluate(field.value, initEnv);
@@ -3347,24 +3503,66 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
                 });
             }
 
-            instance.fields[field.name] = {
+            const fieldDef = {
                 value: val,
                 type: fieldType,
                 isNullable: field.isNullable !== false,
-                isConst: !!field.isConst
+                isConst: !!field.isConst,
+                access: acc,
+                declaringClass: c.name
             };
+            instance.fields[storageKey] = fieldDef;
+            if (isSelf) {
+                if (!isPrivateOrIsolated || !(field.name in instance.fields)) {
+                    instance.fields[field.name] = fieldDef;
+                }
+            } else if (!isPrivateOrIsolated) {
+                instance.fields[field.name] = fieldDef;
+            }
         }
     }
 
     for (const c of chain) {
+        const isSelf = (c === classObj);
         for (const [methodName, methodAst] of Object.entries(c.methods)) {
+            const acc = methodAst.access || 'public';
+            if (!isSelf && (acc === 'isolated' || acc === 'exclusive')) {
+                continue;
+            }
+
+            const isPrivateOrIsolated = (acc === 'private' || acc === 'isolated');
+            const storageKey = isPrivateOrIsolated ? `__${c.name}__${methodName}` : methodName;
+
+            memberAccess.set(methodName, acc);
+            memberOwners.set(methodName, c.name);
+            if (isPrivateOrIsolated) {
+                memberAccess.set(storageKey, acc);
+                memberOwners.set(storageKey, c.name);
+            }
+            if (acc === 'private') {
+                privateMembers.add(methodName);
+                privateOwners.set(methodName, c.name);
+            } else if (acc === 'protected') {
+                protectedMembers.add(methodName);
+            } else if (acc === 'isolated') {
+                isolatedMembers.add(methodName);
+            } else if (acc === 'exclusive') {
+                exclusiveMembers.add(methodName);
+            }
+
             const fnObj = buildBoundMethod(methodAst, instance, c, env, evaluate);
-            instance.fields[methodName] = {
+            const methodDef = {
                 value: fnObj,
                 type: 'Function',
                 isNullable: false,
-                isConst: true
+                isConst: true,
+                access: acc,
+                declaringClass: c.name
             };
+            instance.fields[storageKey] = methodDef;
+            if (!isPrivateOrIsolated || !(methodName in instance.fields)) {
+                instance.fields[methodName] = methodDef;
+            }
         }
     }
 
@@ -3374,6 +3572,12 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
         ctorClosure.values['this'] = {
             value: instance,
             type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+        ctorClosure.values['__declaringClass'] = {
+            value: classObj.name,
+            type: 'String',
             isConst: true,
             isNullable: false
         };
@@ -3407,57 +3611,166 @@ async function instantiateClass(classObj, rawArgs, env, evaluate) {
     return instance;
 }
 
-function checkPrivateAccess(target, memberName, env, isMethod = false) {
-    if (!target || !target.isInstance || !target.privateMembers || !target.privateMembers.has(memberName)) {
+function checkMemberAccess(target, memberName, env, isMethod = false) {
+    if (!target || !target.isInstance) {
         return;
     }
 
-    const activeThis = findScope('this', env);
-    const callerThis = activeThis ? activeThis.values['this'].value : null;
+    let access = 'public';
+    let ownerClass = target.className;
 
-    if (!callerThis || callerThis !== target) {
-        const kind = isMethod ? 'method' : 'member';
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot access private ${kind} '${memberName}' of class '${target.className}'.`
-        });
+    if (target.memberAccess && target.memberAccess.has(memberName)) {
+        access = target.memberAccess.get(memberName);
+        ownerClass = target.memberOwners.get(memberName) || target.className;
+    } else if (target.privateMembers && target.privateMembers.has(memberName)) {
+        access = 'private';
+        ownerClass = target.privateOwners ? target.privateOwners.get(memberName) : target.className;
     }
 
-    if (target.privateOwners && target.privateOwners.has(memberName)) {
-        const ownerClass = target.privateOwners.get(memberName);
-        const activeFnScope = findScope('__currentFunction', env);
-        const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
-        if (currentFn && currentFn.declaringClass && currentFn.declaringClass !== ownerClass) {
-            const kind = isMethod ? 'method' : 'member';
-            printErr({
-                eName: 'TypeError',
-                eContext: `Cannot access private ${kind} '${memberName}' of parent class '${ownerClass}'.`
-            });
-        }
-    }
-}
-
-function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false) {
-    if (!targetClass || targetClass.kind !== 'Class') return;
-    if (!targetClass.privateSharedMembers || !targetClass.privateSharedMembers.has(memberName)) return;
-
-    const activeThis = findScope('this', env);
-    const callerThis = activeThis ? activeThis.values['this'].value : null;
-    if (callerThis && (callerThis.className === targetClass.name || (callerThis.classRef && callerThis.classRef.name === targetClass.name))) {
-        return;
-    }
-
-    const declaringScope = findScope('__declaringClass', env);
-    const declaringClass = declaringScope ? declaringScope.values['__declaringClass'].value : null;
-    if (declaringClass === targetClass.name) {
+    if (access === 'public' || access === 'exclusive') {
         return;
     }
 
     const kind = isMethod ? 'method' : 'member';
-    printErr({
-        eName: 'TypeError',
-        eContext: `Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`
-    });
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+
+    if (!callerThis || callerThis !== target) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} ${kind} '${memberName}' of class '${target.className}'.`
+        });
+    }
+
+    if (access === 'protected') {
+        return;
+    }
+
+    const activeFnScope = findScope('__currentFunction', env);
+    const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
+    let callerDeclaringClass = currentFn ? currentFn.declaringClass : null;
+    if (!callerDeclaringClass) {
+        const declScope = findScope('__declaringClass', env);
+        callerDeclaringClass = declScope ? declScope.values['__declaringClass'].value : null;
+    }
+
+    if (callerDeclaringClass && callerDeclaringClass !== ownerClass) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} ${kind} '${memberName}' of parent class '${ownerClass}'.`
+        });
+    }
+}
+
+function checkSharedMemberAccess(targetClass, memberName, env, isMethod = false) {
+    if (!targetClass || targetClass.kind !== 'Class') return;
+
+    let curr = targetClass;
+    let access = 'public';
+    let ownerClass = targetClass.name;
+
+    while (curr) {
+        if (curr.sharedFields && memberName in curr.sharedFields) {
+            access = curr.sharedFields[memberName].access || 'public';
+            ownerClass = curr.name;
+            break;
+        }
+        if (curr.sharedMethods && memberName in curr.sharedMethods) {
+            const m = curr.sharedMethods[memberName];
+            access = m.access || 'public';
+            ownerClass = curr.name;
+            break;
+        }
+        curr = curr.superClass;
+    }
+
+    if (access === 'public') return;
+
+    const kind = isMethod ? 'method' : 'member';
+
+    if (ownerClass !== targetClass.name && (access === 'isolated' || access === 'exclusive')) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Shared ${kind} '${memberName}' does not exist on class '${targetClass.name}'.`
+        });
+    }
+
+    if (access === 'exclusive') {
+        return;
+    }
+
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+    const declaringScope = findScope('__declaringClass', env);
+    const declaringClass = declaringScope ? declaringScope.values['__declaringClass'].value : null;
+
+    let callerClassName = null;
+    let callerClassRef = null;
+    if (callerThis && callerThis.isInstance) {
+        callerClassName = callerThis.className;
+        callerClassRef = callerThis.classRef;
+    } else if (declaringClass) {
+        callerClassName = declaringClass;
+    }
+
+    if (!callerClassName) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} shared ${kind} '${memberName}' of class '${targetClass.name}'.`
+        });
+    }
+
+    if (access === 'protected') {
+        let isDescendant = false;
+        let c = targetClass;
+        while (c) {
+            if (c.name === ownerClass) { isDescendant = true; break; }
+            c = c.superClass;
+        }
+        if (!isDescendant) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot access protected shared ${kind} '${memberName}' of class '${ownerClass}'.`
+            });
+        }
+        return;
+    }
+
+    if (callerClassName !== ownerClass) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} shared ${kind} '${memberName}' of parent class '${ownerClass}'.`
+        });
+    }
+}
+
+function resolveMemberKey(instance, memberName, env) {
+    if (!instance || !instance.isInstance || !instance.fields) return memberName;
+
+    const activeFnScope = findScope('__currentFunction', env);
+    const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
+    let callerClass = currentFn ? currentFn.declaringClass : null;
+    if (!callerClass) {
+        const declScope = findScope('__declaringClass', env);
+        callerClass = declScope ? declScope.values['__declaringClass'].value : null;
+    }
+
+    if (callerClass) {
+        const mangledKey = `__${callerClass}__${memberName}`;
+        if (mangledKey in instance.fields) {
+            return mangledKey;
+        }
+    }
+
+    return memberName;
+}
+
+function checkPrivateAccess(target, memberName, env, isMethod = false) {
+    return checkMemberAccess(target, memberName, env, isMethod);
+}
+
+function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false) {
+    return checkSharedMemberAccess(targetClass, memberName, env, isMethod);
 }
 
 
@@ -3521,9 +3834,18 @@ async function evalIndexAccess(node, env, evaluate) {
         let curr = target;
         while (curr) {
             if (curr.sharedFields && key in curr.sharedFields) {
+                if (curr !== target && (curr.sharedFields[key].access === 'isolated' || curr.sharedFields[key].access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return curr.sharedFields[key].value;
             }
             if (curr.sharedMethods && key in curr.sharedMethods) {
+                const m = curr.sharedMethods[key];
+                if (curr !== target && (m.access === 'isolated' || m.access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return curr.sharedMethods[key];
             }
             curr = curr.superClass;
@@ -3543,7 +3865,7 @@ async function evalIndexAccess(node, env, evaluate) {
             });
         }
 
-        let key = node.index;
+        let key = (typeof resolveMemberKey === 'function') ? resolveMemberKey(target, node.index, env) : node.index;
 
         checkPrivateAccess(target, key, env, false);
 
@@ -3668,6 +3990,10 @@ async function evalMemberAssign(node, env, evaluate) {
         let fieldEntry = null;
         while (curr) {
             if (curr.sharedFields && key in curr.sharedFields) {
+                if (curr !== container && (curr.sharedFields[key].access === 'isolated' || curr.sharedFields[key].access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 fieldEntry = curr.sharedFields[key];
                 break;
             }
@@ -3706,9 +4032,10 @@ async function evalMemberAssign(node, env, evaluate) {
             });
         }
 
-        checkPrivateAccess(container, node.index, env, false);
+        let key = (typeof resolveMemberKey === 'function') ? resolveMemberKey(container, node.index, env) : node.index;
 
-        let key = node.index;
+        checkPrivateAccess(container, key, env, false);
+
         let newVal = await evaluate(node.value, env);
 
         if (node.operator) {
@@ -3835,6 +4162,10 @@ async function evalMethodCall(node, env, evaluate) {
         while (curr) {
             if (curr.sharedMethods && methodName in curr.sharedMethods) {
                 let fnObj = curr.sharedMethods[methodName];
+                if (curr !== target && (fnObj.access === 'isolated' || fnObj.access === 'exclusive')) {
+                    curr = curr.superClass;
+                    continue;
+                }
                 return await evalCall({ caller: { type: 'Literal', value: fnObj }, args: node.args }, env, evaluate);
             }
             curr = curr.superClass;
@@ -3847,7 +4178,7 @@ async function evalMethodCall(node, env, evaluate) {
     }
 
     if (target && (target.kind === 'Table' || target.isBase)) {
-        let methodName = node.method;
+        let methodName = (typeof resolveMemberKey === 'function') ? resolveMemberKey(target, node.method, env) : node.method;
 
         checkPrivateAccess(target, methodName, env, true);
 
@@ -4632,7 +4963,16 @@ async function evalHook(node, env, evaluate) {
         }
 
         if (container && container.kind === 'Table') {
-            if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
+            if (container.isInstance && container.memberAccess) {
+                const acc = container.memberAccess.get(key);
+                if (acc === 'private' || acc === 'isolated') {
+                    printErr({
+                        eName: 'TypeError',
+                        eContext: `Cannot hook ${acc} method '${key}' of class '${container.className}'.`,
+                        eLine: node.line
+                    });
+                }
+            } else if (container.isInstance && container.privateMembers && container.privateMembers.has(key)) {
                 printErr({
                     eName: 'TypeError',
                     eContext: `Cannot hook private method '${key}' of class '${container.className}'.`,

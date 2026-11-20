@@ -27,19 +27,37 @@ function evalClassDeclaration(node, env, shouldBind = true) {
         sharedMethods: {},
         constructor: null,
         privateMembers: new Set(),
+        protectedMembers: new Set(),
+        isolatedMembers: new Set(),
+        exclusiveMembers: new Set(),
         privateSharedMembers: new Set(),
+        protectedSharedMembers: new Set(),
+        isolatedSharedMembers: new Set(),
+        exclusiveSharedMembers: new Set(),
         instances: new Set()
     };
 
     for (const f of node.fields) {
         if (f.access === 'private') {
             classObj.privateMembers.add(f.name);
+        } else if (f.access === 'protected') {
+            classObj.protectedMembers.add(f.name);
+        } else if (f.access === 'isolated') {
+            classObj.isolatedMembers.add(f.name);
+        } else if (f.access === 'exclusive') {
+            classObj.exclusiveMembers.add(f.name);
         }
     }
 
     for (const m of node.methods) {
         if (m.access === 'private') {
             classObj.privateMembers.add(m.name);
+        } else if (m.access === 'protected') {
+            classObj.protectedMembers.add(m.name);
+        } else if (m.access === 'isolated') {
+            classObj.isolatedMembers.add(m.name);
+        } else if (m.access === 'exclusive') {
+            classObj.exclusiveMembers.add(m.name);
         }
         if (m.name === node.name) {
             classObj.constructor = m;
@@ -53,6 +71,12 @@ function evalClassDeclaration(node, env, shouldBind = true) {
         for (const f of node.sharedFields) {
             if (f.access === 'private') {
                 classObj.privateSharedMembers.add(f.name);
+            } else if (f.access === 'protected') {
+                classObj.protectedSharedMembers.add(f.name);
+            } else if (f.access === 'isolated') {
+                classObj.isolatedSharedMembers.add(f.name);
+            } else if (f.access === 'exclusive') {
+                classObj.exclusiveSharedMembers.add(f.name);
             }
             let val = null;
             if (f.value !== undefined && f.value !== null) {
@@ -93,6 +117,12 @@ function evalClassDeclaration(node, env, shouldBind = true) {
         for (const m of node.sharedMethods) {
             if (m.access === 'private') {
                 classObj.privateSharedMembers.add(m.name);
+            } else if (m.access === 'protected') {
+                classObj.protectedSharedMembers.add(m.name);
+            } else if (m.access === 'isolated') {
+                classObj.isolatedSharedMembers.add(m.name);
+            } else if (m.access === 'exclusive') {
+                classObj.exclusiveSharedMembers.add(m.name);
             }
             const methodClosure = createScope(env);
             methodClosure.values['__declaringClass'] = {
@@ -108,6 +138,7 @@ function evalClassDeclaration(node, env, shouldBind = true) {
                 body: m.body,
                 closure: methodClosure,
                 isShared: true,
+                access: m.access || 'public',
                 declaringClass: node.name
             };
         }
@@ -151,6 +182,12 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
                 isConst: true,
                 isNullable: false
             };
+            ctorClosure.values['__declaringClass'] = {
+                value: superClass.name,
+                type: 'String',
+                isConst: true,
+                isNullable: false
+            };
             if (superClass.superClass) {
                 ctorClosure.values['base'] = {
                     value: createBaseBinding(instance, superClass, env, activeEval),
@@ -189,6 +226,10 @@ function createBaseBinding(instance, currentClass, env, evaluate) {
     const superChain = getHierarchy(superClass);
     for (const ancestor of superChain) {
         for (const [mName, mAst] of Object.entries(ancestor.methods)) {
+            const acc = mAst.access || 'public';
+            if (acc === 'private' || acc === 'isolated' || acc === 'exclusive') {
+                continue;
+            }
             const methodFn = buildBoundMethod(mAst, instance, ancestor, env, evaluate);
             baseObj.fields[mName] = {
                 value: methodFn,
@@ -293,10 +334,12 @@ function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
         });
     }
 
-    if (origMethodAst.access === 'private' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName))) {
+    const origAcc = origMethodAst.access || 'public';
+    if (origAcc === 'private' || origAcc === 'isolated' || (targetClass.privateMembers && targetClass.privateMembers.has(methodName)) || (targetClass.isolatedMembers && targetClass.isolatedMembers.has(methodName))) {
+        const accLabel = (origAcc === 'isolated' || (targetClass.isolatedMembers && targetClass.isolatedMembers.has(methodName))) ? 'isolated' : 'private';
         printErr({
             eName: 'TypeError',
-            eContext: `Cannot hook private method '${methodName}' of class '${targetClass.name}'.`,
+            eContext: `Cannot hook ${accLabel} method '${methodName}' of class '${targetClass.name}'.`,
             eLine: hookNode.line
         });
     }
@@ -325,15 +368,13 @@ function hookClassMethod(classObj, methodName, hookNode, env, evaluate) {
 
 function instantiateClass(classObj, rawArgs, env, evaluate) {
     const chain = getHierarchy(classObj);
+    const memberAccess = new Map();
+    const memberOwners = new Map();
     const privateMembers = new Set();
     const privateOwners = new Map();
-
-    for (const c of chain) {
-        for (const pm of c.privateMembers) {
-            privateMembers.add(pm);
-            privateOwners.set(pm, c.name);
-        }
-    }
+    const protectedMembers = new Set();
+    const isolatedMembers = new Set();
+    const exclusiveMembers = new Set();
 
     const instance = {
         kind: 'Table',
@@ -341,17 +382,30 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
         isInstance: true,
         classRef: classObj,
         fields: {},
+        memberAccess,
+        memberOwners,
         privateMembers,
-        privateOwners
+        privateOwners,
+        protectedMembers,
+        isolatedMembers,
+        exclusiveMembers
     };
 
     classObj.instances.add(instance);
 
     for (const c of chain) {
+        const isSelf = (c === classObj);
+
         const initEnv = createScope(env);
         initEnv.values['this'] = {
             value: instance,
             type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+        initEnv.values['__declaringClass'] = {
+            value: c.name,
+            type: 'String',
             isConst: true,
             isNullable: false
         };
@@ -365,6 +419,33 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
         }
 
         for (const field of c.fields) {
+            const acc = field.access || 'public';
+            if (!isSelf && acc === 'exclusive') {
+                continue;
+            }
+
+            const isPrivateOrIsolated = (acc === 'private' || acc === 'isolated');
+            const storageKey = isPrivateOrIsolated ? `__${c.name}__${field.name}` : field.name;
+
+            if (isSelf || !isPrivateOrIsolated) {
+                memberAccess.set(field.name, acc);
+                memberOwners.set(field.name, c.name);
+            }
+            if (isPrivateOrIsolated) {
+                memberAccess.set(storageKey, acc);
+                memberOwners.set(storageKey, c.name);
+            }
+            if (acc === 'private') {
+                privateMembers.add(field.name);
+                privateOwners.set(field.name, c.name);
+            } else if (acc === 'protected') {
+                protectedMembers.add(field.name);
+            } else if (acc === 'isolated') {
+                isolatedMembers.add(field.name);
+            } else if (acc === 'exclusive') {
+                exclusiveMembers.add(field.name);
+            }
+
             let val = null;
             if (field.value !== undefined && field.value !== null) {
                 val = evaluate(field.value, initEnv);
@@ -391,24 +472,66 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
                 });
             }
 
-            instance.fields[field.name] = {
+            const fieldDef = {
                 value: val,
                 type: fieldType,
                 isNullable: field.isNullable !== false,
-                isConst: !!field.isConst
+                isConst: !!field.isConst,
+                access: acc,
+                declaringClass: c.name
             };
+            instance.fields[storageKey] = fieldDef;
+            if (isSelf) {
+                if (!isPrivateOrIsolated || !(field.name in instance.fields)) {
+                    instance.fields[field.name] = fieldDef;
+                }
+            } else if (!isPrivateOrIsolated) {
+                instance.fields[field.name] = fieldDef;
+            }
         }
     }
 
     for (const c of chain) {
+        const isSelf = (c === classObj);
         for (const [methodName, methodAst] of Object.entries(c.methods)) {
+            const acc = methodAst.access || 'public';
+            if (!isSelf && (acc === 'isolated' || acc === 'exclusive')) {
+                continue;
+            }
+
+            const isPrivateOrIsolated = (acc === 'private' || acc === 'isolated');
+            const storageKey = isPrivateOrIsolated ? `__${c.name}__${methodName}` : methodName;
+
+            memberAccess.set(methodName, acc);
+            memberOwners.set(methodName, c.name);
+            if (isPrivateOrIsolated) {
+                memberAccess.set(storageKey, acc);
+                memberOwners.set(storageKey, c.name);
+            }
+            if (acc === 'private') {
+                privateMembers.add(methodName);
+                privateOwners.set(methodName, c.name);
+            } else if (acc === 'protected') {
+                protectedMembers.add(methodName);
+            } else if (acc === 'isolated') {
+                isolatedMembers.add(methodName);
+            } else if (acc === 'exclusive') {
+                exclusiveMembers.add(methodName);
+            }
+
             const fnObj = buildBoundMethod(methodAst, instance, c, env, evaluate);
-            instance.fields[methodName] = {
+            const methodDef = {
                 value: fnObj,
                 type: 'Function',
                 isNullable: false,
-                isConst: true
+                isConst: true,
+                access: acc,
+                declaringClass: c.name
             };
+            instance.fields[storageKey] = methodDef;
+            if (!isPrivateOrIsolated || !(methodName in instance.fields)) {
+                instance.fields[methodName] = methodDef;
+            }
         }
     }
 
@@ -418,6 +541,12 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
         ctorClosure.values['this'] = {
             value: instance,
             type: 'Table',
+            isConst: true,
+            isNullable: false
+        };
+        ctorClosure.values['__declaringClass'] = {
+            value: classObj.name,
+            type: 'String',
             isConst: true,
             isNullable: false
         };
@@ -451,63 +580,175 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
     return instance;
 }
 
-function checkPrivateAccess(target, memberName, env, isMethod = false) {
-    if (!target || !target.isInstance || !target.privateMembers || !target.privateMembers.has(memberName)) {
+function checkMemberAccess(target, memberName, env, isMethod = false) {
+    if (!target || !target.isInstance) {
         return;
     }
 
-    const activeThis = findScope('this', env);
-    const callerThis = activeThis ? activeThis.values['this'].value : null;
+    let access = 'public';
+    let ownerClass = target.className;
 
-    if (!callerThis || callerThis !== target) {
-        const kind = isMethod ? 'method' : 'member';
-        printErr({
-            eName: 'TypeError',
-            eContext: `Cannot access private ${kind} '${memberName}' of class '${target.className}'.`
-        });
+    if (target.memberAccess && target.memberAccess.has(memberName)) {
+        access = target.memberAccess.get(memberName);
+        ownerClass = target.memberOwners.get(memberName) || target.className;
+    } else if (target.privateMembers && target.privateMembers.has(memberName)) {
+        access = 'private';
+        ownerClass = target.privateOwners ? target.privateOwners.get(memberName) : target.className;
     }
 
-    if (target.privateOwners && target.privateOwners.has(memberName)) {
-        const ownerClass = target.privateOwners.get(memberName);
-        const activeFnScope = findScope('__currentFunction', env);
-        const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
-        if (currentFn && currentFn.declaringClass && currentFn.declaringClass !== ownerClass) {
-            const kind = isMethod ? 'method' : 'member';
-            printErr({
-                eName: 'TypeError',
-                eContext: `Cannot access private ${kind} '${memberName}' of parent class '${ownerClass}'.`
-            });
-        }
-    }
-}
-
-function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false) {
-    if (!targetClass || targetClass.kind !== 'Class') return;
-    if (!targetClass.privateSharedMembers || !targetClass.privateSharedMembers.has(memberName)) return;
-
-    const activeThis = findScope('this', env);
-    const callerThis = activeThis ? activeThis.values['this'].value : null;
-    if (callerThis && (callerThis.className === targetClass.name || (callerThis.classRef && callerThis.classRef.name === targetClass.name))) {
-        return;
-    }
-
-    const declaringScope = findScope('__declaringClass', env);
-    const declaringClass = declaringScope ? declaringScope.values['__declaringClass'].value : null;
-    if (declaringClass === targetClass.name) {
+    if (access === 'public' || access === 'exclusive') {
         return;
     }
 
     const kind = isMethod ? 'method' : 'member';
-    printErr({
-        eName: 'TypeError',
-        eContext: `Cannot access private shared ${kind} '${memberName}' of class '${targetClass.name}'.`
-    });
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+
+    if (!callerThis || callerThis !== target) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} ${kind} '${memberName}' of class '${target.className}'.`
+        });
+    }
+
+    if (access === 'protected') {
+        return;
+    }
+
+    const activeFnScope = findScope('__currentFunction', env);
+    const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
+    let callerDeclaringClass = currentFn ? currentFn.declaringClass : null;
+    if (!callerDeclaringClass) {
+        const declScope = findScope('__declaringClass', env);
+        callerDeclaringClass = declScope ? declScope.values['__declaringClass'].value : null;
+    }
+
+    if (callerDeclaringClass && callerDeclaringClass !== ownerClass) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} ${kind} '${memberName}' of parent class '${ownerClass}'.`
+        });
+    }
+}
+
+function checkSharedMemberAccess(targetClass, memberName, env, isMethod = false) {
+    if (!targetClass || targetClass.kind !== 'Class') return;
+
+    let curr = targetClass;
+    let access = 'public';
+    let ownerClass = targetClass.name;
+
+    while (curr) {
+        if (curr.sharedFields && memberName in curr.sharedFields) {
+            access = curr.sharedFields[memberName].access || 'public';
+            ownerClass = curr.name;
+            break;
+        }
+        if (curr.sharedMethods && memberName in curr.sharedMethods) {
+            const m = curr.sharedMethods[memberName];
+            access = m.access || 'public';
+            ownerClass = curr.name;
+            break;
+        }
+        curr = curr.superClass;
+    }
+
+    if (access === 'public') return;
+
+    const kind = isMethod ? 'method' : 'member';
+
+    if (ownerClass !== targetClass.name && (access === 'isolated' || access === 'exclusive')) {
+        printErr({
+            eName: 'ReferenceError',
+            eContext: `Shared ${kind} '${memberName}' does not exist on class '${targetClass.name}'.`
+        });
+    }
+
+    if (access === 'exclusive') {
+        return;
+    }
+
+    const activeThis = findScope('this', env);
+    const callerThis = activeThis ? activeThis.values['this'].value : null;
+    const declaringScope = findScope('__declaringClass', env);
+    const declaringClass = declaringScope ? declaringScope.values['__declaringClass'].value : null;
+
+    let callerClassName = null;
+    let callerClassRef = null;
+    if (callerThis && callerThis.isInstance) {
+        callerClassName = callerThis.className;
+        callerClassRef = callerThis.classRef;
+    } else if (declaringClass) {
+        callerClassName = declaringClass;
+    }
+
+    if (!callerClassName) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} shared ${kind} '${memberName}' of class '${targetClass.name}'.`
+        });
+    }
+
+    if (access === 'protected') {
+        let isDescendant = false;
+        let c = targetClass;
+        while (c) {
+            if (c.name === ownerClass) { isDescendant = true; break; }
+            c = c.superClass;
+        }
+        if (!isDescendant) {
+            printErr({
+                eName: 'TypeError',
+                eContext: `Cannot access protected shared ${kind} '${memberName}' of class '${ownerClass}'.`
+            });
+        }
+        return;
+    }
+
+    if (callerClassName !== ownerClass) {
+        printErr({
+            eName: 'TypeError',
+            eContext: `Cannot access ${access} shared ${kind} '${memberName}' of parent class '${ownerClass}'.`
+        });
+    }
+}
+
+function resolveMemberKey(instance, memberName, env) {
+    if (!instance || !instance.isInstance || !instance.fields) return memberName;
+
+    const activeFnScope = findScope('__currentFunction', env);
+    const currentFn = activeFnScope ? activeFnScope.values['__currentFunction'].value : null;
+    let callerClass = currentFn ? currentFn.declaringClass : null;
+    if (!callerClass) {
+        const declScope = findScope('__declaringClass', env);
+        callerClass = declScope ? declScope.values['__declaringClass'].value : null;
+    }
+
+    if (callerClass) {
+        const mangledKey = `__${callerClass}__${memberName}`;
+        if (mangledKey in instance.fields) {
+            return mangledKey;
+        }
+    }
+
+    return memberName;
+}
+
+function checkPrivateAccess(target, memberName, env, isMethod = false) {
+    return checkMemberAccess(target, memberName, env, isMethod);
+}
+
+function checkPrivateSharedAccess(targetClass, memberName, env, isMethod = false) {
+    return checkSharedMemberAccess(targetClass, memberName, env, isMethod);
 }
 
 module.exports = { 
     evalClassDeclaration, 
     instantiateClass, 
-    checkPrivateAccess, 
-    checkPrivateSharedAccess, 
-    hookClassMethod 
+    checkMemberAccess,
+    checkPrivateAccess,
+    checkSharedMemberAccess,
+    checkPrivateSharedAccess,
+    hookClassMethod,
+    resolveMemberKey
 };
