@@ -429,8 +429,9 @@ Kuroba/
     - [x] `protected ivar/iconst/function`: accessible across class hierarchies (parent and subclasses), hidden from external consumers
     - [x] `isolated ivar/iconst/function`: strictly exclusive to the declaring class, completely uninherited and inaccessible by child classes
     - [x] `exclusive ivar/iconst/function`: publicly accessible on declaring class, strictly uninherited and absent from child classes
-  - [ ] Custom Property Accessors (`get` / `set`):
-    - Getter / Setter syntax (`get prop then ... end`, `set prop(val) then ... end`) for computed values and validated assignments
+  - [x] Custom Property Accessors (`get` / `set`):
+    - [x] Property interceptor syntax (`get prop then ... end`, `set prop(val) then ... end`) with raw backing storage access via `value`
+    - [x] Immutability protection (`iconst` read-only getters, syntax rejection on setters)
 - [ ] Concurrency & Asynchronous Programming:
   - [ ] Async/Await syntax and runtime semantics (`async function`, `await expr`) integrated with event loop
   - [ ] Lightweight coroutines and cooperative multitasking (`task`, `yield`)
@@ -464,13 +465,14 @@ Kuroba/
 - [ ] Website & Documentation Internationalization (`i18n`):
   - [ ] Multi-language localization across Home, Docs, and Playground (English, French, Spanish, etc.) with dynamic language switcher
 
-### Phase 10: High-Performance Engine, Universal Distribution & Ecosystem `(v1.1.0)`
+### Phase 10: Pure C Native High-Performance Engine, Universal Distribution & Ecosystem `(v1.1.0)`
 
-- [ ] Next-Gen High-Performance Engine (V8-Inspired Architecture):
-  - [ ] Bytecode Compiler (`.kbc`) & Virtual Machine replacing AST tree-walk for 10x-50x faster execution
-  - [ ] Shapes / Hidden Classes optimization for tables and class instances (instant memory offset access)
-  - [ ] High-throughput contiguous memory structures, generational garbage collection, and microsecond startup
-  - [ ] Native standalone runtime (Rust / Zig) with optional JIT pass (Cranelift) for near-C throughput
+- [ ] Next-Gen Pure C High-Performance Engine (Lua-Inspired Architecture):
+  - [ ] Complete native rewrite in pure C (C99/C11) for maximal execution speed, instant startup (~1ms), and tiny binary size (< 400 KB)
+  - [ ] Ultra-fast Bytecode Compiler (`.kbc`) & Register-based Virtual Machine replacing AST tree-walk for 20x-50x faster execution
+  - [ ] Direct Threaded Code (Computed Gotos) for zero branch-misprediction opcode dispatching
+  - [ ] Contiguous memory structures, compact object representations, and custom generational garbage collection
+  - [ ] First-class WebAssembly target (`kuroba.wasm` compiled directly via Emscripten) running at native speed in web browsers
 - [ ] Universal Distribution & Zero-Setup Installation:
   - [ ] Single self-contained binary (`kuroba.exe` on Windows, `kuroba` on macOS/Linux) with bundled `Std`/`StdE` (zero Node.js dependency)
   - [ ] One-liner installation scripts (`irm ... | iex` on Windows PowerShell, `curl ... | bash` on macOS/Linux)

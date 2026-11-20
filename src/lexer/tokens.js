@@ -50,7 +50,9 @@ const KEYWORDS = {
   from: { type: "FROM", value: "from" },
   base: { type: "BASE", value: "base" },
   shared: { type: "SHARED", value: "shared" },
-  enum: { type: "ENUM", value: "enum" }
+  enum: { type: "ENUM", value: "enum" },
+  get: { type: "GET", value: "get" },
+  set: { type: "SET", value: "set" }
 };
 
 const SYMBOLS = {

@@ -37,6 +37,9 @@ function evalClassDeclaration(node, env, shouldBind = true) {
         instances: new Set()
     };
 
+    classObj.getters = node.getters || [];
+    classObj.setters = node.setters || [];
+
     for (const f of node.fields) {
         if (f.access === 'private') {
             classObj.privateMembers.add(f.name);
@@ -46,6 +49,17 @@ function evalClassDeclaration(node, env, shouldBind = true) {
             classObj.isolatedMembers.add(f.name);
         } else if (f.access === 'exclusive') {
             classObj.exclusiveMembers.add(f.name);
+        }
+    }
+
+    for (const s of (node.setters || [])) {
+        const constField = (node.fields || []).find(f => f.name === s.name && (f.isConst || f.type === 'ConstDeclar'));
+        if (constField) {
+            printErr({
+                eName: 'SyntaxError',
+                eContext: `Cannot define setter for constant '${s.name}' in class '${node.name}'.`,
+                eLine: s.line
+            });
         }
     }
 
@@ -382,6 +396,8 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
         isInstance: true,
         classRef: classObj,
         fields: {},
+        getters: {},
+        setters: {},
         memberAccess,
         memberOwners,
         privateMembers,
@@ -395,6 +411,13 @@ function instantiateClass(classObj, rawArgs, env, evaluate) {
 
     for (const c of chain) {
         const isSelf = (c === classObj);
+
+        for (const g of (c.getters || [])) {
+            instance.getters[g.name] = { ast: g, declaringClass: c.name };
+        }
+        for (const s of (c.setters || [])) {
+            instance.setters[s.name] = { ast: s, declaringClass: c.name };
+        }
 
         const initEnv = createScope(env);
         initEnv.values['this'] = {
@@ -734,6 +757,45 @@ function resolveMemberKey(instance, memberName, env) {
     return memberName;
 }
 
+function invokeGetter(getterAst, instance, rawValue, declaringClass, env, evaluate) {
+    const scope = createScope(env);
+    scope.values['this'] = { value: instance, type: 'Table', isConst: true, isNullable: false };
+    scope.values['value'] = { value: rawValue, type: getType(rawValue), isConst: false, isNullable: true };
+    scope.values['__declaringClass'] = { value: declaringClass, type: 'String', isConst: true, isNullable: false };
+
+    try {
+        for (const stmt of getterAst.body) {
+            const res = evaluate(stmt, scope);
+            if (res && res.__returnValue !== undefined) {
+                return res.__returnValue;
+            }
+        }
+    } catch (e) {
+        throw e;
+    }
+    return scope.values['value'] ? scope.values['value'].value : rawValue;
+}
+
+function invokeSetter(setterAst, instance, rawValue, newVal, declaringClass, env, evaluate) {
+    const scope = createScope(env);
+    scope.values['this'] = { value: instance, type: 'Table', isConst: true, isNullable: false };
+    scope.values[setterAst.param] = { value: newVal, type: getType(newVal), isConst: false, isNullable: true };
+    scope.values['value'] = { value: rawValue, type: getType(rawValue), isConst: false, isNullable: true };
+    scope.values['__declaringClass'] = { value: declaringClass, type: 'String', isConst: true, isNullable: false };
+
+    try {
+        for (const stmt of setterAst.body) {
+            const res = evaluate(stmt, scope);
+            if (res && res.__returnValue !== undefined) {
+                break;
+            }
+        }
+    } catch (e) {
+        throw e;
+    }
+    return scope.values['value'] ? scope.values['value'].value : newVal;
+}
+
 function checkPrivateAccess(target, memberName, env, isMethod = false) {
     return checkMemberAccess(target, memberName, env, isMethod);
 }
@@ -750,5 +812,7 @@ module.exports = {
     checkSharedMemberAccess,
     checkPrivateSharedAccess,
     hookClassMethod,
-    resolveMemberKey
+    resolveMemberKey,
+    invokeGetter,
+    invokeSetter
 };

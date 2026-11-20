@@ -323,6 +323,10 @@ class ParserStatements extends ParserControl {
         let methods = [];
         let sharedFields = [];
         let sharedMethods = [];
+        let getters = [];
+        let setters = [];
+        let sharedGetters = [];
+        let sharedSetters = [];
 
         while (!this.check('END') && !this.isAtEnd()) {
             let isShared = false;
@@ -387,6 +391,52 @@ class ParserStatements extends ParserControl {
                                 });
                             }
                             innerAccess = 'public';
+                        } else if (this.match('GET')) {
+                            let propToken = this.consume('IDENTIFIER', "Expected property name after 'get'.");
+                            this.consume('THEN', `Expected 'then' after 'get ${propToken.value}'.`);
+
+                            let body = [];
+                            while (!this.check('END') && !this.isAtEnd()) {
+                                body.push(this.parseStatement());
+                            }
+
+                            this.consume('END', `Expected 'end' to close 'get ${propToken.value}' block.`);
+
+                            const targetGetters = isShared ? sharedGetters : getters;
+                            targetGetters.push({
+                                type: 'GetterDeclaration',
+                                name: propToken.value,
+                                body,
+                                access,
+                                isShared,
+                                line: propToken.line,
+                                col: propToken.col
+                            });
+                        } else if (this.match('SET')) {
+                            let propToken = this.consume('IDENTIFIER', "Expected property name after 'set'.");
+                            this.consume('LPAREN', `Expected '(' after 'set ${propToken.value}'.`);
+                            let paramToken = this.consume('IDENTIFIER', `Expected parameter name in 'set ${propToken.value}(...)'.`);
+                            this.consume('RPAREN', `Expected ')' after parameter in 'set ${propToken.value}'.`);
+                            this.consume('THEN', `Expected 'then' after 'set ${propToken.value}(${paramToken.value})'.`);
+
+                            let body = [];
+                            while (!this.check('END') && !this.isAtEnd()) {
+                                body.push(this.parseStatement());
+                            }
+
+                            this.consume('END', `Expected 'end' to close 'set ${propToken.value}' block.`);
+
+                            const targetSetters = isShared ? sharedSetters : setters;
+                            targetSetters.push({
+                                type: 'SetterDeclaration',
+                                name: propToken.value,
+                                param: paramToken.value,
+                                body,
+                                access,
+                                isShared,
+                                line: propToken.line,
+                                col: propToken.col
+                            });
                         }
 
                         if (this.match('IVAR', 'ICONST')) {
@@ -500,6 +550,46 @@ class ParserStatements extends ParserControl {
                 let method = this.parseFunctionDeclaration(false);
                 const targetMethods = isShared ? sharedMethods : methods;
                 targetMethods.push({ ...method, access, isShared });
+            } else if (this.match('GET')) {
+                let propToken = this.consume('IDENTIFIER', "Expected property name after 'get'.");
+                this.consume('THEN', `Expected 'then' after 'get ${propToken.value}'.`);
+                let body = [];
+                while (!this.check('END') && !this.isAtEnd()) {
+                    body.push(this.parseStatement());
+                }
+                this.consume('END', `Expected 'end' to close 'get ${propToken.value}' block.`);
+                const targetGetters = isShared ? sharedGetters : getters;
+                targetGetters.push({
+                    type: 'GetterDeclaration',
+                    name: propToken.value,
+                    body,
+                    access,
+                    isShared,
+                    line: propToken.line,
+                    col: propToken.col
+                });
+            } else if (this.match('SET')) {
+                let propToken = this.consume('IDENTIFIER', "Expected property name after 'set'.");
+                this.consume('LPAREN', `Expected '(' after 'set ${propToken.value}'.`);
+                let paramToken = this.consume('IDENTIFIER', `Expected parameter name in 'set ${propToken.value}(...)'.`);
+                this.consume('RPAREN', `Expected ')' after parameter in 'set ${propToken.value}'.`);
+                this.consume('THEN', `Expected 'then' after 'set ${propToken.value}(${paramToken.value})'.`);
+                let body = [];
+                while (!this.check('END') && !this.isAtEnd()) {
+                    body.push(this.parseStatement());
+                }
+                this.consume('END', `Expected 'end' to close 'set ${propToken.value}' block.`);
+                const targetSetters = isShared ? sharedSetters : setters;
+                targetSetters.push({
+                    type: 'SetterDeclaration',
+                    name: propToken.value,
+                    param: paramToken.value,
+                    body,
+                    access,
+                    isShared,
+                    line: propToken.line,
+                    col: propToken.col
+                });
             } else {
                 let tok = this.peek();
                 printErr({
@@ -513,7 +603,7 @@ class ParserStatements extends ParserControl {
 
         this.consume('END', `Expected 'end' to close class '${className}' block.`);
 
-        return { fields, methods, sharedFields, sharedMethods };
+        return { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters };
     }
 
     parseClassDeclaration() {
@@ -527,8 +617,7 @@ class ParserStatements extends ParserControl {
 
         this.consume('THEN', `Expected 'then' after class declaration '${className}'.`);
 
-        let { fields, methods, sharedFields, sharedMethods } = this.parseClassBody(className);
-
+        let { fields, methods, sharedFields, sharedMethods, getters, setters, sharedGetters, sharedSetters } = this.parseClassBody(className);
         return {
             type: 'ClassDeclaration',
             name: className,
@@ -537,6 +626,10 @@ class ParserStatements extends ParserControl {
             methods,
             sharedFields,
             sharedMethods,
+            getters,
+            setters,
+            sharedGetters,
+            sharedSetters,
             line: startToken.line,
             col: startToken.col
         };

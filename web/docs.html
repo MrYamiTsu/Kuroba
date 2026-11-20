@@ -1019,6 +1019,45 @@ pasteLn(Player.defaultName());   ~~ "Novice"
 ivar p1 = Player("Kenji");
 ivar p2 = Player("Aoi");
 pasteLn(Player.getCount());     ~~ 2</code></pre>
+
+        <h3>6. Custom Property Accessors (<code>get</code> / <code>set</code>)</h3>
+        <p>Kuroba supports custom property interceptors on class variables. Instead of manual getter and setter methods, you can define declarative <code>get</code> and <code>set</code> blocks that seamlessly intercept member read and write operations:</p>
+        <ul>
+          <li><strong>The <code>value</code> Binding:</strong> Inside both <code>get</code> and <code>set</code>, the special <code>value</code> variable gives direct access to the underlying raw field stored in memory, avoiding infinite recursive loops.</li>
+          <li><strong>Permissive Layering:</strong> If only a <code>get</code> is defined, reading is intercepted while writing updates the underlying variable directly. If only a <code>set</code> is defined, writing is validated while reading retrieves the raw value.</li>
+          <li><strong>Constant Immutability:</strong> Constants (<code>iconst</code>) can have a <code>get</code> accessor, but defining a <code>set</code> on an <code>iconst</code> raises an intentional <code>[SyntaxError]</code>.</li>
+        </ul>
+
+        <pre><code class="language-kuroba">class Character then
+    ivar hp = 100;
+    iconst maxHp = 100;
+
+    ~~ Getter interceptor on maxHp
+    get maxHp then
+        return value;
+    end
+
+    ~~ Setter interceptor with automatic clamping
+    set hp(newVal) then
+        if (newVal &lt; 0) then
+            value = 0;
+        else if (newVal &gt; this.maxHp) then
+            value = this.maxHp;
+        else
+            value = newVal;
+        end
+    end
+
+    function Character(ivar initialHp) then
+        this.hp = initialHp; ~~ Runs through the setter!
+    end
+end
+
+ivar hero = Character(150);
+pasteLn(hero.hp); ~~ 100 (clamped by setter)
+
+hero.hp -= 200;
+pasteLn(hero.hp); ~~ 0 (clamped to zero)</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -2158,7 +2197,7 @@ pasteLn(loaded.player); ~~ "Kenji"</code></pre>
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'class', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared',
+        'class', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared', 'get', 'set',
         'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 

@@ -2,7 +2,7 @@ const { printErr } = require('../errors');
 const { getType, castToType } = require('./types');
 const { findScope } = require('./scope');
 const { evalCall } = require('./functions');
-const { checkPrivateAccess, checkPrivateSharedAccess, instantiateClass, resolveMemberKey } = require('./classes');
+const { checkPrivateAccess, checkPrivateSharedAccess, instantiateClass, resolveMemberKey, invokeGetter, invokeSetter } = require('./classes');
 
 function evalListLiteral(node, env, evaluate) {
     return node.elements.map(el => evaluate(el, env));
@@ -65,7 +65,13 @@ function evalIndexAccess(node, env, evaluate) {
         checkPrivateAccess(target, key, env, false);
 
         if (key in target.fields) {
-            return target.fields[key].value;
+            const rawVal = target.fields[key].value;
+
+            if (target.getters && target.getters[key]) {
+                const g = target.getters[key];
+                return invokeGetter(g.ast, target, rawVal, g.declaringClass, env, evaluate);
+            }
+            return rawVal;
         }
         
         return null;
@@ -236,6 +242,19 @@ function evalMemberAssign(node, env, evaluate) {
         if (node.operator) {
             let currVal = (key in container.fields) ? container.fields[key].value : 0;
             newVal = applyCompoundOp(currVal, newVal, node.operator);
+        }
+
+        if (container.setters && (key in container.setters || node.index in container.setters)) {
+            const sKey = (key in container.setters) ? key : node.index;
+            const s = container.setters[sKey];
+            const currRaw = (key in container.fields) ? container.fields[key].value : null;
+            
+            const computedNewVal = invokeSetter(s.ast, container, currRaw, newVal, s.declaringClass, env, evaluate);
+            
+            if (key in container.fields) {
+                container.fields[key].value = computedNewVal;
+            }
+            return computedNewVal;
         }
 
         if (node.typeInfo) {
