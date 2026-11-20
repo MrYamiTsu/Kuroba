@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.7</span>
+      <span class="version-badge">v1.0.8</span>
     </a>
 
     <nav class="main-nav">
@@ -81,6 +81,7 @@
           <div class="docs-group-label"><span>OOP &amp; Modularity</span><span class="docs-group-toggle">▾</span></div>
           <a href="#functions" class="docs-item-link">Functions &amp; Native Hooks</a>
           <a href="#classes" class="docs-item-link">Classes &amp; OOP Foundations</a>
+          <a href="#interfaces" class="docs-item-link">Interfaces &amp; Contracts (<code>as</code>)</a>
           <a href="#enums" class="docs-item-link">Native Enumerations (<code>enum</code>)</a>
           <a href="#namespaces" class="docs-item-link">Namespaces &amp; Symbol Discovery</a>
         </div>
@@ -1062,7 +1063,7 @@ pasteLn(hero.hp); ~~ 100 (clamped by setter)
 hero.hp -= 200;
 pasteLn(hero.hp); ~~ 0 (clamped to zero)</code></pre>
 
-        <h3>7. Interface Contracts (<code>interface</code> &amp; <code>as</code>)</h3>
+        <h3 id="interfaces">7. Interface Contracts (<code>interface</code> &amp; <code>as</code>)</h3>
         <p>Interfaces in Kuroba serve as pure contracts. They define the required methods, property accessors (<code>get</code> / <code>set</code>), and fields that an implementing class must provide, without containing any implementation details:</p>
         <ul>
           <li><strong>Pure Structural Contracts:</strong> Interfaces cannot be instantiated directly (e.g., <code>IEntity()</code> raises <code>[TypeError]</code>) and cannot have their members accessed directly (<code>IEntity.member</code> raises <code>[TypeError]</code>).</li>
@@ -2198,7 +2199,7 @@ pasteLn("User: " + envTable.USERNAME);
           <div class="footer-brand-row">
             <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
             <span class="footer-brand-name">Kuroba</span>
-            <span class="version-badge">v1.0.7</span>
+            <span class="version-badge">v1.0.8</span>
           </div>
           <p class="footer-tagline">
             A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
@@ -2566,7 +2567,7 @@ pasteLn("User: " + envTable.USERNAME);
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'class', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared', 'get', 'set',
+        'class', 'interface', 'as', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared', 'get', 'set',
         'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 

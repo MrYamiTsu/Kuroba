@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.7</span>
+      <span class="version-badge">v1.0.8</span>
     </a>
 
     <nav class="main-nav">
@@ -43,11 +43,11 @@
       <div class="roadmap-stats-row">
         <div class="roadmap-stat-group">
           <div class="roadmap-stat-item">
-            <span class="roadmap-stat-value moss">v1.0.7</span>
+            <span class="roadmap-stat-value moss">v1.0.8</span>
             <span class="roadmap-stat-label">Current Version</span>
           </div>
           <div class="roadmap-stat-item">
-            <span class="roadmap-stat-value">8 Releases</span>
+            <span class="roadmap-stat-value">10 Releases</span>
             <span class="roadmap-stat-label">Shipped Cycles</span>
           </div>
           <div class="roadmap-stat-item">
@@ -66,7 +66,8 @@
     <div class="roadmap-controls">
       <div class="roadmap-filters" role="group" aria-label="Filter update releases">
         <button class="roadmap-filter-btn active" data-filter="all">All Releases</button>
-        <button class="roadmap-filter-btn" data-filter="v107">v1.0.7 (Latest)</button>
+        <button class="roadmap-filter-btn" data-filter="v108">v1.0.8 (Latest)</button>
+        <button class="roadmap-filter-btn" data-filter="v107">v1.0.7</button>
         <button class="roadmap-filter-btn" data-filter="v106">v1.0.6</button>
         <button class="roadmap-filter-btn" data-filter="v105">v1.0.5</button>
         <button class="roadmap-filter-btn" data-filter="legacy">v1.0.0 – v1.0.4</button>
@@ -78,14 +79,116 @@
     <div class="roadmap-list">
 
       <!-- ====================================================================
-           v1.0.7 : Object-Oriented Classes & Ergonomics (Latest)
+           v1.0.8 : OOP Finalization, Interfaces & Modular StdE (Latest)
            ==================================================================== -->
-      <article class="roadmap-card is-active" data-version="v107">
+      <article class="roadmap-card is-active" data-version="v108">
+        <div class="roadmap-card-header">
+          <div class="roadmap-card-title-wrap">
+            <span class="roadmap-version-pill">v1.0.8</span>
+            <span class="roadmap-card-title">OOP Finalization, Interface Contracts &amp; Modular StdE</span>
+            <span class="roadmap-status-badge active">LATEST RELEASE</span>
+          </div>
+          <div class="roadmap-card-meta">
+            <span class="log-release-date">November 2026</span>
+            <span class="roadmap-chevron">▾</span>
+          </div>
+        </div>
+
+        <div class="roadmap-card-body">
+          <div class="log-tag-list">
+            <span class="log-tag feat">★ Interfaces (as)</span>
+            <span class="log-tag feat">Extended Visibility</span>
+            <span class="log-tag syntax">Property Accessors (get/set)</span>
+            <span class="log-tag feat">StdE.Path</span>
+            <span class="log-tag feat">StdE.Term</span>
+            <span class="log-tag feat">StdE.Process</span>
+            <span class="log-tag feat">StdE.Random</span>
+            <span class="log-tag feat">StdE.Json</span>
+          </div>
+
+          <div class="log-desc-prose">
+            <p>
+              Kuroba <code>v1.0.8</code> completes the Object-Oriented Architecture phase and delivers the full <strong>Standard Extended (StdE)</strong> suite. This release introduces pure interface contracts with the expressive <code>as</code> syntax, extended encapsulation modifiers (<code>protected</code>, <code>isolated</code>, <code>exclusive</code>), declarative <code>get</code> / <code>set</code> property interceptors with backing storage binding, and a robust platform library available in both Node.js and the Web.
+            </p>
+          </div>
+
+          <div class="log-features-grid">
+            <div class="log-feature-item">
+              <div class="log-feature-title">Pure Interface Contracts (<code>interface</code> &amp; <code>as</code>)</div>
+              <div class="log-feature-desc">
+                Define structural contracts without implementation. Classes implement interfaces via <code>class Sub from Super as Inter1, Inter2 then ... end</code> with strict ordering enforcement (<code>from</code> must precede <code>as</code>). Interfaces are non-callable and non-accessible directly, with full polymorphic runtime validation via <code>is</code> across class and interface hierarchies.
+              </div>
+            </div>
+
+            <div class="log-feature-item">
+              <div class="log-feature-title">Extended Encapsulation Modifiers</div>
+              <div class="log-feature-desc">
+                Granular control over class member access: <code>protected</code> (accessible across subclasses, hidden from external callers), <code>isolated</code> (strictly exclusive and private to declaring class, completely uninherited), and <code>exclusive</code> (public on declaring class, absent from subclasses).
+              </div>
+            </div>
+
+            <div class="log-feature-item">
+              <div class="log-feature-title">Declarative Property Accessors (<code>get</code> / <code>set</code>)</div>
+              <div class="log-feature-desc">
+                Seamless getter and setter property interceptors with raw backing storage access via the special <code>value</code> binding, preventing infinite recursion. Permissive layering allows defining single getters or setters, with strict <code>iconst</code> immutability enforcement.
+              </div>
+            </div>
+
+            <div class="log-feature-item">
+              <div class="log-feature-title">Extended Standard Library (<code>StdE</code>)</div>
+              <div class="log-feature-desc">
+                Rich modular platform library: <strong>StdE.Path</strong> (cross-platform path resolution, normalization, and joining), <strong>StdE.Term</strong> (ANSI colors, terminal styling, cursor movement, and screen clearing), <strong>StdE.Process</strong> (synchronous execution, arguments, env variables, and system introspection), <strong>StdE.Random</strong> (stochastic engine with seeding, shuffling, UUIDs, tokens), and <strong>StdE.Json</strong> (bidirectional JSON parse/stringify).
+              </div>
+            </div>
+          </div>
+
+          <div class="log-code-preview">
+            <div class="log-code-label">Example: Interfaces, Encapsulation &amp; Custom Accessors</div>
+            <pre><code class="language-kuroba">~~ Pure interface contract
+interface IMammal then
+    function breathe();
+    get warmBlooded;
+end
+
+interface ICanine from IMammal then
+    function bark();
+end
+
+~~ Implement with inheritance and interface contracts
+class Dog as ICanine then
+    iconst warmBlooded = TRUE;
+    private ivar _energy = 100;
+
+    get energy then
+        return this._energy;
+    end
+
+    function breathe() then
+        return "inhale / exhale";
+    end
+
+    function bark() then
+        return "Woof!";
+    end
+end
+
+ivar d = Dog();
+pasteLn(d.bark());           ~~ "Woof!"
+pasteLn(d is ICanine);       ~~ TRUE
+pasteLn(d is IMammal);       ~~ TRUE</code></pre>
+          </div>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           v1.0.7 : Object-Oriented Classes & Ergonomics
+           ==================================================================== -->
+      <article class="roadmap-card collapsed" data-version="v107">
         <div class="roadmap-card-header">
           <div class="roadmap-card-title-wrap">
             <span class="roadmap-version-pill">v1.0.7</span>
             <span class="roadmap-card-title">Object-Oriented Programming, Encapsulation &amp; Language Ergonomics</span>
-            <span class="roadmap-status-badge active">LATEST RELEASE</span>
+            <span class="roadmap-status-badge completed">COMPLETED</span>
           </div>
           <div class="roadmap-card-meta">
             <span class="log-release-date">November 2026</span>
@@ -532,7 +635,7 @@ pasteLn(~"Adventurer {hero} rolled a {roll} on the D20!");</code></pre>
         <p class="footer-tagline">
           The raven-feather programming language. Zero-dependency interpreted runtime for high-performance terminal games, embedded logic, and interactive systems.
         </p>
-        <div class="footer-version">Active Core: v1.0.7 (OOP Edition)</div>
+        <div class="footer-version">Active Core: v1.0.8 (OOP Finalization &amp; StdE Edition)</div>
       </div>
 
       <div class="footer-col">
@@ -571,9 +674,9 @@ pasteLn(~"Adventurer {hero} rolled a {roll} on the D20!");</code></pre>
       const FLOW_KEYWORDS = new Set([
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
-        'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'class', 'public', 'private',
-        'is', 'TRUE', 'FALSE', 'NULL'
+        'function', 'return', 'hook', 'this', 'orig', 'import', 'alias', 'namespace',
+        'class', 'interface', 'as', 'public', 'protected', 'private', 'isolated', 'exclusive',
+        'get', 'set', 'enum', 'is', 'TRUE', 'FALSE', 'NULL'
       ]);
 
       function escHtml(str) {
@@ -728,6 +831,8 @@ pasteLn(~"Adventurer {hero} rolled a {roll} on the D20!");</code></pre>
             const v = card.dataset.version;
             if (filter === 'all') {
               card.style.display = 'block';
+            } else if (filter === 'v108' && v === 'v108') {
+              card.style.display = 'block';
             } else if (filter === 'v107' && v === 'v107') {
               card.style.display = 'block';
             } else if (filter === 'v106' && v === 'v106') {
@@ -752,7 +857,7 @@ pasteLn(~"Adventurer {hero} rolled a {roll} on the D20!");</code></pre>
             card.classList.remove('collapsed');
           } else {
             // Keep latest open by default
-            if (card.dataset.version !== 'v107') {
+            if (card.dataset.version !== 'v108') {
               card.classList.add('collapsed');
             }
           }

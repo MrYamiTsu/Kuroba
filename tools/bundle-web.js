@@ -67,7 +67,7 @@ function readAsyncEvaluator(relPath) {
 
 // Generate self-contained bundle for browser
 const bundleCode = `/**
- * Kuroba — In-Browser Runtime Engine v1.0.7
+ * Kuroba — In-Browser Runtime Engine v1.0.8
  * Zero External Dependencies • Pure Vanilla JavaScript
  */
 (function(global) {
@@ -901,7 +901,7 @@ const bundleCode = `/**
 
     // Expose Kuroba API on global window
     global.Kuroba = {
-        version: '1.0.7',
+        version: '1.0.8',
         run: async function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });

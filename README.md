@@ -13,7 +13,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-v1.0.7-blue.svg?style=for-the-badge&logo=semver)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.0.8-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Website](https://img.shields.io/badge/website-live-success.svg?style=for-the-badge&logo=githubpages)](https://mryamitsu.github.io/Kuroba/)
 [![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
@@ -421,9 +421,9 @@ Kuroba/
   - [x] Arbitrary nested member and index assignments (`grid[y][x] = "#";`, `enemies[i].hp -= 10;`, `player.bag[0] = "Bow";`) with `iconst` root immutability protection
   - [x] Recursive multi-file project imports in CLI (`namespace Utils`, `namespace Game ~Combat`, subfolder `.krb` discovery, and `[ImportError]` circular import guards)
 
-### Phase 8: OOP Finalization, Modular StdE & Pure C Engine Transformation `(v1.0.8)`
+### Phase 8: OOP Finalization & Modular StdE `(Completed - v1.0.8)`
 
-- [ ] OOP Contracts, Visibility & Ergonomics:
+- [x] OOP Contracts, Visibility & Ergonomics:
   - [x] Extended Visibility Modifiers (`protected`, `isolated`, `exclusive`):
     - [x] `protected ivar/iconst/function`: accessible across class hierarchies (parent and subclasses), hidden from external consumers
     - [x] `isolated ivar/iconst/function`: strictly exclusive to the declaring class, completely uninherited and inaccessible by child classes
@@ -432,14 +432,15 @@ Kuroba/
     - [x] Property interceptor syntax (`get prop then ... end`, `set prop(val) then ... end`) with raw backing storage access via `value`
     - [x] Immutability protection (`iconst` read-only getters, syntax rejection on setters)
   - [x] Interface contracts (`interface IEntity then ... end`, `class Player from Super as IEntity`) & runtime conformance (`player is IEntity`)
-  - [ ] Textual representation & string inspection protocol (`toString()` auto-invoked by `print` and `~` string interpolation)
-  - [ ] Basic operator overloading for vectors, games, and math (`operator +`, `operator -`, `operator *`, etc.)
-- [ ] Built-in `StdE` Package (Standard Extended):
+- [x] Built-in `StdE` Package (Standard Extended):
   - [x] `StdE.Random` (dedicated stochastic engine decoupled from `Std.Math`: `seed`, `int`, `float`, `item`, `shuffle`, `chance`, `uuid`, `token`)
   - [x] `StdE.Json` (native bidirectional parse and stringify of Tables to JSON, formatted read/write, minify)
   - [x] `StdE.Path` (cross-platform path resolution: `join`, `resolve`, `dirname`, `basename`, `extname`, `isAbsolute`, `normalize`, `relative`, `parse`, `format`, `sep`, `delimiter`)
   - [x] `StdE.Process` (child process execution, commands, environment variables, working directory, and system introspection)
   - [x] `StdE.Term` (ANSI colors, terminal styling, dimensions, and cursor control)
+
+### Phase 9: Pure C Native Engine Transformation `(v1.1.0)`
+
 - [ ] Next-Gen Pure C High-Performance Engine Transformation (Lua-Inspired Architecture):
   - [ ] Complete native rewrite in pure C (C99/C11) for maximal speed, sub-millisecond startup, and tiny binary footprint (< 400 KB)
   - [ ] Ultra-fast Bytecode Compiler (`.kbc`) & Register-based Virtual Machine replacing AST tree-walk for 20x-50x faster execution
@@ -447,7 +448,20 @@ Kuroba/
   - [ ] Compact object models, memory arena allocators, and generational garbage collection
   - [ ] First-class WebAssembly target (`kuroba.wasm` compiled directly via Emscripten) running at native speed in web browsers
 
-### Phase 9: Native Asynchronism, Full-Stack Web & 2D Game Engine `(v1.0.9)`
+### Phase 10: Advanced OOP & Language Extensions `(v1.1.1)`
+
+- [ ] OOP Refinements & Language Ergonomics:
+  - [ ] Textual representation & string inspection protocol (`toString()` auto-invoked by `paste` and `~` string interpolation)
+  - [ ] Basic operator overloading for vectors, games, and math (`operator +`, `operator -`, `operator *`, etc.)
+- [ ] Integrated Unit Testing System:
+  - [ ] Built-in test runner CLI (`krb test` with automated test file discovery `*.test.krb`)
+  - [ ] Native test block & assertions (`test "feature" then ... end`, `assert(cond)`, `assertEqual(a, b)`)
+  - [ ] Clean formatted terminal report (passed, failed, duration, error diffs and stack traces)
+- [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
+  - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
+  - [ ] In-browser code challenges with instant automated grading test suites
+
+### Phase 11: Native Asynchronism, Full-Stack Web & Universal Tooling `(v1.1.2)`
 
 - [ ] Native Concurrency & Asynchronous Programming:
   - [ ] Event loop integration & cooperative coroutines / fibers in C (`async function`, `await expr`, `yield`)
@@ -463,26 +477,12 @@ Kuroba/
   - [ ] 2D Canvas & graphical rendering (shapes, colors, sprites, text rendering style Raylib / SDL)
   - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
   - [ ] Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
-- [ ] Integrated Unit Testing System:
-  - [ ] Built-in test runner CLI (`krb test` with automated test file discovery `*.test.krb`)
-  - [ ] Native test block & assertions (`test "feature" then ... end`, `assert(cond)`, `assertEqual(a, b)`)
-  - [ ] Clean formatted terminal report (passed, failed, duration, error diffs and stack traces)
-- [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
-  - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
-  - [ ] In-browser code challenges with instant automated grading test suites
-
-### Phase 10: Universal Distribution, Tooling & Ecosystem `(v1.1.0)`
-
-- [ ] Universal Distribution & Zero-Setup Installation:
+- [ ] Universal Distribution, Tooling & Ecosystem:
   - [ ] Single self-contained binary (`kuroba.exe` on Windows, `kuroba` on macOS/Linux) with bundled `Std`/`StdE` (zero Node.js dependency)
   - [ ] One-liner installation scripts (`irm ... | iex` on Windows PowerShell, `curl ... | bash` on macOS/Linux)
   - [ ] Official npm global distribution (`npm install -g kuroba`)
-  - [ ] WebAssembly engine (`kuroba.wasm`) running at native speed directly inside web browsers
-- [ ] Package Manager & Developer Tooling:
-  - [ ] Official Kuroba Package Manager (`kpm` / `krb install`, `krb publish`) with `kuroba.json` manifest
-  - [ ] Official code formatter (`krb fmt`) & VS Code Language Server Protocol (`LSP`) for live autocomplete
-- [ ] Website & Documentation Internationalization (`i18n`):
-  - [ ] Multi-language localization across Home, Docs, and Playground (English, French, Spanish, etc.) with dynamic language switcher
+  - [ ] Package Manager & Developer Tooling (`kpm` / `krb install`, `krb publish`, `krb fmt`, VS Code LSP)
+  - [ ] Website & Documentation Internationalization (`i18n`)
 
 ---
 

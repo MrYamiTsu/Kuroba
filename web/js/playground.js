@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     terminalScreen.innerHTML = `
-      <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.7</div>
+      <div class="term-line sys">Kuroba (KRB) Web Runtime Engine v1.0.8</div>
       <div class="term-line sys">Terminal output cleared. Ready for execution.</div>
     `;
     timingBadge.style.display = 'none';
