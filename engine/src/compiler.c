@@ -49,7 +49,15 @@ typedef struct {
     bool isConst;
     bool isNonNull;
     bool isCaptured;
+    bool isSealed;
+    bool isUnlocked;
 } Local;
+
+typedef enum {
+    VAR_MUTABLE = 0,
+    VAR_CONST = 1,
+    VAR_SEALED = 2
+} VarKind;
 
 typedef struct {
     uint16_t index;
@@ -252,6 +260,10 @@ static void init_compiler(Compiler* compiler, FunctionType type) {
     Local* local = &current->locals[current->localCount++];
     local->depth = 0;
     local->isConst = false;
+    local->isNonNull = false;
+    local->isCaptured = false;
+    local->isSealed = false;
+    local->isUnlocked = false;
     if (type == TYPE_METHOD || type == TYPE_INITIALIZER) {
         local->name.start = "this";
         local->name.length = 4;
@@ -397,6 +409,12 @@ static void named_variable(Token name, bool canAssign) {
         TokenType assignType = parser.previous.type;
         if (getOp == OP_GET_LOCAL && current->locals[arg].isConst) {
             error("Impossible de reassigner la constante locale.");
+        }
+        if (getOp == OP_GET_LOCAL && current->locals[arg].isSealed) {
+            if (!current->locals[arg].isUnlocked) {
+                error("Impossible de modifier la variable locale scellee. Utilisez unlock.");
+            }
+            current->locals[arg].isUnlocked = false;
         }
 
         if (assignType == TOKEN_PLUS_PLUS || assignType == TOKEN_MINUS_MINUS) {
@@ -849,6 +867,7 @@ ParseRule rules[] = {
     [TOKEN_NUMBER]        = {number,        NULL,      PREC_NONE},
     [TOKEN_IVAR]          = {NULL,          NULL,      PREC_NONE},
     [TOKEN_ICONST]        = {NULL,          NULL,      PREC_NONE},
+    [TOKEN_ISEALED]       = {NULL,          NULL,      PREC_NONE},
     [TOKEN_IF]            = {NULL,          NULL,      PREC_NONE},
     [TOKEN_ELIF]          = {NULL,          NULL,      PREC_NONE},
     [TOKEN_ELSE]          = {NULL,          NULL,      PREC_NONE},
@@ -895,6 +914,8 @@ ParseRule rules[] = {
     [TOKEN_FINALLY]       = {NULL,          NULL,      PREC_NONE},
     [TOKEN_THROW]         = {NULL,          NULL,      PREC_NONE},
     [TOKEN_KILL]          = {NULL,          NULL,      PREC_NONE},
+    [TOKEN_UNLOCK]        = {NULL,          NULL,      PREC_NONE},
+    [TOKEN_LOCK]          = {NULL,          NULL,      PREC_NONE},
     [TOKEN_INTERPOLATION] = {interpolated_string_expr, NULL, PREC_NONE},
     [TOKEN_ERROR]         = {NULL,          NULL,      PREC_NONE},
     [TOKEN_EOF]           = {NULL,          NULL,      PREC_NONE},
@@ -953,7 +974,7 @@ static void expression_statement(void) {
     emit_byte(OP_POP);
 }
 
-static void add_local(Token name, bool isConst) {
+static void add_local(Token name, int kind) {
     if (current->localCount == 256) {
         error("Trop de variables locales dans cette portee.");
         return;
@@ -962,10 +983,14 @@ static void add_local(Token name, bool isConst) {
     Local* local = &current->locals[current->localCount++];
     local->name = name;
     local->depth = -1;
-    local->isConst = isConst;
+    local->isConst = (kind == VAR_CONST);
+    local->isSealed = (kind == VAR_SEALED);
+    local->isUnlocked = false;
+    local->isNonNull = false;
+    local->isCaptured = false;
 }
 
-static void declare_variable(bool isConst) {
+static void declare_variable(int kind) {
     if (current->scopeDepth == 0) return;
 
     Token* name = &parser.previous;
@@ -980,16 +1005,22 @@ static void declare_variable(bool isConst) {
         }
     }
 
-    add_local(*name, isConst);
+    add_local(*name, kind);
 }
 
-static void define_variable(uint16_t global, bool isConst) {
+static void define_variable(uint16_t global, int kind) {
     if (current->scopeDepth > 0) {
         current->locals[current->localCount - 1].depth = current->scopeDepth;
         return;
     }
 
-    emit_op_16(isConst ? OP_DEFINE_CONST : OP_DEFINE_GLOBAL, global);
+    if (kind == VAR_CONST) {
+        emit_op_16(OP_DEFINE_CONST, global);
+    } else if (kind == VAR_SEALED) {
+        emit_op_16(OP_DEFINE_SEALED, global);
+    } else {
+        emit_op_16(OP_DEFINE_GLOBAL, global);
+    }
 }
 
 static void begin_scope(void) {
@@ -1017,7 +1048,7 @@ static void block(void) {
     consume(TOKEN_END, "Attendu 'end' apres le bloc.");
 }
 
-static void declare_variable_named(Token* name, bool isConst) {
+static void declare_variable_named(Token* name, int kind) {
     if (current->scopeDepth == 0) return;
     for (int i = current->localCount - 1; i >= 0; i--) {
         Local* local = &current->locals[i];
@@ -1028,10 +1059,10 @@ static void declare_variable_named(Token* name, bool isConst) {
             error("Une variable portant ce nom existe deja dans cette portee.");
         }
     }
-    add_local(*name, isConst);
+    add_local(*name, kind);
 }
 
-static void var_declaration(bool isConst) {
+static void var_declaration(int kind) {
     // Gestion optionnelle du typage ou transtypage: ~Type ou ~(Type)
     bool isQueueType = false;
     bool isNonNull = false;
@@ -1064,9 +1095,9 @@ static void var_declaration(bool isConst) {
     Token names[32];
     int nameCount = 0;
     do {
-        consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'ivar' ou 'iconst'.");
+        consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'ivar', 'iconst' ou 'isealed'.");
         names[nameCount++] = parser.previous;
-        declare_variable_named(&names[nameCount - 1], isConst);
+        declare_variable_named(&names[nameCount - 1], kind);
         if (current->scopeDepth > 0 && isNonNull) {
             current->locals[current->localCount - 1].isNonNull = true;
         }
@@ -1108,7 +1139,7 @@ static void var_declaration(bool isConst) {
                 global = identifier_constant(&names[i]);
                 if (isNonNull) emit_op_16(OP_DEF_NON_NULL, global);
             }
-            define_variable(global, isConst);
+            define_variable(global, kind);
         }
     } else {
         // Destructuration ou 1-pour-1: ma, mb = 11, 22
@@ -1118,7 +1149,7 @@ static void var_declaration(bool isConst) {
                 global = identifier_constant(&names[i]);
                 if (isNonNull) emit_op_16(OP_DEF_NON_NULL, global);
             }
-            define_variable(global, isConst);
+            define_variable(global, kind);
         }
     }
 }
@@ -2082,6 +2113,30 @@ static void kill_statement(void) {
     emit_op_16(OP_KILL, nameConst);
 }
 
+static void unlock_statement(void) {
+    consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'unlock'.");
+    Token name = parser.previous;
+    uint16_t nameConst = identifier_constant(&name);
+    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'unlock'.");
+    int arg = resolve_local(current, &name);
+    if (arg != -1) {
+        current->locals[arg].isUnlocked = true;
+    }
+    emit_op_16(OP_UNLOCK_VAR, nameConst);
+}
+
+static void lock_statement(void) {
+    consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'lock'.");
+    Token name = parser.previous;
+    uint16_t nameConst = identifier_constant(&name);
+    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'lock'.");
+    int arg = resolve_local(current, &name);
+    if (arg != -1) {
+        current->locals[arg].isUnlocked = false;
+    }
+    emit_op_16(OP_LOCK_VAR, nameConst);
+}
+
 static void import_statement(void) {
     consume(TOKEN_IDENTIFIER, "Nom de module attendu apres 'import'.");
     Token pkg = parser.previous;
@@ -2214,6 +2269,10 @@ static void statement(void) {
         throw_statement();
     } else if (match(TOKEN_KILL)) {
         kill_statement();
+    } else if (match(TOKEN_UNLOCK)) {
+        unlock_statement();
+    } else if (match(TOKEN_LOCK)) {
+        lock_statement();
     } else if (match(TOKEN_IMPORT)) {
         import_statement();
     } else if (match(TOKEN_BREAK)) {
@@ -2233,9 +2292,11 @@ static void statement(void) {
 
 static void declaration(void) {
     if (match(TOKEN_IVAR)) {
-        var_declaration(false);
+        var_declaration(VAR_MUTABLE);
     } else if (match(TOKEN_ICONST)) {
-        var_declaration(true);
+        var_declaration(VAR_CONST);
+    } else if (match(TOKEN_ISEALED)) {
+        var_declaration(VAR_SEALED);
     } else if (match(TOKEN_FUNCTION)) {
         function_declaration();
     } else if (match(TOKEN_CLASS)) {

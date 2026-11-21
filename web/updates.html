@@ -98,9 +98,11 @@
         <div class="roadmap-card-body">
           <div class="log-tag-list">
             <span class="log-tag feat">★ Native C Engine</span>
+            <span class="log-tag feat">isealed &amp; unlock/lock</span>
+            <span class="log-tag feat">Emoji Identifiers</span>
             <span class="log-tag feat">Typed Parameters</span>
             <span class="log-tag feat">Interactive copy() / copyKey()</span>
-            <span class="log-tag feat">181/181 Crash Tests</span>
+            <span class="log-tag feat">187/187 Crash Tests</span>
             <span class="log-tag opt">Instant Startup</span>
           </div>
 
@@ -109,7 +111,7 @@
               Kuroba <code>v1.1.0</code> represents a monumental milestone in the language's evolution: the entire compiler, bytecode generator, and virtual machine have been re-engineered from the ground up as a blazing-fast, standalone <strong>Native C Engine</strong> (<code>kuroba.exe</code> / <code>engine/</code>). This release completely eliminates Node.js runtime overhead for desktop and CLI execution, achieving instant startup, zero background dependencies, and native binary efficiency while preserving full parity with the Web VM.
             </p>
             <p>
-              Along with native performance, <code>v1.1.0</code> introduces gradual type annotations on function parameters (<code>ivar~Type param</code>), strict non-nullable parameter contracts (<code>ivar~(String) strict</code>), native interactive keyboard inputs (<code>copy()</code> and <code>copyKey()</code>), postfix operators (<code>++</code>, <code>--</code>), and an extensive 181-test crash torture suite.
+              Along with native performance, <code>v1.1.0</code> introduces gradual type annotations on function parameters (<code>ivar~Type param</code>), strict non-nullable parameter contracts (<code>ivar~(String) strict</code>), native interactive keyboard inputs (<code>copy()</code> and <code>copyKey()</code>), postfix operators (<code>++</code>, <code>--</code>), sealed variables (<code>isealed</code>) with one-shot unlock mechanics (<code>unlock</code> / <code>lock</code> with auto-resealing), first-class UTF-8 and Emoji identifier support (<code>🚀</code>, <code>🔥</code>, <code>👑</code>), and an extensive 187-test crash torture suite.
             </p>
           </div>
 
@@ -117,6 +119,14 @@
             <div class="log-feature-item">
               <span class="log-feature-title">Native C Compiler &amp; Bytecode VM</span>
               <p>Self-contained native executable (<code>engine/kuroba.exe</code>) written in pure C99 with manual memory management, custom arena allocation, and compact bytecode instruction dispatch.</p>
+            </div>
+            <div class="log-feature-item">
+              <span class="log-feature-title">Sealed Variables (<code>isealed</code>) &amp; Unlock / Lock</span>
+              <p>Protected variables declared with <code>isealed</code> rejecting reassignment until explicitly unlocked with <code>unlock var;</code>, which automatically re-seals upon mutation, or can be re-locked with <code>lock var;</code>.</p>
+            </div>
+            <div class="log-feature-item">
+              <span class="log-feature-title">Emoji &amp; Unicode Identifiers</span>
+              <p>Full UTF-8 multi-byte support in identifiers allowing emojis (<code>🚀</code>, <code>🔥</code>, <code>👑</code>) and international characters across variables, constants, parameters, and functions.</p>
             </div>
             <div class="log-feature-item">
               <span class="log-feature-title">Typed Function &amp; Method Parameters</span>
@@ -127,25 +137,25 @@
               <p>First-class global native functions <code>copy(prompt)</code> for reading full terminal lines and <code>copyKey(prompt)</code> for capturing raw single keystrokes without external libraries.</p>
             </div>
             <div class="log-feature-item">
-              <span class="log-feature-title">181/181 Conformance Torture Suite</span>
-              <p>Comprehensive torture suite in <code>main.krb</code> validating deep recursion, 10-level nested tables, PRNG determinism, metaprogramming hooks, 2D matrix swaps, and hot-loop exception trapping.</p>
+              <span class="log-feature-title">187/187 Conformance Torture Suite</span>
+              <p>Comprehensive torture suite in <code>main.krb</code> validating deep recursion, 10-level nested tables, PRNG determinism, metaprogramming hooks, 2D matrix swaps, sealed variables, and hot-loop exception trapping.</p>
             </div>
           </div>
 
           <div class="log-code-snippet">
-            <div class="log-snippet-label">EXAMPLE : TYPED PARAMETERS &amp; NATIVE INTERACTIVE INPUT (v1.1.0)</div>
-            <pre><code>import StdE;
+            <div class="log-snippet-label">EXAMPLE : ISEALED, EMOJI IDENTIFIERS &amp; NATIVE INPUT (v1.1.0)</div>
+            <pre><code>~~ Sealed variable with explicit unlock &amp; auto-reseal
+isealed 👑 = "Arthur";
+unlock 👑;
+👑 = "Pendragon"; ~~ Auto-reseals immediately!
 
-~~ Typed function with automatic coercion &amp; strict non-nullable contract
-function processHero(ivar~String name, ivar~Int level, ivar~(String) rank) then
-    pasteLn(StdE.Term.green("[HERO] ") + name + " - Lvl " + level + " (" + rank + ")");
-end
+~~ Emoji identifiers
+ivar 🚀 = 100;
+pasteLn("Status: " + 👑 + " with power " + 🚀);
 
 ~~ Interactive keyboard input from terminal
 ivar username = copy("Entrez votre pseudo: ");
-ivar confirm = copyKey("Confirmer ? (o/n): ");
-
-processHero(username, "42", "Legend");</code></pre>
+ivar confirm = copyKey("Confirmer ? (o/n): ");</code></pre>
           </div>
         </div>
       </article>

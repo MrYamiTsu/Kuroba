@@ -66,6 +66,9 @@ typedef enum {
     OP_ITER_VAL,      // Récupère la valeur d'itération
     OP_IMPLEMENT,     // Enregistre l'implémentation d'une interface
     OP_HOOK_SAVE_METHOD, // Sauvegarde la méthode originale avant hook (1 opérande : index constante nom)
+    OP_DEFINE_SEALED, // Définit une variable scellée (isealed)
+    OP_UNLOCK_VAR,    // Déverrouille une variable scellée (unlock)
+    OP_LOCK_VAR,      // Re-verrouille manuellement une variable scellée (lock)
     OP_RETURN,        // Retourne / termine l'exécution
 } OpCode;
 

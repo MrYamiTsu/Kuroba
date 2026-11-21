@@ -162,6 +162,8 @@ void krb_init_vm(void) {
     vm.try_count = 0;
     krb_init_table(&vm.globals);
     krb_init_table(&vm.constGlobals);
+    krb_init_table(&vm.sealedGlobals);
+    krb_init_table(&vm.unlockedGlobals);
     krb_init_table(&vm.nonNullGlobals);
 
     // Enregistrement des natives de base
@@ -177,6 +179,8 @@ void krb_init_vm(void) {
 void krb_free_vm(void) {
     krb_free_table(&vm.globals);
     krb_free_table(&vm.constGlobals);
+    krb_free_table(&vm.sealedGlobals);
+    krb_free_table(&vm.unlockedGlobals);
     krb_free_table(&vm.nonNullGlobals);
 
     // Libération de tous les objets alloués sur le tas (GC)
@@ -563,6 +567,15 @@ static InterpretResult run(void) {
                     if (!trigger_runtime_error("TypeError", "Impossible de reassigner la constante '%s'.", nameVal.as.string)) return INTERPRET_RUNTIME_ERROR;
                     frame = &vm.frames[vm.frameCount - 1];
                     break;
+                }
+                if (krb_table_get(&vm.sealedGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), &dummy)) {
+                    KrbValue unlockedVal;
+                    if (!krb_table_get(&vm.unlockedGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), &unlockedVal)) {
+                        if (!trigger_runtime_error("TypeError", "Impossible de modifier la variable scellee '%s'. Utilisez unlock.", nameVal.as.string)) return INTERPRET_RUNTIME_ERROR;
+                        frame = &vm.frames[vm.frameCount - 1];
+                        break;
+                    }
+                    krb_table_delete(&vm.unlockedGlobals, nameVal.as.string, (int)strlen(nameVal.as.string));
                 }
                 if (!krb_table_assign(&vm.globals, nameVal.as.string, (int)strlen(nameVal.as.string), val)) {
                     if (!trigger_runtime_error("ReferenceError", "Variable non definie '%s'.", nameVal.as.string)) return INTERPRET_RUNTIME_ERROR;
@@ -1163,6 +1176,8 @@ static InterpretResult run(void) {
                     frame = &vm.frames[vm.frameCount - 1];
                     break;
                 }
+                krb_table_delete(&vm.sealedGlobals, nameVal.as.string, (int)strlen(nameVal.as.string));
+                krb_table_delete(&vm.unlockedGlobals, nameVal.as.string, (int)strlen(nameVal.as.string));
                 krb_table_delete(&vm.globals, nameVal.as.string, (int)strlen(nameVal.as.string));
                 break;
             }
@@ -1407,6 +1422,26 @@ static InterpretResult run(void) {
                         krb_table_set(&klass->methods, origName, (int)strlen(origName), oldMethod, false);
                     }
                 }
+                break;
+            }
+            case OP_DEFINE_SEALED: {
+                uint16_t constIdx = READ_SHORT();
+                KrbValue name = CURRENT_CHUNK.constants.values[constIdx];
+                KrbValue val = krb_pop();
+                krb_table_set(&vm.globals, name.as.string, (int)strlen(name.as.string), val, false);
+                krb_table_set(&vm.sealedGlobals, name.as.string, (int)strlen(name.as.string), krb_bool(true), false);
+                break;
+            }
+            case OP_UNLOCK_VAR: {
+                uint16_t constIdx = READ_SHORT();
+                KrbValue name = CURRENT_CHUNK.constants.values[constIdx];
+                krb_table_set(&vm.unlockedGlobals, name.as.string, (int)strlen(name.as.string), krb_bool(true), false);
+                break;
+            }
+            case OP_LOCK_VAR: {
+                uint16_t constIdx = READ_SHORT();
+                KrbValue name = CURRENT_CHUNK.constants.values[constIdx];
+                krb_table_delete(&vm.unlockedGlobals, name.as.string, (int)strlen(name.as.string));
                 break;
             }
             case OP_RETURN: {

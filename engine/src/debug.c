@@ -180,6 +180,12 @@ int krb_disassemble_instruction(Chunk* chunk, int offset) {
             return constant_instruction("OP_IMPLEMENT", chunk, offset);
         case OP_HOOK_SAVE_METHOD:
             return constant_instruction("OP_HOOK_SAVE_METHOD", chunk, offset);
+        case OP_DEFINE_SEALED:
+            return constant_instruction("OP_DEFINE_SEALED", chunk, offset);
+        case OP_UNLOCK_VAR:
+            return constant_instruction("OP_UNLOCK_VAR", chunk, offset);
+        case OP_LOCK_VAR:
+            return constant_instruction("OP_LOCK_VAR", chunk, offset);
         case OP_RETURN:
             return simple_instruction("OP_RETURN", offset);
         default:

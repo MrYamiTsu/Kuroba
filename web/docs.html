@@ -68,7 +68,7 @@
 
         <div class="docs-group" data-group="core">
           <div class="docs-group-label"><span>Language Core &amp; Primitives</span><span class="docs-group-toggle">▾</span></div>
-          <a href="#variables" class="docs-item-link">Variables, Constants &amp; <code>kill</code></a>
+          <a href="#variables" class="docs-item-link">Variables, Constants, <code>isealed</code> &amp; <code>kill</code></a>
           <a href="#types" class="docs-item-link">Type System &amp; Non-Nullability</a>
           <a href="#operators" class="docs-item-link">Operators &amp; Precedence Table</a>
           <a href="#control" class="docs-item-link">Control Flow &amp; Pattern Match</a>
@@ -198,9 +198,10 @@ end</code></pre>
         <p>Kuroba enforces clear boundaries between mutable variables and immutable constants declared at initialization:</p>
         
         <h3>Variable Declaration (<code>ivar</code>)</h3>
-        <p>Declares a variable whose initial type is inferred from the assigned expression:</p>
+        <p>Declares a variable whose initial type is inferred from the assigned expression. Variable names also natively support UTF-8 characters and emojis (e.g. <code>ivar 🚀 = 100;</code>):</p>
         <pre><code class="language-kuroba">ivar score = 100;       ~~ Inferred as Int
 ivar hero = "Shinobi";  ~~ Inferred as String
+ivar 🚀 = 50;           ~~ Emojis supported in identifiers
 ivar ratio = 3.14;      ~~ Inferred as Float
 ivar active = TRUE;     ~~ Inferred as Bool
 score += 25;            ~~ Reassignment allowed</code></pre>
@@ -217,6 +218,23 @@ ivar~Int x, y = "10", 20;  ~~ x = 10, y = 20 (both cast to Int)</code></pre>
         <pre><code class="language-kuroba">iconst PI = 3.141592653589793;
 iconst PORT = 8080;
 PORT = 3000; ~~ [TypeError] Cannot reassign constant 'PORT'.</code></pre>
+
+        <h3>Sealed Variables (<code>isealed</code>) &amp; Unlock / Lock Mechanics</h3>
+        <p>A sealed variable sits between a mutable variable (<code>ivar</code>) and an immutable constant (<code>iconst</code>). It is locked by default: direct reassignment is rejected with a runtime <code>[TypeError]</code> unless explicitly unlocked beforehand:</p>
+        <pre><code class="language-kuroba">isealed secret = 100;
+~~ secret = 200;       ~~ [TypeError] Cannot reassign sealed variable 'secret' without unlocking it first.
+
+~~ 1. Temporarily unlock to mutate:
+unlock secret;
+secret = 200;          ~~ Mutation succeeds!
+~~ Once modified, the variable automatically re-seals (auto-reseal)!
+
+~~ secret = 300;       ~~ [TypeError] Automatically locked again!
+
+~~ 2. Manual lock without mutation:
+unlock secret;
+lock secret;           ~~ Manually locks back before any modification
+~~ secret = 400;       ~~ [TypeError] Locked!</code></pre>
 
         <h3>Variable Destruction (<code>kill</code>)</h3>
         <p>The <code>kill</code> statement explicitly purges a variable from memory and active scope. Constants cannot be killed. If an inner shadowed variable is killed, the outer variable becomes visible again:</p>
@@ -2570,7 +2588,7 @@ pasteLn("User: " + envTable.USERNAME);
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
         'class', 'interface', 'as', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared', 'get', 'set',
-        'is', 'TRUE', 'FALSE', 'NULL'
+        'is', 'TRUE', 'FALSE', 'NULL', 'unlock', 'lock', 'kill'
       ]);
 
       function escHtml(str) {
@@ -2620,7 +2638,7 @@ pasteLn("User: " + envTable.USERNAME);
             while (i < code.length && /[a-zA-Z0-9_]/.test(code[i])) i++;
             let word = code.slice(start, i);
 
-            if (word === 'ivar' || word === 'iconst') {
+            if (word === 'ivar' || word === 'iconst' || word === 'isealed') {
               if (code[i] === '~') {
                 let tEnd = i + 1;
                 if (code[tEnd] === '(') {

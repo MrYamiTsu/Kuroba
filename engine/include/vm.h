@@ -34,6 +34,8 @@ typedef struct {
 
     Table globals;
     Table constGlobals; // Ensemble des variables immuables iconst
+    Table sealedGlobals; // Ensemble des variables scellees isealed
+    Table unlockedGlobals; // Variables temporairement de-verrouillees via unlock
     Table nonNullGlobals; // Variables soumises au contrat non-nullable
     ObjUpvalue* openUpvalues; // Liste chaînée des upvalues ouvertes sur la pile
     Obj* objects; // Liste chaînée de tous les objets pour le Garbage Collector

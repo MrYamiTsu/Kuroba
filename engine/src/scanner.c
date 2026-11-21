@@ -129,7 +129,8 @@ static bool is_digit(char c) {
 static bool is_alpha(char c) {
     return (c >= 'a' && c <= 'z') ||
            (c >= 'A' && c <= 'Z') ||
-            c == '_';
+            c == '_' ||
+            ((unsigned char)c >= 0x80);
 }
 
 static Token string(void) {
@@ -272,6 +273,7 @@ static TokenType identifier_type(void) {
                         return check_keyword(2, 7, "terface", TOKEN_INTERFACE);
                     case 's':
                         if (scanner.current - scanner.start == 2) return TOKEN_IS;
+                        if (scanner.current - scanner.start == 7) return check_keyword(2, 5, "ealed", TOKEN_ISEALED);
                         return check_keyword(2, 6, "olated", TOKEN_ISOLATED);
                     case 'm': return check_keyword(2, 4, "port", TOKEN_IMPORT);
                     case 'v': return check_keyword(2, 2, "ar", TOKEN_IVAR);
@@ -280,6 +282,7 @@ static TokenType identifier_type(void) {
             }
             break;
         case 'k': return check_keyword(1, 3, "ill", TOKEN_KILL);
+        case 'l': return check_keyword(1, 3, "ock", TOKEN_LOCK);
         case 'n': return check_keyword(1, 8, "amespace", TOKEN_NAMESPACE);
         case 'o': return check_keyword(1, 3, "rig", TOKEN_ORIG);
         case 'p':
@@ -327,6 +330,7 @@ static TokenType identifier_type(void) {
                 }
             }
             break;
+        case 'u': return check_keyword(1, 5, "nlock", TOKEN_UNLOCK);
         case 'w': return check_keyword(1, 4, "hile", TOKEN_WHILE);
         case 'F': return check_keyword(1, 4, "ALSE", TOKEN_FALSE);
         case 'T': return check_keyword(1, 3, "RUE", TOKEN_TRUE);
