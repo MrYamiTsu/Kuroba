@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.8</span>
+      <span class="version-badge">v1.1.0</span>
     </a>
 
     <nav class="main-nav">
@@ -37,13 +37,13 @@
       <div class="hero-content">
         <div class="hero-badges">
           <span class="arch-badge"><span class="badge-dot"></span>Zero Dependencies</span>
-          <span class="arch-badge"><span class="badge-dot"></span>Pure Node.js</span>
+          <span class="arch-badge"><span class="badge-dot"></span>Native C &amp; Web</span>
           <span class="arch-badge"><span class="badge-dot"></span>OOP &amp; Functional</span>
         </div>
 
         <h1 class="hero-title">Write scripts, tools, and games with zero dependencies.</h1>
         <p class="hero-lead">
-          Kuroba is an interpreted language built from scratch in Node.js with no external packages or build steps. It combines readable <code>then ... end</code> blocks, object-oriented classes with C#-style constructors, optional type enforcement, atomic swaps, and native function hooks.
+          Kuroba is an interpreted language powered by a high-performance <strong>Native C Engine</strong> on desktop/CLI and an in-browser Web VM. It combines readable <code>then ... end</code> blocks, object-oriented classes with C#-style constructors, optional type enforcement, atomic swaps, and native function hooks.
         </p>
 
         <div class="hero-actions">
@@ -83,10 +83,10 @@
   <section class="quickstart-section">
     <div class="quickstart-strip">
       <div class="quickstart-info">
-        <span class="quickstart-badge">ZERO-INSTALL RUNTIME</span>
+        <span class="quickstart-badge">NATIVE C RUNTIME</span>
         <h2 class="quickstart-title">Start in seconds on your machine.</h2>
         <p class="quickstart-desc">
-          Zero dependencies, no build steps. Clone the repository and run scripts directly with pure Node.js v16+.
+          Zero dependencies, instant execution. Clone the repository and run scripts directly with the standalone <code>kuroba</code> native engine.
         </p>
       </div>
 
@@ -113,10 +113,10 @@
     <div class="pillars-grid">
       <div class="pillar-card">
         <span class="pillar-tag">ARCHITECTURE</span>
-        <h3>Zero Dependencies</h3>
-        <p>No <code>node_modules</code>, no transpilers, and zero build steps. The lexer, parser, evaluator, and standard libraries run natively in Node.js and inside web browsers.</p>
-        <pre><code>~~ Pure Node.js &amp; browser runtime
-pasteLn("Zero external dependencies!");</code></pre>
+        <h3>Native C &amp; Web VM</h3>
+        <p>A self-contained native C engine (<code>engine/kuroba.exe</code>) for raw speed on desktop/CLI, alongside an in-browser Web VM. Zero <code>node_modules</code> and zero setup.</p>
+        <pre><code>~~ Run directly with native C binary
+./kuroba main.krb</code></pre>
       </div>
 
       <div class="pillar-card">
@@ -340,10 +340,10 @@ ivar save = Json.read("save.json");</code></pre>
           <div class="footer-brand-row">
             <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
             <span class="footer-brand-name">Kuroba</span>
-            <span class="version-badge">v1.0.8</span>
+            <span class="version-badge">v1.1.0</span>
           </div>
           <p class="footer-tagline">
-            A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
+            A high-performance interpreted language powered by a native C engine on desktop and an in-browser Web VM.
           </p>
         </div>
 
@@ -380,7 +380,7 @@ ivar save = Json.read("save.json");</code></pre>
 
       <div class="footer-bottom">
         <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
-        <span class="footer-bottom-meta">Pure JS AST Engine • Zero npm Dependencies</span>
+        <span class="footer-bottom-meta">Native C Engine &amp; Web VM • Zero External Dependencies</span>
       </div>
     </div>
   </footer>

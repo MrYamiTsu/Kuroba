@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.8</span>
+      <span class="version-badge">v1.1.0</span>
     </a>
 
     <nav class="main-nav">
@@ -138,13 +138,13 @@
            ==================================================================== -->
       <section id="quickstart">
         <h1>Quickstart &amp; Installation</h1>
-        <p>Kuroba is fully self-contained with <strong>zero npm dependencies</strong>. A standard Node.js runtime (v16.0.0 or higher) is all that is required to execute scripts or run the interactive REPL shell.</p>
+        <p>Kuroba is fully self-contained with <strong>zero external dependencies</strong>. The high-performance standalone <strong>Native C Engine</strong> executes scripts natively or in the interactive REPL shell on Windows, Linux, and macOS, alongside the in-browser Web VM.</p>
         
         <h3>Local Installation via Git</h3>
         <pre><code class="language-bash">git clone https://github.com/MrYamiTsu/Kuroba.git
 cd Kuroba</code></pre>
 
-        <p>Kuroba source files use the conventional <code>.krb</code> extension. On Windows, you can also use the bundled convenience launcher <code>.\krb.cmd main.krb</code>.</p>
+        <p>Kuroba source files use the conventional <code>.krb</code> extension. On Windows, execute scripts directly with <code>.\kuroba.cmd main.krb</code> (or <code>.\engine\kuroba.exe main.krb</code>). To launch the interactive REPL, simply run <code>.\krb.cmd</code>.</p>
       </section>
 
       <!-- ====================================================================
@@ -153,7 +153,9 @@ cd Kuroba</code></pre>
       <section id="cli">
         <h2>CLI &amp; Command-Line Arguments</h2>
         <p>Kuroba automatically parses and injects all trailing parameters into the global scope as an immutable <code>List&lt;String&gt;</code> accessible through <code>args</code>:</p>
-        <pre><code class="language-bash">node index.js script.krb --host 127.0.0.1 --port 8080 --verbose</code></pre>
+        <pre><code class="language-bash">.\kuroba.cmd script.krb --host 127.0.0.1 --port 8080 --verbose
+# Linux / macOS:
+./engine/kuroba script.krb --host 127.0.0.1 --port 8080 --verbose</code></pre>
 
         <h3>Processing Arguments in Kuroba</h3>
         <pre><code class="language-kuroba">pasteLn("Arguments received: " + args.count());
@@ -174,10 +176,10 @@ end</code></pre>
            ==================================================================== -->
       <section id="repl">
         <h2>Interactive REPL Shell (<code>krb</code>)</h2>
-        <p>Invoking <code>index.js</code> or the launcher shortcut <code>./krb.cmd</code> without arguments starts an interactive read-eval-print loop shell:</p>
-        <pre><code class="language-bash">node index.js
-# Or via Windows shortcut:
-.\krb.cmd</code></pre>
+        <p>Invoking <code>kuroba</code> without arguments or running the launcher shortcut <code>.\krb.cmd</code> starts an interactive read-eval-print loop shell:</p>
+        <pre><code class="language-bash">.\krb.cmd
+# Or directly via native binary:
+.\engine\kuroba.exe</code></pre>
 
         <h3>Shell Features</h3>
         <ul>
@@ -1145,7 +1147,7 @@ end
            ==================================================================== -->
       <section id="namespaces">
         <h2>Namespaces &amp; Module Discovery</h2>
-        <p>Kuroba resolves modules purely from declared AST symbols across your project, recursively scanning <code>.krb</code> subdirectories from the script directory in CLI (or virtual workspace tabs in the Web Playground), independent of physical file names on disk:</p>
+        <p>Kuroba resolves modules purely from declared symbols across your project, recursively scanning <code>.krb</code> subdirectories from the script directory in CLI (or virtual workspace tabs in the Web Playground), independent of physical file names on disk:</p>
 
         <h3>Hierarchy: <code>Namespace &rarr; Module Slice (~Module) &rarr; Members</code></h3>
         <ul>
@@ -2143,7 +2145,7 @@ pasteLn("User: " + envTable.USERNAME);
         <p>Kuroba provides exact line, column, and contextual diagnostics for rapid debugging:</p>
 
         <h3>1. SyntaxError</h3>
-        <p>Grammar violations during tokenization or AST parsing:</p>
+        <p>Grammar violations during tokenization or compilation:</p>
         <pre><code class="language-output">[SyntaxError: Line 2, Col 1] Missing semicolon ';' at the end of statement.
 [SyntaxError: Line 4, Col 12] Unclosed parenthesis. Missing closing ')' to match '(' at Line 4, Col 6.
 [SyntaxError: Line 10, Col 5] Return statements are only allowed inside functions.</code></pre>
@@ -2199,10 +2201,10 @@ pasteLn("User: " + envTable.USERNAME);
           <div class="footer-brand-row">
             <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
             <span class="footer-brand-name">Kuroba</span>
-            <span class="version-badge">v1.0.8</span>
+            <span class="version-badge">v1.1.0</span>
           </div>
           <p class="footer-tagline">
-            A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
+            A lightweight, zero-dependency interpreted language featuring a high-performance Native C Engine and in-browser Web VM.
           </p>
         </div>
 
@@ -2239,7 +2241,7 @@ pasteLn("User: " + envTable.USERNAME);
 
       <div class="footer-bottom">
         <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
-        <span class="footer-bottom-meta">Pure JS AST Engine • Zero npm Dependencies</span>
+        <span class="footer-bottom-meta">Native C Engine &amp; Web VM • Zero External Dependencies</span>
       </div>
     </div>
   </footer>

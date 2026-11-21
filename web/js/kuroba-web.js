@@ -1,5 +1,5 @@
 /**
- * Kuroba — In-Browser Runtime Engine v1.0.8
+ * Kuroba — In-Browser Runtime Engine v1.1.0
  * Zero External Dependencies • Pure Vanilla JavaScript
  */
 (function(global) {
