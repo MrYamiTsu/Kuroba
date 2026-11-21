@@ -998,7 +998,7 @@ f.takeDamage(45);</code></pre>
     shared then
         ivar totalCount = 0;
         iconst MAX_PARTY = 4;
-        shared private ivar _serverSecret = 9876;
+        private ivar _serverSecret = 9876;
 
         function getCount() then
             return Player.totalCount;
@@ -2184,8 +2184,8 @@ pasteLn("User: " + envTable.USERNAME);
 [ImportError] Unknown package or namespace 'MissingPkg'. Create a '.krb' file with 'namespace MissingPkg then ... end' or import 'Std' / 'StdE'.</code></pre>
 
         <h3>8. RecursionError</h3>
-        <p>Triggered when nested function calls exceed Kuroba's safe call-stack limit (512 frames). Can be trapped cleanly with <code>try / catch</code>:</p>
-        <pre><code class="language-output">[RecursionError] Maximum recursion depth (512) exceeded in function 'infiniteLoop'.</code></pre>
+        <p>Triggered when nested function calls exceed Kuroba's safe call-stack limit (1024 frames). Can be trapped cleanly with <code>try / catch</code>:</p>
+        <pre><code class="language-output">[RecursionError] Maximum recursion depth (1024) exceeded in function 'infiniteLoop'.</code></pre>
       </section>
 
     </main>
