@@ -2567,7 +2567,7 @@ static void given_statement(void)
         if (match(TOKEN_TILDE))
         {
             consume(TOKEN_THEN, "Attendu 'then' apres 'case ~'.");
-            while (!check(TOKEN_CASE) && !check(TOKEN_END) && !check(TOKEN_EOF))
+            while (!check(TOKEN_END) && !check(TOKEN_EOF))
             {
                 if (match(TOKEN_BREAK))
                 {
@@ -2579,6 +2579,7 @@ static void given_statement(void)
                     declaration();
                 }
             }
+            consume(TOKEN_END, "Attendu 'end' pour fermer 'case ~'.");
         }
         else
         {
@@ -2588,7 +2589,7 @@ static void given_statement(void)
             nextCaseJump = emit_jump(OP_JUMP_IF_FALSE);
 
             consume(TOKEN_THEN, "Attendu 'then' apres la condition de 'case'.");
-            while (!check(TOKEN_CASE) && !check(TOKEN_END) && !check(TOKEN_EOF))
+            while (!check(TOKEN_END) && !check(TOKEN_EOF))
             {
                 if (match(TOKEN_BREAK))
                 {
@@ -2600,6 +2601,7 @@ static void given_statement(void)
                     declaration();
                 }
             }
+            consume(TOKEN_END, "Attendu 'end' pour fermer le 'case'.");
         }
     }
 
@@ -2609,12 +2611,13 @@ static void given_statement(void)
     }
 
     consume(TOKEN_END, "Attendu 'end' pour fermer 'given'.");
-    end_scope();
 
     for (int i = 0; i < exitJumpCount; i++)
     {
         patch_jump(exitJumps[i]);
     }
+
+    end_scope();
 }
 
 static void throw_statement(void)

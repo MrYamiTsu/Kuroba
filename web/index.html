@@ -166,6 +166,8 @@ end</code></pre>
 given role then
   case Role.ADMIN then
     pasteLn("Admin access");
+    break;
+  end
 end</code></pre>
       </div>
 
@@ -367,8 +369,10 @@ given role then
     case "admin" then
         pasteLn("Full access granted.");
         break;
+    end
     case ~ then
         pasteLn("Guest session.");
+    end
 end`,
           output: 'Full access granted.'
         },

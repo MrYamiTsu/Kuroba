@@ -141,8 +141,10 @@ given username then
     case "admin" then
         paste("Access Granted");
         break;
+    end
     case ~ then
         paste("Welcome Guest: " + username);
+    end
 end
 
 ~~ Exception handling with structured recovery

@@ -506,11 +506,14 @@ given role then
     case "user" then
         pasteLn("Standard user dashboard");
         break;
+    end
     case "admin" then
         pasteLn("Full administrative privileges");
         break;
+    end
     case ~ then
         pasteLn("Unknown role; access restricted.");
+    end
 end</code></pre>
 
         <h3>Loops: <code>for</code>, <code>while</code>, <code>do-while</code></h3>
