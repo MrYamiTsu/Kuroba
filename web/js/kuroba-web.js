@@ -6163,7 +6163,7 @@ async function evaluate(node, env = createScope()) {
 
     // Expose Kuroba API on global window
     global.Kuroba = {
-        version: '1.0.8',
+        version: '1.1.0',
         run: async function(sourceCode, options = {}) {
             activePrintHandler = options.onPrint || ((t, nl) => console.log(t));
             activeErrorHandler = options.onError || ((err) => { throw new Error(err); });

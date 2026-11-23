@@ -59,7 +59,7 @@
             <button id="btn-hero-prev" class="hero-nav-btn" title="Previous snippet" aria-label="Previous snippet">&lsaquo;</button>
             <button id="btn-hero-next" class="hero-nav-btn" title="Next snippet" aria-label="Next snippet">&rsaquo;</button>
             <div class="hero-code-title-wrap">
-              <span id="hero-code-index" class="hero-code-index">01/13</span>
+              <span id="hero-code-index" class="hero-code-index">01/10</span>
               <span id="hero-code-title" class="hero-code-title">Hello, Kuroba!</span>
             </div>
           </div>
@@ -197,10 +197,10 @@ ivar save = Json.read("save.json");</code></pre>
     <h2 class="section-heading">Expressive, readable, concise.</h2>
 
     <div class="syntax-filters">
-      <button class="syntax-filter-pill active" data-filter="all">All Features (22)</button>
+      <button class="syntax-filter-pill active" data-filter="all">All Features (10)</button>
       <button class="syntax-filter-pill" data-filter="basics">Basics &amp; Control</button>
-      <button class="syntax-filter-pill" data-filter="oop">OOP &amp; Types</button>
-      <button class="syntax-filter-pill" data-filter="collections">Collections &amp; Data</button>
+      <button class="syntax-filter-pill" data-filter="oop">OOP &amp; Functions</button>
+      <button class="syntax-filter-pill" data-filter="collections">Collections</button>
       <button class="syntax-filter-pill" data-filter="stdlib">Std &amp; StdE Modules</button>
     </div>
 
@@ -215,114 +215,54 @@ ivar save = Json.read("save.json");</code></pre>
         </thead>
         <tbody>
           <tr data-category="basics">
-            <td><strong>Console Output</strong></td>
-            <td><code>paste(x);</code> / <code>pasteLn(x);</code></td>
-            <td>Prints to stdout without a newline (<code>paste</code>) or with trailing newline (<code>pasteLn</code>). Supports template interpolation.</td>
+            <td><strong>Variables, Const &amp; Sealed</strong></td>
+            <td><code>ivar x = 10;</code> / <code>iconst MAX = 100;</code><br/><code>isealed s = 1;</code> / <code>unlock s;</code></td>
+            <td>Inferred mutable variables, immutable constants, and sealed variables requiring explicit <code>unlock</code>. Identifiers support emojis (<code>ivar 🚀 = 50;</code>).</td>
           </tr>
           <tr data-category="basics">
-            <td><strong>Console Input</strong></td>
-            <td><code>copy("Prompt: ");</code> / <code>copyKey();</code></td>
-            <td>Blocking interactive line input or instant single-character capture in terminal raw mode.</td>
-          </tr>
-          <tr data-category="basics">
-            <td><strong>Variables &amp; Constants</strong></td>
-            <td><code>ivar x = 10;</code> / <code>iconst MAX = 100;</code></td>
-            <td>Type-inferred mutable variables and immutable constants with re-assignment rejection.</td>
-          </tr>
-          <tr data-category="basics">
-            <td><strong>Gradual Coercion</strong></td>
-            <td><code>ivar~Int count = "42";</code></td>
-            <td>Enforces automatic type coercion on declaration and subsequent assignments.</td>
-          </tr>
-          <tr data-category="basics">
-            <td><strong>Strict Non-Nullability</strong></td>
-            <td><code>ivar~(String) name = "Kenji";</code></td>
-            <td>Strict contract rejecting <code>NULL</code> assignments with immediate <code>[TypeError]</code> diagnostics.</td>
+            <td><strong>Gradual Types &amp; Nullability</strong></td>
+            <td><code>ivar~Int count = "42";</code><br/><code>ivar~(String) name = "...";</code></td>
+            <td>Automatic type coercion (<code>~Type</code>) and strict non-nullability contracts (<code>~(Type)</code>) verified at declaration and assignment.</td>
           </tr>
           <tr data-category="basics">
             <td><strong>Atomic Swap</strong></td>
-            <td><code>a &lt;-&gt; b;</code> / <code>list[i] &lt;-&gt; list[j];</code></td>
-            <td>In-place atomic value exchange across variables, lists, or table properties without temporary vars.</td>
+            <td><code>a &lt;-&gt; b;</code><br/><code>list[i] &lt;-&gt; list[j];</code></td>
+            <td>In-place atomic value exchange across variables, lists, or tables without temporary variables.</td>
           </tr>
           <tr data-category="basics">
-            <td><strong>String Interpolation</strong></td>
-            <td><code>~"Score: {pts}/{max}"</code></td>
-            <td>Evaluates embedded Kuroba expressions directly inside strings using the <code>~</code> prefix.</td>
+            <td><strong>Interactive Console I/O</strong></td>
+            <td><code>pasteLn(~"Hello {name}");</code><br/><code>copy("Prompt: ");</code> / <code>copyKey();</code></td>
+            <td>Formatted stdout with string interpolation (<code>~"..."</code>), line input (<code>copy</code>), and single keystroke capture (<code>copyKey</code>).</td>
           </tr>
           <tr data-category="basics">
-            <td><strong>Pattern Matching</strong></td>
-            <td><code>given x then case 1 then ... break; case ~ then ... end</code></td>
-            <td>Value branching with explicit fallthrough control (<code>break;</code>) and default fallback branch (<code>case ~</code>).</td>
+            <td><strong>Control Flow &amp; Pattern Match</strong></td>
+            <td><code>given x then case 1 ... case ~ end</code><br/><code>for (item in list) ... if (c) skip; end</code></td>
+            <td>Pattern matching with fallback branch (<code>case ~</code>), conditionals, and collection loops with <code>skip</code> / <code>break;</code>.</td>
           </tr>
           <tr data-category="basics">
-            <td><strong>Iteration &amp; Loops</strong></td>
-            <td><code>for (item in list) then ... end</code> / <code>do ... while</code></td>
-            <td>Collection traversal with <code>skip</code> (continue) and <code>break;</code>, plus pre/post-test conditional loops.</td>
-          </tr>
-          <tr data-category="basics">
-            <td><strong>Exception Safety</strong></td>
-            <td><code>try ... catch (ivar e) then ... finally ... end</code></td>
-            <td>Structured exception safety trapping all 8 error classes with metadata tables (<code>eName</code>, <code>eContext</code>).</td>
-          </tr>
-          <tr data-category="basics">
-            <td><strong>Memory Lifecycle</strong></td>
-            <td><code>kill variable;</code></td>
-            <td>Destroys variable bindings from the active scope and releases references from memory.</td>
+            <td><strong>Exception Trapping</strong></td>
+            <td><code>try ... catch (ivar e) then ... finally ... end</code><br/><code>throw "error message";</code></td>
+            <td>Structured exception safety trapping runtime errors as metadata tables (<code>eName</code>, <code>eContext</code>).</td>
           </tr>
           <tr data-category="oop">
-            <td><strong>Classes &amp; Constructors</strong></td>
-            <td><code>class Player then function Player(...) then ... end end</code></td>
-            <td>C#-style constructors without <code>new</code> keyword; automatic default constructor if omitted.</td>
+            <td><strong>Classes, OOP &amp; Accessors</strong></td>
+            <td><code>class Player from Entity then ... end</code><br/><code>get hp then ... end</code> / <code>set hp(v) ... end</code></td>
+            <td>C#-style constructors, inheritance (<code>from</code> / <code>base</code>), property accessors, and encapsulation (<code>public</code>, <code>private</code>, <code>protected</code>).</td>
           </tr>
           <tr data-category="oop">
-            <td><strong>Custom Accessors</strong></td>
-            <td><code>get hp then return value; end</code> / <code>set hp(v) then ... end</code></td>
-            <td>Property interceptors with raw storage access via <code>value</code>, avoiding recursive loops.</td>
-          </tr>
-          <tr data-category="oop">
-            <td><strong>Encapsulation Guards</strong></td>
-            <td><code>public</code>, <code>protected</code>, <code>private</code>, <code>isolated</code>, <code>exclusive</code></td>
-            <td>Granular access modifiers with private name mangling across inheritance hierarchies.</td>
-          </tr>
-          <tr data-category="oop">
-            <td><strong>Inheritance &amp; Base</strong></td>
-            <td><code>class Child from Parent then function Child() then base(); end end</code></td>
-            <td>Single class inheritance with <code>from</code> and superclass delegation via <code>base(...)</code>.</td>
-          </tr>
-          <tr data-category="oop">
-            <td><strong>Type Verification</strong></td>
-            <td><code>obj is Player</code> / <code>val is Int</code></td>
-            <td>Runtime type checking operator verifying primitives, collections, custom classes, and enums.</td>
-          </tr>
-          <tr data-category="oop">
-            <td><strong>Native Enums</strong></td>
-            <td><code>enum Status then ACTIVE, IDLE end</code></td>
-            <td>Named immutable enumerations with optional custom explicit values (e.g. <code>OK = 200</code>).</td>
-          </tr>
-          <tr data-category="oop">
-            <td><strong>Function &amp; Method Hooks</strong></td>
-            <td><code>hook target(x) then return this(x); end</code> / <code>orig(...)</code></td>
-            <td>Non-invasive runtime interception for standalone functions (<code>this</code>) and class methods (<code>orig</code>).</td>
+            <td><strong>Functions, Closures &amp; Hooks</strong></td>
+            <td><code>function f(ivar x)</code> / <code>function ~(ivar x)</code><br/><code>hook Class.method(x) then return orig(x); end</code></td>
+            <td>First-class functions, anonymous lambdas (<code>~</code>), lexical closures, and non-invasive runtime method hooks.</td>
           </tr>
           <tr data-category="collections">
             <td><strong>Typed Collections</strong></td>
             <td><code>List&lt;T&gt;</code>, <code>Stack&lt;T&gt;</code>, <code>Queue&lt;T&gt;</code>, <code>Table</code></td>
-            <td>Built-in collections with <code>.push()</code>, <code>.pop()</code>, <code>.peek()</code>, <code>.count()</code>, and bracket/dot access.</td>
+            <td>Dynamic arrays, LIFO stacks, FIFO queues, and key-value tables with bracket/dot access and iteration.</td>
           </tr>
           <tr data-category="stdlib">
-            <td><strong>Filesystem (Std.IO)</strong></td>
-            <td><code>IO.fileCopy()</code> / <code>IO.filePaste()</code> / <code>IO.fileKill()</code></td>
-            <td>Synchronous file reading, writing, appending, existence checks, and deletion.</td>
-          </tr>
-          <tr data-category="stdlib">
-            <td><strong>Deterministic PRNG (StdE.Random)</strong></td>
-            <td><code>Random.seed(42);</code> / <code>Random.int(1, 20);</code> / <code>Random.shuffle(d);</code></td>
-            <td>Mulberry32 PRNG with seed reproducibility, Fisher-Yates shuffle, and RFC4122 UUIDs.</td>
-          </tr>
-          <tr data-category="stdlib">
-            <td><strong>JSON Storage (StdE.Json)</strong></td>
-            <td><code>Json.stringify()</code> / <code>Json.parse()</code> / <code>Json.read()</code> / <code>Json.write()</code></td>
-            <td>Seamless bidirectional translation between Kuroba Tables/Lists and JSON data.</td>
+            <td><strong>Standard Libraries (Std / StdE)</strong></td>
+            <td><code>Std.Math</code>, <code>Std.String</code>, <code>Std.IO</code><br/><code>StdE.Random</code>, <code>StdE.Json</code>, <code>StdE.Path</code></td>
+            <td>Decoupled PRNG with seed reproducibility, JSON storage, cross-platform filesystem, and process controls.</td>
           </tr>
         </tbody>
       </table>
@@ -408,13 +348,15 @@ pasteLn(~"New value: {score}");`,
           output: 'New value: 99'
         },
         {
-          title: 'Dynamic Retyping',
-          raw: `~~ Strict non-nullability & transtyping
-ivar~(Int) level = 1;
-level~String = "Max";
+          title: 'Sealed Variables (isealed)',
+          raw: `~~ Sealed protection with one-shot unlock
+isealed 👑 = "Arthur";
 
-pasteLn(~"Level: {level}");`,
-          output: 'Level: Max'
+unlock 👑;
+👑 = "Pendragon";
+
+pasteLn(~"King: {👑}");`,
+          output: 'King: Pendragon'
         },
         {
           title: 'Pattern Matching (given)',
@@ -444,30 +386,16 @@ pasteLn(~"Sum without 3: {total}");`,
           output: 'Sum without 3: 12'
         },
         {
-          title: 'Typed Lists & For-In',
-          raw: `~~ Generic list with direct iteration
-ivar~List<Int> scores = [10, 20];
-scores.push(30);
-
-ivar sum = 0;
+          title: 'Typed Collections',
+          raw: `~~ Generic collections (List, Stack)
+ivar~List<Int> scores = [10, 20, 30];
+ivar total = 0;
 for (ivar pts in scores) then
-    sum += pts;
+    total += pts;
 end
 
-pasteLn(~"Total points: {sum}");`,
-          output: 'Total points: 60'
-        },
-        {
-          title: 'Associative Tables',
-          raw: `~~ Structured dictionaries with dot access
-ivar hero = {
-    name: "Kenji",
-    hp: 100
-};
-
-hero.hp -= 15;
-pasteLn(~"{hero.name} HP: {hero.hp}");`,
-          output: 'Kenji HP: 85'
+pasteLn(~"Total score: {total}");`,
+          output: 'Total score: 60'
         },
         {
           title: 'Classes & OOP',
@@ -528,26 +456,6 @@ catch (ivar err) then
     pasteLn(~"[{err.eName}] {err.eContext}");
 end`,
           output: '[MathError] Division by zero is undefined.'
-        },
-        {
-          title: 'Standard Library (Std)',
-          raw: `~~ Selective module import with alias ~
-import Std ~(String, Math) alias ~;
-
-ivar tag = String.upper(String.trim("  kuroba  "));
-ivar val = Math.round(9.7);
-pasteLn(~"{tag} #{val}");`,
-          output: 'KUROBA #10'
-        },
-        {
-          title: 'LIFO Stack',
-          raw: `~~ Typed Stack collection (LIFO)
-ivar~Stack<String> deck = [];
-deck.push("Katana");
-deck.push("Shuriken");
-
-pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
-          output: 'Top: Shuriken | Left: 1'
         }
       ];
 
@@ -556,7 +464,7 @@ pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'orig', 'import', 'alias', 'namespace',
         'class', 'interface', 'as', 'public', 'private', 'protected', 'isolated', 'exclusive',
-        'get', 'set', 'enum', 'is', 'TRUE', 'FALSE', 'NULL'
+        'get', 'set', 'enum', 'is', 'TRUE', 'FALSE', 'NULL', 'unlock', 'lock', 'kill'
       ]);
 
       function escHtml(str) {
@@ -596,7 +504,7 @@ pasteLn(~"Top: {deck.pop()} | Left: {deck.count()}");`,
             while (i < code.length && /[a-zA-Z0-9_]/.test(code[i])) i++;
             let word = code.slice(start, i);
 
-            if (word === 'ivar' || word === 'iconst') {
+            if (word === 'ivar' || word === 'iconst' || word === 'isealed') {
               if (code[i] === '~') {
                 let tEnd = i + 1;
                 if (code[tEnd] === '(') {

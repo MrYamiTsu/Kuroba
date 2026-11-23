@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Scope 2: Dedicated Standard Libraries Reference (6 Modules) -->
+      <!-- Scope 2: Dedicated Standard Libraries Reference (9 Modules) -->
       <div class="docs-sidebar-nav-scope docs-scope-hidden" id="scope-nav-libraries">
         <div class="docs-group" data-group="std-core">
           <div class="docs-group-label"><span>Core Standard Library (<code>Std</code>)</span><span class="docs-group-toggle">▾</span></div>
@@ -129,7 +129,7 @@
       <div class="docs-chapter-meta-bar" id="docs-chapter-meta-bar">
         <div class="docs-chapter-meta-left">
           <span class="docs-chapter-track-badge" id="docs-track-badge">Setup &amp; CLI</span>
-          <span class="docs-chapter-counter" id="docs-chapter-counter">Chapter 1 of 15</span>
+          <span class="docs-chapter-counter" id="docs-chapter-counter">Chapter 1 of 16</span>
         </div>
       </div>
 
@@ -1082,8 +1082,13 @@ pasteLn(hero.hp); ~~ 100 (clamped by setter)
 
 hero.hp -= 200;
 pasteLn(hero.hp); ~~ 0 (clamped to zero)</code></pre>
+      </section>
 
-        <h3 id="interfaces">7. Interface Contracts (<code>interface</code> &amp; <code>as</code>)</h3>
+      <!-- ====================================================================
+           Section : Interfaces & Contracts (as)
+           ==================================================================== -->
+      <section id="interfaces">
+        <h2>Interfaces &amp; Contracts (<code>interface</code> &amp; <code>as</code>)</h2>
         <p>Interfaces in Kuroba serve as pure contracts. They define the required methods, property accessors (<code>get</code> / <code>set</code>), and fields that an implementing class must provide, without containing any implementation details:</p>
         <ul>
           <li><strong>Pure Structural Contracts:</strong> Interfaces cannot be instantiated directly (e.g., <code>IEntity()</code> raises <code>[TypeError]</code>) and cannot have their members accessed directly (<code>IEntity.member</code> raises <code>[TypeError]</code>).</li>
@@ -2276,7 +2281,7 @@ pasteLn("User: " + envTable.USERNAME);
       const GUIDE_SECTIONS = [
         'quickstart', 'cli', 'repl',
         'variables', 'types', 'operators', 'control', 'exceptions', 'io-primitives', 'collections',
-        'functions', 'classes', 'enums', 'namespaces',
+        'functions', 'classes', 'interfaces', 'enums', 'namespaces',
         'errors'
       ];
 
@@ -2298,6 +2303,7 @@ pasteLn("User: " + envTable.USERNAME);
         collections: 'core',
         functions: 'oop',
         classes: 'oop',
+        interfaces: 'oop',
         enums: 'oop',
         namespaces: 'oop',
         errors: 'errors',
@@ -2400,7 +2406,7 @@ pasteLn("User: " + envTable.USERNAME);
         }
 
         if (mobileMenuLabel) {
-          mobileMenuLabel.textContent = scope === 'guide' ? 'Browse Chapters (15)' : 'Browse Modules (6)';
+          mobileMenuLabel.textContent = scope === 'guide' ? 'Browse Chapters (16)' : 'Browse Modules (9)';
         }
 
         renderTrackPills();
@@ -2796,7 +2802,7 @@ pasteLn("User: " + envTable.USERNAME);
         sec.appendChild(nav);
       });
 
-      // Build Navigation Cards for Library Sections (6 Modules)
+      // Build Navigation Cards for Library Sections (9 Modules)
       LIBRARY_SECTIONS.forEach((secId, idx) => {
         const sec = sectionById[secId];
         if (!sec) return;
