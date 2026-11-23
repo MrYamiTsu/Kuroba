@@ -82,7 +82,7 @@ Colored, contextual error reporting (`SyntaxError`, `TypeError`, `ReferenceError
 
 ### Dynamic Retyping / Transtyping
 
-Update a variable's type and nullability dynamically with `var~Type = val;` or `var~(Type) = val;`, with constant protection.
+Update a variable's type dynamically with `[Type]var = val;` or cast expressions with `[Type]expr`, with constant and sealed protection.
 
 </td>
 </tr>
@@ -227,7 +227,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Native Swap**                 | `a <-> b;`                                                                                | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring.                                          |
 | **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                                         | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration. Variable names also support emojis (`ivar 🚀 = 1;`). |
 | **Sealed Variables**            | `isealed key = 1;`<br/>`unlock key;`<br/>`lock key;`                                      | Variable protected against mutation until unlocked via `unlock`; automatically re-seals upon reassignment, or can be re-locked manually with `lock`.               |
-| **Dynamic Retyping**            | `score~String = "A";`                                                                     | Dynamic type transtyping without redeclaration or shadowing. Constants remain immutable.                                                                           |
+| **Dynamic Retyping & Cast**     | `[String]score = "A";`<br/>`[Int]b + [Int]c`                                              | Dynamic type transtyping without redeclaration (`[Type]var = val;`) and prefix expression casting (`[Type]operand`).                                               |
 | **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                                        | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                                                           |
 | **Nested Mutations**            | `grid[y][x] = "#";`<br/>`enemies[i].hp -= 10;`<br/>`player.bag[0] = "Bow";`               | Arbitrary mixed `[...]` and `.prop` assignment chains with compound operators, retyping, and `iconst` root protection.                                             |
 | **Recursive Project Imports**   | `namespace Utils`<br/>`namespace Game ~Combat`<br/>`import Game;`                         | Symbol-based recursive `.krb` discovery across project subfolders (CLI & Web) with circular import detection.                                                      |
@@ -338,7 +338,7 @@ Kuroba/
 - [x] Non-nullable enforcement (`~(Type)`)
 - [x] Order comparisons (`<`, `>`, `<=`, `>=`)
 - [x] Modulo operator (`%`)
-- [x] Dynamic variable transtyping (`var~Type = val;` and `var~(Type) = val;`)
+- [x] Dynamic variable transtyping and expression casting (`[Type]var = val;` and `[Type]operand`)
 
 ### Phase 2: Iteration & Interactive Console `(Completed - v1.0.2)`
 

@@ -337,11 +337,18 @@ ivar~Float ratio = "3.14"; ~~ Coerced to Float 3.14</code></pre>
         <pre><code class="language-kuroba">ivar~(String) user = "Admin";
 user = NULL; ~~ [TypeError] Cannot assign NULL to non-nullable variable 'user'.</code></pre>
 
-        <h3>Dynamic In-Place Retyping</h3>
-        <p>An existing variable can change type dynamically during assignment using <code>var~Type = val;</code>:</p>
-        <pre><code class="language-kuroba">ivar score = 100;           ~~ Inferred as Int
-score~String = "Top Score"; ~~ Retyped to String in-place
-score~Float = 99.5;         ~~ Retyped to Float in-place</code></pre>
+        <h3>Prefix Type Casting &amp; Dynamic Retyping (<code>[Type]</code>)</h3>
+        <p>Values, expressions, and properties can be explicitly cast using the prefix bracket syntax <code>[Type]operand</code> (or <code>[(Type)]operand</code> for non-nullable contracts):</p>
+        <pre><code class="language-kuroba">ivar b = "20";
+ivar c = "30";
+ivar sum = [Int]b + [Int]c;          ~~ Explicit cast in expression (50)
+ivar hp = [Float]player.health / 2;  ~~ Cast on object/table properties
+ivar tag = [String](10 + 5);         ~~ Cast on grouped expression ("15")</code></pre>
+        <p>An existing variable can also change type dynamically during assignment using <code>[Type]var = val;</code>:</p>
+        <pre><code class="language-kuroba">ivar score = 100;              ~~ Inferred as Int
+[String]score = "Top Score";   ~~ Retyped to String in-place
+[Float]score = 99.5;           ~~ Retyped to Float in-place
+[(Int)]score = 250;            ~~ Retyped with strict non-nullable contract</code></pre>
 
         <h3>Runtime Type Checking (<code>is</code>)</h3>
         <p>The <code>is</code> operator evaluates to a strict boolean verifying whether a value matches a native type (<code>Int</code>, <code>Float</code>, <code>String</code>, <code>Bool</code>, <code>List</code>, <code>Stack</code>, <code>Queue</code>, <code>Table</code>, <code>Function</code>), a strict literal (<code>NULL</code>, <code>TRUE</code>, <code>FALSE</code>), or a typed generic collection (<code>List&lt;Int&gt;</code>, <code>List&lt;(Int)&gt;</code>, <code>Stack&lt;String&gt;</code>). Unknown types raise an immediate <code>[TypeError]</code>:</p>
@@ -380,8 +387,8 @@ pasteLn(!(5 is String));     ~~ TRUE</code></pre>
             <tr>
               <td><strong>2</strong></td>
               <td>Unary</td>
-              <td><code>!</code>, <code>++</code>, <code>--</code>, <code>-</code></td>
-              <td>Logical NOT, postfix step increment/decrement, negation</td>
+              <td><code>!</code>, <code>++</code>, <code>--</code>, <code>-</code>, <code>[Type]</code></td>
+              <td>Logical NOT, postfix step increment/decrement, negation, prefix type cast</td>
               <td>Right-to-left</td>
             </tr>
             <tr>

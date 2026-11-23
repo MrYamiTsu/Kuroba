@@ -220,9 +220,9 @@ ivar save = Json.read("save.json");</code></pre>
             <td>Inferred mutable variables, immutable constants, and sealed variables requiring explicit <code>unlock</code>. Identifiers support emojis (<code>ivar 🚀 = 50;</code>).</td>
           </tr>
           <tr data-category="basics">
-            <td><strong>Gradual Types &amp; Nullability</strong></td>
-            <td><code>ivar~Int count = "42";</code><br/><code>ivar~(String) name = "...";</code></td>
-            <td>Automatic type coercion (<code>~Type</code>) and strict non-nullability contracts (<code>~(Type)</code>) verified at declaration and assignment.</td>
+            <td><strong>Types, Cast &amp; Nullability</strong></td>
+            <td><code>ivar~Int count = "42";</code><br/><code>[String]count = 100;</code> / <code>[Int]val</code></td>
+            <td>Contract typing at declaration (<code>~Type</code>), non-nullability (<code>~(Type)</code>), and prefix type casting (<code>[Type]var</code>).</td>
           </tr>
           <tr data-category="basics">
             <td><strong>Atomic Swap</strong></td>
