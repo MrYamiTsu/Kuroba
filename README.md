@@ -15,8 +15,8 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 [![Version](https://img.shields.io/badge/version-v1.1.0-blue.svg?style=for-the-badge&logo=semver)](package.json)
 [![Website](https://img.shields.io/badge/website-live-success.svg?style=for-the-badge&logo=githubpages)](https://mryamitsu.github.io/Kuroba/)
-[![Node](https://img.shields.io/badge/node->=%2016.0.0-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
-[![Dependencies](<https://img.shields.io/badge/dependencies-0%20(pure%20vanilla)-orange.svg?style=for-the-badge>)](package.json)
+[![Engine](https://img.shields.io/badge/engine-pure%20C99-00599C.svg?style=for-the-badge&logo=c)](engine/)
+[![Dependencies](<https://img.shields.io/badge/dependencies-0%20(standalone)-orange.svg?style=for-the-badge>)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg?style=for-the-badge)](LICENSE)
 
 <br/>
@@ -43,7 +43,7 @@ _Blending ideas from multiple modern languages into a clean AST interpreter with
 
 ### Zero External Dependencies
 
-Written entirely from scratch in vanilla Node.js without third-party packages. Fast, lightweight, and fully transparent.
+Native engine written entirely from scratch in pure C99 (< 250 KB binary) with zero runtime dependencies. Sub-millisecond startup and tiny memory footprint.
 
 </td>
 <td width="50%">
@@ -163,7 +163,7 @@ end
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v16.0.0 or higher recommended)
+- Prebuilt standalone binary included (`engine/kuroba.exe` on Windows), or any C99 compiler (`clang` or `gcc`) to build from source.
 
 ### Installation
 
@@ -180,29 +180,25 @@ Kuroba source files use the `.krb` extension:
 
 ```bash
 # Launch the Interactive REPL Shell (no arguments)
-.\krb
-# or
-.\kuroba
+.\krb.cmd
+# or directly via native binary:
+.\engine\kuroba.exe
 
 # Run a specific script with arguments
-.\krb path/to/script.krb --speed 50 --verbose
+.\krb.cmd path/to/script.krb --speed 50 --verbose
 # or
-.\kuroba path/to/script.krb --speed 50 --verbose
-
-# Cross-platform via Node.js
-node index.js                      # Starts REPL
-node index.js path/to/script.krb   # Runs script
+.\engine\kuroba.exe path/to/script.krb --speed 50 --verbose
 ```
 
 ### CLI Options
 
-| Command / Flag                         | Description                                                |
-| :------------------------------------- | :--------------------------------------------------------- |
-| `.\krb` / `.\kuroba` / `node index.js` | Launches the interactive REPL shell (Read-Eval-Print Loop) |
-| `.\krb <file.krb> [args...]`           | Executes the script with command-line arguments            |
-| `.\krb -i`, `--repl`                   | Explicitly forces interactive REPL mode                    |
-| `.\krb -v`, `--version`                | Displays current engine version and build info             |
-| `.\krb -h`, `--help`                   | Prints the CLI help manual                                 |
+| Command / Flag                             | Description                                                |
+| :----------------------------------------- | :--------------------------------------------------------- |
+| `.\krb.cmd` / `.\engine\kuroba.exe`        | Launches the interactive REPL shell (Read-Eval-Print Loop) |
+| `.\engine\kuroba.exe <file.krb> [args...]` | Executes the script with command-line arguments            |
+| `.\engine\kuroba.exe -i`, `--repl`         | Explicitly forces interactive REPL mode                    |
+| `.\engine\kuroba.exe -v`, `--version`      | Displays current engine version and build info             |
+| `.\engine\kuroba.exe -h`, `--help`         | Prints the CLI help manual                                 |
 
 ### Interactive REPL Shell
 
@@ -251,66 +247,63 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 
 ## Architecture
 
-Kuroba is designed as a classic, modular 3-stage interpreted engine:
+Kuroba is designed as a high-performance bytecode-compiled native engine:
 
 ```text
  ┌─────────────┐      ┌──────────────┐      ┌─────────────┐      ┌──────────────┐
- │ Source Code │ ───> │ Lexer        │ ───> │ Parser      │ ───> │ Evaluator    │
- │   (.krb)    │      │ (Tokens)     │      │ (AST)       │      │ (Runtime Env)│
+ │ Source Code │ ───> │ Fast Scanner │ ───> │ Bytecode    │ ───> │ Bytecode VM  │
+ │   (.krb)    │      │ (Tokens)     │      │ Compiler    │      │ (Native C)   │
  └─────────────┘      └──────────────┘      └─────────────┘      └──────────────┘
                              │                     │                    │
                              └──────────┬──────────┴────────────────────┘
                                         ▼
-                             [ Centralized Diagnostics ]
-                                  (errors.js)
+                             [ Structured Error Tables ]
+                                 (eName, eContext)
 ```
 
 ```text
 Kuroba/
-├── index.js          # CLI entrypoint & argument parsing
-├── kuroba.cmd        # Windows primary launcher
-├── krb.cmd           # Windows short alias launcher
-├── config.json       # Engine configuration & version metadata
-├── package.json      # Project manifest
-├── main.krb          # Full test suite & language validation runner
-├── src/              # Interpreter Core (Modular Lexer, Parser, AST Evaluator)
-│   ├── errors.js         # Colored diagnostic reporting engine & try/catch context
-│   ├── repl.js           # Interactive REPL shell with multi-line support
-│   ├── lexer/            # Modular Lexical Analysis
-│   │   ├── tokens.js         # Keywords, symbols, and character classification
-│   │   └── index.js          # Lexer engine & token stream generator
-│   ├── parser/           # Modular AST Recursive Descent Parser
-│   │   ├── cursor.js         # Token cursor, lookahead, and consumption utilities
-│   │   ├── types.js          # Type annotation & nullability contract parser
-│   │   ├── expressions.js    # Precedence hierarchy & primary expressions
-│   │   ├── control.js        # Control structures (if, for, while, given, try, hook...)
-│   │   ├── statements.js     # Statements, assignments, variable declarations & program
-│   │   └── index.js          # Parser entrypoint parse(tokens)
-│   ├── evaluator/        # Modular Runtime AST Evaluators (Zero circular imports)
-│   │   ├── index.js          # Main AST dispatcher evaluate(node, env)
-│   │   ├── operations.js     # Arithmetic, comparison, unary & logical operations
-│   │   ├── scope.js          # Environment scope frames and lookup
-│   │   ├── types.js          # Type coercion, checking and value representations
-│   │   ├── io.js             # Built-in I/O (paste, pasteln, copy, clear, exit)
-│   │   ├── tables.js         # Table literals & property mutations
-│   │   ├── collections.js    # List, Stack, Queue methods and indexing
-│   │   ├── variables.js      # Variable declarations, retyping, and destruction (kill)
-│   │   ├── functions.js      # Closures, lambdas, returns and hook interception
-│   │   ├── control.js        # Flow control (if, for, for-in, while, do-while, given, try)
-│   │   └── packages.js       # Modular package imports and namespaces
-│   └── runtime/          # Built-in runtime native functions (Math, Date, IO)
-│       └── natives.js        # Standard library natives bridge
-├── lib/              # Core Standard Library source (.krb)
-│   └── std/              # io.krb, math.krb, string.krb, time.krb
+├── engine/           # Pure C99 High-Performance Native Engine
+│   ├── kuroba.exe        # Prebuilt native binary executable (< 250 KB)
+│   ├── main.c            # CLI entrypoint, REPL shell & file runner
+│   ├── include/          # Engine header declarations
+│   │   ├── common.h          # Standard includes, definitions & debug toggles
+│   │   ├── chunk.h           # Bytecode chunk representation & opcodes
+│   │   ├── compiler.h        # Bytecode compiler interface
+│   │   ├── memory.h          # Dynamic memory allocation & garbage safety
+│   │   ├── object.h          # Runtime objects (strings, lists, tables, functions)
+│   │   ├── scanner.h         # Lexer & token scanning interface
+│   │   ├── table.h           # Hash table implementation for fields & globals
+│   │   ├── value.h           # Tagged union value representation
+│   │   └── vm.h              # Virtual machine state & stack frame definitions
+│   └── src/              # Engine implementation source
+│       ├── chunk.c           # Bytecode emission & constant pool management
+│       ├── compiler.c        # Single-pass Pratt parser & bytecode generator
+│       ├── debug.c           # Bytecode disassembler & diagnostic tooling
+│       ├── memory.c          # Allocation & memory safety manager
+│       ├── object.c          # Object allocation & string interning
+│       ├── scanner.c         # High-speed UTF-8 token scanner
+│       ├── stdlib_krb.c      # Native standard library bindings (I/O, Math, Time)
+│       ├── table.c           # Hash table lookup & linear probing
+│       ├── value.c           # Value operations & conversions
+│       └── vm.c              # Bytecode interpreter loop & call stack engine
+├── lib/              # Core Standard Library (.krb)
+│   ├── std/              # io.krb, math.krb, string.krb, time.krb
+│   └── stde/             # json.krb, path.krb, process.krb, random.krb, term.krb
 ├── web/              # Official Website, Web Docs & Interactive IDE
 │   ├── index.html        # Language showcase & architectural principles
-│   ├── docs.html         # Complete technical documentation & spec
+│   ├── docs.html         # Complete technical documentation & specification
 │   ├── playground.html   # Fullscreen IDE & live virtual terminal
 │   ├── css/style.css     # Official stylesheet (strict 5-color palette)
-│   ├── js/kuroba-web.js  # Zero-dependency client-side AST engine
+│   ├── js/kuroba-web.js  # Zero-dependency in-browser Web VM
 │   └── js/playground.js  # Interactive IDE controller & samples
-├── tools/            # Development & packaging utilities
-│   └── bundle-web.js     # Standalone browser bundle builder
+├── tools/            # Maintenance & SSOT version sync scripts
+│   └── sync-version.js   # Single Source of Truth version synchronizer
+├── main.krb          # TDD test suite & language validation runner
+├── config.json       # Engine configuration & version metadata
+├── package.json      # Project manifest & npm scripts
+├── kuroba.cmd        # Windows primary launcher shortcut
+└── krb.cmd           # Windows short alias launcher shortcut
 ```
 
 ---
@@ -489,7 +482,7 @@ Kuroba/
   - [ ] Game / application loop hooks (`App.onUpdate`, `App.onDraw`)
   - [ ] Real-time input handling for games and desktop apps (`App.isKeyDown`, `App.mousePos`)
 - [ ] Universal Distribution, Tooling & Ecosystem:
-  - [ ] Single self-contained binary (`kuroba.exe` on Windows, `kuroba` on macOS/Linux) with bundled `Std`/`StdE` (zero Node.js dependency)
+  - [ ] Single self-contained native binary (`engine/kuroba.exe` on Windows, `kuroba` on macOS/Linux) with bundled `Std`/`StdE` (zero external dependencies)
   - [ ] One-liner installation scripts (`irm ... | iex` on Windows PowerShell, `curl ... | bash` on macOS/Linux)
   - [ ] Official npm global distribution (`npm install -g kuroba`)
   - [ ] Package Manager & Developer Tooling (`kpm` / `krb install`, `krb publish`, `krb fmt`, VS Code LSP)
