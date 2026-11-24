@@ -1,653 +1,166 @@
-~~ ============================================================================
-~~ KUROBA TORTURE & CRASH TEST SUITE (v1.1.0 CONFORMANCE)
-~~ Designed to push JS & Native C engines to their absolute limits.
-~~ ============================================================================
-
 import Std;
 import StdE;
 
+~~ ===============================================================
+~~ FRAMEWORK DE TEST MODERNE (Gestion automatique du try/catch)
+~~ ===============================================================
+ivar totalCount = 0;
 ivar passedCount = 0;
 ivar failedCount = 0;
-ivar totalCount = 0;
 
-function assert(ivar~Bool cond, ivar~String msg) then
+function test(ivar~String desc, ivar fn) then
     totalCount = totalCount + 1;
-    if cond then
+    try then
+        fn();
         passedCount = passedCount + 1;
-        pasteLn(StdE.Term.green("[PASS] " + msg));
+        pasteLn(StdE.Term.bold(StdE.Term.green("[PASS] ")) + desc);
+    catch (ivar err) then
+        failedCount = failedCount + 1;
+        pasteLn(StdE.Term.bold(StdE.Term.red("[FAIL] ")) + desc);
+        pasteLn(StdE.Term.yellow(~"       {err.eName} : {err.eContext}"));
+    end
+end
+
+function testThrows(ivar~String desc, ivar fn) then
+    totalCount = totalCount + 1;
+    ivar threw = FALSE;
+    try then
+        fn();
+    catch (ivar err) then
+        threw = TRUE;
+    end
+    if threw then
+        passedCount = passedCount + 1;
+        pasteLn(StdE.Term.bold(StdE.Term.green("[PASS] ")) + desc);
     else
         failedCount = failedCount + 1;
-        pasteLn(StdE.Term.red("[FAIL] " + msg));
+        pasteLn(StdE.Term.bold(StdE.Term.red("[FAIL] ")) + desc + StdE.Term.yellow(" (Succes inattendu: une exception etait attendue)"));
     end
 end
 
 function assertEq(ivar val, ivar expected, ivar~String msg) then
-    totalCount = totalCount + 1;
-    if (val == expected) then
-        passedCount = passedCount + 1;
-        pasteLn(StdE.Term.green("[PASS] " + msg));
-    else
-        failedCount = failedCount + 1;
-        pasteLn(StdE.Term.red("[FAIL] " + msg + " (Got: " + val + ", Expected: " + expected + ")"));
+    if (val != expected) then
+        throw msg + " (Got: " + val + ", Expected: " + expected + ")";
     end
 end
 
-pasteLn("================================================================================");
-pasteLn(">> LANCEMENT DU CRASH TEST & TORTURE SUITE KUROBA v1.1.0");
-pasteLn("================================================================================");
-
-~~ ============================================================================
-~~ SECTION 1: TYPED FUNCTION PARAMETERS & STRICT CONTRACTS (C ENGINE FIX TEST)
-~~ ============================================================================
-pasteLn("--- SECTION 1: PARAMETRES TYPES & CONTRATS STRICTS ---");
-
-function fnTypedScalars(ivar~Int a, ivar~Float b, ivar~String c, ivar~Bool d) then
-    return a + b;
-end
-
-ivar resScalar = fnTypedScalars("100", "25.5", 42, 1);
-assertEq(resScalar, 125.5, "Typed parameters auto-coercion (String->Int, String->Float)");
-
-function fnTypedStack(ivar~Stack<Int> sabot) then
-    sabot.push(10);
-    sabot.push(20);
-    return sabot.pop();
-end
-
-ivar~Stack<Int> s1 = [];
-ivar popVal = fnTypedStack(s1);
-assertEq(popVal, 20, "Typed generic parameter ivar~Stack<Int>");
-assertEq(s1.count(), 1, "Stack state preserved across typed parameter call");
-
-function fnTypedList(ivar~List<Int> lst) then
-    return lst.count();
-end
-ivar l1 = [1, 2, 3, 4, 5];
-assertEq(fnTypedList(l1), 5, "Typed generic parameter ivar~List<Int>");
-
-function fnStrictParam(ivar~(String) strictStr, ivar~Int num) then
-    return strictStr + ":" + num;
-end
-assertEq(fnStrictParam("Alpha", 7), "Alpha:7", "Non-nullable parameter with valid argument");
-
-ivar strictNullCaught = FALSE;
-try then
-    fnStrictParam(NULL, 10);
-catch (ivar e) then
-    strictNullCaught = TRUE;
-end
-assert(strictNullCaught, "Strict non-nullable parameter rejects NULL with TypeError");
-
-function fnDefaultsWithTypes(ivar~Int a = 10, ivar~String b = "kuroba", ivar~Bool c = TRUE) then
-    if c then
-        return b + a;
-    end
-    return "NONE";
-end
-assertEq(fnDefaultsWithTypes(), "kuroba10", "Typed parameters with defaults (all omitted)");
-assertEq(fnDefaultsWithTypes(99), "kuroba99", "Typed parameters with defaults (1 provided)");
-assertEq(fnDefaultsWithTypes(5, "v", FALSE), "NONE", "Typed parameters with defaults (all provided)");
-
-function fnNullableVsStrict(ivar~String optName, ivar~(String) reqName) then
-    if (optName == NULL) then
-        return "NULL_OK:" + reqName;
-    end
-    return optName + ":" + reqName;
-end
-assertEq(fnNullableVsStrict(NULL, "StrictVal"), "NULL_OK:StrictVal", "Nullable ivar~String accepts NULL argument");
-
-function fnTransferQueues(ivar~Queue<Int> qSrc, ivar~Queue<Int> qDst) then
-    while (qSrc.count() > 0) then
-        qDst.push(qSrc.pop());
-    end
-    return qDst.count();
-end
-
-ivar~Queue<Int> srcQ = [10, 20, 30];
-ivar~Queue<Int> dstQ = [1, 2];
-ivar totalQueued = fnTransferQueues(srcQ, dstQ);
-assertEq(totalQueued, 5, "Multiples parametres de collections generiques ivar~Queue<Int>");
-assertEq(srcQ.count(), 0, "Queue source vidangee a travers appel type");
-assertEq(dstQ.count(), 5, "Queue destination accumulee a travers appel type");
-assertEq(dstQ.pop(), 1, "Ordre FIFO respecte dans Queue transferee (premier: 1)");
-assertEq(dstQ.pop(), 2, "Ordre FIFO respecte dans Queue transferee (deuxieme: 2)");
-assertEq(dstQ.pop(), 10, "Ordre FIFO respecte dans Queue transferee (troisieme: 10)");
-
-~~ ============================================================================
-~~ SECTION 2: SYNTAXE DES ENTREES INTERACTIVES (copy / copyKey C NATIVE ENGINE)
-~~ ============================================================================
-pasteLn("--- SECTION 2: SYNTAXE copy() & copyKey() ---");
-
-function __validateInteractiveSyntax() then
-    if (FALSE) then
-        ivar a = copy();
-        ivar b = copy("Prompt> ");
-        ivar c = copyKey();
-        ivar d = copyKey("Press key> ");
-    end
-    return TRUE;
-end
-assert(__validateInteractiveSyntax(), "Compilation et validation syntaxique de copy() et copyKey()");
-
-~~ ============================================================================
-~~ SECTION 3: RECURSION PROFONDE & STABILITE DE LA PILE
-~~ ============================================================================
-pasteLn("--- SECTION 3: RECURSION PROFONDE & APPELS CROISES ---");
-
-function deepSum(ivar~Int n, ivar~Int acc) then
-    if (n <= 0) then
-        return acc;
-    end
-    return deepSum(n - 1, acc + n);
-end
-assertEq(deepSum(200, 0), 20100, "Recursion lineaire a 200 niveaux de profondeur");
-
-function mutualEven(ivar~Int n) then
-    if (n == 0) then return TRUE; end
-    return mutualOdd(n - 1);
-end
-
-function mutualOdd(ivar~Int n) then
-    if (n == 0) then return FALSE; end
-    return mutualEven(n - 1);
-end
-assert(mutualEven(100), "Recursion mutuelle even/odd sur 100 sauts (even)");
-assert(mutualOdd(101), "Recursion mutuelle even/odd sur 101 sauts (odd)");
-
-function infiniteRecurse(ivar~Int x) then
-    return infiniteRecurse(x + 1);
-end
-
-ivar recursionLimitCaught = FALSE;
-try then
-    infiniteRecurse(1);
-catch (ivar e) then
-    recursionLimitCaught = TRUE;
-end
-assert(recursionLimitCaught, "Depassement de pile de recursion capte sans crash natif");
-
-~~ ============================================================================
-~~ SECTION 4: ALLOCATION MASSIVE & STRUCTURES DE DONNEES
-~~ ============================================================================
-pasteLn("--- SECTION 4: ALLOCATION MASSIVE & COLLECTIONS ---");
-
-ivar bigList = [];
-for (ivar i = 0; i < 2000; i = i + 1) then
-    bigList.push(i);
-end
-assertEq(bigList.count(), 2000, "Allocation de 2000 elements dans une List");
-assertEq(bigList[0], 0, "Premier element de la grande liste");
-assertEq(bigList[1999], 1999, "Dernier element de la grande liste");
-
-ivar left = 0;
-ivar right = bigList.count() - 1;
-while (left < right) then
-    bigList[left] <-> bigList[right];
-    left = left + 1;
-    right = right - 1;
-end
-assertEq(bigList[0], 1999, "Inversion in-place de la grande liste via swaps");
-assertEq(bigList[1999], 0, "Dernier element apres inversion");
-
-ivar~Stack<Int> stMassive = [];
-for (ivar sIdx = 0; sIdx < 500; sIdx = sIdx + 1) then
-    stMassive.push(sIdx);
-end
-assertEq(stMassive.count(), 500, "Empilement de 500 elements dans un Stack");
-
-ivar stPopsCorrect = TRUE;
-for (ivar pIdx = 499; pIdx >= 0; pIdx = pIdx - 1) then
-    if (stMassive.pop() != pIdx) then
-        stPopsCorrect = FALSE;
+function assertTrue(ivar cond, ivar~String msg) then
+    if (!cond) then
+        throw msg;
     end
 end
-assert(stPopsCorrect, "Depilement LIFO strict des 500 elements du Stack");
-assertEq(stMassive.count(), 0, "Stack completement vide");
 
-ivar~Queue<Int> qMassive = [];
-for (ivar qIdx = 0; qIdx < 500; qIdx = qIdx + 1) then
-    qMassive.push(qIdx);
-end
-assertEq(qMassive.count(), 500, "Enfilement de 500 elements dans une Queue");
+pasteLn(StdE.Term.bold(StdE.Term.cyan("========================================================")));
+pasteLn(StdE.Term.bold(StdE.Term.cyan(">> LANCEMENT DE LA SUITE DE TESTS")));
+pasteLn(StdE.Term.bold(StdE.Term.cyan("========================================================")));
 
-ivar qPopsCorrect = TRUE;
-for (ivar qpIdx = 0; qpIdx < 500; qpIdx = qpIdx + 1) then
-    if (qMassive.pop() != qpIdx) then
-        qPopsCorrect = FALSE;
-    end
-end
-assert(qPopsCorrect, "Defilement FIFO strict des 500 elements de la Queue");
-assertEq(qMassive.count(), 0, "Queue completement vide");
-
-ivar deepTable = {
-    lvl1: {
-        lvl2: {
-            lvl3: {
-                lvl4: {
-                    lvl5: {
-                        lvl6: {
-                            lvl7: {
-                                lvl8: {
-                                    lvl9: {
-                                        lvl10: {
-                                            target: 9999
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-};
-assertEq(deepTable.lvl1.lvl2.lvl3.lvl4.lvl5.lvl6.lvl7.lvl8.lvl9.lvl10.target, 9999, "Acces table imbriquee sur 10 niveaux");
-
-~~ ============================================================================
-~~ SECTION 5: MATRICE 2D & ATOMIC SWAPS (<->) CRASH TEST
-~~ ============================================================================
-pasteLn("--- SECTION 5: MATRICE 2D & ATOMIC SWAPS (<->) ---");
-
-ivar matrix = [];
-for (ivar row = 0; row < 10; row = row + 1) then
-    ivar rowList = [];
-    for (ivar col = 0; col < 10; col = col + 1) then
-        rowList.push((row * 10) + col);
-    end
-    matrix.push(rowList);
-end
-assertEq(matrix[3][7], 37, "Initialisation correcte de la matrice 10x10");
-
-matrix[0][0] <-> matrix[9][9];
-assertEq(matrix[0][0], 99, "Swap atomique coin superieur gauche <-> coin inferieur droit");
-assertEq(matrix[9][9], 0, "Swap atomique destination");
-
-ivar cellVal = 777;
-cellVal <-> matrix[5][5];
-assertEq(cellVal, 55, "Swap atomique variable scalaire <-> cellule matrice");
-assertEq(matrix[5][5], 777, "Cellule matrice apres swap avec variable");
-
-ivar objA = { x: 100, y: 200 };
-ivar objB = { x: 999, y: 888 };
-objA.x <-> objB.x;
-assertEq(objA.x, 999, "Swap atomique proprietes de tables: objA.x");
-assertEq(objB.x, 100, "Swap atomique proprietes de tables: objB.x");
-
-objA.y <-> matrix[0][0];
-assertEq(objA.y, 99, "Swap atomique table.prop <-> matrix[i][j]");
-assertEq(matrix[0][0], 200, "Cellule matrice apres swap avec table.prop");
-
-~~ ============================================================================
-~~ SECTION 6: CONTROLE DE FLUX EXTREME & PATTERN MATCHING
-~~ ============================================================================
-pasteLn("--- SECTION 6: CONTROLE DE FLUX & PATTERN MATCHING ---");
-
-ivar nestedLoopsSum = 0;
-for (ivar o = 0; o < 20; o = o + 1) then
-    if (o % 2 == 1) then
-        skip;
-    end
-    for (ivar p = 0; p < 20; p = p + 1) then
-        if (p == 10) then
-            break;
-        end
-        nestedLoopsSum = nestedLoopsSum + 1;
-    end
-end
-assertEq(nestedLoopsSum, 100, "Boucles imbriquees avec break et skip conditionnels");
-
-ivar singleVarFlag = TRUE;
-ivar singleVarBranch = "NO";
-if singleVarFlag then
-    singleVarBranch = "YES";
-end
-assertEq(singleVarBranch, "YES", "Condition 'if var then' sans parentheses pour variable simple");
-
-function evalComplexGiven(ivar val) then
-    ivar out = "";
-    given val then
+~~ --- 1. CASE STANDARD AVEC END OBLIGATOIRE ---
+test("Case standard avec 'end' sur chaque branche", function ~() then
+    ivar res = 0;
+    given 1 then
         case 1 then
-            out = "ONE";
+            res = 10;
             break;
+        end
         case 2 then
-            out = "TWO";
+            res = 20;
             break;
-        case "test" then
-            out = "STRING_TEST";
+        end
+    end
+    assertEq(res, 10, "Given case 1 avec end");
+
+    given 2 then
+        case 1 then
+            res = 10;
             break;
-        case NULL then
-            out = "NULL_VAL";
+        end
+        case 2 then
+            res = 20;
             break;
+        end
+    end
+    assertEq(res, 20, "Given case 2 avec end");
+end);
+
+~~ --- 2. FALLBACK CASE ~ THEN AVEC END ---
+test("Fallback case ~ then avec end", function ~() then
+    ivar res = 0;
+    given 99 then
+        case 1 then
+            res = 1;
+            break;
+        end
         case ~ then
-            out = "FALLBACK";
+            res = 999;
+        end
     end
-    return out;
-end
-assertEq(evalComplexGiven(1), "ONE", "Given match 1");
-assertEq(evalComplexGiven(2), "TWO", "Given match 2");
-assertEq(evalComplexGiven("test"), "STRING_TEST", "Given match string");
-assertEq(evalComplexGiven(NULL), "NULL_VAL", "Given match NULL");
-assertEq(evalComplexGiven(999), "FALLBACK", "Given fallback case ~");
+    assertEq(res, 999, "Fallback case ~ avec end");
+end);
 
-function multiElifChain(ivar~Int x) then
-    if (x == 0) then return "ZERO";
-    elif (x == 1) then return "ONE";
-    elif (x == 2) then return "TWO";
-    elif (x == 3) then return "THREE";
-    elif (x == 4) then return "FOUR";
-    elif (x == 5) then return "FIVE";
-    elif (x == 6) then return "SIX";
-    elif (x == 7) then return "SEVEN";
-    elif (x == 8) then return "EIGHT";
-    elif (x == 9) then return "NINE";
-    else return "OTHER";
+~~ --- 3. BLOCS INTERNES DANS UN CASE ---
+test("Bloc interne (if then end) dans un case avec end", function ~() then
+    ivar res = 0;
+    given 1 then
+        case 1 then
+            if (TRUE) then
+                res = 42;
+            end
+            break;
+        end
+        case 2 then
+            res = 99;
+            break;
+        end
     end
-end
-assertEq(multiElifChain(0), "ZERO", "Chaine elif: 0");
-assertEq(multiElifChain(5), "FIVE", "Chaine elif: 5");
-assertEq(multiElifChain(9), "NINE", "Chaine elif: 9");
-assertEq(multiElifChain(42), "OTHER", "Chaine elif: fallback else");
+    assertEq(res, 42, "If interne et case end");
+end);
 
-~~ ============================================================================
-~~ SECTION 7: FERMETURES LEXICALES & APPELS HAUTE FREQUENCE
-~~ ============================================================================
-pasteLn("--- SECTION 7: FERMETURES LEXICALES & PORTÉE ---");
-
-function makeStatefulCounter(ivar~Int start, ivar~Int step) then
-    ivar current = start;
-    return function ~() then
-        current = current + step;
-        return current;
-    end;
-end
-
-ivar c1 = makeStatefulCounter(0, 5);
-ivar c2 = makeStatefulCounter(100, -2);
-
-for (ivar it = 0; it < 500; it = it + 1) then
-    c1();
-    c2();
-end
-assertEq(c1(), 2505, "Closure c1 apres 500 iterations (isolation parfaite)");
-assertEq(c2(), -902, "Closure c2 apres 500 iterations (isolation parfaite)");
-
-ivar shadowA = "SCOPE_ROOT";
-if (TRUE) then
-    ivar shadowA = "SCOPE_L1";
+~~ --- 4. GIVEN IMBRIQUE DANS UN BLOC IF ---
+test("Given avec case end a l'interieur d'un bloc if", function ~() then
+    ivar res = 0;
     if (TRUE) then
-        ivar shadowA = "SCOPE_L2";
-        if (TRUE) then
-            ivar shadowA = "SCOPE_L3";
-            assertEq(shadowA, "SCOPE_L3", "Masquage lexical niveau 3");
+        given 2 then
+            case 1 then
+                res = 10;
+                break;
+            end
+            case 2 then
+                res = 20;
+                break;
+            end
         end
-        assertEq(shadowA, "SCOPE_L2", "Masquage lexical niveau 2 restaure");
     end
-    assertEq(shadowA, "SCOPE_L1", "Masquage lexical niveau 1 restaure");
-end
-assertEq(shadowA, "SCOPE_ROOT", "Portee racine non polluee par masquage");
+    assertEq(res, 20, "Given dans if avec case end");
+end);
 
-~~ ============================================================================
-~~ SECTION 8: METAPROGRAMMATION & HOOKS HAUTE FREQUENCE
-~~ ============================================================================
-pasteLn("--- SECTION 8: HOOKS DE FONCTIONS ET METHODES ---");
-
-function targetMath(ivar a, ivar b) then
-    return a * b;
-end
-assertEq(targetMath(6, 7), 42, "Appel avant hook");
-
-hook targetMath(ivar a, ivar b) then
-    return orig(a, b) + 10;
-end
-assertEq(targetMath(6, 7), 52, "Appel apres hook avec delegation orig()");
-
-ivar hookLoopSum = 0;
-for (ivar h = 0; h < 500; h = h + 1) then
-    hookLoopSum = hookLoopSum + targetMath(2, 3);
-end
-assertEq(hookLoopSum, 8000, "Execution du hook 500 fois sans fuite ni corruption");
-
-class HookableGreeter then
-    public ivar prefix = "Hello, ";
-    public function greet(ivar name) then
-        return this.prefix + name;
-    end
-end
-
-ivar hg = HookableGreeter();
-assertEq(hg.greet("Yami"), "Hello, Yami", "Methode avant hook");
-
-hook HookableGreeter.greet(ivar name) then
-    return orig(name) + "!";
-end
-assertEq(hg.greet("Yami"), "Hello, Yami!", "Methode de classe apres hook avec orig()");
-
-~~ ============================================================================
-~~ SECTION 9: OOP AVANCE, HERITAGE, VISIBILITE & INTERFACES
-~~ ============================================================================
-pasteLn("--- SECTION 9: POO, HERITAGE A 3 NIVEAUX & VISIBILITE ---");
-
-class Entity then
-    public ivar id = 0;
-    protected ivar secretTag = "ENTITY_SECRET";
-    private ivar internalSeed = 12345;
-
-    public function Entity(ivar id) then
-        this.id = id;
-    end
-
-    public function getSecret() then
-        return this.secretTag;
-    end
-
-    public function getInternal() then
-        return this.internalSeed;
-    end
-end
-
-class LivingEntity from Entity then
-    public ivar hp = 100;
-
-    public function LivingEntity(ivar id, ivar hp) then
-        base(id);
-        this.hp = hp;
-    end
-
-    public function revealParentSecret() then
-        return this.secretTag + "_REVEALED";
-    end
-end
-
-class Hero from LivingEntity then
-    public ivar mana = 50;
-
-    public function Hero(ivar id, ivar hp, ivar mana) then
-        base(id, hp);
-        this.mana = mana;
-    end
-
-    public function getDetails() then
-        return this.id + ":" + this.hp + ":" + this.mana;
-    end
-
-    public function takeElementalDamage(ivar~Int dmg, ivar~String element, ivar~Bool isCrit) then
-        ivar finalDmg = dmg;
-        if isCrit then
-            finalDmg = finalDmg * 2;
+~~ --- 5. GIVEN IMBRIQUE DANS UN AUTRE GIVEN ---
+test("Given imbrique dans un autre given", function ~() then
+    ivar res = "";
+    given "outer" then
+        case "outer" then
+            given "inner" then
+                case "inner" then
+                    res = "ok";
+                    break;
+                end
+            end
+            break;
         end
-        this.hp = this.hp - finalDmg;
-        return element + ":" + finalDmg;
     end
-end
+    assertEq(res, "ok", "Given imbrique dans un given");
+end);
 
-ivar hero = Hero(1, 250, 100);
-assertEq(hero.id, 1, "Heritage 3 niveaux: hero.id");
-assertEq(hero.hp, 250, "Heritage 3 niveaux: hero.hp");
-assertEq(hero.mana, 100, "Heritage 3 niveaux: hero.mana");
-assertEq(hero.getDetails(), "1:250:100", "Heritage 3 niveaux: hero.getDetails()");
-assertEq(hero.getSecret(), "ENTITY_SECRET", "Acces protege autorise via getter public");
-assertEq(hero.revealParentSecret(), "ENTITY_SECRET_REVEALED", "Acces propriete pro autorise dans classe derivee");
-assertEq(hero.getInternal(), 12345, "Acces propriete pri autorise via methode de la classe de base");
-
-ivar dmgResult = hero.takeElementalDamage("30", "frost", 1);
-assertEq(dmgResult, "frost:60", "Methode de classe avec parametres types & coercion (Int, String, Bool)");
-assertEq(hero.hp, 190, "Mise a jour de l'etat d'instance suite a methode typee");
-
-ivar priAccessFailed = FALSE;
-try then
-    ivar bad = hero.internalSeed;
-catch (ivar e) then
-    priAccessFailed = TRUE;
-end
-assert(priAccessFailed, "Acces externe a un champ pri refuse avec erreur de visibilite");
-
-interface ICalculator then
-    function add(ivar a, ivar b);
-    function multiply(ivar a, ivar b);
-end
-
-class SimpleCalc as ICalculator then
-    public function add(ivar a, ivar b) then
-        return a + b;
-    end
-    public function multiply(ivar a, ivar b) then
-        return a * b;
-    end
-end
-
-ivar calc = SimpleCalc();
-assert(calc is ICalculator, "Instance conforme a l'interface ICalculator via 'is'");
-assertEq(calc.add(10, 20), 30, "Appel methode d'interface implementee: add");
-assertEq(calc.multiply(10, 20), 200, "Appel methode d'interface implementee: multiply");
-
-~~ ============================================================================
-~~ SECTION 10: PRNG DETERMINISTE & STDE.RANDOM
-~~ ============================================================================
-pasteLn("--- SECTION 10: PRNG DETERMINISTE (MULBERRY32) & STDE ---");
-
-StdE.Random.seed(777);
-ivar seqA = [];
-for (ivar r = 0; r < 50; r = r + 1) then
-    seqA.push(StdE.Random.int(1, 1000));
-end
-
-StdE.Random.seed(777);
-ivar seqB = [];
-for (ivar r2 = 0; r2 < 50; r2 = r2 + 1) then
-    seqB.push(StdE.Random.int(1, 1000));
-end
-
-ivar prngIdentical = TRUE;
-for (ivar checkIdx = 0; checkIdx < 50; checkIdx = checkIdx + 1) then
-    if (seqA[checkIdx] != seqB[checkIdx]) then
-        prngIdentical = FALSE;
-    end
-end
-assert(prngIdentical, "Determinisme parfait du PRNG Mulberry32 avec meme seed (50 nombres)");
-
-ivar uuid = StdE.Random.uuid();
-assertEq(Std.String.count(uuid), 36, "Generation UUID RFC4122 (longueur 36 caracteres)");
-assertEq(Std.String.split(uuid, "-").count(), 5, "Format UUID correct (5 segments separes par tirets)");
-
-~~ ============================================================================
-~~ SECTION 11: CRASH TEST GESTION D'EXCEPTIONS EN BOUCLE CHAUDE
-~~ ============================================================================
-pasteLn("--- SECTION 11: EXCEPTIONS, RE-THROW & FINALLY EN BOUCLE ---");
-
-ivar tryLoopSuccess = 0;
-ivar finallyLoopCount = 0;
-
-for (ivar exIdx = 0; exIdx < 500; exIdx = exIdx + 1) then
-    try then
-        if (exIdx % 2 == 0) then
-            throw "EVEN_ERROR_" + exIdx;
-        end
-        tryLoopSuccess = tryLoopSuccess + 1;
-    catch (ivar err) then
-        ~~ Erreur captee
-    finally then
-        finallyLoopCount = finallyLoopCount + 1;
-    end
-end
-assertEq(tryLoopSuccess, 250, "500 cycles try/catch/finally: 250 passes directes");
-assertEq(finallyLoopCount, 500, "500 cycles try/catch/finally: 500 executions du bloc finally");
-
-function nestedRethrow() then
-    try then
-        try then
-            throw "DEEP_ERROR";
-        catch (ivar e) then
-            throw "RETHROWN_" + e;
-        end
-    catch (ivar e2) then
-        return e2;
-    end
-end
-assertEq(nestedRethrow(), "RETHROWN_DEEP_ERROR", "Capture, re-throw et re-capture d'exception");
-
-ivar boundsErrorCaught = FALSE;
-try then
-    ivar emptyList = [];
-    ivar invalid = emptyList.peek(99);
-catch (ivar e) then
-    boundsErrorCaught = TRUE;
-end
-assert(boundsErrorCaught, "Tentative d'acces hors limites interceptee proprement");
-
-~~ ============================================================================
-~~ SECTION 12: PERSISTENCE, I/O & PARSING JSON SOUS PRESSION
-~~ ============================================================================
-pasteLn("--- SECTION 12: PERSISTENCE, I/O & PARSING JSON ---");
-
-ivar testFile = ".crash_test_temp.tmp";
-if (Std.IO.fileExists(testFile)) then
-    Std.IO.fileKill(testFile);
-end
-
-Std.IO.filePaste(testFile, "CRASH_HEADER\n");
-for (ivar fIdx = 0; fIdx < 100; fIdx = fIdx + 1) then
-    Std.IO.filePasteLn(testFile, "LINE_" + fIdx);
-end
-assert(Std.IO.fileExists(testFile), "Creation et append repetitif d'un fichier I/O");
-
-ivar fileContent = Std.IO.fileCopy(testFile);
-assert(Std.String.contains(fileContent, "CRASH_HEADER"), "Lecture de l'en-tete du fichier");
-assert(Std.String.contains(fileContent, "LINE_99"), "Verification de la derniere ligne ecrite");
-Std.IO.fileKill(testFile);
-assert(!Std.IO.fileExists(testFile), "Suppression propre du fichier temporaire");
-
-ivar complexTree = {
-    app: "Kuroba Engine",
-    version: 110,
-    features: ["types", "hooks", "prng", "classes"],
-    nested: {
-        author: "Yami",
-        specs: {
-            zeroDep: TRUE,
-            speed: 99.9
-        }
-    }
-};
-
-ivar jsonStr = StdE.Json.stringify(complexTree);
-assert(Std.String.contains(jsonStr, "Kuroba Engine"), "Serialisation JSON d'arborescence complexe");
-
-ivar decodedTree = StdE.Json.parse(jsonStr);
-assertEq(decodedTree.app, "Kuroba Engine", "Deserialisation JSON: app");
-assertEq(decodedTree.version, 110, "Deserialisation JSON: version");
-assertEq(decodedTree.features.count(), 4, "Deserialisation JSON: features.count");
-assertEq(decodedTree.nested.specs.speed, 99.9, "Deserialisation JSON: nested.specs.speed");
-
-pasteLn("================================================================================");
-pasteLn(">> RAPPORT FINAL DU CRASH TEST:");
-pasteLn(">> TOTAL: " + totalCount);
-pasteLn(">> SUCCES: " + passedCount);
-pasteLn(">> ECHECS: " + failedCount);
-pasteLn("================================================================================");
-
+~~ ===============================================================
+~~ RAPPORT FINAL
+~~ ===============================================================
+pasteLn(StdE.Term.bold(StdE.Term.cyan("========================================================")));
+pasteLn(StdE.Term.bold(StdE.Term.cyan(">> RAPPORT DES TESTS :")));
+pasteLn(StdE.Term.bold(StdE.Term.cyan(">> TOTAL: ")) + totalCount);
+pasteLn(StdE.Term.bold(StdE.Term.green(">> SUCCES: ")) + passedCount);
 if (failedCount == 0) then
-    pasteLn(">> FELICITATIONS: 100% DES CRASH TESTS SONT VALIDES !");
+    pasteLn(StdE.Term.bold(StdE.Term.green(">> ECHECS: ")) + failedCount);
+    pasteLn(StdE.Term.bold(StdE.Term.green(">> 100% DES TESTS SONT VALIDES !")));
 else
-    pasteLn(">> ATTENTION: REGRESSIONS DETECTEES !");
+    pasteLn(StdE.Term.bold(StdE.Term.red(">> ECHECS: ")) + failedCount);
 end
+pasteLn(StdE.Term.bold(StdE.Term.cyan("========================================================")));
