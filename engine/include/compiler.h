@@ -6,8 +6,8 @@
 #include "object.h"
 
 /**
- * Compile le code source Kuroba et renvoie la fonction de plus haut niveau (script).
- * Utilise la technique du Pratt Parsing pour une compilation Single-Pass (0 AST).
+ * Compiles Kuroba source code and returns the top-level script function.
+ * Uses single-pass Pratt Parsing directly generating bytecode without an AST.
  */
 ObjFunction* krb_compile(const char* source);
 

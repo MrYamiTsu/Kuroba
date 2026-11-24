@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/**
+ * Tagged union representing runtime value types in Kuroba.
+ */
 typedef enum {
     VAL_NULL,
     VAL_BOOL,
@@ -16,6 +19,9 @@ typedef enum {
 struct Obj;
 typedef struct Obj Obj;
 
+/**
+ * Union payload storing primitive types or heap object pointer.
+ */
 typedef union {
     bool boolean;
     int64_t integer;
@@ -24,31 +30,31 @@ typedef union {
     Obj* obj;
 } ValueAs;
 
+/**
+ * Tagged Kuroba value structure.
+ */
 typedef struct {
     ValueType type;
     ValueAs as;
 } KrbValue;
 
-// Constructeurs pour créer des valeurs primitives
+// Constructors for primitive values
 KrbValue krb_null(void);
 KrbValue krb_bool(bool value);
 KrbValue krb_int(int64_t value);
 KrbValue krb_float(double value);
 KrbValue krb_string(const char* value);
 
-// Affichage
+// Value operations & display
 void krb_print_value(KrbValue value);
 void krb_println_value(KrbValue value);
 bool krb_values_equal(KrbValue a, KrbValue b);
 
 /**
- * ============================================================================
- * Tableau Dynamique de Valeurs (KrbValueArray)
- * ============================================================================
- * C'est le conteneur dynamique universel :
- * - count : Nombre réel d'éléments actuellement présents
- * - capacity : Nombre total d'emplacements alloués en RAM sur la Heap
- * - values : Pointeur vers le premier élément en mémoire
+ * Dynamic value array (KrbValueArray) used for stacks and constant pools:
+ * - count: Current number of elements stored.
+ * - capacity: Total allocated capacity on the heap.
+ * - values: Pointer to the first element in contiguous memory.
  */
 typedef struct {
     int count;
@@ -56,7 +62,7 @@ typedef struct {
     KrbValue* values;
 } KrbValueArray;
 
-// Fonctions du tableau dynamique
+// Dynamic array operations
 void krb_init_value_array(KrbValueArray* array);
 void krb_write_value_array(KrbValueArray* array, KrbValue value);
 void krb_free_value_array(KrbValueArray* array);

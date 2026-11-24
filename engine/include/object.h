@@ -5,6 +5,9 @@
 #include "chunk.h"
 #include "table.h"
 
+/**
+ * Runtime object types allocated on the heap.
+ */
 typedef enum {
     OBJ_FUNCTION,
     OBJ_CLOSURE,
@@ -18,13 +21,17 @@ typedef enum {
 
 typedef struct Obj Obj;
 
+/**
+ * Base object header for all heap-allocated entities.
+ * Supports mark-and-sweep garbage collection via 'isMarked' and intrusive linked list 'next'.
+ */
 struct Obj {
     ObjType type;
     bool isMarked;
     struct Obj* next;
 };
 
-// 1. Fonctions de premier ordre
+// 1. First-class Functions
 typedef struct {
     Obj obj;
     int arity;
@@ -35,7 +42,7 @@ typedef struct {
     char* name;
 } ObjFunction;
 
-// 1b. Upvalues et Fermetures (Closures)
+// 1b. Upvalues and Closures
 typedef struct ObjUpvalue {
     Obj obj;
     KrbValue* location;
@@ -50,7 +57,7 @@ typedef struct {
     int upvalueCount;
 } ObjClosure;
 
-// 2. Fonctions Natives C
+// 2. Native C Functions
 typedef KrbValue (*NativeFn)(int argCount, KrbValue* args);
 
 typedef struct {
@@ -59,7 +66,7 @@ typedef struct {
     char* name;
 } ObjNative;
 
-// 3. Collections (Listes & Tables associatives)
+// 3. Collections (Dynamic Lists & Hash Tables)
 typedef struct {
     Obj obj;
     KrbValueArray elements;
@@ -71,7 +78,7 @@ typedef struct {
     Table fields;
 } ObjTable;
 
-// 4. Modèle Objet (Classes & Instances)
+// 4. Object-Oriented Model (Classes & Instances)
 typedef struct ObjClass {
     Obj obj;
     char* name;
@@ -88,7 +95,7 @@ typedef struct {
     Table fields;
 } ObjInstance;
 
-// Macros de diagnostic et de transtypage
+// Type checking and casting macros
 static inline bool is_obj_type(KrbValue value, ObjType type) {
     return value.type == VAL_OBJ && value.as.obj->type == type;
 }
@@ -111,7 +118,7 @@ static inline bool is_obj_type(KrbValue value, ObjType type) {
 #define AS_CLASS(v)    ((ObjClass*)((v).as.obj))
 #define AS_INSTANCE(v) ((ObjInstance*)((v).as.obj))
 
-// Constructeurs d'objets
+// Object constructors
 ObjFunction* krb_new_function(void);
 ObjClosure* krb_new_closure(ObjFunction* function);
 ObjUpvalue* krb_new_upvalue(KrbValue* slot);

@@ -8,7 +8,6 @@
 #include "../include/compiler.h"
 #include "../include/stdlib_krb.h"
 
-// Instance globale unique de la Machine Virtuelle
 VM vm;
 static bool trace_execution = false;
 
@@ -49,7 +48,6 @@ static bool trigger_runtime_error(const char *errorName, const char *format, ...
         vm.stackTop = vm.stack + h.stack_count;
         CallFrame *frame = &vm.frames[vm.frameCount - 1];
 
-        // Format d'erreur structuré Kuroba JS
         ObjTable *errTable = krb_new_obj_table();
         krb_table_set(&errTable->fields, "eName", 5, krb_string(_strdup(errorName)), false);
         krb_table_set(&errTable->fields, "eContext", 8, krb_string(_strdup(message)), false);
@@ -70,7 +68,6 @@ static bool trigger_runtime_error(const char *errorName, const char *format, ...
         }
     }
 
-    // Format d'erreur strict du moteur Kuroba JS
     fprintf(stderr, "\x1b[31m[%s: Line %d, Col 1] %s\x1b[0m\n", errorName, line, message);
     reset_stack();
     return false;
@@ -103,10 +100,6 @@ void krb_define_native(const char *name, NativeFn function)
     krb_pop();
     krb_pop();
 }
-
-// ----------------------------------------------------------------------------
-// Fonctions Natives de la Bibliothèque Standard Kuroba
-// ----------------------------------------------------------------------------
 
 static KrbValue native_len(int argCount, KrbValue *args)
 {
@@ -208,13 +201,11 @@ void krb_init_vm(void)
     krb_init_table(&vm.unlockedGlobals);
     krb_init_table(&vm.nonNullGlobals);
 
-    // Enregistrement des natives de base
     krb_define_native("len", native_len);
     krb_define_native("type", native_type);
     krb_define_native("push", native_push);
     krb_define_native("pop", native_pop);
 
-    // Bibliothèque Standard Kuroba (Std & StdE)
     krb_init_stdlib();
 }
 
@@ -226,7 +217,6 @@ void krb_free_vm(void)
     krb_free_table(&vm.unlockedGlobals);
     krb_free_table(&vm.nonNullGlobals);
 
-    // Libération de tous les objets alloués sur le tas (GC)
     Obj *object = vm.objects;
     while (object != NULL)
     {
@@ -671,6 +661,42 @@ static bool call_value(KrbValue callee, int argCount)
     return true;
 }
 
+static int check_field_visibility(ObjInstance *instance, const char *propName, CallFrame **frameOut)
+{
+    if (vm.frameCount > 0)
+    {
+        CallFrame *currF = &vm.frames[vm.frameCount - 1];
+        if (currF->slots && IS_INSTANCE(currF->slots[0]))
+        {
+            ObjInstance *thisInst = AS_INSTANCE(currF->slots[0]);
+            if (thisInst == instance)
+                return 1;
+            for (ObjClass *c = thisInst->klass; c != NULL; c = c->superClass)
+            {
+                if (c == instance->klass)
+                    return 1;
+            }
+        }
+    }
+
+    for (ObjClass *c = instance->klass; c != NULL; c = c->superClass)
+    {
+        KrbValue visVal;
+        if (krb_table_get(&c->visibilities, propName, (int)strlen(propName), &visVal))
+        {
+            if (visVal.type == VAL_INT && (visVal.as.integer == 1 || visVal.as.integer == 2))
+            {
+                const char *kind = (visVal.as.integer == 2) ? "private" : "protected";
+                if (!trigger_runtime_error("TypeError", "External access to %s field '%s' rejected.", kind, propName))
+                    return -1;
+                *frameOut = &vm.frames[vm.frameCount - 1];
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
 static InterpretResult run(void)
 {
     CallFrame *frame = &vm.frames[vm.frameCount - 1];
@@ -1077,62 +1103,11 @@ static InterpretResult run(void)
             {
                 ObjInstance *instance = AS_INSTANCE(target);
 
-                // Contrôle de visibilité (private / protected)
-                bool isInternal = false;
-                if (vm.frameCount > 0)
-                {
-                    CallFrame *currF = &vm.frames[vm.frameCount - 1];
-                    if (currF->slots && IS_INSTANCE(currF->slots[0]))
-                    {
-                        ObjInstance *thisInst = AS_INSTANCE(currF->slots[0]);
-                        if (thisInst == instance)
-                            isInternal = true;
-                        else
-                        {
-                            ObjClass *c = thisInst->klass;
-                            while (c != NULL)
-                            {
-                                if (c == instance->klass)
-                                {
-                                    isInternal = true;
-                                    break;
-                                }
-                                c = c->superClass;
-                            }
-                        }
-                    }
-                }
-                if (!isInternal)
-                {
-                    bool caught = false;
-                    ObjClass *c = instance->klass;
-                    while (c != NULL)
-                    {
-                        KrbValue visVal;
-                        if (krb_table_get(&c->visibilities, propName.as.string, (int)strlen(propName.as.string), &visVal))
-                        {
-                            if (visVal.type == VAL_INT && visVal.as.integer == 2)
-                            { // PRIVATE
-                                if (!trigger_runtime_error("TypeError", "External access to private field '%s' rejected.", propName.as.string))
-                                    return INTERPRET_RUNTIME_ERROR;
-                                frame = &vm.frames[vm.frameCount - 1];
-                                caught = true;
-                                break;
-                            }
-                            if (visVal.type == VAL_INT && visVal.as.integer == 1)
-                            { // PROTECTED
-                                if (!trigger_runtime_error("TypeError", "External access to protected field '%s' rejected.", propName.as.string))
-                                    return INTERPRET_RUNTIME_ERROR;
-                                frame = &vm.frames[vm.frameCount - 1];
-                                caught = true;
-                                break;
-                            }
-                        }
-                        c = c->superClass;
-                    }
-                    if (caught)
-                        break;
-                }
+                int visCheck = check_field_visibility(instance, propName.as.string, &frame);
+                if (visCheck < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (visCheck == 0)
+                    break;
 
                 char getterName[128];
                 snprintf(getterName, sizeof(getterName), "get_%s", propName.as.string);
@@ -1150,7 +1125,7 @@ static InterpretResult run(void)
                 }
                 if (hasGetter)
                 {
-                    krb_push(target); // this
+                    krb_push(target);
                     if (IS_CLOSURE(getterVal))
                     {
                         if (!call(AS_CLOSURE(getterVal), 0))
@@ -1236,8 +1211,8 @@ static InterpretResult run(void)
                 }
                 if (hasSetter)
                 {
-                    krb_push(target); // this
-                    krb_push(val);    // argument
+                    krb_push(target);
+                    krb_push(val);
                     if (IS_CLOSURE(setterVal))
                     {
                         if (!call(AS_CLOSURE(setterVal), 1))
@@ -1539,7 +1514,6 @@ static InterpretResult run(void)
                 line = CURRENT_CHUNK.lines[instruction];
             }
 
-            // Si la valeur levée n'est pas déjà une Table d'erreur Kuroba avec eName, on l'enveloppe
             if (val.type != VAL_OBJ || val.as.obj->type != OBJ_TABLE)
             {
                 ObjTable *errTable = krb_new_obj_table();
@@ -1748,8 +1722,8 @@ static InterpretResult run(void)
         }
         case OP_INHERIT:
         {
-            KrbValue superVal = krb_pop(); // superclasse en haut
-            KrbValue subVal = krb_pop();   // sous-classe en-dessous
+            KrbValue superVal = krb_pop();
+            KrbValue subVal = krb_pop();
             if (IS_CLASS(subVal) && IS_CLASS(superVal))
             {
                 AS_CLASS(subVal)->superClass = AS_CLASS(superVal);
@@ -1968,7 +1942,7 @@ static InterpretResult run(void)
             vm.frameCount--;
             if (vm.frameCount == 0)
             {
-                krb_pop(); // Nettoie le script
+                krb_pop();
                 return INTERPRET_OK;
             }
 

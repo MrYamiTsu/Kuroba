@@ -4,10 +4,10 @@
 #include <stdbool.h>
 
 /**
- * Types de Tokens reconnus par le Scanner Kuroba.
+ * Token types recognized by the Kuroba lexical scanner.
  */
 typedef enum {
-    // Ponctuation & Délimiteurs
+    // Punctuation & Delimiters
     TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,     // ( )
     TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE,     // { }
     TOKEN_LEFT_BRACKET, TOKEN_RIGHT_BRACKET, // [ ]
@@ -15,7 +15,7 @@ typedef enum {
     TOKEN_COLON,                             // :
     TOKEN_TILDE,                             // ~
 
-    // Opérateurs
+    // Operators
     TOKEN_PLUS, TOKEN_MINUS,                 // + -
     TOKEN_STAR, TOKEN_SLASH, TOKEN_PERCENT,  // * / %
     TOKEN_PLUS_PLUS, TOKEN_MINUS_MINUS,      // ++ --
@@ -27,14 +27,14 @@ typedef enum {
     TOKEN_EQUAL, TOKEN_EQUAL_EQUAL,          // = ==
     TOKEN_GREATER, TOKEN_GREATER_EQUAL,      // > >=
     TOKEN_LESS, TOKEN_LESS_EQUAL,            // < <=
-    TOKEN_SWAP,                              // <-> (Atomic Swap Kuroba)
+    TOKEN_SWAP,                              // <-> (Atomic Swap)
 
-    // Littéraux
+    // Literals
     TOKEN_IDENTIFIER,
     TOKEN_STRING,
     TOKEN_NUMBER,
 
-    // Mots-clés de Kuroba
+    // Keywords
     TOKEN_IVAR, TOKEN_ICONST, TOKEN_ISEALED,
     TOKEN_IF, TOKEN_ELIF, TOKEN_ELSE,
     TOKEN_THEN, TOKEN_END,
@@ -55,25 +55,25 @@ typedef enum {
     TOKEN_KILL, TOKEN_UNLOCK, TOKEN_LOCK,
     TOKEN_INTERPOLATION,
 
-    // Contrôle & Diagnostics
+    // Control & Diagnostics
     TOKEN_ERROR,
     TOKEN_EOF
 } TokenType;
 
 /**
- * Structure d'un Token en C (Technique Zero-Allocation) :
- * Au lieu de copier la chaîne avec malloc(), 'start' pointe directement
- * dans le texte source d'origine, avec sa longueur 'length'.
+ * Token representation in C (Zero-Allocation strategy):
+ * Instead of allocating a string via malloc(), 'start' points directly
+ * into the source code buffer, along with its 'length'.
  */
 typedef struct {
     TokenType type;
-    const char* start; // Pointeur direct dans le code source
-    int length;        // Longueur du token
-    int line;          // Numéro de ligne source
-    int col;           // Numéro de colonne source
+    const char* start; // Direct pointer into source buffer
+    int length;        // Length of token in bytes
+    int line;          // 1-based source line number
+    int col;           // 1-based source column number
 } Token;
 
-// Fonctions du Scanner
+// Scanner interface functions
 void krb_init_scanner(const char* source);
 Token krb_scan_token(void);
 Token krb_peek_token(void);

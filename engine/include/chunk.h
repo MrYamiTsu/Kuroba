@@ -5,78 +5,78 @@
 #include "value.h"
 
 /**
- * Les OpCodes (Codes Opération) de la Machine Virtuelle Kuroba.
- * Chaque instruction est encodée sur un seul octet (uint8_t, de 0 à 255).
+ * Bytecode operation codes (OpCodes) for the Kuroba Virtual Machine.
+ * Each instruction is encoded as a single byte (uint8_t, 0-255).
  */
 typedef enum {
-    OP_CONSTANT,      // Charge une constante depuis le pool de constantes
-    OP_POP,           // Dépile et jette la valeur au sommet
-    OP_PASTE,         // Affiche la valeur sans saut de ligne (paste)
-    OP_PASTELN,       // Affiche la valeur avec saut de ligne (pasteLn)
-    OP_PASTELN_EMPTY, // Affiche un saut de ligne vide (pasteLn())
-    OP_DEFINE_GLOBAL, // Définit une variable globale mutable (ivar)
-    OP_DEFINE_CONST,  // Définit une constante globale immuable (iconst)
-    OP_GET_GLOBAL,    // Lit une variable globale
-    OP_SET_GLOBAL,    // Réassigne une variable globale existante
-    OP_GET_LOCAL,     // Lit une variable locale depuis la pile (1 opérande : slot)
-    OP_SET_LOCAL,     // Modifie une variable locale sur la pile (1 opérande : slot)
-    OP_ADD,           // Additionne les deux valeurs au sommet de la pile (+)
-    OP_SUBTRACT,      // Soustrait (-)
-    OP_MULTIPLY,      // Multiplie (*)
-    OP_DIVIDE,        // Divise (/)
-    OP_MODULO,        // Modulo (%)
-    OP_NEGATE,        // Opposé unaire (-x)
-    OP_NOT,           // Négation logique (!x)
-    OP_EQUAL,         // Égalité (==)
-    OP_GREATER,       // Plus grand que (>)
-    OP_LESS,          // Plus petit que (<)
-    OP_JUMP,          // Saut inconditionnel en avant (2 octets d'offset)
-    OP_JUMP_IF_FALSE, // Saut conditionnel si faux (2 octets d'offset)
-    OP_LOOP,          // Saut inconditionnel en arriere pour les boucles (2 octets d'offset)
-    OP_CALL,          // Appel de fonction (1 opérande : nombre d'arguments)
-    OP_BUILD_LIST,    // Construit une liste (1 opérande : nombre d'éléments)
-    OP_BUILD_TABLE,   // Construit une table associative (1 opérande : nombre d'entrées)
-    OP_GET_INDEX,     // Accès par index [i] ou clé
-    OP_SET_INDEX,     // Assignation par index [i] = val
-    OP_CLASS,         // Crée une classe (1 opérande : index constante nom)
-    OP_GET_PROPERTY,  // Lit une propriété .champ (1 opérande : index constante nom)
-    OP_SET_PROPERTY,  // Assigne une propriété .champ = val (1 opérande : index constante nom)
-    OP_METHOD,        // Lie une méthode à une classe (1 opérande : index constante nom)
-    OP_INVOKE,        // Appel direct d'une méthode instance.methode(...) (2 opérandes : index constante nom, argCount)
-    OP_SWAP,          // Échange atomique de deux valeurs
-    OP_DUP,           // Duplique le sommet de la pile
-    OP_DUP2,          // Duplique les deux valeurs au sommet de la pile
-    OP_TRY,           // Bloc try (catch_offset 2 bytes, finally_offset 2 bytes)
-    OP_TRY_END,       // Fin normale d'un bloc try (dépile le gestionnaire)
-    OP_THROW,         // Déclenche une exception
-    OP_IS,            // Opérateur d'appartenance / type (is)
-    OP_KILL,          // Destruction de variable (kill)
-    OP_CLOSURE,       // Crée une fermeture (closure)
-    OP_GET_UPVALUE,   // Lit une upvalue capturée
-    OP_SET_UPVALUE,   // Modifie une upvalue capturée
-    OP_CLOSE_UPVALUE, // Ferme une upvalue
-    OP_COERCE,        // Transtypage dynamique
-    OP_CHECK_NON_NULL,// Vérifie le contrat non-nullable
-    OP_DEF_NON_NULL,  // Déclare un contrat non-nullable pour un global
-    OP_MARK_QUEUE,    // Marque une liste comme file FIFO
-    OP_INHERIT,       // Lie la superclasse
-    OP_CLASS_FIELD,   // Enregistre un champ par défaut et sa visibilité
-    OP_SUPER_INVOKE,  // Appel méthode de la classe parente
-    OP_ITER_KEY,      // Récupère la clé / l'index d'itération
-    OP_ITER_VAL,      // Récupère la valeur d'itération
-    OP_IMPLEMENT,     // Enregistre l'implémentation d'une interface
-    OP_HOOK_SAVE_METHOD, // Sauvegarde la méthode originale avant hook (1 opérande : index constante nom)
-    OP_DEFINE_SEALED, // Définit une variable scellée (isealed)
-    OP_UNLOCK_VAR,    // Déverrouille une variable scellée (unlock)
-    OP_LOCK_VAR,      // Re-verrouille manuellement une variable scellée (lock)
-    OP_RETURN,        // Retourne / termine l'exécution
+    OP_CONSTANT,         // Load a constant from the chunk's constant pool
+    OP_POP,              // Pop and discard the value at the top of the stack
+    OP_PASTE,            // Print the top value without a newline
+    OP_PASTELN,          // Print the top value with a newline
+    OP_PASTELN_EMPTY,    // Print an empty newline
+    OP_DEFINE_GLOBAL,    // Define a mutable global variable (ivar)
+    OP_DEFINE_CONST,     // Define an immutable global constant (iconst)
+    OP_GET_GLOBAL,       // Read a global variable
+    OP_SET_GLOBAL,       // Reassign an existing global variable
+    OP_GET_LOCAL,        // Read a local variable from the stack (1 operand: slot)
+    OP_SET_LOCAL,        // Write to a local variable on the stack (1 operand: slot)
+    OP_ADD,              // Add the two values at top of stack (+)
+    OP_SUBTRACT,         // Subtract (-)
+    OP_MULTIPLY,         // Multiply (*)
+    OP_DIVIDE,           // Divide (/)
+    OP_MODULO,           // Modulo (%)
+    OP_NEGATE,           // Unary negation (-x)
+    OP_NOT,              // Logical negation (!x)
+    OP_EQUAL,            // Equality check (==)
+    OP_GREATER,          // Greater-than check (>)
+    OP_LESS,             // Less-than check (<)
+    OP_JUMP,             // Unconditional forward jump (2-byte offset)
+    OP_JUMP_IF_FALSE,    // Conditional forward jump if falsey (2-byte offset)
+    OP_LOOP,             // Unconditional backward jump for loops (2-byte offset)
+    OP_CALL,             // Function invocation (1 operand: argument count)
+    OP_BUILD_LIST,       // Construct a list (1 operand: item count)
+    OP_BUILD_TABLE,      // Construct a hash table (1 operand: entry count)
+    OP_GET_INDEX,        // Index/subscript read access: collection[i]
+    OP_SET_INDEX,        // Index/subscript write access: collection[i] = val
+    OP_CLASS,            // Create a class (1 operand: name constant index)
+    OP_GET_PROPERTY,     // Read an object property: obj.prop (1 operand: name constant index)
+    OP_SET_PROPERTY,     // Write an object property: obj.prop = val (1 operand: name constant index)
+    OP_METHOD,           // Bind a method to a class (1 operand: name constant index)
+    OP_INVOKE,           // Optimized method invocation: instance.method(...) (2 operands: name index, argCount)
+    OP_SWAP,             // Atomic swap of two values on the stack
+    OP_DUP,              // Duplicate the top stack value
+    OP_DUP2,             // Duplicate the top two stack values
+    OP_TRY,              // Enter try block (catch_offset: 2 bytes, finally_offset: 2 bytes)
+    OP_TRY_END,          // Normal exit of a try block (pops try handler)
+    OP_THROW,            // Throw a runtime exception
+    OP_IS,               // Type check / membership operator (is)
+    OP_KILL,             // Explicit variable destruction (kill)
+    OP_CLOSURE,          // Instantiate a function closure
+    OP_GET_UPVALUE,      // Read a captured upvalue
+    OP_SET_UPVALUE,      // Write to a captured upvalue
+    OP_CLOSE_UPVALUE,    // Close an upvalue moving from stack to heap
+    OP_COERCE,           // Dynamic type coercion
+    OP_CHECK_NON_NULL,   // Enforce non-nullable constraint
+    OP_DEF_NON_NULL,     // Register a non-nullable contract for a global variable
+    OP_MARK_QUEUE,       // Flag a list as a FIFO queue
+    OP_INHERIT,          // Link subclass to superclass
+    OP_CLASS_FIELD,      // Register a default class field and its visibility
+    OP_SUPER_INVOKE,     // Invoke parent class method (base.method)
+    OP_ITER_KEY,         // Retrieve loop iteration key/index
+    OP_ITER_VAL,         // Retrieve loop iteration value
+    OP_IMPLEMENT,        // Register interface implementation
+    OP_HOOK_SAVE_METHOD, // Preserve original method prior to hooking (1 operand: name constant index)
+    OP_DEFINE_SEALED,    // Define a sealed variable (isealed)
+    OP_UNLOCK_VAR,       // Unlock a sealed variable (unlock)
+    OP_LOCK_VAR,         // Relock a sealed variable (lock)
+    OP_RETURN,           // Return from function or exit script
 } OpCode;
 
 /**
- * Un Chunk (bloc de bytecode) contient :
- * 1. 'code' : La suite brute des octets d'instructions.
- * 2. 'lines' : Le numéro de ligne source correspondant à chaque instruction (pour le debug).
- * 3. 'constants' : Le pool des constantes (nombres, textes) associées au chunk.
+ * A Chunk represents a compiled bytecode block, containing:
+ * 1. 'code': Raw stream of instruction bytes.
+ * 2. 'lines': Line numbers in source code corresponding to each bytecode offset (for debugging).
+ * 3. 'constants': Constant pool (numbers, strings, nested objects) referenced by instructions.
  */
 typedef struct {
     int count;
@@ -86,7 +86,7 @@ typedef struct {
     KrbValueArray constants;
 } Chunk;
 
-// Fonctions du Chunk
+// Chunk lifecycle and manipulation functions
 void krb_init_chunk(Chunk* chunk);
 void krb_write_chunk(Chunk* chunk, uint8_t byte, int line);
 int krb_add_constant(Chunk* chunk, KrbValue value);

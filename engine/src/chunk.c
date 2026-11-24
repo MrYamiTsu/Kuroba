@@ -2,7 +2,8 @@
 #include "../include/chunk.h"
 #include "../include/memory.h"
 
-void krb_init_chunk(Chunk* chunk) {
+void krb_init_chunk(Chunk *chunk)
+{
     chunk->count = 0;
     chunk->capacity = 0;
     chunk->code = NULL;
@@ -10,9 +11,10 @@ void krb_init_chunk(Chunk* chunk) {
     krb_init_value_array(&chunk->constants);
 }
 
-void krb_write_chunk(Chunk* chunk, uint8_t byte, int line) {
-    // Si la capacité est pleine, on double la taille du code et des lignes
-    if (chunk->capacity < chunk->count + 1) {
+void krb_write_chunk(Chunk *chunk, uint8_t byte, int line)
+{
+    if (chunk->capacity < chunk->count + 1)
+    {
         int oldCapacity = chunk->capacity;
         chunk->capacity = GROW_CAPACITY(oldCapacity);
         chunk->code = GROW_ARRAY(uint8_t, chunk->code, oldCapacity, chunk->capacity);
@@ -24,9 +26,12 @@ void krb_write_chunk(Chunk* chunk, uint8_t byte, int line) {
     chunk->count++;
 }
 
-int krb_add_constant(Chunk* chunk, KrbValue value) {
-    for (int i = 0; i < chunk->constants.count; i++) {
-        if (krb_values_equal(chunk->constants.values[i], value)) {
+int krb_add_constant(Chunk *chunk, KrbValue value)
+{
+    for (int i = 0; i < chunk->constants.count; i++)
+    {
+        if (krb_values_equal(chunk->constants.values[i], value))
+        {
             return i;
         }
     }
@@ -34,7 +39,8 @@ int krb_add_constant(Chunk* chunk, KrbValue value) {
     return chunk->constants.count - 1;
 }
 
-void krb_free_chunk(Chunk* chunk) {
+void krb_free_chunk(Chunk *chunk)
+{
     FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
     FREE_ARRAY(int, chunk->lines, chunk->capacity);
     krb_free_value_array(&chunk->constants);

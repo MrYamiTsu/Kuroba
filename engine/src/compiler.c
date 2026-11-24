@@ -16,15 +16,15 @@ typedef struct
 typedef enum
 {
     PREC_NONE,
-    PREC_ASSIGNMENT, // = += -= *= /= %=
-    PREC_OR,         // ||
-    PREC_AND,        // &&
-    PREC_EQUALITY,   // == !=
-    PREC_COMPARISON, // < > <= >=
-    PREC_TERM,       // + -
-    PREC_FACTOR,     // * / %
-    PREC_UNARY,      // ! -
-    PREC_CALL,       // . () []
+    PREC_ASSIGNMENT,
+    PREC_OR,
+    PREC_AND,
+    PREC_EQUALITY,
+    PREC_COMPARISON,
+    PREC_TERM,
+    PREC_FACTOR,
+    PREC_UNARY,
+    PREC_CALL,
     PREC_PRIMARY
 } Precedence;
 
@@ -142,7 +142,6 @@ static void error_at(Token *token, const char *message)
     }
     else if (token->type == TOKEN_ERROR)
     {
-        // Pas de préfixe pour un token d'erreur
     }
     else
     {
@@ -299,7 +298,6 @@ static void init_compiler(Compiler *compiler, FunctionType type)
         current->function->name[parser.previous.length] = '\0';
     }
 
-    // Le premier slot de pile (slot 0) est réservé
     Local *local = &current->locals[current->localCount++];
     local->depth = 0;
     local->isConst = false;
@@ -336,7 +334,6 @@ static ObjFunction *end_compiler(void)
     return function;
 }
 
-// Déclarations pour le Pratt Parser
 static void expression(void);
 static void statement(void);
 static void declaration(void);
@@ -456,6 +453,30 @@ static void emit_var_op(uint8_t op, int arg)
     }
 }
 
+static void emit_compound_op(TokenType assignType)
+{
+    switch (assignType)
+    {
+    case TOKEN_PLUS_EQUAL:
+        emit_byte(OP_ADD);
+        break;
+    case TOKEN_MINUS_EQUAL:
+        emit_byte(OP_SUBTRACT);
+        break;
+    case TOKEN_STAR_EQUAL:
+        emit_byte(OP_MULTIPLY);
+        break;
+    case TOKEN_SLASH_EQUAL:
+        emit_byte(OP_DIVIDE);
+        break;
+    case TOKEN_PERCENT_EQUAL:
+        emit_byte(OP_MODULO);
+        break;
+    default:
+        break;
+    }
+}
+
 static void named_variable(Token name, bool canAssign)
 {
     uint8_t getOp, setOp;
@@ -510,26 +531,7 @@ static void named_variable(Token name, bool canAssign)
         {
             emit_var_op(getOp, arg);
             expression();
-            switch (assignType)
-            {
-            case TOKEN_PLUS_EQUAL:
-                emit_byte(OP_ADD);
-                break;
-            case TOKEN_MINUS_EQUAL:
-                emit_byte(OP_SUBTRACT);
-                break;
-            case TOKEN_STAR_EQUAL:
-                emit_byte(OP_MULTIPLY);
-                break;
-            case TOKEN_SLASH_EQUAL:
-                emit_byte(OP_DIVIDE);
-                break;
-            case TOKEN_PERCENT_EQUAL:
-                emit_byte(OP_MODULO);
-                break;
-            default:
-                break;
-            }
+            emit_compound_op(assignType);
         }
         if (getOp == OP_GET_LOCAL && current->locals[arg].isNonNull)
         {
@@ -563,7 +565,7 @@ static void base_call(bool canAssign)
 {
     (void)canAssign;
     consume(TOKEN_LEFT_PAREN, "Attendu '(' apres 'base'.");
-    emit_bytes(OP_GET_LOCAL, 0); // 'this'
+    emit_bytes(OP_GET_LOCAL, 0);
     uint8_t argCount = 0;
     if (!check(TOKEN_RIGHT_PAREN))
     {
@@ -591,7 +593,7 @@ static void orig_call(bool canAssign)
     if (current != NULL && current->type == TYPE_METHOD && current->hookMethodName[0] != '\0')
     {
         consume(TOKEN_LEFT_PAREN, "Attendu '(' apres 'orig'.");
-        emit_bytes(OP_GET_LOCAL, 0); // 'this'
+        emit_bytes(OP_GET_LOCAL, 0);
         uint8_t argCount = 0;
         if (!check(TOKEN_RIGHT_PAREN))
         {
@@ -723,11 +725,6 @@ static void dot(bool canAssign)
     consume(TOKEN_IDENTIFIER, "Nom de propriete attendu apres '.'.");
     uint16_t name = identifier_constant(&parser.previous);
 
-    if (canAssign && match(TOKEN_TILDE))
-    {
-        consume(TOKEN_IDENTIFIER, "Nom de type attendu apres '~'.");
-    }
-
     if (canAssign && (match(TOKEN_EQUAL) || match(TOKEN_PLUS_EQUAL) || match(TOKEN_MINUS_EQUAL) ||
                       match(TOKEN_STAR_EQUAL) || match(TOKEN_SLASH_EQUAL) || match(TOKEN_PERCENT_EQUAL) ||
                       match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS)))
@@ -751,26 +748,7 @@ static void dot(bool canAssign)
             emit_byte(OP_DUP);
             emit_op_16(OP_GET_PROPERTY, name);
             expression();
-            switch (assignType)
-            {
-            case TOKEN_PLUS_EQUAL:
-                emit_byte(OP_ADD);
-                break;
-            case TOKEN_MINUS_EQUAL:
-                emit_byte(OP_SUBTRACT);
-                break;
-            case TOKEN_STAR_EQUAL:
-                emit_byte(OP_MULTIPLY);
-                break;
-            case TOKEN_SLASH_EQUAL:
-                emit_byte(OP_DIVIDE);
-                break;
-            case TOKEN_PERCENT_EQUAL:
-                emit_byte(OP_MODULO);
-                break;
-            default:
-                break;
-            }
+            emit_compound_op(assignType);
             emit_op_16(OP_SET_PROPERTY, name);
         }
     }
@@ -814,26 +792,7 @@ static void subscript(bool canAssign)
             emit_byte(OP_DUP2);
             emit_byte(OP_GET_INDEX);
             expression();
-            switch (assignType)
-            {
-            case TOKEN_PLUS_EQUAL:
-                emit_byte(OP_ADD);
-                break;
-            case TOKEN_MINUS_EQUAL:
-                emit_byte(OP_SUBTRACT);
-                break;
-            case TOKEN_STAR_EQUAL:
-                emit_byte(OP_MULTIPLY);
-                break;
-            case TOKEN_SLASH_EQUAL:
-                emit_byte(OP_DIVIDE);
-                break;
-            case TOKEN_PERCENT_EQUAL:
-                emit_byte(OP_MODULO);
-                break;
-            default:
-                break;
-            }
+            emit_compound_op(assignType);
             emit_byte(OP_SET_INDEX);
         }
     }
@@ -1063,8 +1022,8 @@ static void interpolated_string_expr(bool canAssign)
 {
     (void)canAssign;
     Token token = parser.previous;
-    const char *p = token.start + 2;                  // Saute ~"
-    const char *end = token.start + token.length - 1; // Avant le " final
+    const char *p = token.start + 2;
+    const char *end = token.start + token.length - 1;
 
     emit_constant(krb_string(_strdup("")));
 
@@ -1136,7 +1095,6 @@ static void interpolated_string_expr(bool canAssign)
     }
 }
 
-// Table des règles du Pratt Parser
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
@@ -1266,10 +1224,6 @@ static void expression(void)
 {
     parse_precedence(PREC_ASSIGNMENT);
 }
-
-// ----------------------------------------------------------------------------
-// Déclarations et Instructions (Statements)
-// ----------------------------------------------------------------------------
 
 static void paste_statement(bool isLn)
 {
@@ -1408,9 +1362,23 @@ static void declare_variable_named(Token *name, int kind)
     add_local(*name, kind);
 }
 
+static void emit_type_check_and_coerce(bool isQueueType, const char *typeName, bool isNonNull)
+{
+    if (isQueueType)
+        emit_byte(OP_MARK_QUEUE);
+    if (typeName[0] != '\0' && !isNonNull)
+    {
+        uint16_t typeConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(typeName)));
+        emit_op_16(OP_COERCE, typeConst);
+    }
+    if (isNonNull)
+    {
+        emit_byte(OP_CHECK_NON_NULL);
+    }
+}
+
 static void var_declaration(int kind)
 {
-    // Gestion optionnelle du typage ou transtypage: ~Type ou ~(Type)
     bool isQueueType = false;
     bool isNonNull = false;
     char typeName[32] = "";
@@ -1465,69 +1433,31 @@ static void var_declaration(int kind)
 
     consume(TOKEN_EQUAL, "Attendu '=' apres les identifiants de variable.");
     expression();
-    if (isQueueType)
-        emit_byte(OP_MARK_QUEUE);
-    if (typeName[0] != '\0' && !isNonNull)
-    {
-        uint16_t typeConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(typeName)));
-        emit_op_16(OP_COERCE, typeConst);
-    }
-    if (isNonNull)
-    {
-        emit_byte(OP_CHECK_NON_NULL);
-    }
+    emit_type_check_and_coerce(isQueueType, typeName, isNonNull);
 
     int valCount = 1;
     while (match(TOKEN_COMMA))
     {
         expression();
-        if (isQueueType)
-            emit_byte(OP_MARK_QUEUE);
-        if (typeName[0] != '\0' && !isNonNull)
-        {
-            uint16_t typeConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(typeName)));
-            emit_op_16(OP_COERCE, typeConst);
-        }
-        if (isNonNull)
-        {
-            emit_byte(OP_CHECK_NON_NULL);
-        }
+        emit_type_check_and_coerce(isQueueType, typeName, isNonNull);
         valCount++;
     }
 
     consume(TOKEN_SEMICOLON, "Attendu ';' apres la declaration de variable.");
 
-    if (valCount == 1 && nameCount > 1)
+    bool duplicate = (valCount == 1 && nameCount > 1);
+    for (int i = nameCount - 1; i >= 0; i--)
     {
-        // Propagation: a, b = 777
-        for (int i = nameCount - 1; i >= 0; i--)
+        if (duplicate && i > 0)
+            emit_byte(OP_DUP);
+        uint16_t global = 0;
+        if (current->scopeDepth == 0)
         {
-            if (i > 0)
-                emit_byte(OP_DUP);
-            uint16_t global = 0;
-            if (current->scopeDepth == 0)
-            {
-                global = identifier_constant(&names[i]);
-                if (isNonNull)
-                    emit_op_16(OP_DEF_NON_NULL, global);
-            }
-            define_variable(global, kind);
+            global = identifier_constant(&names[i]);
+            if (isNonNull)
+                emit_op_16(OP_DEF_NON_NULL, global);
         }
-    }
-    else
-    {
-        // Destructuration ou 1-pour-1: ma, mb = 11, 22
-        for (int i = nameCount - 1; i >= 0; i--)
-        {
-            uint16_t global = 0;
-            if (current->scopeDepth == 0)
-            {
-                global = identifier_constant(&names[i]);
-                if (isNonNull)
-                    emit_op_16(OP_DEF_NON_NULL, global);
-            }
-            define_variable(global, kind);
-        }
+        define_variable(global, kind);
     }
 }
 
@@ -1678,7 +1608,6 @@ static void for_statement(void)
     }
     else if (match(TOKEN_SEMICOLON))
     {
-        // Pas d'initialisation
     }
     else
     {
@@ -1728,7 +1657,6 @@ static void for_statement(void)
         loop.enclosing = currentLoop;
         currentLoop = &loop;
 
-        // Condition : _i < _coll.count()
         emit_bytes(OP_GET_LOCAL, (uint8_t)iSlot);
         emit_bytes(OP_GET_LOCAL, (uint8_t)collSlot);
         uint16_t countConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup("count")));
@@ -1925,6 +1853,18 @@ static void skip_type_annotation(void)
     }
 }
 
+static void emit_closure(Compiler *compiler)
+{
+    ObjFunction *func = end_compiler();
+    uint16_t fnConst = (uint16_t)krb_add_constant(current_chunk(), krb_obj_val((Obj *)func));
+    emit_op_16(OP_CLOSURE, fnConst);
+    for (int i = 0; i < func->upvalueCount; i++)
+    {
+        emit_byte(compiler->upvalues[i].isLocal ? 1 : 0);
+        emit_short(compiler->upvalues[i].index);
+    }
+}
+
 static void function_body(FunctionType type)
 {
     Compiler compiler;
@@ -2058,15 +1998,7 @@ static void function_body(FunctionType type)
         declaration();
     }
     consume(TOKEN_END, "Attendu 'end' pour fermer la fonction.");
-
-    ObjFunction *function = end_compiler();
-    uint16_t fnConst = (uint16_t)krb_add_constant(current_chunk(), krb_obj_val((Obj *)function));
-    emit_op_16(OP_CLOSURE, fnConst);
-    for (int i = 0; i < function->upvalueCount; i++)
-    {
-        emit_byte(compiler.upvalues[i].isLocal ? 1 : 0);
-        emit_short(compiler.upvalues[i].index);
-    }
+    emit_closure(&compiler);
 }
 
 static void function_declaration(void)
@@ -2136,18 +2068,16 @@ static void class_declaration(void)
     classCompiler.hasSuperclass = false;
     currentClass = &classCompiler;
 
-    // Optionnel : heritage avec 'from'
     if (match(TOKEN_FROM))
     {
         consume(TOKEN_IDENTIFIER, "Nom de superclasse attendu apres 'from'.");
         classCompiler.hasSuperclass = true;
         classCompiler.superclass = parser.previous;
-        named_variable(className, false); // Pousse la sous-classe
-        variable(false);                  // Pousse la superclasse
+        named_variable(className, false);
+        variable(false);
         emit_byte(OP_INHERIT);
     }
 
-    // Optionnel : conformite interface avec 'as'
     Token ifaceTokens[32];
     int ifaceCount = 0;
     if (match(TOKEN_AS))
@@ -2164,7 +2094,7 @@ static void class_declaration(void)
 
     consume(TOKEN_THEN, "Attendu 'then' apres l'en-tete de classe.");
 
-    named_variable(className, false); // Pousse la classe sur la pile pour OP_METHOD / OP_SET_PROPERTY
+    named_variable(className, false);
 
     for (int i = 0; i < ifaceCount; i++)
     {
@@ -2174,9 +2104,8 @@ static void class_declaration(void)
 
     while (!check(TOKEN_END) && !check(TOKEN_EOF))
     {
-        // Modificateurs de visibilité
         bool isShared = false;
-        int visibility = 0; // 0: PUBLIC, 1: PROTECTED, 2: PRIVATE, 3: ISOLATED, 4: EXCLUSIVE
+        int visibility = 0;
         while (match(TOKEN_PUBLIC) || match(TOKEN_PROTECTED) || match(TOKEN_PRIVATE) ||
                match(TOKEN_ISOLATED) || match(TOKEN_EXCLUSIVE) || match(TOKEN_SHARED))
         {
@@ -2194,7 +2123,6 @@ static void class_declaration(void)
 
         if (match(TOKEN_IVAR) || match(TOKEN_ICONST))
         {
-            bool isConst = (parser.previous.type == TOKEN_ICONST);
             consume(TOKEN_IDENTIFIER, "Nom de champ attendu.");
             Token fieldName = parser.previous;
             uint16_t fieldConst = identifier_constant(&fieldName);
@@ -2211,10 +2139,9 @@ static void class_declaration(void)
 
             if (isShared)
             {
-                // Initialise le champ directement sur la classe
                 emit_op_16(OP_SET_PROPERTY, fieldConst);
                 emit_byte(OP_POP);
-                named_variable(className, false); // Restaure la classe sur la pile
+                named_variable(className, false);
             }
             else
             {
@@ -2228,8 +2155,6 @@ static void class_declaration(void)
             Token methTok = parser.previous;
             uint16_t constant = identifier_constant(&methTok);
             FunctionType type = TYPE_METHOD;
-
-            // Constructeur : soit 'init', soit nom exact de la classe
             if ((methTok.length == 4 && memcmp(methTok.start, "init", 4) == 0) ||
                 identifiers_equal(&methTok, &className))
             {
@@ -2250,7 +2175,6 @@ static void class_declaration(void)
             snprintf(getBuf, sizeof(getBuf), "get_%.*s", propTok.length, propTok.start);
             uint16_t getConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(getBuf)));
 
-            // Compiler corps du getter (arite 0)
             Compiler compiler;
             init_compiler(&compiler, TYPE_METHOD);
             begin_scope();
@@ -2260,14 +2184,7 @@ static void class_declaration(void)
                 declaration();
             }
             consume(TOKEN_END, "Attendu 'end' pour fermer le getter.");
-            ObjFunction *func = end_compiler();
-            uint16_t fnConst = (uint16_t)krb_add_constant(current_chunk(), krb_obj_val((Obj *)func));
-            emit_op_16(OP_CLOSURE, fnConst);
-            for (int i = 0; i < func->upvalueCount; i++)
-            {
-                emit_byte(compiler.upvalues[i].isLocal ? 1 : 0);
-                emit_short(compiler.upvalues[i].index);
-            }
+            emit_closure(&compiler);
             emit_op_16(OP_METHOD, getConst);
         }
         else if (match(TOKEN_SET))
@@ -2297,14 +2214,7 @@ static void class_declaration(void)
                 declaration();
             }
             consume(TOKEN_END, "Attendu 'end' pour fermer le setter.");
-            ObjFunction *func = end_compiler();
-            uint16_t fnConst = (uint16_t)krb_add_constant(current_chunk(), krb_obj_val((Obj *)func));
-            emit_op_16(OP_CLOSURE, fnConst);
-            for (int i = 0; i < func->upvalueCount; i++)
-            {
-                emit_byte(compiler.upvalues[i].isLocal ? 1 : 0);
-                emit_short(compiler.upvalues[i].index);
-            }
+            emit_closure(&compiler);
             emit_op_16(OP_METHOD, setConst);
         }
         else
@@ -2313,7 +2223,7 @@ static void class_declaration(void)
         }
     }
     consume(TOKEN_END, "Attendu 'end' pour fermer la classe.");
-    emit_byte(OP_POP); // Dépile la classe
+    emit_byte(OP_POP);
     currentClass = classCompiler.enclosing;
 }
 

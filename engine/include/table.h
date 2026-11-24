@@ -6,8 +6,8 @@
 #include "value.h"
 
 /**
- * Entrée d'une table de hachage :
- * Clé (nom de la variable), son hash précalculé, et la valeur associée.
+ * Hash table entry:
+ * Holds string key pointer, length, cached hash, associated value, and state flags.
  */
 typedef struct {
     const char* key;
@@ -19,8 +19,8 @@ typedef struct {
 } Entry;
 
 /**
- * Table de hachage haute performance (Open Addressing & Linear Probing).
- * C'est le dictionnaire O(1) qui stocke les variables globales de Kuroba.
+ * High-performance hash table using Open Addressing and Linear Probing.
+ * Serves as the primary O(1) dictionary for globals, fields, and method tables.
  */
 typedef struct {
     int count;
@@ -28,7 +28,7 @@ typedef struct {
     Entry* entries;
 } Table;
 
-// Fonctions de la Table de Hachage
+// Hash table manipulation functions
 void krb_init_table(Table* table);
 void krb_free_table(Table* table);
 bool krb_table_set(Table* table, const char* key, int length, KrbValue value, bool isConst);

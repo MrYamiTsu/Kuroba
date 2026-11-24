@@ -9,12 +9,18 @@
 #define FRAMES_MAX 1024
 #define STACK_MAX (FRAMES_MAX * 256)
 
+/**
+ * Call frame tracking execution of a function or closure.
+ */
 typedef struct {
     ObjClosure* closure;
     uint8_t* ip;
     KrbValue* slots;
 } CallFrame;
 
+/**
+ * Exception handler entry for try/catch/finally blocks.
+ */
 typedef struct {
     uint8_t* catch_ip;
     uint8_t* finally_ip;
@@ -23,7 +29,7 @@ typedef struct {
 } KrbTryHandler;
 
 /**
- * La Machine Virtuelle (VM) de Kuroba avec CallFrames & GC.
+ * The Kuroba Virtual Machine (VM) maintaining execution state, stack, and globals.
  */
 typedef struct {
     CallFrame frames[FRAMES_MAX];
@@ -33,12 +39,12 @@ typedef struct {
     KrbValue* stackTop;
 
     Table globals;
-    Table constGlobals; // Ensemble des variables immuables iconst
-    Table sealedGlobals; // Ensemble des variables scellees isealed
-    Table unlockedGlobals; // Variables temporairement de-verrouillees via unlock
-    Table nonNullGlobals; // Variables soumises au contrat non-nullable
-    ObjUpvalue* openUpvalues; // Liste chaînée des upvalues ouvertes sur la pile
-    Obj* objects; // Liste chaînée de tous les objets pour le Garbage Collector
+    Table constGlobals;       // Immutable global constants (iconst)
+    Table sealedGlobals;      // Sealed global variables (isealed)
+    Table unlockedGlobals;    // Variables temporarily unlocked via unlock
+    Table nonNullGlobals;     // Variables subject to non-null contract
+    ObjUpvalue* openUpvalues; // Intrusive linked list of open upvalues on the stack
+    Obj* objects;             // Intrusive linked list of all heap-allocated objects for GC
 
     KrbTryHandler try_stack[256];
     int try_count;
@@ -46,26 +52,29 @@ typedef struct {
 
 extern VM vm;
 
+/**
+ * Interpretation execution status results.
+ */
 typedef enum {
     INTERPRET_OK,
     INTERPRET_COMPILE_ERROR,
     INTERPRET_RUNTIME_ERROR
 } InterpretResult;
 
-// Fonctions du cycle de vie de la VM
+// VM lifecycle functions
 void krb_init_vm(void);
 void krb_free_vm(void);
 void krb_set_trace_execution(bool enable);
 
-// Gestion de la pile d'évaluation
+// Evaluation stack management
 void krb_push(KrbValue value);
 KrbValue krb_pop(void);
 KrbValue krb_peek(int distance);
 
-// Fonctions natives
+// Native function registration
 void krb_define_native(const char* name, NativeFn function);
 
-// Exécution
+// Bytecode execution
 InterpretResult krb_interpret(Chunk* chunk);
 InterpretResult krb_interpret_source(const char* source);
 
