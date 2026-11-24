@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.8</span>
+      <span class="version-badge">v1.1.0</span>
     </a>
 
     <nav class="main-nav">
@@ -34,7 +34,7 @@
       <div class="section-label">ABOUT KUROBA</div>
       <h1>A readable language engine built from scratch.</h1>
       <p>
-        <strong>Kuroba</strong> (literally <em>"Black Feather"</em>, abbreviated <strong>KRB</strong>) is an interpreted programming language created by <strong>MrYamiTsu</strong> in vanilla JavaScript and Node.js. It started with one clear goal: build an expressive, understandable language runtime with zero external dependencies that lets you write scripts, CLI utilities, and interactive text games comfortably.
+        <strong>Kuroba</strong> (literally <em>"Black Feather"</em>, abbreviated <strong>KRB</strong>) is an interpreted programming language created by <strong>MrYamiTsu</strong> featuring a high-performance standalone <strong>Native C Engine</strong> and a companion zero-dependency in-browser <strong>Web VM</strong>. It started with one clear goal: build an expressive, understandable language runtime with zero external dependencies that lets you write scripts, CLI utilities, and interactive text games comfortably.
       </p>
     </section>
 
@@ -42,7 +42,7 @@
       <article class="about-card">
         <h3>Zero Black Boxes</h3>
         <p>
-          Kuroba ships with <code>"dependencies": {}</code> in <code>package.json</code>. Every single part of the interpreter — from raw keyboard capture (<code>copyKey()</code>) and string interpolation (<code>~"..."</code>) to multi-file module discovery and the browser runtime bundle — is transparent, readable JavaScript.
+          Kuroba ships with zero external dependencies. Every single part of the interpreter — from raw keyboard capture (<code>copyKey()</code>) and string interpolation (<code>~"..."</code>) to native collections and the browser runtime bundle — is transparent, robust, and readable.
         </p>
       </article>
 
@@ -54,16 +54,16 @@
       </article>
 
       <article class="about-card">
-        <h3>Built for Both CLI &amp; Web</h3>
+        <h3>Built for Both Desktop &amp; Web</h3>
         <p>
-          The same lexer, recursive-descent parser, and evaluator run natively in Node.js (<code>krb</code> / <code>node index.js</code>) and inside your browser via <code>kuroba-web.js</code> with an asynchronous virtual terminal supporting interactive prompts and multi-file projects.
+          Execute scripts at maximum speed using the standalone Native C Engine (<code>kuroba.cmd</code> / <code>krb.cmd</code>) on Windows, Linux, and macOS, or run directly inside your browser via WebAssembly (<code>kuroba-engine.wasm</code>) with an interactive virtual terminal.
         </p>
       </article>
 
       <article class="about-card">
         <h3>Practical Metaprogramming</h3>
         <p>
-          Native function hooks (<code>hook fn(...) then ... this(...) end</code>), first-class closures, and symbol-driven namespaces allow clean modularity and instrumentation without complicated boilerplate.
+          Native function hooks (<code>hook fn(...) then ... orig(...) end</code>), first-class closures, and symbol-driven namespaces allow clean modularity and instrumentation without complicated boilerplate.
         </p>
       </article>
     </section>
@@ -72,24 +72,24 @@
       <div class="section-label">ENGINE PIPELINE</div>
       <h2 class="section-heading" style="margin-bottom: 0.75rem;">How Kuroba executes your code</h2>
       <p style="color: var(--text-secondary); max-width: 720px; font-size: 0.96rem;">
-        Every <code>.krb</code> source file flows cleanly through a modular 3-stage pipeline in <code>src/</code>, backed by zero-dependency runtime natives in <code>src/runtime/</code> and Kuroba-written standard library modules in <code>lib/std/</code>:
+        Every <code>.krb</code> source file flows cleanly through a high-performance 3-stage pipeline in <code>engine/src/</code>, backed by zero-dependency native standard library extensions (<code>stdlib_krb.c</code>):
       </p>
 
       <div class="about-pipeline">
         <div class="about-stage">
           <div class="about-stage-num">Stage 01</div>
-          <h4>Modular Lexer</h4>
-          <p>Tokenizes <code>~~</code> comments, interpolated strings (<code>~"{expr}"</code>), operators, types, and line/column metadata for diagnostics.</p>
+          <h4>High-Speed Scanner</h4>
+          <p>Scans <code>~~</code> comments, interpolated strings (<code>~"{expr}"</code>), operators, type tokens, and line/column metadata for diagnostics.</p>
         </div>
         <div class="about-stage">
           <div class="about-stage-num">Stage 02</div>
-          <h4>Recursive Descent AST Parser</h4>
-          <p>Builds a clean AST covering expressions, control structures, typed collections, nested member assignments, namespaces, and hooks.</p>
+          <h4>Single-Pass Bytecode Compiler</h4>
+          <p>Compiles source tokens directly into compact, cache-friendly bytecode instructions, resolving scopes, local offsets, closures, and interfaces.</p>
         </div>
         <div class="about-stage">
           <div class="about-stage-num">Stage 03</div>
-          <h4>Scoped AST Evaluator</h4>
-          <p>Executes lexical block frames, validates nullability and casts at runtime, resolves multi-file imports recursively, and traps errors cleanly.</p>
+          <h4>Stack-Based Virtual Machine</h4>
+          <p>Executes bytecode instructions with extreme speed, call frames, strict runtime type checking, and native standard library dispatch.</p>
         </div>
       </div>
     </section>
@@ -115,10 +115,10 @@
           <div class="footer-brand-row">
             <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
             <span class="footer-brand-name">Kuroba</span>
-            <span class="version-badge">v1.0.8</span>
+            <span class="version-badge">v1.1.0</span>
           </div>
           <p class="footer-tagline">
-            A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
+            A lightweight, zero-dependency interpreted language with a high-performance Native C Engine and Web VM.
           </p>
         </div>
 
@@ -155,7 +155,7 @@
 
       <div class="footer-bottom">
         <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
-        <span class="footer-bottom-meta">Pure JS AST Engine • Zero npm Dependencies</span>
+        <span class="footer-bottom-meta">Native C Engine &amp; Web VM • Zero External Dependencies</span>
       </div>
     </div>
   </footer>

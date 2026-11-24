@@ -19,7 +19,7 @@
     <a href="index.html" class="brand">
       <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
       <span class="brand-name">Kuroba</span>
-      <span class="version-badge">v1.0.8</span>
+      <span class="version-badge">v1.1.0</span>
     </a>
 
     <nav class="main-nav">
@@ -68,7 +68,7 @@
 
         <div class="docs-group" data-group="core">
           <div class="docs-group-label"><span>Language Core &amp; Primitives</span><span class="docs-group-toggle">▾</span></div>
-          <a href="#variables" class="docs-item-link">Variables, Constants &amp; <code>kill</code></a>
+          <a href="#variables" class="docs-item-link">Variables, Constants, <code>isealed</code> &amp; <code>kill</code></a>
           <a href="#types" class="docs-item-link">Type System &amp; Non-Nullability</a>
           <a href="#operators" class="docs-item-link">Operators &amp; Precedence Table</a>
           <a href="#control" class="docs-item-link">Control Flow &amp; Pattern Match</a>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Scope 2: Dedicated Standard Libraries Reference (6 Modules) -->
+      <!-- Scope 2: Dedicated Standard Libraries Reference (9 Modules) -->
       <div class="docs-sidebar-nav-scope docs-scope-hidden" id="scope-nav-libraries">
         <div class="docs-group" data-group="std-core">
           <div class="docs-group-label"><span>Core Standard Library (<code>Std</code>)</span><span class="docs-group-toggle">▾</span></div>
@@ -129,7 +129,7 @@
       <div class="docs-chapter-meta-bar" id="docs-chapter-meta-bar">
         <div class="docs-chapter-meta-left">
           <span class="docs-chapter-track-badge" id="docs-track-badge">Setup &amp; CLI</span>
-          <span class="docs-chapter-counter" id="docs-chapter-counter">Chapter 1 of 15</span>
+          <span class="docs-chapter-counter" id="docs-chapter-counter">Chapter 1 of 16</span>
         </div>
       </div>
 
@@ -138,13 +138,13 @@
            ==================================================================== -->
       <section id="quickstart">
         <h1>Quickstart &amp; Installation</h1>
-        <p>Kuroba is fully self-contained with <strong>zero npm dependencies</strong>. A standard Node.js runtime (v16.0.0 or higher) is all that is required to execute scripts or run the interactive REPL shell.</p>
+        <p>Kuroba is fully self-contained with <strong>zero external dependencies</strong>. The high-performance standalone <strong>Native C Engine</strong> executes scripts natively or in the interactive REPL shell on Windows, Linux, and macOS, alongside the in-browser Web VM.</p>
         
         <h3>Local Installation via Git</h3>
         <pre><code class="language-bash">git clone https://github.com/MrYamiTsu/Kuroba.git
 cd Kuroba</code></pre>
 
-        <p>Kuroba source files use the conventional <code>.krb</code> extension. On Windows, you can also use the bundled convenience launcher <code>.\krb.cmd main.krb</code>.</p>
+        <p>Kuroba source files use the conventional <code>.krb</code> extension. On Windows, execute scripts directly with <code>.\kuroba.cmd main.krb</code> (or <code>.\engine\kuroba.exe main.krb</code>). To launch the interactive REPL, simply run <code>.\krb.cmd</code>.</p>
       </section>
 
       <!-- ====================================================================
@@ -153,7 +153,9 @@ cd Kuroba</code></pre>
       <section id="cli">
         <h2>CLI &amp; Command-Line Arguments</h2>
         <p>Kuroba automatically parses and injects all trailing parameters into the global scope as an immutable <code>List&lt;String&gt;</code> accessible through <code>args</code>:</p>
-        <pre><code class="language-bash">node index.js script.krb --host 127.0.0.1 --port 8080 --verbose</code></pre>
+        <pre><code class="language-bash">.\kuroba.cmd script.krb --host 127.0.0.1 --port 8080 --verbose
+# Linux / macOS:
+./engine/kuroba script.krb --host 127.0.0.1 --port 8080 --verbose</code></pre>
 
         <h3>Processing Arguments in Kuroba</h3>
         <pre><code class="language-kuroba">pasteLn("Arguments received: " + args.count());
@@ -174,10 +176,10 @@ end</code></pre>
            ==================================================================== -->
       <section id="repl">
         <h2>Interactive REPL Shell (<code>krb</code>)</h2>
-        <p>Invoking <code>index.js</code> or the launcher shortcut <code>./krb.cmd</code> without arguments starts an interactive read-eval-print loop shell:</p>
-        <pre><code class="language-bash">node index.js
-# Or via Windows shortcut:
-.\krb.cmd</code></pre>
+        <p>Invoking <code>kuroba</code> without arguments or running the launcher shortcut <code>.\krb.cmd</code> starts an interactive read-eval-print loop shell:</p>
+        <pre><code class="language-bash">.\krb.cmd
+# Or directly via native binary:
+.\engine\kuroba.exe</code></pre>
 
         <h3>Shell Features</h3>
         <ul>
@@ -196,9 +198,10 @@ end</code></pre>
         <p>Kuroba enforces clear boundaries between mutable variables and immutable constants declared at initialization:</p>
         
         <h3>Variable Declaration (<code>ivar</code>)</h3>
-        <p>Declares a variable whose initial type is inferred from the assigned expression:</p>
+        <p>Declares a variable whose initial type is inferred from the assigned expression. Variable names also natively support UTF-8 characters and emojis (e.g. <code>ivar 🚀 = 100;</code>):</p>
         <pre><code class="language-kuroba">ivar score = 100;       ~~ Inferred as Int
 ivar hero = "Shinobi";  ~~ Inferred as String
+ivar 🚀 = 50;           ~~ Emojis supported in identifiers
 ivar ratio = 3.14;      ~~ Inferred as Float
 ivar active = TRUE;     ~~ Inferred as Bool
 score += 25;            ~~ Reassignment allowed</code></pre>
@@ -215,6 +218,23 @@ ivar~Int x, y = "10", 20;  ~~ x = 10, y = 20 (both cast to Int)</code></pre>
         <pre><code class="language-kuroba">iconst PI = 3.141592653589793;
 iconst PORT = 8080;
 PORT = 3000; ~~ [TypeError] Cannot reassign constant 'PORT'.</code></pre>
+
+        <h3>Sealed Variables (<code>isealed</code>) &amp; Unlock / Lock Mechanics</h3>
+        <p>A sealed variable sits between a mutable variable (<code>ivar</code>) and an immutable constant (<code>iconst</code>). It is locked by default: direct reassignment is rejected with a runtime <code>[TypeError]</code> unless explicitly unlocked beforehand:</p>
+        <pre><code class="language-kuroba">isealed secret = 100;
+~~ secret = 200;       ~~ [TypeError] Cannot reassign sealed variable 'secret' without unlocking it first.
+
+~~ 1. Temporarily unlock to mutate:
+unlock secret;
+secret = 200;          ~~ Mutation succeeds!
+~~ Once modified, the variable automatically re-seals (auto-reseal)!
+
+~~ secret = 300;       ~~ [TypeError] Automatically locked again!
+
+~~ 2. Manual lock without mutation:
+unlock secret;
+lock secret;           ~~ Manually locks back before any modification
+~~ secret = 400;       ~~ [TypeError] Locked!</code></pre>
 
         <h3>Variable Destruction (<code>kill</code>)</h3>
         <p>The <code>kill</code> statement explicitly purges a variable from memory and active scope. Constants cannot be killed. If an inner shadowed variable is killed, the outer variable becomes visible again:</p>
@@ -317,11 +337,18 @@ ivar~Float ratio = "3.14"; ~~ Coerced to Float 3.14</code></pre>
         <pre><code class="language-kuroba">ivar~(String) user = "Admin";
 user = NULL; ~~ [TypeError] Cannot assign NULL to non-nullable variable 'user'.</code></pre>
 
-        <h3>Dynamic In-Place Retyping</h3>
-        <p>An existing variable can change type dynamically during assignment using <code>var~Type = val;</code>:</p>
-        <pre><code class="language-kuroba">ivar score = 100;           ~~ Inferred as Int
-score~String = "Top Score"; ~~ Retyped to String in-place
-score~Float = 99.5;         ~~ Retyped to Float in-place</code></pre>
+        <h3>Prefix Type Casting &amp; Dynamic Retyping (<code>[Type]</code>)</h3>
+        <p>Values, expressions, and properties can be explicitly cast using the prefix bracket syntax <code>[Type]operand</code> (or <code>[(Type)]operand</code> for non-nullable contracts):</p>
+        <pre><code class="language-kuroba">ivar b = "20";
+ivar c = "30";
+ivar sum = [Int]b + [Int]c;          ~~ Explicit cast in expression (50)
+ivar hp = [Float]player.health / 2;  ~~ Cast on object/table properties
+ivar tag = [String](10 + 5);         ~~ Cast on grouped expression ("15")</code></pre>
+        <p>An existing variable can also change type dynamically during assignment using <code>[Type]var = val;</code>:</p>
+        <pre><code class="language-kuroba">ivar score = 100;              ~~ Inferred as Int
+[String]score = "Top Score";   ~~ Retyped to String in-place
+[Float]score = 99.5;           ~~ Retyped to Float in-place
+[(Int)]score = 250;            ~~ Retyped with strict non-nullable contract</code></pre>
 
         <h3>Runtime Type Checking (<code>is</code>)</h3>
         <p>The <code>is</code> operator evaluates to a strict boolean verifying whether a value matches a native type (<code>Int</code>, <code>Float</code>, <code>String</code>, <code>Bool</code>, <code>List</code>, <code>Stack</code>, <code>Queue</code>, <code>Table</code>, <code>Function</code>), a strict literal (<code>NULL</code>, <code>TRUE</code>, <code>FALSE</code>), or a typed generic collection (<code>List&lt;Int&gt;</code>, <code>List&lt;(Int)&gt;</code>, <code>Stack&lt;String&gt;</code>). Unknown types raise an immediate <code>[TypeError]</code>:</p>
@@ -360,8 +387,8 @@ pasteLn(!(5 is String));     ~~ TRUE</code></pre>
             <tr>
               <td><strong>2</strong></td>
               <td>Unary</td>
-              <td><code>!</code>, <code>++</code>, <code>--</code>, <code>-</code></td>
-              <td>Logical NOT, postfix step increment/decrement, negation</td>
+              <td><code>!</code>, <code>++</code>, <code>--</code>, <code>-</code>, <code>[Type]</code></td>
+              <td>Logical NOT, postfix step increment/decrement, negation, prefix type cast</td>
               <td>Right-to-left</td>
             </tr>
             <tr>
@@ -479,11 +506,14 @@ given role then
     case "user" then
         pasteLn("Standard user dashboard");
         break;
+    end
     case "admin" then
         pasteLn("Full administrative privileges");
         break;
+    end
     case ~ then
         pasteLn("Unknown role; access restricted.");
+    end
 end</code></pre>
 
         <h3>Loops: <code>for</code>, <code>while</code>, <code>do-while</code></h3>
@@ -998,7 +1028,7 @@ f.takeDamage(45);</code></pre>
     shared then
         ivar totalCount = 0;
         iconst MAX_PARTY = 4;
-        shared private ivar _serverSecret = 9876;
+        private ivar _serverSecret = 9876;
 
         function getCount() then
             return Player.totalCount;
@@ -1062,8 +1092,13 @@ pasteLn(hero.hp); ~~ 100 (clamped by setter)
 
 hero.hp -= 200;
 pasteLn(hero.hp); ~~ 0 (clamped to zero)</code></pre>
+      </section>
 
-        <h3 id="interfaces">7. Interface Contracts (<code>interface</code> &amp; <code>as</code>)</h3>
+      <!-- ====================================================================
+           Section : Interfaces & Contracts (as)
+           ==================================================================== -->
+      <section id="interfaces">
+        <h2>Interfaces &amp; Contracts (<code>interface</code> &amp; <code>as</code>)</h2>
         <p>Interfaces in Kuroba serve as pure contracts. They define the required methods, property accessors (<code>get</code> / <code>set</code>), and fields that an implementing class must provide, without containing any implementation details:</p>
         <ul>
           <li><strong>Pure Structural Contracts:</strong> Interfaces cannot be instantiated directly (e.g., <code>IEntity()</code> raises <code>[TypeError]</code>) and cannot have their members accessed directly (<code>IEntity.member</code> raises <code>[TypeError]</code>).</li>
@@ -1145,7 +1180,7 @@ end
            ==================================================================== -->
       <section id="namespaces">
         <h2>Namespaces &amp; Module Discovery</h2>
-        <p>Kuroba resolves modules purely from declared AST symbols across your project, recursively scanning <code>.krb</code> subdirectories from the script directory in CLI (or virtual workspace tabs in the Web Playground), independent of physical file names on disk:</p>
+        <p>Kuroba resolves modules purely from declared symbols across your project, recursively scanning <code>.krb</code> subdirectories from the script directory in CLI (or virtual workspace tabs in the Web Playground), independent of physical file names on disk:</p>
 
         <h3>Hierarchy: <code>Namespace &rarr; Module Slice (~Module) &rarr; Members</code></h3>
         <ul>
@@ -2143,7 +2178,7 @@ pasteLn("User: " + envTable.USERNAME);
         <p>Kuroba provides exact line, column, and contextual diagnostics for rapid debugging:</p>
 
         <h3>1. SyntaxError</h3>
-        <p>Grammar violations during tokenization or AST parsing:</p>
+        <p>Grammar violations during tokenization or compilation:</p>
         <pre><code class="language-output">[SyntaxError: Line 2, Col 1] Missing semicolon ';' at the end of statement.
 [SyntaxError: Line 4, Col 12] Unclosed parenthesis. Missing closing ')' to match '(' at Line 4, Col 6.
 [SyntaxError: Line 10, Col 5] Return statements are only allowed inside functions.</code></pre>
@@ -2184,8 +2219,8 @@ pasteLn("User: " + envTable.USERNAME);
 [ImportError] Unknown package or namespace 'MissingPkg'. Create a '.krb' file with 'namespace MissingPkg then ... end' or import 'Std' / 'StdE'.</code></pre>
 
         <h3>8. RecursionError</h3>
-        <p>Triggered when nested function calls exceed Kuroba's safe call-stack limit (512 frames). Can be trapped cleanly with <code>try / catch</code>:</p>
-        <pre><code class="language-output">[RecursionError] Maximum recursion depth (512) exceeded in function 'infiniteLoop'.</code></pre>
+        <p>Triggered when nested function calls exceed Kuroba's safe call-stack limit (1024 frames). Can be trapped cleanly with <code>try / catch</code>:</p>
+        <pre><code class="language-output">[RecursionError] Maximum recursion depth (1024) exceeded in function 'infiniteLoop'.</code></pre>
       </section>
 
     </main>
@@ -2199,10 +2234,10 @@ pasteLn("User: " + envTable.USERNAME);
           <div class="footer-brand-row">
             <img src="assets/kuroba.png" alt="Kuroba" class="footer-logo">
             <span class="footer-brand-name">Kuroba</span>
-            <span class="version-badge">v1.0.8</span>
+            <span class="version-badge">v1.1.0</span>
           </div>
           <p class="footer-tagline">
-            A lightweight, zero-dependency interpreted language built from scratch in pure JavaScript and Node.js.
+            A lightweight, zero-dependency interpreted language featuring a high-performance Native C Engine and in-browser Web VM.
           </p>
         </div>
 
@@ -2239,7 +2274,7 @@ pasteLn("User: " + envTable.USERNAME);
 
       <div class="footer-bottom">
         <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
-        <span class="footer-bottom-meta">Pure JS AST Engine • Zero npm Dependencies</span>
+        <span class="footer-bottom-meta">Native C Engine &amp; Web VM • Zero External Dependencies</span>
       </div>
     </div>
   </footer>
@@ -2256,7 +2291,7 @@ pasteLn("User: " + envTable.USERNAME);
       const GUIDE_SECTIONS = [
         'quickstart', 'cli', 'repl',
         'variables', 'types', 'operators', 'control', 'exceptions', 'io-primitives', 'collections',
-        'functions', 'classes', 'enums', 'namespaces',
+        'functions', 'classes', 'interfaces', 'enums', 'namespaces',
         'errors'
       ];
 
@@ -2278,6 +2313,7 @@ pasteLn("User: " + envTable.USERNAME);
         collections: 'core',
         functions: 'oop',
         classes: 'oop',
+        interfaces: 'oop',
         enums: 'oop',
         namespaces: 'oop',
         errors: 'errors',
@@ -2380,7 +2416,7 @@ pasteLn("User: " + envTable.USERNAME);
         }
 
         if (mobileMenuLabel) {
-          mobileMenuLabel.textContent = scope === 'guide' ? 'Browse Chapters (15)' : 'Browse Modules (6)';
+          mobileMenuLabel.textContent = scope === 'guide' ? 'Browse Chapters (16)' : 'Browse Modules (9)';
         }
 
         renderTrackPills();
@@ -2568,7 +2604,7 @@ pasteLn("User: " + envTable.USERNAME);
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
         'class', 'interface', 'as', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared', 'get', 'set',
-        'is', 'TRUE', 'FALSE', 'NULL'
+        'is', 'TRUE', 'FALSE', 'NULL', 'unlock', 'lock', 'kill'
       ]);
 
       function escHtml(str) {
@@ -2618,7 +2654,7 @@ pasteLn("User: " + envTable.USERNAME);
             while (i < code.length && /[a-zA-Z0-9_]/.test(code[i])) i++;
             let word = code.slice(start, i);
 
-            if (word === 'ivar' || word === 'iconst') {
+            if (word === 'ivar' || word === 'iconst' || word === 'isealed') {
               if (code[i] === '~') {
                 let tEnd = i + 1;
                 if (code[tEnd] === '(') {
@@ -2776,7 +2812,7 @@ pasteLn("User: " + envTable.USERNAME);
         sec.appendChild(nav);
       });
 
-      // Build Navigation Cards for Library Sections (6 Modules)
+      // Build Navigation Cards for Library Sections (9 Modules)
       LIBRARY_SECTIONS.forEach((secId, idx) => {
         const sec = sectionById[secId];
         if (!sec) return;

@@ -1,3 +1,2 @@
 @echo off
-node "%~dp0index.js" %*
-
+"%~dp0engine\kuroba.exe" %*

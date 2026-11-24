@@ -1,0 +1,166 @@
+import Std;
+import StdE;
+
+~~ ===============================================================
+~~ FRAMEWORK DE TEST MODERNE (Gestion automatique du try/catch)
+~~ ===============================================================
+ivar totalCount = 0;
+ivar passedCount = 0;
+ivar failedCount = 0;
+
+function test(ivar~String desc, ivar fn) then
+    totalCount = totalCount + 1;
+    try then
+        fn();
+        passedCount = passedCount + 1;
+        pasteLn(StdE.Term.bold(StdE.Term.green("[PASS] ")) + desc);
+    catch (ivar err) then
+        failedCount = failedCount + 1;
+        pasteLn(StdE.Term.bold(StdE.Term.red("[FAIL] ")) + desc);
+        pasteLn(StdE.Term.yellow(~"       {err.eName} : {err.eContext}"));
+    end
+end
+
+function testThrows(ivar~String desc, ivar fn) then
+    totalCount = totalCount + 1;
+    ivar threw = FALSE;
+    try then
+        fn();
+    catch (ivar err) then
+        threw = TRUE;
+    end
+    if threw then
+        passedCount = passedCount + 1;
+        pasteLn(StdE.Term.bold(StdE.Term.green("[PASS] ")) + desc);
+    else
+        failedCount = failedCount + 1;
+        pasteLn(StdE.Term.bold(StdE.Term.red("[FAIL] ")) + desc + StdE.Term.yellow(" (Succes inattendu: une exception etait attendue)"));
+    end
+end
+
+function assertEq(ivar val, ivar expected, ivar~String msg) then
+    if (val != expected) then
+        throw msg + " (Got: " + val + ", Expected: " + expected + ")";
+    end
+end
+
+function assertTrue(ivar cond, ivar~String msg) then
+    if (!cond) then
+        throw msg;
+    end
+end
+
+pasteLn(StdE.Term.bold(StdE.Term.cyan("========================================================")));
+pasteLn(StdE.Term.bold(StdE.Term.cyan(">> LANCEMENT DE LA SUITE DE TESTS")));
+pasteLn(StdE.Term.bold(StdE.Term.cyan("========================================================")));
+
+~~ --- 1. CASE STANDARD AVEC END OBLIGATOIRE ---
+test("Case standard avec 'end' sur chaque branche", function ~() then
+    ivar res = 0;
+    given 1 then
+        case 1 then
+            res = 10;
+            break;
+        end
+        case 2 then
+            res = 20;
+            break;
+        end
+    end
+    assertEq(res, 10, "Given case 1 avec end");
+
+    given 2 then
+        case 1 then
+            res = 10;
+            break;
+        end
+        case 2 then
+            res = 20;
+            break;
+        end
+    end
+    assertEq(res, 20, "Given case 2 avec end");
+end);
+
+~~ --- 2. FALLBACK CASE ~ THEN AVEC END ---
+test("Fallback case ~ then avec end", function ~() then
+    ivar res = 0;
+    given 99 then
+        case 1 then
+            res = 1;
+            break;
+        end
+        case ~ then
+            res = 999;
+        end
+    end
+    assertEq(res, 999, "Fallback case ~ avec end");
+end);
+
+~~ --- 3. BLOCS INTERNES DANS UN CASE ---
+test("Bloc interne (if then end) dans un case avec end", function ~() then
+    ivar res = 0;
+    given 1 then
+        case 1 then
+            if (TRUE) then
+                res = 42;
+            end
+            break;
+        end
+        case 2 then
+            res = 99;
+            break;
+        end
+    end
+    assertEq(res, 42, "If interne et case end");
+end);
+
+~~ --- 4. GIVEN IMBRIQUE DANS UN BLOC IF ---
+test("Given avec case end a l'interieur d'un bloc if", function ~() then
+    ivar res = 0;
+    if (TRUE) then
+        given 2 then
+            case 1 then
+                res = 10;
+                break;
+            end
+            case 2 then
+                res = 20;
+                break;
+            end
+        end
+    end
+    assertEq(res, 20, "Given dans if avec case end");
+end);
+
+~~ --- 5. GIVEN IMBRIQUE DANS UN AUTRE GIVEN ---
+test("Given imbrique dans un autre given", function ~() then
+    ivar res = "";
+    given "outer" then
+        case "outer" then
+            given "inner" then
+                case "inner" then
+                    res = "ok";
+                    break;
+                end
+            end
+            break;
+        end
+    end
+    assertEq(res, "ok", "Given imbrique dans un given");
+end);
+
+~~ ===============================================================
+~~ RAPPORT FINAL
+~~ ===============================================================
+pasteLn(StdE.Term.bold(StdE.Term.cyan("========================================================")));
+pasteLn(StdE.Term.bold(StdE.Term.cyan(">> RAPPORT DES TESTS :")));
+pasteLn(StdE.Term.bold(StdE.Term.cyan(">> TOTAL: ")) + totalCount);
+pasteLn(StdE.Term.bold(StdE.Term.green(">> SUCCES: ")) + passedCount);
+if (failedCount == 0) then
+    pasteLn(StdE.Term.bold(StdE.Term.green(">> ECHECS: ")) + failedCount);
+    pasteLn(StdE.Term.bold(StdE.Term.green(">> 100% DES TESTS SONT VALIDES !")));
+else
+    pasteLn(StdE.Term.bold(StdE.Term.red(">> ECHECS: ")) + failedCount);
+end
+pasteLn(StdE.Term.bold(StdE.Term.cyan("========================================================")));
