@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "engine\\kuroba.exe main.krb",
+    "build:wasm": "node tools/build-wasm.js",
     "sync-version": "node tools/sync-version.js",
     "version": "node tools/sync-version.js"
   },

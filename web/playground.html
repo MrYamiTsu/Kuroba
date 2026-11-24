@@ -91,8 +91,60 @@
 
   </main>
 
-  <!-- Kuroba Web Engine and Controller Scripts -->
-  <script src="js/kuroba-web.js"></script>
+  <!-- Kuroba Native C WebAssembly Engine and Controller -->
+  <script>
+    var Module = {
+      print: function(text) {
+        if (window.__kuroba_print) window.__kuroba_print(text);
+        else console.log(text);
+      },
+      printErr: function(text) {
+        if (window.__kuroba_error) window.__kuroba_error(text);
+        else if (window.__kuroba_print) window.__kuroba_print(text);
+        else console.error(text);
+      },
+      onRuntimeInitialized: function() {
+        Module._krb_wasm_init();
+        window.Kuroba = {
+          version: '1.1.0 (Native C WASM)',
+          isReady: true,
+          run: async function(code, options) {
+            const onPrint = (options && options.onPrint) || console.log;
+            const onError = (options && options.onError) || ((err) => onPrint(err, true));
+            window.__kuroba_print = onPrint;
+            window.__kuroba_error = onError;
+
+            if (options && options.files && Module.FS) {
+              for (var f in options.files) {
+                try {
+                  Module.FS.writeFile(f, options.files[f]);
+                } catch(e) {}
+              }
+            }
+
+            try {
+              return Module.ccall('krb_wasm_run', 'number', ['string'], [code]);
+            } finally {
+              window.__kuroba_print = null;
+              window.__kuroba_error = null;
+            }
+          },
+          reset: function() {
+            if (Module._krb_wasm_reset) Module._krb_wasm_reset();
+          },
+          abort: function() {}
+        };
+        var term = document.getElementById('terminal-screen');
+        if (term) {
+          var line = document.createElement('div');
+          line.className = 'term-line ok';
+          line.textContent = '>> Kuroba Native C WebAssembly Engine (v1.1.0) ready.';
+          term.appendChild(line);
+        }
+      }
+    };
+  </script>
+  <script src="js/kuroba-engine.js"></script>
   <script src="js/playground.js"></script>
 </body>
 </html>
