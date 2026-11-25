@@ -37,6 +37,7 @@ typedef struct {
     int arity;
     int minArity;
     int upvalueCount;
+    bool hasValueReturn;
     KrbValue defaultValues[16];
     Chunk chunk;
     char* name;

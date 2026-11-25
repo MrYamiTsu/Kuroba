@@ -35,6 +35,7 @@ ObjFunction *krb_new_function(void)
     function->arity = 0;
     function->minArity = 0;
     function->upvalueCount = 0;
+    function->hasValueReturn = false;
     for (int i = 0; i < 16; i++)
         function->defaultValues[i] = krb_null();
     function->name = NULL;

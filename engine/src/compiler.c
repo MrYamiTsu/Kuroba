@@ -56,7 +56,46 @@ typedef struct
     bool isCaptured;
     bool isSealed;
     bool isUnlocked;
+    char typeName[32];
 } Local;
+
+static struct
+{
+    char name[64];
+    char typeName[32];
+} globalVarTypes[256];
+static int globalVarTypeCount = 0;
+
+static void set_global_var_type(Token *tok, const char *tName)
+{
+    int len = tok->length < 63 ? tok->length : 63;
+    for (int i = 0; i < globalVarTypeCount; i++)
+    {
+        if ((int)strlen(globalVarTypes[i].name) == len && memcmp(globalVarTypes[i].name, tok->start, len) == 0)
+        {
+            snprintf(globalVarTypes[i].typeName, sizeof(globalVarTypes[i].typeName), "%s", tName);
+            return;
+        }
+    }
+    if (globalVarTypeCount < 256)
+    {
+        memcpy(globalVarTypes[globalVarTypeCount].name, tok->start, len);
+        globalVarTypes[globalVarTypeCount].name[len] = '\0';
+        snprintf(globalVarTypes[globalVarTypeCount].typeName, sizeof(globalVarTypes[0].typeName), "%s", tName);
+        globalVarTypeCount++;
+    }
+}
+
+static const char *get_global_var_type(Token *tok)
+{
+    int len = tok->length < 63 ? tok->length : 63;
+    for (int i = 0; i < globalVarTypeCount; i++)
+    {
+        if ((int)strlen(globalVarTypes[i].name) == len && memcmp(globalVarTypes[i].name, tok->start, len) == 0)
+            return globalVarTypes[i].typeName[0] != '\0' ? globalVarTypes[i].typeName : NULL;
+    }
+    return NULL;
+}
 
 typedef enum
 {
@@ -275,6 +314,18 @@ static uint16_t identifier_constant(Token *name)
     return (uint16_t)krb_add_constant(current_chunk(), krb_string(chars));
 }
 
+static void emit_runtime_type_error(const char *msg)
+{
+    ObjTable *err = krb_new_obj_table();
+    krb_table_set(&err->fields, "eName", 5, krb_string(_strdup("TypeError")), false);
+    krb_table_set(&err->fields, "eContext", 8, krb_string(_strdup(msg)), false);
+    krb_table_set(&err->fields, "eTime", 5, krb_bool(false), false);
+    krb_table_set(&err->fields, "eLine", 5, krb_int(parser.previous.line), false);
+    krb_table_set(&err->fields, "eCol", 4, krb_int(parser.previous.col), false);
+    emit_constant(krb_obj_val((Obj *)err));
+    emit_byte(OP_THROW);
+}
+
 static void init_compiler(Compiler *compiler, FunctionType type)
 {
     compiler->enclosing = current;
@@ -305,6 +356,9 @@ static void init_compiler(Compiler *compiler, FunctionType type)
     local->isCaptured = false;
     local->isSealed = false;
     local->isUnlocked = false;
+    local->typeName[0] = '\0';
+    if (type == TYPE_INITIALIZER)
+        current->function->hasValueReturn = true;
     if (type == TYPE_METHOD || type == TYPE_INITIALIZER)
     {
         local->name.start = "this";
@@ -504,18 +558,11 @@ static void named_variable(Token name, bool canAssign)
                       match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS)))
     {
         TokenType assignType = parser.previous.type;
-        if (getOp == OP_GET_LOCAL && current->locals[arg].isConst)
-        {
-            error("Impossible de reassigner la constante locale.");
-        }
+        bool blockedConst = (getOp == OP_GET_LOCAL && current->locals[arg].isConst);
         if (getOp == OP_GET_LOCAL && current->locals[arg].isSealed)
         {
-            if (!current->locals[arg].isUnlocked)
-            {
-                error("Impossible de modifier la variable locale scellee. Utilisez unlock.");
-            }
             current->locals[arg].isUnlocked = false;
-            emit_op_16(OP_LOCK_VAR, identifier_constant(&name));
+            emit_op_16(OP_CONSUME_UNLOCK, identifier_constant(&name));
         }
 
         if (assignType == TOKEN_PLUS_PLUS || assignType == TOKEN_MINUS_MINUS)
@@ -534,9 +581,28 @@ static void named_variable(Token name, bool canAssign)
             expression();
             emit_compound_op(assignType);
         }
+        if (blockedConst)
+        {
+            emit_runtime_type_error("Impossible de reassigner la constante locale.");
+            return;
+        }
         if (getOp == OP_GET_LOCAL && current->locals[arg].isNonNull)
         {
             emit_byte(OP_CHECK_NON_NULL);
+        }
+        if (getOp == OP_GET_LOCAL && current->locals[arg].typeName[0] != '\0')
+        {
+            uint16_t tc = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(current->locals[arg].typeName)));
+            emit_op_16(OP_COERCE, tc);
+        }
+        else if (getOp == OP_SET_GLOBAL || setOp == OP_SET_GLOBAL)
+        {
+            const char *gt = get_global_var_type(&name);
+            if (gt != NULL)
+            {
+                uint16_t tc = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(gt)));
+                emit_op_16(OP_COERCE, tc);
+            }
         }
         emit_var_op(setOp, arg);
     }
@@ -548,6 +614,29 @@ static void named_variable(Token name, bool canAssign)
 
 static void variable(bool canAssign)
 {
+    if (check(TOKEN_DOT))
+    {
+        void *st = krb_save_scanner_state();
+        Parser saved = parser;
+        Token rootTok = parser.previous;
+        advance();
+        if (match(TOKEN_IDENTIFIER) && check(TOKEN_IS))
+        {
+            Token memberTok = parser.previous;
+            TokenType afterIs = krb_peek_token().type;
+            if (afterIs == TOKEN_LOCK || afterIs == TOKEN_UNLOCK)
+            {
+                char buf[128];
+                snprintf(buf, sizeof(buf), "$global:%.*s.%.*s", rootTok.length, rootTok.start, memberTok.length, memberTok.start);
+                emit_constant(krb_string(_strdup(buf)));
+                krb_free_scanner_state(st);
+                return;
+            }
+        }
+        krb_restore_scanner_state(st);
+        krb_free_scanner_state(st);
+        parser = saved;
+    }
     if (check(TOKEN_IS))
     {
         TokenType afterIs = krb_peek_token().type;
@@ -854,6 +943,8 @@ static bool is_type_name_str(const char *name, int len)
     if (len == 5 && strncmp(name, "Queue", 5) == 0)
         return true;
     if (len == 5 && strncmp(name, "Table", 5) == 0)
+        return true;
+    if (len == 8 && strncmp(name, "Function", 8) == 0)
         return true;
     return false;
 }
@@ -1307,6 +1398,7 @@ static void add_local(Token name, int kind)
     local->isUnlocked = false;
     local->isNonNull = false;
     local->isCaptured = false;
+    local->typeName[0] = '\0';
 }
 
 static void declare_variable_named(Token *name, int kind)
@@ -1416,14 +1508,12 @@ static void emit_type_check_and_coerce(bool isQueueType, const char *typeName, b
 {
     if (isQueueType)
         emit_byte(OP_MARK_QUEUE);
-    if (typeName[0] != '\0' && !isNonNull)
+    if (isNonNull)
+        emit_byte(OP_CHECK_NON_NULL);
+    if (typeName[0] != '\0')
     {
         uint16_t typeConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(typeName)));
         emit_op_16(OP_COERCE, typeConst);
-    }
-    if (isNonNull)
-    {
-        emit_byte(OP_CHECK_NON_NULL);
     }
 }
 
@@ -1441,9 +1531,16 @@ static void var_declaration(int kind)
         consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'ivar', 'iconst' ou 'isealed'.");
         names[nameCount++] = parser.previous;
         declare_variable_named(&names[nameCount - 1], kind);
-        if (current->scopeDepth > 0 && isNonNull)
+        if (current->scopeDepth > 0)
         {
-            current->locals[current->localCount - 1].isNonNull = true;
+            if (isNonNull)
+                current->locals[current->localCount - 1].isNonNull = true;
+            if (typeName[0] != '\0')
+                snprintf(current->locals[current->localCount - 1].typeName, 32, "%s", typeName);
+        }
+        else
+        {
+            set_global_var_type(&names[nameCount - 1], typeName);
         }
     } while (match(TOKEN_COMMA) && nameCount < 32);
 
@@ -1960,7 +2057,7 @@ static void function_body(FunctionType type)
     emit_closure(&compiler);
 }
 
-static void function_declaration(void)
+static void function_declaration(int kind)
 {
     consume(TOKEN_IDENTIFIER, "Nom de fonction attendu apres 'function'.");
     Token nameToken = parser.previous;
@@ -1968,15 +2065,53 @@ static void function_declaration(void)
     if (current->scopeDepth == 0)
     {
         global = identifier_constant(&nameToken);
+        set_global_var_type(&nameToken, "Function");
+        function_body(TYPE_FUNCTION);
+        define_variable(global, kind);
+        return;
     }
-    else
+
+    int existing = -1;
+    for (int i = current->localCount - 1; i >= 0; i--)
     {
-        declare_variable(false);
+        if (current->locals[i].depth != -1 && current->locals[i].depth < current->scopeDepth)
+            break;
+        if (identifiers_equal(&nameToken, &current->locals[i].name))
+        {
+            existing = i;
+            break;
+        }
     }
 
-    function_body(TYPE_FUNCTION);
+    if (existing != -1)
+    {
+        function_body(TYPE_FUNCTION);
+        if (current->locals[existing].isConst)
+        {
+            emit_byte(OP_POP);
+            emit_runtime_type_error("Impossible de reecrire une fonction constante.");
+            return;
+        }
+        if (current->locals[existing].isSealed)
+        {
+            current->locals[existing].isUnlocked = false;
+            emit_op_16(OP_CONSUME_UNLOCK, identifier_constant(&nameToken));
+        }
+        if (kind == VAR_CONST)
+            current->locals[existing].isConst = true;
+        else if (kind == VAR_SEALED)
+            current->locals[existing].isSealed = true;
+        emit_bytes(OP_SET_LOCAL, (uint8_t)existing);
+        emit_byte(OP_POP);
+        return;
+    }
 
-    define_variable(global, false);
+    declare_variable(kind);
+    snprintf(current->locals[current->localCount - 1].typeName, 32, "Function");
+    if (kind == VAR_SEALED)
+        emit_op_16(OP_LOCK_VAR, identifier_constant(&nameToken));
+    function_body(TYPE_FUNCTION);
+    define_variable(0, kind);
 }
 
 static void return_statement(void)
@@ -1989,14 +2124,9 @@ static void return_statement(void)
     if (match(TOKEN_SEMICOLON))
     {
         if (current->type == TYPE_INITIALIZER)
-        {
             emit_bytes(OP_GET_LOCAL, 0);
-        }
         else
-        {
-            emit_byte(OP_CONSTANT);
-            emit_byte((uint8_t)krb_add_constant(current_chunk(), krb_null()));
-        }
+            emit_constant(krb_null());
         emit_byte(OP_RETURN);
     }
     else
@@ -2005,9 +2135,20 @@ static void return_statement(void)
         {
             error("Impossible de renvoyer une valeur personnalisee depuis un constructeur 'init'.");
         }
-        expression();
-        consume(TOKEN_SEMICOLON, "Attendu ';' apres la valeur de retour.");
-        emit_byte(OP_RETURN);
+        if (check(TOKEN_NULL) && krb_peek_token().type == TOKEN_SEMICOLON)
+        {
+            advance();
+            consume(TOKEN_SEMICOLON, "Attendu ';' apres la valeur de retour.");
+            emit_constant(krb_null());
+            emit_byte(OP_RETURN);
+        }
+        else
+        {
+            current->function->hasValueReturn = true;
+            expression();
+            consume(TOKEN_SEMICOLON, "Attendu ';' apres la valeur de retour.");
+            emit_byte(OP_RETURN);
+        }
     }
 }
 
@@ -2080,7 +2221,15 @@ static void class_declaration(void)
                 visibility = 4;
         }
 
-        if (match(TOKEN_IVAR) || match(TOKEN_ICONST))
+        int memberKind = -1;
+        if (match(TOKEN_IVAR))
+            memberKind = VAR_MUTABLE;
+        else if (match(TOKEN_ICONST))
+            memberKind = VAR_CONST;
+        else if (match(TOKEN_ISEALED))
+            memberKind = VAR_SEALED;
+
+        if (memberKind != -1 && !check(TOKEN_FUNCTION))
         {
             bool isNonNull = false;
             char typeName[32] = "";
@@ -2112,6 +2261,8 @@ static void class_declaration(void)
         }
         else if (match(TOKEN_FUNCTION))
         {
+            if (memberKind == -1)
+                memberKind = VAR_MUTABLE;
             consume(TOKEN_IDENTIFIER, "Nom de methode attendu.");
             Token methTok = parser.previous;
             uint16_t constant = identifier_constant(&methTok);
@@ -2127,6 +2278,14 @@ static void class_declaration(void)
             }
             function_body(type);
             emit_op_16(OP_METHOD, constant);
+            if (memberKind == VAR_CONST || memberKind == VAR_SEALED)
+            {
+                char qual[128];
+                snprintf(qual, sizeof(qual), "%.*s.%.*s", className.length, className.start, methTok.length, methTok.start);
+                uint16_t qualConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(qual)));
+                emit_constant(krb_null());
+                emit_op_16(memberKind == VAR_CONST ? OP_DEFINE_CONST : OP_DEFINE_SEALED, qualConst);
+            }
         }
         else if (match(TOKEN_OPERATOR))
         {
@@ -2638,32 +2797,28 @@ static void kill_statement(void)
     emit_op_16(OP_KILL, nameConst);
 }
 
-static void unlock_statement(void)
+static void lock_or_unlock_statement(bool isUnlock)
 {
-    consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'unlock'.");
+    consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'unlock' / 'lock'.");
     Token name = parser.previous;
-    uint16_t nameConst = identifier_constant(&name);
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'unlock'.");
-    int arg = resolve_local(current, &name);
-    if (arg != -1)
+    char full[128];
+    snprintf(full, sizeof(full), "%.*s", name.length, name.start);
+    bool isDotted = false;
+    if (match(TOKEN_DOT))
     {
-        current->locals[arg].isUnlocked = true;
+        isDotted = true;
+        consume(TOKEN_IDENTIFIER, "Nom de membre attendu apres '.'.");
+        snprintf(full + strlen(full), sizeof(full) - strlen(full), ".%.*s", parser.previous.length, parser.previous.start);
     }
-    emit_op_16(OP_UNLOCK_VAR, nameConst);
-}
-
-static void lock_statement(void)
-{
-    consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'lock'.");
-    Token name = parser.previous;
-    uint16_t nameConst = identifier_constant(&name);
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'lock'.");
-    int arg = resolve_local(current, &name);
-    if (arg != -1)
+    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'unlock' / 'lock'.");
+    if (!isDotted)
     {
-        current->locals[arg].isUnlocked = false;
+        int arg = resolve_local(current, &name);
+        if (arg != -1)
+            current->locals[arg].isUnlocked = isUnlock;
     }
-    emit_op_16(OP_LOCK_VAR, nameConst);
+    uint16_t nameConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(full)));
+    emit_op_16(isUnlock ? OP_UNLOCK_VAR : OP_LOCK_VAR, nameConst);
 }
 
 static void import_statement(void)
@@ -2782,17 +2937,41 @@ static void hook_declaration(void)
     }
     else
     {
-        uint16_t funcConst = identifier_constant(&target1);
-        emit_op_16(OP_GET_GLOBAL, funcConst);
         Token origTok;
         origTok.start = "orig";
         origTok.length = 4;
         uint16_t origConst = identifier_constant(&origTok);
-        emit_op_16(OP_DEFINE_GLOBAL, origConst);
+        int localArg = resolve_local(current, &target1);
+        if (localArg != -1)
+        {
+            if (current->locals[localArg].isConst)
+            {
+                function_body(TYPE_FUNCTION);
+                emit_byte(OP_POP);
+                emit_runtime_type_error("Impossible de hook une fonction constante.");
+                return;
+            }
+            if (current->locals[localArg].isSealed)
+            {
+                current->locals[localArg].isUnlocked = false;
+                emit_op_16(OP_CONSUME_UNLOCK, identifier_constant(&target1));
+            }
+            emit_bytes(OP_GET_LOCAL, (uint8_t)localArg);
+            emit_op_16(OP_DEFINE_GLOBAL, origConst);
+            function_body(TYPE_FUNCTION);
+            emit_bytes(OP_SET_LOCAL, (uint8_t)localArg);
+            emit_byte(OP_POP);
+        }
+        else
+        {
+            uint16_t funcConst = identifier_constant(&target1);
+            emit_op_16(OP_GET_GLOBAL, funcConst);
+            emit_op_16(OP_DEFINE_GLOBAL, origConst);
 
-        function_body(TYPE_FUNCTION);
-        emit_op_16(OP_SET_GLOBAL, funcConst);
-        emit_byte(OP_POP);
+            function_body(TYPE_FUNCTION);
+            emit_op_16(OP_SET_GLOBAL, funcConst);
+            emit_byte(OP_POP);
+        }
     }
 }
 
@@ -2821,31 +3000,35 @@ static void cast_assignment_statement(void)
 
     int arg = resolve_local(current, &varName);
     uint8_t setOp;
+    bool blockedConst = false;
     if (arg != -1)
     {
         setOp = OP_SET_LOCAL;
+        snprintf(current->locals[arg].typeName, 32, "%s", typeName);
         if (current->locals[arg].isConst)
-        {
-            error("Impossible de reassigner la constante locale.");
-        }
+            blockedConst = true;
         if (current->locals[arg].isSealed)
         {
-            if (!current->locals[arg].isUnlocked)
-            {
-                error("Impossible de modifier la variable locale scellee. Utilisez unlock.");
-            }
             current->locals[arg].isUnlocked = false;
-            emit_op_16(OP_LOCK_VAR, identifier_constant(&varName));
+            emit_op_16(OP_CONSUME_UNLOCK, identifier_constant(&varName));
         }
     }
     else
     {
         arg = identifier_constant(&varName);
         setOp = OP_SET_GLOBAL;
+        set_global_var_type(&varName, typeName);
     }
 
     consume(TOKEN_EQUAL, "Attendu '=' pour l'assignation de transtypage.");
     expression();
+    if (blockedConst)
+    {
+        emit_byte(OP_POP);
+        emit_runtime_type_error("Impossible de reassigner la constante locale.");
+        consume(TOKEN_SEMICOLON, "Attendu ';' apres l'assignation de transtypage.");
+        return;
+    }
 
     uint16_t typeConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(typeName)));
     emit_op_16(OP_COERCE, typeConst);
@@ -2940,11 +3123,11 @@ static void statement(void)
     }
     else if (match(TOKEN_UNLOCK))
     {
-        unlock_statement();
+        lock_or_unlock_statement(true);
     }
     else if (match(TOKEN_LOCK))
     {
-        lock_statement();
+        lock_or_unlock_statement(false);
     }
     else if (match(TOKEN_IMPORT))
     {
@@ -2983,19 +3166,28 @@ static void declaration(void)
 {
     if (match(TOKEN_IVAR))
     {
-        var_declaration(VAR_MUTABLE);
+        if (match(TOKEN_FUNCTION))
+            function_declaration(VAR_MUTABLE);
+        else
+            var_declaration(VAR_MUTABLE);
     }
     else if (match(TOKEN_ICONST))
     {
-        var_declaration(VAR_CONST);
+        if (match(TOKEN_FUNCTION))
+            function_declaration(VAR_CONST);
+        else
+            var_declaration(VAR_CONST);
     }
     else if (match(TOKEN_ISEALED))
     {
-        var_declaration(VAR_SEALED);
+        if (match(TOKEN_FUNCTION))
+            function_declaration(VAR_SEALED);
+        else
+            var_declaration(VAR_SEALED);
     }
     else if (match(TOKEN_FUNCTION))
     {
-        function_declaration();
+        function_declaration(VAR_MUTABLE);
     }
     else if (match(TOKEN_CLASS))
     {

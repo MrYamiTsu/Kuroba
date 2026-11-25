@@ -68,6 +68,7 @@ typedef enum {
     OP_DEFINE_SEALED,    // Define a sealed variable (isealed)
     OP_UNLOCK_VAR,       // Unlock a sealed variable (unlock)
     OP_LOCK_VAR,         // Relock a sealed variable (lock)
+    OP_CONSUME_UNLOCK,   // Verify and consume one-shot unlock on local sealed entity
     OP_RETURN,           // Return from function or exit script
 } OpCode;
 

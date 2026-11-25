@@ -283,8 +283,16 @@ static bool is_falsey(KrbValue value)
     return false;
 }
 
+static bool is_null_function(KrbValue v)
+{
+    ObjFunction *fn = IS_CLOSURE(v) ? AS_CLOSURE(v)->function : (IS_FUNCTION(v) ? AS_FUNCTION(v) : NULL);
+    return fn != NULL && fn->arity == 0 && !fn->hasValueReturn;
+}
+
 static bool values_equal(KrbValue a, KrbValue b)
 {
+    if ((a.type == VAL_NULL && is_null_function(b)) || (b.type == VAL_NULL && is_null_function(a)))
+        return true;
     if (a.type == b.type)
         return krb_values_equal(a, b);
     if (a.type == VAL_INT && b.type == VAL_BOOL)
@@ -336,7 +344,7 @@ static bool eval_is_check(KrbValue val, const char *spec)
     }
 
     if (strcmp(spec, "NULL") == 0)
-        return val.type == VAL_NULL;
+        return val.type == VAL_NULL || is_null_function(val);
     if (strcmp(spec, "Int") == 0)
         return val.type == VAL_INT;
     if (strcmp(spec, "Float") == 0)
@@ -353,6 +361,8 @@ static bool eval_is_check(KrbValue val, const char *spec)
         return IS_LIST(val);
     if (strcmp(spec, "Table") == 0)
         return IS_TABLE(val) || IS_INSTANCE(val);
+    if (strcmp(spec, "Function") == 0)
+        return IS_CLOSURE(val) || IS_FUNCTION(val) || IS_NATIVE(val);
 
     if (IS_INSTANCE(val))
     {
@@ -785,6 +795,33 @@ static int check_field_visibility(ObjInstance *instance, const char *propName, C
     return 1;
 }
 
+/* Verifies that 'key' is not locked by iconst or isealed (auto-reseals if unlocked).
+ * Returns 1 if allowed, 0 if caught runtime error, -1 if uncaught runtime error. */
+static int check_lock_guard(const char *key, CallFrame **frameOut)
+{
+    int len = (int)strlen(key);
+    KrbValue dummy;
+    if (krb_table_get(&vm.constGlobals, key, len, &dummy))
+    {
+        if (!trigger_runtime_error("TypeError", "Impossible de modifier ou hook la constante '%s'.", key))
+            return -1;
+        *frameOut = &vm.frames[vm.frameCount - 1];
+        return 0;
+    }
+    if (krb_table_get(&vm.sealedGlobals, key, len, &dummy))
+    {
+        if (!krb_table_get(&vm.unlockedGlobals, key, len, &dummy))
+        {
+            if (!trigger_runtime_error("TypeError", "Impossible de modifier ou hook l'element scelle '%s'. Utilisez unlock.", key))
+                return -1;
+            *frameOut = &vm.frames[vm.frameCount - 1];
+            return 0;
+        }
+        krb_table_delete(&vm.unlockedGlobals, key, len);
+    }
+    return 1;
+}
+
 static InterpretResult run(int minFrameCount)
 {
     CallFrame *frame = &vm.frames[vm.frameCount - 1];
@@ -856,16 +893,32 @@ static InterpretResult run(int minFrameCount)
         }
         case OP_DEFINE_GLOBAL:
         case OP_DEFINE_CONST:
+        case OP_DEFINE_SEALED:
         {
-            bool isConst = (instruction == OP_DEFINE_CONST);
             uint16_t constIdx = READ_SHORT();
             KrbValue nameVal = CURRENT_CHUNK.constants.values[constIdx];
             KrbValue val = krb_pop();
-            krb_table_set(&vm.globals, nameVal.as.string, (int)strlen(nameVal.as.string), val, isConst);
-            if (isConst)
+            const char *key = nameVal.as.string;
+            int keyLen = (int)strlen(key);
+            if (strchr(key, '.') != NULL)
             {
-                krb_table_set(&vm.constGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), krb_bool(true), false);
+                if (instruction == OP_DEFINE_CONST)
+                    krb_table_set(&vm.constGlobals, key, keyLen, krb_bool(true), false);
+                else if (instruction == OP_DEFINE_SEALED)
+                    krb_table_set(&vm.sealedGlobals, key, keyLen, krb_bool(true), false);
+                break;
             }
+            int guard = check_lock_guard(key, &frame);
+            if (guard < 0)
+                return INTERPRET_RUNTIME_ERROR;
+            if (guard == 0)
+                break;
+            bool isConst = (instruction == OP_DEFINE_CONST);
+            krb_table_set(&vm.globals, key, keyLen, val, isConst);
+            if (isConst)
+                krb_table_set(&vm.constGlobals, key, keyLen, krb_bool(true), false);
+            else if (instruction == OP_DEFINE_SEALED)
+                krb_table_set(&vm.sealedGlobals, key, keyLen, krb_bool(true), false);
             break;
         }
         case OP_GET_GLOBAL:
@@ -896,25 +949,11 @@ static InterpretResult run(int minFrameCount)
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
             }
-            if (krb_table_get(&vm.constGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), &dummy))
-            {
-                if (!trigger_runtime_error("TypeError", "Impossible de reassigner la constante '%s'.", nameVal.as.string))
-                    return INTERPRET_RUNTIME_ERROR;
-                frame = &vm.frames[vm.frameCount - 1];
+            int guard = check_lock_guard(nameVal.as.string, &frame);
+            if (guard < 0)
+                return INTERPRET_RUNTIME_ERROR;
+            if (guard == 0)
                 break;
-            }
-            if (krb_table_get(&vm.sealedGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), &dummy))
-            {
-                KrbValue unlockedVal;
-                if (!krb_table_get(&vm.unlockedGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), &unlockedVal))
-                {
-                    if (!trigger_runtime_error("TypeError", "Impossible de modifier la variable scellee '%s'. Utilisez unlock.", nameVal.as.string))
-                        return INTERPRET_RUNTIME_ERROR;
-                    frame = &vm.frames[vm.frameCount - 1];
-                    break;
-                }
-                krb_table_delete(&vm.unlockedGlobals, nameVal.as.string, (int)strlen(nameVal.as.string));
-            }
             if (!krb_table_assign(&vm.globals, nameVal.as.string, (int)strlen(nameVal.as.string), val))
             {
                 if (!trigger_runtime_error("ReferenceError", "Variable non definie '%s'.", nameVal.as.string))
@@ -1304,9 +1343,16 @@ static InterpretResult run(int minFrameCount)
                 krb_push(val);
                 break;
             }
-            if (target.type == VAL_OBJ && target.as.obj->type == OBJ_CLASS)
+            if (IS_CLASS(target))
             {
-                ObjClass *klass = (ObjClass *)target.as.obj;
+                ObjClass *klass = AS_CLASS(target);
+                char qual[128];
+                snprintf(qual, sizeof(qual), "%s.%s", klass->name ? klass->name : "", propName.as.string);
+                int guard = check_lock_guard(qual, &frame);
+                if (guard < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (guard == 0)
+                    break;
                 krb_table_set(&klass->methods, propName.as.string, (int)strlen(propName.as.string), val, false);
                 krb_push(val);
                 break;
@@ -1684,6 +1730,15 @@ static InterpretResult run(int minFrameCount)
                         *(vm.stackTop - 1) = krb_bool(strcmp(top.as.string, "TRUE") == 0 || strcmp(top.as.string, "1") == 0);
                     }
                 }
+                else if (strcmp(targetType, "Function") == 0)
+                {
+                    if (!IS_CLOSURE(top) && !IS_FUNCTION(top) && !IS_NATIVE(top))
+                    {
+                        if (!trigger_runtime_error("TypeError", "Expected a Function value."))
+                            return INTERPRET_RUNTIME_ERROR;
+                        frame = &vm.frames[vm.frameCount - 1];
+                    }
+                }
             }
             break;
         }
@@ -1824,23 +1879,21 @@ static InterpretResult run(int minFrameCount)
             if (IS_CLASS(klassVal))
             {
                 ObjClass *klass = AS_CLASS(klassVal);
+                char qual[128];
+                snprintf(qual, sizeof(qual), "%s.%s", klass->name ? klass->name : "", name.as.string);
+                int guard = check_lock_guard(qual, &frame);
+                if (guard < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (guard == 0)
+                    break;
                 KrbValue oldMethod;
                 if (find_class_method(klass, name.as.string, &oldMethod))
                 {
                     char origName[128];
                     snprintf(origName, sizeof(origName), "__orig_%s", name.as.string);
-                    krb_table_set(&klass->methods, origName, (int)strlen(origName), oldMethod, false);
+                    krb_table_set(&klass->methods, _strdup(origName), (int)strlen(origName), oldMethod, false);
                 }
             }
-            break;
-        }
-        case OP_DEFINE_SEALED:
-        {
-            uint16_t constIdx = READ_SHORT();
-            KrbValue name = CURRENT_CHUNK.constants.values[constIdx];
-            KrbValue val = krb_pop();
-            krb_table_set(&vm.globals, name.as.string, (int)strlen(name.as.string), val, false);
-            krb_table_set(&vm.sealedGlobals, name.as.string, (int)strlen(name.as.string), krb_bool(true), false);
             break;
         }
         case OP_UNLOCK_VAR:
@@ -1854,6 +1907,21 @@ static InterpretResult run(int minFrameCount)
         {
             uint16_t constIdx = READ_SHORT();
             KrbValue name = CURRENT_CHUNK.constants.values[constIdx];
+            krb_table_delete(&vm.unlockedGlobals, name.as.string, (int)strlen(name.as.string));
+            break;
+        }
+        case OP_CONSUME_UNLOCK:
+        {
+            uint16_t constIdx = READ_SHORT();
+            KrbValue name = CURRENT_CHUNK.constants.values[constIdx];
+            KrbValue dummy;
+            if (!krb_table_get(&vm.unlockedGlobals, name.as.string, (int)strlen(name.as.string), &dummy))
+            {
+                if (!trigger_runtime_error("TypeError", "Impossible de modifier ou hook l'element scelle '%s'. Utilisez unlock.", name.as.string))
+                    return INTERPRET_RUNTIME_ERROR;
+                frame = &vm.frames[vm.frameCount - 1];
+                break;
+            }
             krb_table_delete(&vm.unlockedGlobals, name.as.string, (int)strlen(name.as.string));
             break;
         }

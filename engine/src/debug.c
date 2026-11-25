@@ -196,6 +196,8 @@ int krb_disassemble_instruction(Chunk *chunk, int offset)
         return constant_instruction("OP_UNLOCK_VAR", chunk, offset);
     case OP_LOCK_VAR:
         return constant_instruction("OP_LOCK_VAR", chunk, offset);
+    case OP_CONSUME_UNLOCK:
+        return constant_instruction("OP_CONSUME_UNLOCK", chunk, offset);
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:
