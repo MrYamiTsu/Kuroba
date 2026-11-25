@@ -289,6 +289,20 @@ static bool is_null_function(KrbValue v)
     return fn != NULL && fn->arity == 0 && !fn->hasValueReturn;
 }
 
+static KrbValue wrap_value_as_function(KrbValue val)
+{
+    ObjFunction *fn = krb_new_function();
+    fn->hasValueReturn = (val.type != VAL_NULL);
+    if (val.type == VAL_STRING && val.as.string != NULL)
+        val = krb_string(_strdup(val.as.string));
+    int idx = krb_add_constant(&fn->chunk, val);
+    krb_write_chunk(&fn->chunk, OP_CONSTANT, 0);
+    krb_write_chunk(&fn->chunk, (uint8_t)((idx >> 8) & 0xff), 0);
+    krb_write_chunk(&fn->chunk, (uint8_t)(idx & 0xff), 0);
+    krb_write_chunk(&fn->chunk, OP_RETURN, 0);
+    return krb_obj_val((Obj *)krb_new_closure(fn));
+}
+
 static bool values_equal(KrbValue a, KrbValue b)
 {
     if ((a.type == VAL_NULL && is_null_function(b)) || (b.type == VAL_NULL && is_null_function(a)))
@@ -942,7 +956,7 @@ static InterpretResult run(int minFrameCount)
             KrbValue nameVal = CURRENT_CHUNK.constants.values[constIdx];
             KrbValue val = *(vm.stackTop - 1);
             KrbValue dummy;
-            if (val.type == VAL_NULL && krb_table_get(&vm.nonNullGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), &dummy))
+            if ((val.type == VAL_NULL || is_null_function(val)) && krb_table_get(&vm.nonNullGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), &dummy))
             {
                 if (!trigger_runtime_error("TypeError", "Cannot assign NULL to non-nullable variable '%s'.", nameVal.as.string))
                     return INTERPRET_RUNTIME_ERROR;
@@ -1654,6 +1668,12 @@ static InterpretResult run(int minFrameCount)
             KrbValue typeVal = CURRENT_CHUNK.constants.values[typeConst];
             const char *targetType = typeVal.as.string;
             KrbValue top = krb_peek(0);
+            if (strcmp(targetType, "Function") == 0)
+            {
+                if (!IS_CLOSURE(top) && !IS_FUNCTION(top) && !IS_NATIVE(top))
+                    *(vm.stackTop - 1) = wrap_value_as_function(top);
+                break;
+            }
             if (top.type != VAL_NULL)
             {
                 if (strcmp(targetType, "Int") == 0)
@@ -1730,21 +1750,13 @@ static InterpretResult run(int minFrameCount)
                         *(vm.stackTop - 1) = krb_bool(strcmp(top.as.string, "TRUE") == 0 || strcmp(top.as.string, "1") == 0);
                     }
                 }
-                else if (strcmp(targetType, "Function") == 0)
-                {
-                    if (!IS_CLOSURE(top) && !IS_FUNCTION(top) && !IS_NATIVE(top))
-                    {
-                        if (!trigger_runtime_error("TypeError", "Expected a Function value."))
-                            return INTERPRET_RUNTIME_ERROR;
-                        frame = &vm.frames[vm.frameCount - 1];
-                    }
-                }
             }
             break;
         }
         case OP_CHECK_NON_NULL:
         {
-            if (krb_peek(0).type == VAL_NULL)
+            KrbValue chk = krb_peek(0);
+            if (chk.type == VAL_NULL || is_null_function(chk))
             {
                 if (!trigger_runtime_error("TypeError", "Cannot assign NULL to non-nullable variable."))
                     return INTERPRET_RUNTIME_ERROR;

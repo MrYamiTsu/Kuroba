@@ -336,9 +336,9 @@ ivar~String port = 8080;   ~~ Coerced to String "8080"
 ivar~Bool active = 1;      ~~ Coerced to TRUE (0 becomes FALSE)
 ivar~Float ratio = "3.14"; ~~ Coerced to Float 3.14
 
-~~ Enforcing callable Function references:
-ivar~Function cb = function ~(ivar x) then return x * 2; end;
-~~ cb = 123;               ~~ [TypeError] Expected a Function value.</code></pre>
+~~ Coercing values into 0-argument getter Functions:
+ivar~Function cb = 123;      ~~ Becomes function ~() then return 123; end (cb() -> 123)
+ivar~Function fnNull = NULL; ~~ Becomes 0-arg function returning NULL (fnNull is Function &amp;&amp; fnNull is NULL)</code></pre>
 
         <h3>Strict Non-Nullable Contract (<code>~(Type)</code>)</h3>
         <p>Guarantees that a variable, parameter, or field can <strong>never</strong> receive <code>NULL</code>, raising an immediate <code>[TypeError]</code> upon violation:</p>
@@ -825,8 +825,8 @@ end
 pasteLn(calculateDamage(25));    ~~ 25 (uses default multiplier = 1)
 pasteLn(calculateDamage(25, 2)); ~~ 50</code></pre>
 
-        <h3>Anonymous Lambdas (<code>function ~</code>), <code>Function</code> Typing &amp; Null Functions</h3>
-        <p>Functions are first-class values that can be constrained with <code>ivar~Function</code>. Any <strong>0-argument</strong> function that returns nothing, uses a bare <code>return;</code>, or returns <code>NULL</code> is treated as a <strong>null function</strong> (evaluating to <code>TRUE</code> on both <code>fn is NULL</code> and <code>fn == NULL</code> while remaining <code>fn is Function</code>):</p>
+        <h3>Anonymous Lambdas (<code>function ~</code>), <code>Function</code> Coercion &amp; Null Functions</h3>
+        <p>Functions are first-class values that can be typed or cast with <code>ivar~Function</code> and <code>[Function]val</code>. Coercing or casting any non-function value (including <code>NULL</code>) into <code>Function</code> wraps it into a <strong>0-argument</strong> function returning that value. Any 0-argument function that returns nothing, uses a bare <code>return;</code>, or returns <code>NULL</code> is treated as a <strong>null function</strong> (evaluating to <code>TRUE</code> on both <code>fn is NULL</code> and <code>fn == NULL</code> while remaining <code>fn is Function</code>):</p>
         <pre><code class="language-kuroba">function createMultiplier(ivar factor) then
     return function ~(ivar n) then
         return n * factor;
@@ -835,11 +835,13 @@ end
 
 ivar~Function triple = createMultiplier(3);
 pasteLn(triple(10));         ~~ 30
-pasteLn(triple is Function); ~~ TRUE
 
-ivar~Function noop = function ~() then end;
+ivar~Function constGetter = 123; ~~ Coerced into 0-arg function returning 123
+pasteLn(constGetter());          ~~ 123
+
+ivar~Function noop = NULL;   ~~ Coerced into 0-arg function returning NULL
 pasteLn(noop is Function);   ~~ TRUE
-pasteLn(noop is NULL);       ~~ TRUE (0 parameters &amp; no value return)
+pasteLn(noop is NULL);       ~~ TRUE (0 parameters &amp; returns NULL)
 pasteLn(noop == NULL);       ~~ TRUE</code></pre>
 
         <h3>Constant &amp; Sealed Functions (<code>iconst function</code> / <code>isealed function</code>)</h3>
@@ -2286,7 +2288,7 @@ pasteLn("User: " + envTable.USERNAME);
 
         <h3>2. TypeError</h3>
         <p>Violations of runtime type contracts, non-nullability, encapsulation, or constant/sealed locks:</p>
-        <pre><code class="language-output">[TypeError: Line 3, Col 1] Expected a Function value.
+        <pre><code class="language-output">[TypeError: Line 3, Col 1] Cannot assign NULL to non-nullable variable.
 [TypeError: Line 5, Col 1] Cannot modify or hook constant 'PORT'.
 [TypeError: Line 7, Col 1] Cannot modify or hook sealed target 'secret'. Use unlock first.
 [TypeError: Line 9, Col 1] Cannot assign NULL to non-nullable variable 'user'.
