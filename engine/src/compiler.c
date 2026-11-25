@@ -515,6 +515,7 @@ static void named_variable(Token name, bool canAssign)
                 error("Impossible de modifier la variable locale scellee. Utilisez unlock.");
             }
             current->locals[arg].isUnlocked = false;
+            emit_op_16(OP_LOCK_VAR, identifier_constant(&name));
         }
 
         if (assignType == TOKEN_PLUS_PLUS || assignType == TOKEN_MINUS_MINUS)
@@ -547,6 +548,40 @@ static void named_variable(Token name, bool canAssign)
 
 static void variable(bool canAssign)
 {
+    if (check(TOKEN_IS))
+    {
+        TokenType afterIs = krb_peek_token().type;
+        if (afterIs == TOKEN_LOCK || afterIs == TOKEN_UNLOCK)
+        {
+            Token varTok = parser.previous;
+            Local *loc = NULL;
+            for (Compiler *c = current; c != NULL; c = c->enclosing)
+            {
+                int idx = resolve_local(c, &varTok);
+                if (idx != -1)
+                {
+                    loc = &c->locals[idx];
+                    break;
+                }
+            }
+            char buf[96];
+            if (loc != NULL)
+            {
+                if (loc->isConst)
+                    strcpy(buf, "$const");
+                else if (!loc->isSealed)
+                    strcpy(buf, "$mutable");
+                else
+                    snprintf(buf, sizeof(buf), "$sealed:%.*s", varTok.length, varTok.start);
+            }
+            else
+            {
+                snprintf(buf, sizeof(buf), "$global:%.*s", varTok.length, varTok.start);
+            }
+            emit_constant(krb_string(_strdup(buf)));
+            return;
+        }
+    }
     named_variable(parser.previous, canAssign);
 }
 
@@ -987,6 +1022,14 @@ static void is_expression(bool canAssign)
     if (match(TOKEN_NULL))
     {
         strcpy(typeBuf, "NULL");
+    }
+    else if (match(TOKEN_LOCK))
+    {
+        strcpy(typeBuf, ":lock");
+    }
+    else if (match(TOKEN_UNLOCK))
+    {
+        strcpy(typeBuf, ":unlock");
     }
     else
     {
@@ -1429,6 +1472,10 @@ static void var_declaration(int kind)
             global = identifier_constant(&names[i]);
             if (isNonNull)
                 emit_op_16(OP_DEF_NON_NULL, global);
+        }
+        else if (kind == VAR_SEALED)
+        {
+            emit_op_16(OP_LOCK_VAR, identifier_constant(&names[i]));
         }
         define_variable(global, kind);
     }
@@ -2788,6 +2835,7 @@ static void cast_assignment_statement(void)
                 error("Impossible de modifier la variable locale scellee. Utilisez unlock.");
             }
             current->locals[arg].isUnlocked = false;
+            emit_op_16(OP_LOCK_VAR, identifier_constant(&varName));
         }
     }
     else

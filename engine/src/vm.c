@@ -300,6 +300,41 @@ static bool values_equal(KrbValue a, KrbValue b)
 
 static bool eval_is_check(KrbValue val, const char *spec)
 {
+    const char *lockSpec = (spec[0] == ':') ? (spec + 1) : spec;
+    if (strcmp(lockSpec, "lock") == 0 || strcmp(lockSpec, "unlock") == 0)
+    {
+        bool wantLock = (strcmp(lockSpec, "lock") == 0);
+        if (val.type != VAL_STRING)
+            return false;
+        const char *s = val.as.string;
+        if (strcmp(s, "$const") == 0)
+            return wantLock;
+        if (strcmp(s, "$mutable") == 0)
+            return !wantLock;
+        KrbValue dummy;
+        if (strncmp(s, "$sealed:", 8) == 0)
+        {
+            const char *vname = s + 8;
+            bool isUnl = krb_table_get(&vm.unlockedGlobals, vname, (int)strlen(vname), &dummy);
+            return wantLock ? !isUnl : isUnl;
+        }
+        if (strncmp(s, "$global:", 8) == 0)
+        {
+            const char *vname = s + 8;
+            int vlen = (int)strlen(vname);
+            if (krb_table_get(&vm.constGlobals, vname, vlen, &dummy))
+                return wantLock;
+            if (krb_table_get(&vm.sealedGlobals, vname, vlen, &dummy))
+            {
+                bool isUnl = krb_table_get(&vm.unlockedGlobals, vname, vlen, &dummy);
+                return wantLock ? !isUnl : isUnl;
+            }
+            if (krb_table_get(&vm.globals, vname, vlen, &dummy))
+                return !wantLock;
+        }
+        return false;
+    }
+
     if (strcmp(spec, "NULL") == 0)
         return val.type == VAL_NULL;
     if (strcmp(spec, "Int") == 0)
@@ -534,11 +569,21 @@ static bool binary_op(char op, CallFrame **frameOut)
         const char *opMethod = NULL;
         switch (op)
         {
-        case '+': opMethod = "__op_add"; break;
-        case '-': opMethod = "__op_sub"; break;
-        case '*': opMethod = "__op_mul"; break;
-        case '/': opMethod = "__op_div"; break;
-        case '%': opMethod = "__op_mod"; break;
+        case '+':
+            opMethod = "__op_add";
+            break;
+        case '-':
+            opMethod = "__op_sub";
+            break;
+        case '*':
+            opMethod = "__op_mul";
+            break;
+        case '/':
+            opMethod = "__op_div";
+            break;
+        case '%':
+            opMethod = "__op_mod";
+            break;
         }
         if (opMethod != NULL)
         {
