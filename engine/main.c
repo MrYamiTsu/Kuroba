@@ -16,7 +16,7 @@ static char *read_file_from_disk(const char *path)
     FILE *file = fopen(path, "rb");
     if (file == NULL)
     {
-        fprintf(stderr, "Impossible d'ouvrir le fichier \"%s\".\n", path);
+        fprintf(stderr, "Could not open file \"%s\".\n", path);
         return NULL;
     }
 
@@ -27,7 +27,7 @@ static char *read_file_from_disk(const char *path)
     char *buffer = (char *)malloc(fileSize + 1);
     if (buffer == NULL)
     {
-        fprintf(stderr, "Pas assez de memoire pour lire \"%s\".\n", path);
+        fprintf(stderr, "Not enough memory to read \"%s\".\n", path);
         fclose(file);
         return NULL;
     }

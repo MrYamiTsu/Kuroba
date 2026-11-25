@@ -674,7 +674,7 @@ static bool binary_op(char op, CallFrame **frameOut)
         return true;
     }
 
-    if (!trigger_runtime_error("TypeError", "Les operandes doivent etre des nombres (Int ou Float)."))
+    if (!trigger_runtime_error("TypeError", "Operands must be numbers (Int or Float)."))
         return false;
     *frameOut = &vm.frames[vm.frameCount - 1];
     return true;
@@ -685,7 +685,7 @@ static bool call(ObjClosure *closure, int argCount)
     ObjFunction *function = closure->function;
     if (argCount < function->minArity || argCount > function->arity)
     {
-        if (!runtime_error("Attendu entre %d et %d arguments mais recu %d.", function->minArity, function->arity, argCount))
+        if (!runtime_error("Expected between %d and %d arguments but got %d.", function->minArity, function->arity, argCount))
             return false;
         return true;
     }
@@ -698,7 +698,7 @@ static bool call(ObjClosure *closure, int argCount)
 
     if (vm.frameCount == FRAMES_MAX)
     {
-        if (!runtime_error("Debordement de pile d'appels (Stack overflow)."))
+        if (!runtime_error("Call stack overflow."))
             return false;
         return true;
     }
@@ -744,7 +744,7 @@ static bool call_value(KrbValue callee, int argCount)
             }
             else if (argCount != 0)
             {
-                if (!runtime_error("Attendu 0 arguments mais recu %d.", argCount))
+                if (!runtime_error("Expected 0 arguments but got %d.", argCount))
                     return false;
                 return true;
             }
@@ -754,7 +754,7 @@ static bool call_value(KrbValue callee, int argCount)
             break;
         }
     }
-    if (!runtime_error("Seules les fonctions et classes peuvent etre appelees."))
+    if (!runtime_error("Only functions and classes can be called."))
         return false;
     return true;
 }
@@ -803,7 +803,7 @@ static int check_lock_guard(const char *key, CallFrame **frameOut)
     KrbValue dummy;
     if (krb_table_get(&vm.constGlobals, key, len, &dummy))
     {
-        if (!trigger_runtime_error("TypeError", "Impossible de modifier ou hook la constante '%s'.", key))
+        if (!trigger_runtime_error("TypeError", "Cannot modify or hook constant '%s'.", key))
             return -1;
         *frameOut = &vm.frames[vm.frameCount - 1];
         return 0;
@@ -812,7 +812,7 @@ static int check_lock_guard(const char *key, CallFrame **frameOut)
     {
         if (!krb_table_get(&vm.unlockedGlobals, key, len, &dummy))
         {
-            if (!trigger_runtime_error("TypeError", "Impossible de modifier ou hook l'element scelle '%s'. Utilisez unlock.", key))
+            if (!trigger_runtime_error("TypeError", "Cannot modify or hook sealed target '%s'. Use unlock first.", key))
                 return -1;
             *frameOut = &vm.frames[vm.frameCount - 1];
             return 0;
@@ -928,7 +928,7 @@ static InterpretResult run(int minFrameCount)
             KrbValue val;
             if (!krb_table_get(&vm.globals, nameVal.as.string, (int)strlen(nameVal.as.string), &val))
             {
-                if (!trigger_runtime_error("ReferenceError", "Variable non definie '%s'.", nameVal.as.string))
+                if (!trigger_runtime_error("ReferenceError", "Undefined variable '%s'.", nameVal.as.string))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
@@ -956,7 +956,7 @@ static InterpretResult run(int minFrameCount)
                 break;
             if (!krb_table_assign(&vm.globals, nameVal.as.string, (int)strlen(nameVal.as.string), val))
             {
-                if (!trigger_runtime_error("ReferenceError", "Variable non definie '%s'.", nameVal.as.string))
+                if (!trigger_runtime_error("ReferenceError", "Undefined variable '%s'.", nameVal.as.string))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
@@ -1016,7 +1016,7 @@ static InterpretResult run(int minFrameCount)
             }
             else
             {
-                if (!trigger_runtime_error("TypeError", "L'operande de negation unaire doit etre un nombre."))
+                if (!trigger_runtime_error("TypeError", "Operand of unary '-' must be a number."))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
             }
@@ -1069,7 +1069,7 @@ static InterpretResult run(int minFrameCount)
             }
             else
             {
-                if (!trigger_runtime_error("TypeError", isGt ? "Les operandes de '>' doivent etre des nombres." : "Les operandes de '<' doivent etre des nombres."))
+                if (!trigger_runtime_error("TypeError", isGt ? "Operands of '>' must be numbers." : "Operands of '<' must be numbers."))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
             }
@@ -1150,7 +1150,7 @@ static InterpretResult run(int minFrameCount)
                 int64_t idx = index.as.integer;
                 if (idx < 0 || idx >= list->elements.count)
                 {
-                    if (!trigger_runtime_error("IndexError", "Index de liste hors limites [%lld].", (long long)idx))
+                    if (!trigger_runtime_error("IndexError", "List index out of bounds [%lld].", (long long)idx))
                         return INTERPRET_RUNTIME_ERROR;
                     frame = &vm.frames[vm.frameCount - 1];
                     break;
@@ -1163,7 +1163,7 @@ static InterpretResult run(int minFrameCount)
                 size_t len = strlen(target.as.string);
                 if (idx < 0 || (size_t)idx >= len)
                 {
-                    if (!trigger_runtime_error("IndexError", "Index de chaine hors limites."))
+                    if (!trigger_runtime_error("IndexError", "String index out of bounds."))
                         return INTERPRET_RUNTIME_ERROR;
                     frame = &vm.frames[vm.frameCount - 1];
                     break;
@@ -1186,7 +1186,7 @@ static InterpretResult run(int minFrameCount)
             }
             else
             {
-                if (!trigger_runtime_error("IndexError", "Indexation invalide sur cette valeur."))
+                if (!trigger_runtime_error("IndexError", "Invalid indexing on this value."))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
@@ -1205,7 +1205,7 @@ static InterpretResult run(int minFrameCount)
                 int64_t idx = index.as.integer;
                 if (idx < 0 || idx >= list->elements.count)
                 {
-                    if (!trigger_runtime_error("IndexError", "Index de liste hors limites [%lld].", (long long)idx))
+                    if (!trigger_runtime_error("IndexError", "List index out of bounds [%lld].", (long long)idx))
                         return INTERPRET_RUNTIME_ERROR;
                     frame = &vm.frames[vm.frameCount - 1];
                     break;
@@ -1221,7 +1221,7 @@ static InterpretResult run(int minFrameCount)
             }
             else
             {
-                if (!trigger_runtime_error("IndexError", "Assignation par index invalide."))
+                if (!trigger_runtime_error("IndexError", "Invalid index assignment."))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
@@ -1304,7 +1304,7 @@ static InterpretResult run(int minFrameCount)
                 krb_push(krb_null());
                 break;
             }
-            if (!trigger_runtime_error("TypeError", "Seules les instances et tables ont des proprietes."))
+            if (!trigger_runtime_error("TypeError", "Only instances and tables have properties."))
                 return INTERPRET_RUNTIME_ERROR;
             frame = &vm.frames[vm.frameCount - 1];
             break;
@@ -1357,7 +1357,7 @@ static InterpretResult run(int minFrameCount)
                 krb_push(val);
                 break;
             }
-            if (!trigger_runtime_error("TypeError", "Seules les instances et tables ont des champs mutables."))
+            if (!trigger_runtime_error("TypeError", "Only instances and tables have mutable fields."))
                 return INTERPRET_RUNTIME_ERROR;
             frame = &vm.frames[vm.frameCount - 1];
             break;
@@ -1433,7 +1433,7 @@ static InterpretResult run(int minFrameCount)
                         int64_t pos = (krb_peek(0).type == VAL_INT) ? krb_peek(0).as.integer : 0;
                         if (pos < 0 || pos >= list->elements.count)
                         {
-                            if (!trigger_runtime_error("IndexError", "Index hors limites."))
+                            if (!trigger_runtime_error("IndexError", "Index out of bounds."))
                                 return INTERPRET_RUNTIME_ERROR;
                             frame = &vm.frames[vm.frameCount - 1];
                             break;
@@ -1461,7 +1461,7 @@ static InterpretResult run(int minFrameCount)
                     int64_t pos = (argCount > 0 && krb_peek(0).type == VAL_INT) ? krb_peek(0).as.integer : (list->isQueue ? 0 : list->elements.count - 1);
                     if (pos < 0 || pos >= list->elements.count)
                     {
-                        if (!trigger_runtime_error("IndexError", "Index hors limites."))
+                        if (!trigger_runtime_error("IndexError", "Index out of bounds."))
                             return INTERPRET_RUNTIME_ERROR;
                         frame = &vm.frames[vm.frameCount - 1];
                         break;
@@ -1528,7 +1528,7 @@ static InterpretResult run(int minFrameCount)
                     break;
             }
 
-            if (!trigger_runtime_error("RuntimeError", "Methode non definie '%s'.", name.as.string))
+            if (!trigger_runtime_error("RuntimeError", "Undefined method '%s'.", name.as.string))
                 return INTERPRET_RUNTIME_ERROR;
             frame = &vm.frames[vm.frameCount - 1];
             break;
@@ -1599,7 +1599,7 @@ static InterpretResult run(int minFrameCount)
             KrbValue dummy;
             if (krb_table_get(&vm.constGlobals, nameVal.as.string, (int)strlen(nameVal.as.string), &dummy))
             {
-                if (!trigger_runtime_error("TypeError", "Impossible de supprimer la constante '%s'.", nameVal.as.string))
+                if (!trigger_runtime_error("TypeError", "Cannot delete constant '%s'.", nameVal.as.string))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
@@ -1798,7 +1798,7 @@ static InterpretResult run(int minFrameCount)
             KrbValue receiver = *(vm.stackTop - argCount - 1);
             if (!IS_INSTANCE(receiver))
             {
-                if (!trigger_runtime_error("TypeError", "base(...) ne peut etre appele que sur une instance."))
+                if (!trigger_runtime_error("TypeError", "base(...) can only be called on an instance."))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
@@ -1821,7 +1821,7 @@ static InterpretResult run(int minFrameCount)
                 return INTERPRET_RUNTIME_ERROR;
             if (inv == 0)
             {
-                if (!trigger_runtime_error("RuntimeError", "Methode parente non definie '%s'.", name.as.string))
+                if (!trigger_runtime_error("RuntimeError", "Undefined superclass method '%s'.", name.as.string))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
             }
@@ -1917,7 +1917,7 @@ static InterpretResult run(int minFrameCount)
             KrbValue dummy;
             if (!krb_table_get(&vm.unlockedGlobals, name.as.string, (int)strlen(name.as.string), &dummy))
             {
-                if (!trigger_runtime_error("TypeError", "Impossible de modifier ou hook l'element scelle '%s'. Utilisez unlock.", name.as.string))
+                if (!trigger_runtime_error("TypeError", "Cannot modify or hook sealed target '%s'. Use unlock first.", name.as.string))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
@@ -1946,7 +1946,7 @@ static InterpretResult run(int minFrameCount)
             break;
         }
         default:
-            runtime_error("Opcode inconnu.");
+            runtime_error("Unknown opcode.");
             return INTERPRET_RUNTIME_ERROR;
         }
     }

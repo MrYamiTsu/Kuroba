@@ -276,7 +276,7 @@ static void patch_jump(int offset)
 
     if (jump > UINT16_MAX)
     {
-        error("Trop de code dans le bloc a sauter.");
+        error("Too much code to jump over.");
     }
 
     current_chunk()->code[offset] = (uint8_t)((jump >> 8) & 0xff);
@@ -289,7 +289,7 @@ static void emit_loop(int loopStart)
 
     int offset = current_chunk()->count - loopStart + 2;
     if (offset > UINT16_MAX)
-        error("Corps de boucle trop grand.");
+        error("Loop body too large.");
 
     emit_byte((offset >> 8) & 0xff);
     emit_byte(offset & 0xff);
@@ -300,7 +300,7 @@ static void emit_constant(KrbValue value)
     int constant = krb_add_constant(current_chunk(), value);
     if (constant > 65535)
     {
-        error("Trop de constantes dans un seul chunk de bytecode.");
+        error("Too many constants in one bytecode chunk.");
         return;
     }
     emit_op_16(OP_CONSTANT, (uint16_t)constant);
@@ -445,7 +445,7 @@ static int resolve_local(Compiler *compiler, Token *name)
         {
             if (local->depth == -1)
             {
-                error("Impossible de lire une variable locale dans sa propre initialisation.");
+                error("Cannot read local variable in its own initializer.");
             }
             return i;
         }
@@ -466,7 +466,7 @@ static int add_upvalue(Compiler *compiler, uint16_t index, bool isLocal)
     }
     if (upvalueCount == 256)
     {
-        error("Trop de variables capturees dans la fermeture.");
+        error("Too many closure variables in function.");
         return 0;
     }
     compiler->upvalues[upvalueCount].isLocal = isLocal;
@@ -583,7 +583,7 @@ static void named_variable(Token name, bool canAssign)
         }
         if (blockedConst)
         {
-            emit_runtime_type_error("Impossible de reassigner la constante locale.");
+            emit_runtime_type_error("Cannot reassign local constant.");
             return;
         }
         if (getOp == OP_GET_LOCAL && current->locals[arg].isNonNull)
@@ -688,7 +688,7 @@ static void this_(bool canAssign)
 static void base_call(bool canAssign)
 {
     (void)canAssign;
-    consume(TOKEN_LEFT_PAREN, "Attendu '(' apres 'base'.");
+    consume(TOKEN_LEFT_PAREN, "Expected '(' after 'base'.");
     emit_bytes(OP_GET_LOCAL, 0);
     uint8_t argCount = 0;
     if (!check(TOKEN_RIGHT_PAREN))
@@ -699,7 +699,7 @@ static void base_call(bool canAssign)
             argCount++;
         } while (match(TOKEN_COMMA));
     }
-    consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres les arguments de 'base'.");
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after 'base' arguments.");
     uint16_t initConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup("init")));
     uint16_t superConst = 0;
     if (currentClass != NULL && currentClass->hasSuperclass)
@@ -716,7 +716,7 @@ static void orig_call(bool canAssign)
     (void)canAssign;
     if (current != NULL && current->type == TYPE_METHOD && current->hookMethodName[0] != '\0')
     {
-        consume(TOKEN_LEFT_PAREN, "Attendu '(' apres 'orig'.");
+        consume(TOKEN_LEFT_PAREN, "Expected '(' after 'orig'.");
         emit_bytes(OP_GET_LOCAL, 0);
         uint8_t argCount = 0;
         if (!check(TOKEN_RIGHT_PAREN))
@@ -727,7 +727,7 @@ static void orig_call(bool canAssign)
                 argCount++;
             } while (match(TOKEN_COMMA));
         }
-        consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres les arguments de 'orig'.");
+        consume(TOKEN_RIGHT_PAREN, "Expected ')' after 'orig' arguments.");
         char origName[128];
         snprintf(origName, sizeof(origName), "__orig_%s", current->hookMethodName);
         uint16_t origConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(origName)));
@@ -748,7 +748,7 @@ static void grouping(bool canAssign)
 {
     (void)canAssign;
     expression();
-    consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres l'expression.");
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after expression.");
 }
 
 static void unary(bool canAssign)
@@ -828,12 +828,12 @@ static uint8_t argument_list(void)
             expression();
             if (argCount == 255)
             {
-                error("Impossible d'avoir plus de 255 arguments.");
+                error("Cannot have more than 255 arguments.");
             }
             argCount++;
         } while (match(TOKEN_COMMA));
     }
-    consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres les arguments.");
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
     return argCount;
 }
 
@@ -846,7 +846,7 @@ static void call(bool canAssign)
 
 static void dot(bool canAssign)
 {
-    consume(TOKEN_IDENTIFIER, "Nom de propriete attendu apres '.'.");
+    consume(TOKEN_IDENTIFIER, "Expected property name after '.'.");
     uint16_t name = identifier_constant(&parser.previous);
 
     if (canAssign && (match(TOKEN_EQUAL) || match(TOKEN_PLUS_EQUAL) || match(TOKEN_MINUS_EQUAL) ||
@@ -891,7 +891,7 @@ static void dot(bool canAssign)
 static void subscript(bool canAssign)
 {
     expression();
-    consume(TOKEN_RIGHT_BRACKET, "Attendu ']' apres l'index.");
+    consume(TOKEN_RIGHT_BRACKET, "Expected ']' after index.");
 
     if (canAssign && (match(TOKEN_EQUAL) || match(TOKEN_PLUS_EQUAL) || match(TOKEN_MINUS_EQUAL) ||
                       match(TOKEN_STAR_EQUAL) || match(TOKEN_SLASH_EQUAL) || match(TOKEN_PERCENT_EQUAL) ||
@@ -990,7 +990,7 @@ static void list_literal(bool canAssign)
         {
             snprintf(typeName, sizeof(typeName), "%.*s", parser.current.length, parser.current.start);
             advance();
-            consume(TOKEN_RIGHT_BRACKET, "Attendu ']'.");
+            consume(TOKEN_RIGHT_BRACKET, "Expected ']'.");
             isCast = true;
         }
     }
@@ -1017,12 +1017,12 @@ static void list_literal(bool canAssign)
             expression();
             if (itemCount == 255)
             {
-                error("Trop d'elements dans la liste.");
+                error("Too many elements in list.");
             }
             itemCount++;
         } while (match(TOKEN_COMMA));
     }
-    consume(TOKEN_RIGHT_BRACKET, "Attendu ']' pour fermer la liste.");
+    consume(TOKEN_RIGHT_BRACKET, "Expected ']' to close list.");
     emit_bytes(OP_BUILD_LIST, itemCount);
 }
 
@@ -1051,15 +1051,15 @@ static void table_literal(bool canAssign)
             }
             else
             {
-                error("Cle attendue dans le litteral de table.");
+                error("Expected key in table literal.");
             }
 
-            consume(TOKEN_COLON, "Attendu ':' apres la cle.");
+            consume(TOKEN_COLON, "Expected ':' after key.");
             expression();
             entryCount++;
         } while (match(TOKEN_COMMA));
     }
-    consume(TOKEN_RIGHT_BRACE, "Attendu '}' pour fermer la table.");
+    consume(TOKEN_RIGHT_BRACE, "Expected '}' to close table.");
     emit_bytes(OP_BUILD_TABLE, entryCount);
 }
 
@@ -1124,7 +1124,7 @@ static void is_expression(bool canAssign)
     }
     else
     {
-        consume(TOKEN_IDENTIFIER, "Type attendu apres 'is'.");
+        consume(TOKEN_IDENTIFIER, "Expected type after 'is'.");
         Token typeTok = parser.previous;
         int tLen = typeTok.length < 120 ? typeTok.length : 120;
         memcpy(typeBuf, typeTok.start, tLen);
@@ -1137,7 +1137,7 @@ static void is_expression(bool canAssign)
             {
                 strncat(typeBuf, parser.previous.start, parser.previous.length);
             }
-            consume(TOKEN_GREATER, "Attendu '>' pour fermer le type generique.");
+            consume(TOKEN_GREATER, "Expected '>' to close generic type.");
             strcat(typeBuf, ">");
         }
     }
@@ -1148,7 +1148,7 @@ static void is_expression(bool canAssign)
 static void lambda_expression(bool canAssign)
 {
     (void)canAssign;
-    consume(TOKEN_TILDE, "Attendu '~' pour une fonction lambda.");
+    consume(TOKEN_TILDE, "Expected '~' for lambda function.");
     function_body(TYPE_FUNCTION);
 }
 
@@ -1335,7 +1335,7 @@ static void parse_precedence(Precedence precedence)
     ParseFn prefixRule = get_rule(parser.previous.type)->prefix;
     if (prefixRule == NULL)
     {
-        error("Expression attendue.");
+        error("Expected expression.");
         return;
     }
 
@@ -1351,7 +1351,7 @@ static void parse_precedence(Precedence precedence)
 
     if (canAssign && match(TOKEN_EQUAL))
     {
-        error("Cible d'assignation invalide.");
+        error("Invalid assignment target.");
     }
 }
 
@@ -1362,23 +1362,23 @@ static void expression(void)
 
 static void paste_statement(bool isLn)
 {
-    consume(TOKEN_LEFT_PAREN, "Attendu '(' apres 'paste' / 'pasteLn'.");
+    consume(TOKEN_LEFT_PAREN, "Expected '(' after 'paste' / 'pasteLn'.");
     if (isLn && match(TOKEN_RIGHT_PAREN))
     {
-        consume(TOKEN_SEMICOLON, "Attendu ';' en fin d'instruction.");
+        consume(TOKEN_SEMICOLON, "Expected ';' at end of statement.");
         emit_byte(OP_PASTELN_EMPTY);
         return;
     }
     expression();
-    consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres l'expression.");
-    consume(TOKEN_SEMICOLON, "Attendu ';' en fin d'instruction.");
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after expression.");
+    consume(TOKEN_SEMICOLON, "Expected ';' at end of statement.");
     emit_byte(isLn ? OP_PASTELN : OP_PASTE);
 }
 
 static void expression_statement(void)
 {
     expression();
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres l'expression.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
     emit_byte(OP_POP);
 }
 
@@ -1386,7 +1386,7 @@ static void add_local(Token name, int kind)
 {
     if (current->localCount == 256)
     {
-        error("Trop de variables locales dans cette portee.");
+        error("Too many local variables in scope.");
         return;
     }
 
@@ -1411,7 +1411,7 @@ static void declare_variable_named(Token *name, int kind)
         if (local->depth != -1 && local->depth < current->scopeDepth)
             break;
         if (identifiers_equal(name, &local->name))
-            error("Une variable portant ce nom existe deja dans cette portee.");
+            error("A variable with this name already exists in this scope.");
     }
     add_local(*name, kind);
 }
@@ -1473,7 +1473,7 @@ static void block(void)
     {
         declaration();
     }
-    consume(TOKEN_END, "Attendu 'end' apres le bloc.");
+    consume(TOKEN_END, "Expected 'end' after block.");
 }
 
 static bool parse_type_annotation(bool *outNonNull, char *typeBuf, size_t bufSize)
@@ -1489,7 +1489,7 @@ static bool parse_type_annotation(bool *outNonNull, char *typeBuf, size_t bufSiz
     if (outNonNull)
         *outNonNull = nonNull;
 
-    consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
+    consume(TOKEN_IDENTIFIER, "Expected type name.");
     if (typeBuf && bufSize > 0)
         snprintf(typeBuf, bufSize, "%.*s", parser.previous.length, parser.previous.start);
 
@@ -1497,10 +1497,10 @@ static bool parse_type_annotation(bool *outNonNull, char *typeBuf, size_t bufSiz
     {
         while (!check(TOKEN_GREATER) && !check(TOKEN_EOF))
             advance();
-        consume(TOKEN_GREATER, "Attendu '>'.");
+        consume(TOKEN_GREATER, "Expected '>'.");
     }
     if (nonNull)
-        consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres le type.");
+        consume(TOKEN_RIGHT_PAREN, "Expected ')' after type.");
     return true;
 }
 
@@ -1528,7 +1528,7 @@ static void var_declaration(int kind)
     int nameCount = 0;
     do
     {
-        consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'ivar', 'iconst' ou 'isealed'.");
+        consume(TOKEN_IDENTIFIER, "Expected variable name after 'ivar', 'iconst', or 'isealed'.");
         names[nameCount++] = parser.previous;
         declare_variable_named(&names[nameCount - 1], kind);
         if (current->scopeDepth > 0)
@@ -1544,7 +1544,7 @@ static void var_declaration(int kind)
         }
     } while (match(TOKEN_COMMA) && nameCount < 32);
 
-    consume(TOKEN_EQUAL, "Attendu '=' apres les identifiants de variable.");
+    consume(TOKEN_EQUAL, "Expected '=' after variable identifier(s).");
     expression();
     emit_type_check_and_coerce(isQueueType, typeName, isNonNull);
 
@@ -1556,7 +1556,7 @@ static void var_declaration(int kind)
         valCount++;
     }
 
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres la declaration de variable.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after variable declaration.");
 
     bool duplicate = (valCount == 1 && nameCount > 1);
     for (int i = nameCount - 1; i >= 0; i--)
@@ -1581,7 +1581,7 @@ static void var_declaration(int kind)
 static void if_statement(void)
 {
     expression();
-    consume(TOKEN_THEN, "Attendu 'then' apres la condition de 'if'.");
+    consume(TOKEN_THEN, "Expected 'then' after 'if' condition.");
 
     int thenJump = emit_jump(OP_JUMP_IF_FALSE);
 
@@ -1605,7 +1605,7 @@ static void if_statement(void)
     while (match(TOKEN_ELIF))
     {
         expression();
-        consume(TOKEN_THEN, "Attendu 'then' apres la condition de 'elif'.");
+        consume(TOKEN_THEN, "Expected 'then' after 'elif' condition.");
 
         int elifJump = emit_jump(OP_JUMP_IF_FALSE);
 
@@ -1634,7 +1634,7 @@ static void if_statement(void)
         end_scope();
     }
 
-    consume(TOKEN_END, "Attendu 'end' pour fermer le bloc if.");
+    consume(TOKEN_END, "Expected 'end' to close 'if' block.");
 
     for (int i = 0; i < exitJumpCount; i++)
     {
@@ -1653,7 +1653,7 @@ static void while_statement(void)
     currentLoop = &loop;
 
     expression();
-    consume(TOKEN_THEN, "Attendu 'then' apres la condition de 'while'.");
+    consume(TOKEN_THEN, "Expected 'then' after 'while' condition.");
 
     int exitJump = emit_jump(OP_JUMP_IF_FALSE);
 
@@ -1677,14 +1677,14 @@ static void while_statement(void)
         patch_jump(loop.breakJumps[i]);
     }
 
-    consume(TOKEN_END, "Attendu 'end' pour fermer le bloc 'while'.");
+    consume(TOKEN_END, "Expected 'end' to close 'while' block.");
     currentLoop = loop.enclosing;
 }
 
 static void for_statement(void)
 {
     begin_scope();
-    consume(TOKEN_LEFT_PAREN, "Attendu '(' avant l'en-tete de boucle 'for'.");
+    consume(TOKEN_LEFT_PAREN, "Expected '(' before 'for' loop header.");
 
     bool isForIn = false;
     Token var1;
@@ -1693,15 +1693,15 @@ static void for_statement(void)
 
     if (match(TOKEN_IVAR))
     {
-        consume(TOKEN_IDENTIFIER, "Nom de variable attendu.");
+        consume(TOKEN_IDENTIFIER, "Expected variable name.");
         var1 = parser.previous;
 
         if (match(TOKEN_COMMA))
         {
-            consume(TOKEN_IDENTIFIER, "Nom de variable attendu.");
+            consume(TOKEN_IDENTIFIER, "Expected variable name.");
             var2 = parser.previous;
             hasVar2 = true;
-            consume(TOKEN_IN, "Attendu 'in' dans la boucle 'for'.");
+            consume(TOKEN_IN, "Expected 'in' in 'for' loop.");
             isForIn = true;
         }
         else if (match(TOKEN_IN))
@@ -1720,7 +1720,7 @@ static void for_statement(void)
                 emit_constant(krb_null());
             }
             define_variable(0, false);
-            consume(TOKEN_SEMICOLON, "Attendu ';' apres l'initialisation du 'for'.");
+            consume(TOKEN_SEMICOLON, "Expected ';' after 'for' initializer.");
         }
     }
     else if (match(TOKEN_SEMICOLON))
@@ -1734,8 +1734,8 @@ static void for_statement(void)
     if (isForIn)
     {
         expression();
-        consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres la collection.");
-        consume(TOKEN_THEN, "Attendu 'then' apres l'en-tete du 'for'.");
+        consume(TOKEN_RIGHT_PAREN, "Expected ')' after collection.");
+        consume(TOKEN_THEN, "Expected 'then' after 'for' header.");
 
         Token collTok;
         collTok.start = "$coll";
@@ -1831,7 +1831,7 @@ static void for_statement(void)
             patch_jump(loop.breakJumps[i]);
         }
 
-        consume(TOKEN_END, "Attendu 'end' pour fermer le 'for'.");
+        consume(TOKEN_END, "Expected 'end' to close 'for' block.");
         end_scope();
         currentLoop = loop.enclosing;
         return;
@@ -1849,7 +1849,7 @@ static void for_statement(void)
     if (!match(TOKEN_SEMICOLON))
     {
         expression();
-        consume(TOKEN_SEMICOLON, "Attendu ';' apres la condition du 'for'.");
+        consume(TOKEN_SEMICOLON, "Expected ';' after 'for' condition.");
         exitJump = emit_jump(OP_JUMP_IF_FALSE);
     }
 
@@ -1860,14 +1860,14 @@ static void for_statement(void)
 
         expression();
         emit_byte(OP_POP);
-        consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres la clause de mise a jour du 'for'.");
+        consume(TOKEN_RIGHT_PAREN, "Expected ')' after 'for' increment clause.");
 
         emit_loop(loop.start);
         loop.start = incrementStart;
         patch_jump(bodyJump);
     }
 
-    consume(TOKEN_THEN, "Attendu 'then' apres l'en-tete du 'for'.");
+    consume(TOKEN_THEN, "Expected 'then' after 'for' header.");
 
     begin_scope();
     while (!check(TOKEN_END) && !check(TOKEN_EOF))
@@ -1893,7 +1893,7 @@ static void for_statement(void)
         patch_jump(loop.breakJumps[i]);
     }
 
-    consume(TOKEN_END, "Attendu 'end' pour fermer le bloc 'for'.");
+    consume(TOKEN_END, "Expected 'end' to close 'for' block.");
     end_scope();
     currentLoop = loop.enclosing;
 }
@@ -1902,10 +1902,10 @@ static void break_statement(void)
 {
     if (currentLoop == NULL)
     {
-        error("Impossible d'utiliser 'break' en dehors d'une boucle.");
+        error("Cannot use 'break' outside of a loop.");
         return;
     }
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'break'.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after 'break'.");
 
     for (int i = current->localCount - 1; i >= 0; i--)
     {
@@ -1922,10 +1922,10 @@ static void skip_statement(void)
 {
     if (currentLoop == NULL)
     {
-        error("Impossible d'utiliser 'skip' en dehors d'une boucle.");
+        error("Cannot use 'skip' outside of a loop.");
         return;
     }
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'skip'.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after 'skip'.");
 
     for (int i = current->localCount - 1; i >= 0; i--)
     {
@@ -1956,7 +1956,7 @@ static void function_body(FunctionType type)
     init_compiler(&compiler, type);
     begin_scope();
 
-    consume(TOKEN_LEFT_PAREN, "Attendu '(' apres le nom de fonction.");
+    consume(TOKEN_LEFT_PAREN, "Expected '(' after function name.");
     struct
     {
         bool isNonNull;
@@ -1974,13 +1974,13 @@ static void function_body(FunctionType type)
             char typeName[32] = "";
             parse_type_annotation(&isNonNull, typeName, sizeof(typeName));
 
-            consume(TOKEN_IDENTIFIER, "Nom de parametre attendu.");
+            consume(TOKEN_IDENTIFIER, "Expected parameter name.");
             Token paramTok = parser.previous;
             int paramIndex = current->function->arity;
             current->function->arity++;
             if (current->function->arity > 255)
             {
-                error_at_current("Impossible d'avoir plus de 255 parametres.");
+                error_at_current("Cannot have more than 255 parameters.");
             }
 
             if (match(TOKEN_EQUAL))
@@ -2030,8 +2030,8 @@ static void function_body(FunctionType type)
             }
         } while (match(TOKEN_COMMA));
     }
-    consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres les parametres.");
-    consume(TOKEN_THEN, "Attendu 'then' apres l'en-tete de fonction.");
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after parameters.");
+    consume(TOKEN_THEN, "Expected 'then' after function header.");
 
     for (int i = 0; i < paramTypeCount; i++)
     {
@@ -2053,13 +2053,13 @@ static void function_body(FunctionType type)
     {
         declaration();
     }
-    consume(TOKEN_END, "Attendu 'end' pour fermer la fonction.");
+    consume(TOKEN_END, "Expected 'end' to close function.");
     emit_closure(&compiler);
 }
 
 static void function_declaration(int kind)
 {
-    consume(TOKEN_IDENTIFIER, "Nom de fonction attendu apres 'function'.");
+    consume(TOKEN_IDENTIFIER, "Expected function name after 'function'.");
     Token nameToken = parser.previous;
     uint16_t global = 0;
     if (current->scopeDepth == 0)
@@ -2089,7 +2089,7 @@ static void function_declaration(int kind)
         if (current->locals[existing].isConst)
         {
             emit_byte(OP_POP);
-            emit_runtime_type_error("Impossible de reecrire une fonction constante.");
+            emit_runtime_type_error("Cannot overwrite a constant function.");
             return;
         }
         if (current->locals[existing].isSealed)
@@ -2118,7 +2118,7 @@ static void return_statement(void)
 {
     if (current->type == TYPE_SCRIPT)
     {
-        error("Impossible d'utiliser 'return' au niveau superieur du script.");
+        error("Cannot use 'return' at top-level script scope.");
     }
 
     if (match(TOKEN_SEMICOLON))
@@ -2133,12 +2133,12 @@ static void return_statement(void)
     {
         if (current->type == TYPE_INITIALIZER)
         {
-            error("Impossible de renvoyer une valeur personnalisee depuis un constructeur 'init'.");
+            error("Cannot return a custom value from an 'init' constructor.");
         }
         if (check(TOKEN_NULL) && krb_peek_token().type == TOKEN_SEMICOLON)
         {
             advance();
-            consume(TOKEN_SEMICOLON, "Attendu ';' apres la valeur de retour.");
+            consume(TOKEN_SEMICOLON, "Expected ';' after return value.");
             emit_constant(krb_null());
             emit_byte(OP_RETURN);
         }
@@ -2146,7 +2146,7 @@ static void return_statement(void)
         {
             current->function->hasValueReturn = true;
             expression();
-            consume(TOKEN_SEMICOLON, "Attendu ';' apres la valeur de retour.");
+            consume(TOKEN_SEMICOLON, "Expected ';' after return value.");
             emit_byte(OP_RETURN);
         }
     }
@@ -2154,7 +2154,7 @@ static void return_statement(void)
 
 static void class_declaration(void)
 {
-    consume(TOKEN_IDENTIFIER, "Nom de classe attendu apres 'class'.");
+    consume(TOKEN_IDENTIFIER, "Expected class name after 'class'.");
     Token className = parser.previous;
     uint16_t nameConstant = identifier_constant(&className);
     declare_variable(false);
@@ -2170,7 +2170,7 @@ static void class_declaration(void)
 
     if (match(TOKEN_FROM))
     {
-        consume(TOKEN_IDENTIFIER, "Nom de superclasse attendu apres 'from'.");
+        consume(TOKEN_IDENTIFIER, "Expected superclass name after 'from'.");
         classCompiler.hasSuperclass = true;
         classCompiler.superclass = parser.previous;
         named_variable(className, false);
@@ -2184,7 +2184,7 @@ static void class_declaration(void)
     {
         do
         {
-            consume(TOKEN_IDENTIFIER, "Nom d'interface attendu apres 'as'.");
+            consume(TOKEN_IDENTIFIER, "Expected interface name after 'as'.");
             if (ifaceCount < 32)
             {
                 ifaceTokens[ifaceCount++] = parser.previous;
@@ -2192,7 +2192,7 @@ static void class_declaration(void)
         } while (match(TOKEN_COMMA));
     }
 
-    consume(TOKEN_THEN, "Attendu 'then' apres l'en-tete de classe.");
+    consume(TOKEN_THEN, "Expected 'then' after class header.");
 
     named_variable(className, false);
 
@@ -2236,7 +2236,7 @@ static void class_declaration(void)
             bool hasType = parse_type_annotation(&isNonNull, typeName, sizeof(typeName));
             bool isQueueType = (hasType && !isNonNull && strcmp(typeName, "Queue") == 0);
 
-            consume(TOKEN_IDENTIFIER, "Nom de champ attendu.");
+            consume(TOKEN_IDENTIFIER, "Expected field name.");
             Token fieldName = parser.previous;
             uint16_t fieldConst = identifier_constant(&fieldName);
 
@@ -2245,7 +2245,7 @@ static void class_declaration(void)
             else
                 emit_constant(krb_null());
             emit_type_check_and_coerce(isQueueType, typeName, isNonNull);
-            consume(TOKEN_SEMICOLON, "Attendu ';' apres la declaration de champ.");
+            consume(TOKEN_SEMICOLON, "Expected ';' after field declaration.");
 
             if (isShared)
             {
@@ -2263,7 +2263,7 @@ static void class_declaration(void)
         {
             if (memberKind == -1)
                 memberKind = VAR_MUTABLE;
-            consume(TOKEN_IDENTIFIER, "Nom de methode attendu.");
+            consume(TOKEN_IDENTIFIER, "Expected method name.");
             Token methTok = parser.previous;
             uint16_t constant = identifier_constant(&methTok);
             FunctionType type = TYPE_METHOD;
@@ -2343,7 +2343,7 @@ static void class_declaration(void)
         }
         else if (match(TOKEN_GET))
         {
-            consume(TOKEN_IDENTIFIER, "Nom de propriete attendu apres 'get'.");
+            consume(TOKEN_IDENTIFIER, "Expected property name after 'get'.");
             Token propTok = parser.previous;
             char getBuf[64];
             snprintf(getBuf, sizeof(getBuf), "get_%.*s", propTok.length, propTok.start);
@@ -2352,18 +2352,18 @@ static void class_declaration(void)
             Compiler compiler;
             init_compiler(&compiler, TYPE_METHOD);
             begin_scope();
-            consume(TOKEN_THEN, "Attendu 'then' apres l'en-tete de 'get'.");
+            consume(TOKEN_THEN, "Expected 'then' after 'get' header.");
             while (!check(TOKEN_END) && !check(TOKEN_EOF))
             {
                 declaration();
             }
-            consume(TOKEN_END, "Attendu 'end' pour fermer le getter.");
+            consume(TOKEN_END, "Expected 'end' to close getter.");
             emit_closure(&compiler);
             emit_op_16(OP_METHOD, getConst);
         }
         else if (match(TOKEN_SET))
         {
-            consume(TOKEN_IDENTIFIER, "Nom de propriete attendu apres 'set'.");
+            consume(TOKEN_IDENTIFIER, "Expected property name after 'set'.");
             Token propTok = parser.previous;
             char setBuf[64];
             snprintf(setBuf, sizeof(setBuf), "set_%.*s", propTok.length, propTok.start);
@@ -2372,20 +2372,20 @@ static void class_declaration(void)
             Compiler compiler;
             init_compiler(&compiler, TYPE_METHOD);
             begin_scope();
-            consume(TOKEN_LEFT_PAREN, "Attendu '(' apres le nom de 'set'.");
+            consume(TOKEN_LEFT_PAREN, "Expected '(' after 'set' name.");
             current->function->arity = 1;
             match(TOKEN_IVAR);
             parse_type_annotation(NULL, NULL, 0);
-            consume(TOKEN_IDENTIFIER, "Nom de parametre attendu.");
+            consume(TOKEN_IDENTIFIER, "Expected parameter name.");
             declare_variable(false);
             define_variable(0, false);
-            consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres le parametre.");
-            consume(TOKEN_THEN, "Attendu 'then' apres l'en-tete de 'set'.");
+            consume(TOKEN_RIGHT_PAREN, "Expected ')' after parameter.");
+            consume(TOKEN_THEN, "Expected 'then' after 'set' header.");
             while (!check(TOKEN_END) && !check(TOKEN_EOF))
             {
                 declaration();
             }
-            consume(TOKEN_END, "Attendu 'end' pour fermer le setter.");
+            consume(TOKEN_END, "Expected 'end' to close setter.");
             emit_closure(&compiler);
             emit_op_16(OP_METHOD, setConst);
         }
@@ -2394,7 +2394,7 @@ static void class_declaration(void)
             declaration();
         }
     }
-    consume(TOKEN_END, "Attendu 'end' pour fermer la classe.");
+    consume(TOKEN_END, "Expected 'end' to close class.");
     emit_byte(OP_POP);
     currentClass = classCompiler.enclosing;
 }
@@ -2420,26 +2420,26 @@ static SwapTarget parse_swap_target(void)
 {
     SwapTarget t;
     memset(&t, 0, sizeof(t));
-    consume(TOKEN_IDENTIFIER, "Identifiant attendu dans l'echange atomique.");
+    consume(TOKEN_IDENTIFIER, "Expected identifier in atomic swap.");
     t.root = parser.previous;
 
     if (match(TOKEN_DOT))
     {
         t.kind = SWAP_KIND_PROP;
-        consume(TOKEN_IDENTIFIER, "Nom de propriete attendu apres '.'.");
+        consume(TOKEN_IDENTIFIER, "Expected property name after '.'.");
         t.prop = parser.previous;
     }
     else if (match(TOKEN_LEFT_BRACKET))
     {
         t.idx1 = parser.current;
         advance();
-        consume(TOKEN_RIGHT_BRACKET, "Attendu ']' apres l'index.");
+        consume(TOKEN_RIGHT_BRACKET, "Expected ']' after index.");
         if (match(TOKEN_LEFT_BRACKET))
         {
             t.kind = SWAP_KIND_INDEX2;
             t.idx2 = parser.current;
             advance();
-            consume(TOKEN_RIGHT_BRACKET, "Attendu ']' apres l'index.");
+            consume(TOKEN_RIGHT_BRACKET, "Expected ']' after index.");
         }
         else
         {
@@ -2544,9 +2544,9 @@ static void emit_swap_store_from_temp(SwapTarget t, int tempLocal)
 static void swap_statement(void)
 {
     SwapTarget left = parse_swap_target();
-    consume(TOKEN_SWAP, "Attendu '<->'.");
+    consume(TOKEN_SWAP, "Expected '<->'.");
     SwapTarget right = parse_swap_target();
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres l'echange.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after swap.");
 
     begin_scope();
 
@@ -2591,8 +2591,8 @@ static void do_statement(void)
         }
         end_scope();
 
-        consume(TOKEN_WHILE, "Attendu 'while' apres le corps de 'do'.");
-        consume(TOKEN_LEFT_PAREN, "Attendu '(' avant la condition de 'while'.");
+        consume(TOKEN_WHILE, "Expected 'while' after 'do' body.");
+        consume(TOKEN_LEFT_PAREN, "Expected '(' before 'while' condition.");
 
         for (int i = 0; i < loop.skipJumpCount; i++)
         {
@@ -2600,8 +2600,8 @@ static void do_statement(void)
         }
 
         expression();
-        consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres la condition de 'while'.");
-        consume(TOKEN_SEMICOLON, "Attendu ';' apres 'while (...)'.");
+        consume(TOKEN_RIGHT_PAREN, "Expected ')' after 'while' condition.");
+        consume(TOKEN_SEMICOLON, "Expected ';' after 'while (...)'.");
 
         int exitJump = emit_jump(OP_JUMP_IF_FALSE);
         emit_loop(loop.start);
@@ -2624,7 +2624,7 @@ static void do_statement(void)
 static void given_statement(void)
 {
     expression();
-    consume(TOKEN_THEN, "Attendu 'then' apres l'expression de 'given'.");
+    consume(TOKEN_THEN, "Expected 'then' after 'given' expression.");
 
     begin_scope();
     Token targetTok;
@@ -2648,12 +2648,12 @@ static void given_statement(void)
 
         if (match(TOKEN_TILDE))
         {
-            consume(TOKEN_THEN, "Attendu 'then' apres 'case ~'.");
+            consume(TOKEN_THEN, "Expected 'then' after 'case ~'.");
             while (!check(TOKEN_END) && !check(TOKEN_EOF))
             {
                 if (match(TOKEN_BREAK))
                 {
-                    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'break'.");
+                    consume(TOKEN_SEMICOLON, "Expected ';' after 'break'.");
                     exitJumps[exitJumpCount++] = emit_jump(OP_JUMP);
                 }
                 else
@@ -2661,7 +2661,7 @@ static void given_statement(void)
                     declaration();
                 }
             }
-            consume(TOKEN_END, "Attendu 'end' pour fermer 'case ~'.");
+            consume(TOKEN_END, "Expected 'end' to close 'case ~'.");
         }
         else
         {
@@ -2670,12 +2670,12 @@ static void given_statement(void)
             emit_byte(OP_EQUAL);
             nextCaseJump = emit_jump(OP_JUMP_IF_FALSE);
 
-            consume(TOKEN_THEN, "Attendu 'then' apres la condition de 'case'.");
+            consume(TOKEN_THEN, "Expected 'then' after 'case' condition.");
             while (!check(TOKEN_END) && !check(TOKEN_EOF))
             {
                 if (match(TOKEN_BREAK))
                 {
-                    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'break'.");
+                    consume(TOKEN_SEMICOLON, "Expected ';' after 'break'.");
                     exitJumps[exitJumpCount++] = emit_jump(OP_JUMP);
                 }
                 else
@@ -2683,7 +2683,7 @@ static void given_statement(void)
                     declaration();
                 }
             }
-            consume(TOKEN_END, "Attendu 'end' pour fermer le 'case'.");
+            consume(TOKEN_END, "Expected 'end' to close 'case'.");
         }
     }
 
@@ -2692,7 +2692,7 @@ static void given_statement(void)
         patch_jump(nextCaseJump);
     }
 
-    consume(TOKEN_END, "Attendu 'end' pour fermer 'given'.");
+    consume(TOKEN_END, "Expected 'end' to close 'given'.");
 
     for (int i = 0; i < exitJumpCount; i++)
     {
@@ -2705,7 +2705,7 @@ static void given_statement(void)
 static void throw_statement(void)
 {
     expression();
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'throw'.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after 'throw'.");
     emit_byte(OP_THROW);
 }
 
@@ -2734,11 +2734,11 @@ static void try_statement(void)
     if (match(TOKEN_CATCH))
     {
         catchOffset = current_chunk()->count;
-        consume(TOKEN_LEFT_PAREN, "Attendu '(' apres 'catch'.");
-        consume(TOKEN_IVAR, "Attendu 'ivar' pour le parametre d'erreur de 'catch'.");
-        consume(TOKEN_IDENTIFIER, "Nom de variable d'erreur attendu.");
+        consume(TOKEN_LEFT_PAREN, "Expected '(' after 'catch'.");
+        consume(TOKEN_IVAR, "Expected 'ivar' for 'catch' error parameter.");
+        consume(TOKEN_IDENTIFIER, "Expected error variable name.");
         Token errToken = parser.previous;
-        consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres le parametre de 'catch'.");
+        consume(TOKEN_RIGHT_PAREN, "Expected ')' after 'catch' parameter.");
         match(TOKEN_THEN);
 
         begin_scope();
@@ -2768,7 +2768,7 @@ static void try_statement(void)
         end_scope();
     }
 
-    consume(TOKEN_END, "Attendu 'end' pour fermer le bloc 'try'.");
+    consume(TOKEN_END, "Expected 'end' to close 'try' block.");
     if (exitJump != -1)
     {
         patch_jump(exitJump);
@@ -2790,16 +2790,16 @@ static void try_statement(void)
 
 static void kill_statement(void)
 {
-    consume(TOKEN_IDENTIFIER, "Nom attendu apres 'kill'.");
+    consume(TOKEN_IDENTIFIER, "Expected variable name after 'kill'.");
     Token name = parser.previous;
     uint16_t nameConst = identifier_constant(&name);
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'kill'.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after 'kill'.");
     emit_op_16(OP_KILL, nameConst);
 }
 
 static void lock_or_unlock_statement(bool isUnlock)
 {
-    consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres 'unlock' / 'lock'.");
+    consume(TOKEN_IDENTIFIER, "Expected variable name after 'unlock' / 'lock'.");
     Token name = parser.previous;
     char full[128];
     snprintf(full, sizeof(full), "%.*s", name.length, name.start);
@@ -2807,10 +2807,10 @@ static void lock_or_unlock_statement(bool isUnlock)
     if (match(TOKEN_DOT))
     {
         isDotted = true;
-        consume(TOKEN_IDENTIFIER, "Nom de membre attendu apres '.'.");
+        consume(TOKEN_IDENTIFIER, "Expected member name after '.'.");
         snprintf(full + strlen(full), sizeof(full) - strlen(full), ".%.*s", parser.previous.length, parser.previous.start);
     }
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'unlock' / 'lock'.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after 'unlock' / 'lock'.");
     if (!isDotted)
     {
         int arg = resolve_local(current, &name);
@@ -2823,16 +2823,16 @@ static void lock_or_unlock_statement(bool isUnlock)
 
 static void import_statement(void)
 {
-    consume(TOKEN_IDENTIFIER, "Nom de module attendu apres 'import'.");
+    consume(TOKEN_IDENTIFIER, "Expected module name after 'import'.");
     Token pkg = parser.previous;
     uint16_t pkgConst = identifier_constant(&pkg);
 
     if (match(TOKEN_TILDE))
     {
-        consume(TOKEN_LEFT_PAREN, "Attendu '(' apres '~'.");
+        consume(TOKEN_LEFT_PAREN, "Expected '(' after '~'.");
         while (!check(TOKEN_RIGHT_PAREN) && !check(TOKEN_EOF))
         {
-            consume(TOKEN_IDENTIFIER, "Nom de membre attendu.");
+            consume(TOKEN_IDENTIFIER, "Expected member name.");
             Token mem = parser.previous;
             uint16_t memConst = identifier_constant(&mem);
 
@@ -2842,10 +2842,10 @@ static void import_statement(void)
 
             if (!check(TOKEN_RIGHT_PAREN))
             {
-                consume(TOKEN_COMMA, "Attendu ',' entre les membres.");
+                consume(TOKEN_COMMA, "Expected ',' between members.");
             }
         }
-        consume(TOKEN_RIGHT_PAREN, "Attendu ')' pour fermer la liste d'importation.");
+        consume(TOKEN_RIGHT_PAREN, "Expected ')' to close import list.");
     }
 
     if (match(TOKEN_ALIAS))
@@ -2855,26 +2855,26 @@ static void import_statement(void)
         }
         else
         {
-            consume(TOKEN_IDENTIFIER, "Nom d'alias attendu.");
+            consume(TOKEN_IDENTIFIER, "Expected alias name.");
         }
     }
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres 'import'.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after 'import'.");
 }
 
 static void enum_declaration(void)
 {
-    consume(TOKEN_IDENTIFIER, "Nom d'enum attendu.");
+    consume(TOKEN_IDENTIFIER, "Expected enum name.");
     Token enumTok = parser.previous;
     uint16_t enumConst = identifier_constant(&enumTok);
     declare_variable(true);
 
-    consume(TOKEN_THEN, "Attendu 'then' apres le nom d'enum.");
+    consume(TOKEN_THEN, "Expected 'then' after enum name.");
     emit_constant(krb_obj_val((Obj *)krb_new_obj_table()));
 
     int idx = 0;
     while (!check(TOKEN_END) && !check(TOKEN_EOF))
     {
-        consume(TOKEN_IDENTIFIER, "Nom de membre d'enum attendu.");
+        consume(TOKEN_IDENTIFIER, "Expected enum member name.");
         Token mTok = parser.previous;
         uint16_t mConst = identifier_constant(&mTok);
 
@@ -2886,23 +2886,23 @@ static void enum_declaration(void)
         if (!check(TOKEN_END))
             match(TOKEN_COMMA);
     }
-    consume(TOKEN_END, "Attendu 'end' pour fermer l'enum.");
+    consume(TOKEN_END, "Expected 'end' to close enum.");
     define_variable(enumConst, true);
 }
 
 static void interface_declaration(void)
 {
-    consume(TOKEN_IDENTIFIER, "Nom d'interface attendu.");
+    consume(TOKEN_IDENTIFIER, "Expected interface name.");
     Token ifaceTok = parser.previous;
     uint16_t ifaceConst = identifier_constant(&ifaceTok);
     declare_variable(true);
 
-    consume(TOKEN_THEN, "Attendu 'then' apres le nom d'interface.");
+    consume(TOKEN_THEN, "Expected 'then' after interface name.");
     while (!check(TOKEN_END) && !check(TOKEN_EOF))
     {
         advance();
     }
-    consume(TOKEN_END, "Attendu 'end' pour fermer l'interface.");
+    consume(TOKEN_END, "Expected 'end' to close interface.");
 
     char *str = (char *)malloc(ifaceTok.length + 1);
     memcpy(str, ifaceTok.start, ifaceTok.length);
@@ -2913,12 +2913,12 @@ static void interface_declaration(void)
 
 static void hook_declaration(void)
 {
-    consume(TOKEN_IDENTIFIER, "Nom de cible attendu apres 'hook'.");
+    consume(TOKEN_IDENTIFIER, "Expected target name after 'hook'.");
     Token target1 = parser.previous;
 
     if (match(TOKEN_DOT))
     {
-        consume(TOKEN_IDENTIFIER, "Nom de methode attendu apres '.'.");
+        consume(TOKEN_IDENTIFIER, "Expected method name after '.'.");
         Token methodTok = parser.previous;
         uint16_t methodConst = identifier_constant(&methodTok);
 
@@ -2948,7 +2948,7 @@ static void hook_declaration(void)
             {
                 function_body(TYPE_FUNCTION);
                 emit_byte(OP_POP);
-                emit_runtime_type_error("Impossible de hook une fonction constante.");
+                emit_runtime_type_error("Cannot hook a constant function.");
                 return;
             }
             if (current->locals[localArg].isSealed)
@@ -2977,25 +2977,25 @@ static void hook_declaration(void)
 
 static void cast_assignment_statement(void)
 {
-    consume(TOKEN_LEFT_BRACKET, "Attendu '['.");
+    consume(TOKEN_LEFT_BRACKET, "Expected '['.");
     bool isNonNull = false;
     char typeName[32] = "";
 
     if (match(TOKEN_LEFT_PAREN))
     {
         isNonNull = true;
-        consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
+        consume(TOKEN_IDENTIFIER, "Expected type name.");
         snprintf(typeName, sizeof(typeName), "%.*s", parser.previous.length, parser.previous.start);
-        consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres le type.");
+        consume(TOKEN_RIGHT_PAREN, "Expected ')' after type.");
     }
     else
     {
-        consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
+        consume(TOKEN_IDENTIFIER, "Expected type name.");
         snprintf(typeName, sizeof(typeName), "%.*s", parser.previous.length, parser.previous.start);
     }
-    consume(TOKEN_RIGHT_BRACKET, "Attendu ']' pour fermer le cast.");
+    consume(TOKEN_RIGHT_BRACKET, "Expected ']' to close cast.");
 
-    consume(TOKEN_IDENTIFIER, "Nom de variable attendu apres le cast.");
+    consume(TOKEN_IDENTIFIER, "Expected variable name after cast.");
     Token varName = parser.previous;
 
     int arg = resolve_local(current, &varName);
@@ -3020,13 +3020,13 @@ static void cast_assignment_statement(void)
         set_global_var_type(&varName, typeName);
     }
 
-    consume(TOKEN_EQUAL, "Attendu '=' pour l'assignation de transtypage.");
+    consume(TOKEN_EQUAL, "Expected '=' for cast assignment.");
     expression();
     if (blockedConst)
     {
         emit_byte(OP_POP);
-        emit_runtime_type_error("Impossible de reassigner la constante locale.");
-        consume(TOKEN_SEMICOLON, "Attendu ';' apres l'assignation de transtypage.");
+        emit_runtime_type_error("Cannot reassign local constant.");
+        consume(TOKEN_SEMICOLON, "Expected ';' after cast assignment.");
         return;
     }
 
@@ -3040,7 +3040,7 @@ static void cast_assignment_statement(void)
 
     emit_var_op(setOp, arg);
     emit_byte(OP_POP);
-    consume(TOKEN_SEMICOLON, "Attendu ';' apres l'assignation de transtypage.");
+    consume(TOKEN_SEMICOLON, "Expected ';' after cast assignment.");
 }
 
 static bool is_cast_assignment_ahead(void)

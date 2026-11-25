@@ -180,7 +180,7 @@ static Token string(void)
     }
 
     if (is_at_end())
-        return error_token("Chaine de caracteres non fermee.");
+        return error_token("Unterminated string literal.");
 
     advance();
     return make_token(TOKEN_STRING);
@@ -200,7 +200,7 @@ static Token interpolated_string(void)
         advance();
     }
     if (is_at_end())
-        return error_token("Chaine interpolee non terminee.");
+        return error_token("Unterminated interpolated string.");
     advance();
     return make_token(TOKEN_INTERPOLATION);
 }
@@ -551,11 +551,11 @@ Token krb_scan_token(void)
     case '&':
         if (match('&'))
             return make_token(TOKEN_AND_AND);
-        return error_token("Symbole '&' seul inattendu. Voulez-vous dire '&&' ?");
+        return error_token("Unexpected single '&'. Did you mean '&&'?");
     case '|':
         if (match('|'))
             return make_token(TOKEN_OR_OR);
-        return error_token("Symbole '|' seul inattendu. Voulez-vous dire '||' ?");
+        return error_token("Unexpected single '|'. Did you mean '||'?");
     case '!':
         return make_token(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
     case '=':
@@ -574,7 +574,7 @@ Token krb_scan_token(void)
         return string();
     }
 
-    return error_token("Caractere inattendu.");
+    return error_token("Unexpected character.");
 }
 
 Token krb_peek_token(void)
