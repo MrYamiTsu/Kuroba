@@ -146,8 +146,6 @@ int krb_disassemble_instruction(Chunk *chunk, int offset)
         return constant_instruction("OP_METHOD", chunk, offset);
     case OP_INVOKE:
         return invoke_instruction("OP_INVOKE", chunk, offset);
-    case OP_SWAP:
-        return simple_instruction("OP_SWAP", offset);
     case OP_DUP:
         return simple_instruction("OP_DUP", offset);
     case OP_DUP2:

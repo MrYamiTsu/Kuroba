@@ -43,7 +43,6 @@ typedef enum {
     OP_SET_PROPERTY,     // Write an object property: obj.prop = val (1 operand: name constant index)
     OP_METHOD,           // Bind a method to a class (1 operand: name constant index)
     OP_INVOKE,           // Optimized method invocation: instance.method(...) (2 operands: name index, argCount)
-    OP_SWAP,             // Atomic swap of two values on the stack
     OP_DUP,              // Duplicate the top stack value
     OP_DUP2,             // Duplicate the top two stack values
     OP_TRY,              // Enter try block (catch_offset: 2 bytes, finally_offset: 2 bytes)

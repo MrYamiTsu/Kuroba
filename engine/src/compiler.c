@@ -1266,27 +1266,24 @@ static void add_local(Token name, int kind)
     local->isCaptured = false;
 }
 
-static void declare_variable(int kind)
+static void declare_variable_named(Token *name, int kind)
 {
     if (current->scopeDepth == 0)
         return;
-
-    Token *name = &parser.previous;
     for (int i = current->localCount - 1; i >= 0; i--)
     {
         Local *local = &current->locals[i];
         if (local->depth != -1 && local->depth < current->scopeDepth)
-        {
             break;
-        }
-
         if (identifiers_equal(name, &local->name))
-        {
             error("Une variable portant ce nom existe deja dans cette portee.");
-        }
     }
-
     add_local(*name, kind);
+}
+
+static void declare_variable(int kind)
+{
+    declare_variable_named(&parser.previous, kind);
 }
 
 static void define_variable(uint16_t global, int kind)
@@ -1344,23 +1341,32 @@ static void block(void)
     consume(TOKEN_END, "Attendu 'end' apres le bloc.");
 }
 
-static void declare_variable_named(Token *name, int kind)
+static bool parse_type_annotation(bool *outNonNull, char *typeBuf, size_t bufSize)
 {
-    if (current->scopeDepth == 0)
-        return;
-    for (int i = current->localCount - 1; i >= 0; i--)
+    if (outNonNull)
+        *outNonNull = false;
+    if (typeBuf && bufSize > 0)
+        typeBuf[0] = '\0';
+    if (!match(TOKEN_TILDE))
+        return false;
+
+    bool nonNull = match(TOKEN_LEFT_PAREN);
+    if (outNonNull)
+        *outNonNull = nonNull;
+
+    consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
+    if (typeBuf && bufSize > 0)
+        snprintf(typeBuf, bufSize, "%.*s", parser.previous.length, parser.previous.start);
+
+    if (match(TOKEN_LESS))
     {
-        Local *local = &current->locals[i];
-        if (local->depth != -1 && local->depth < current->scopeDepth)
-        {
-            break;
-        }
-        if (identifiers_equal(name, &local->name))
-        {
-            error("Une variable portant ce nom existe deja dans cette portee.");
-        }
+        while (!check(TOKEN_GREATER) && !check(TOKEN_EOF))
+            advance();
+        consume(TOKEN_GREATER, "Attendu '>'.");
     }
-    add_local(*name, kind);
+    if (nonNull)
+        consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres le type.");
+    return true;
 }
 
 static void emit_type_check_and_coerce(bool isQueueType, const char *typeName, bool isNonNull)
@@ -1380,44 +1386,10 @@ static void emit_type_check_and_coerce(bool isQueueType, const char *typeName, b
 
 static void var_declaration(int kind)
 {
-    bool isQueueType = false;
     bool isNonNull = false;
     char typeName[32] = "";
-
-    if (match(TOKEN_TILDE))
-    {
-        if (match(TOKEN_LEFT_PAREN))
-        {
-            isNonNull = true;
-            consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
-            snprintf(typeName, sizeof(typeName), "%.*s", parser.previous.length, parser.previous.start);
-            if (match(TOKEN_LESS))
-            {
-                if (match(TOKEN_IDENTIFIER))
-                {
-                }
-                consume(TOKEN_GREATER, "Attendu '>'.");
-            }
-            consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres le type.");
-        }
-        else
-        {
-            consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
-            Token typeTok = parser.previous;
-            snprintf(typeName, sizeof(typeName), "%.*s", typeTok.length, typeTok.start);
-            if (typeTok.length == 5 && memcmp(typeTok.start, "Queue", 5) == 0)
-            {
-                isQueueType = true;
-            }
-            if (match(TOKEN_LESS))
-            {
-                if (match(TOKEN_IDENTIFIER))
-                {
-                }
-                consume(TOKEN_GREATER, "Attendu '>'.");
-            }
-        }
-    }
+    bool hasType = parse_type_annotation(&isNonNull, typeName, sizeof(typeName));
+    bool isQueueType = (hasType && !isNonNull && strcmp(typeName, "Queue") == 0);
 
     Token names[32];
     int nameCount = 0;
@@ -1822,38 +1794,6 @@ static void skip_statement(void)
     currentLoop->skipJumps[currentLoop->skipJumpCount++] = emit_jump(OP_JUMP);
 }
 
-static void skip_type_annotation(void)
-{
-    if (match(TOKEN_TILDE))
-    {
-        if (match(TOKEN_LEFT_PAREN))
-        {
-            consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
-            if (match(TOKEN_LESS))
-            {
-                while (!check(TOKEN_GREATER) && !check(TOKEN_EOF))
-                {
-                    advance();
-                }
-                consume(TOKEN_GREATER, "Attendu '>'.");
-            }
-            consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres le type.");
-        }
-        else
-        {
-            consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
-            if (match(TOKEN_LESS))
-            {
-                while (!check(TOKEN_GREATER) && !check(TOKEN_EOF))
-                {
-                    advance();
-                }
-                consume(TOKEN_GREATER, "Attendu '>'.");
-            }
-        }
-    }
-}
-
 static void emit_closure(Compiler *compiler)
 {
     ObjFunction *func = end_compiler();
@@ -1885,39 +1825,10 @@ static void function_body(FunctionType type)
     {
         do
         {
-            if (match(TOKEN_IVAR))
-            {
-            }
+            match(TOKEN_IVAR);
             bool isNonNull = false;
             char typeName[32] = "";
-
-            if (match(TOKEN_TILDE))
-            {
-                if (match(TOKEN_LEFT_PAREN))
-                {
-                    isNonNull = true;
-                    consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
-                    snprintf(typeName, sizeof(typeName), "%.*s", parser.previous.length, parser.previous.start);
-                    if (match(TOKEN_LESS))
-                    {
-                        while (!check(TOKEN_GREATER) && !check(TOKEN_EOF))
-                            advance();
-                        consume(TOKEN_GREATER, "Attendu '>'.");
-                    }
-                    consume(TOKEN_RIGHT_PAREN, "Attendu ')' apres le type.");
-                }
-                else
-                {
-                    consume(TOKEN_IDENTIFIER, "Nom de type attendu.");
-                    snprintf(typeName, sizeof(typeName), "%.*s", parser.previous.length, parser.previous.start);
-                    if (match(TOKEN_LESS))
-                    {
-                        while (!check(TOKEN_GREATER) && !check(TOKEN_EOF))
-                            advance();
-                        consume(TOKEN_GREATER, "Attendu '>'.");
-                    }
-                }
-            }
+            parse_type_annotation(&isNonNull, typeName, sizeof(typeName));
 
             consume(TOKEN_IDENTIFIER, "Nom de parametre attendu.");
             Token paramTok = parser.previous;
@@ -2255,10 +2166,8 @@ static void class_declaration(void)
             begin_scope();
             consume(TOKEN_LEFT_PAREN, "Attendu '(' apres le nom de 'set'.");
             current->function->arity = 1;
-            if (match(TOKEN_IVAR))
-            {
-            }
-            skip_type_annotation();
+            match(TOKEN_IVAR);
+            parse_type_annotation(NULL, NULL, 0);
             consume(TOKEN_IDENTIFIER, "Nom de parametre attendu.");
             declare_variable(false);
             define_variable(0, false);

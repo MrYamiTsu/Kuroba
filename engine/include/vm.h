@@ -75,7 +75,6 @@ KrbValue krb_peek(int distance);
 void krb_define_native(const char* name, NativeFn function);
 
 // Bytecode execution
-InterpretResult krb_interpret(Chunk* chunk);
 InterpretResult krb_interpret_source(const char* source);
 
 #endif // KUROBA_VM_H

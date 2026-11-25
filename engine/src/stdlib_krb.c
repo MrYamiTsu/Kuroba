@@ -65,6 +65,16 @@ static void table_set_val(ObjTable *table, const char *name, KrbValue val)
     krb_table_set(&table->fields, name, (int)strlen(name), val, false);
 }
 
+static inline double as_num(KrbValue v)
+{
+    return (v.type == VAL_INT) ? (double)v.as.integer : v.as.number;
+}
+
+static inline KrbValue num_val(double res)
+{
+    return (res == (int64_t)res) ? krb_int((int64_t)res) : krb_float(res);
+}
+
 static KrbValue math_abs(int argCount, KrbValue *args)
 {
     if (argCount < 1)
@@ -74,11 +84,8 @@ static KrbValue math_abs(int argCount, KrbValue *args)
         int64_t v = args[0].as.integer;
         return krb_int(v < 0 ? -v : v);
     }
-    else if (args[0].type == VAL_FLOAT)
-    {
-        double v = args[0].as.number;
-        return krb_float(v < 0 ? -v : v);
-    }
+    if (args[0].type == VAL_FLOAT)
+        return krb_float(fabs(args[0].as.number));
     return krb_int(0);
 }
 
@@ -86,12 +93,9 @@ static KrbValue math_min(int argCount, KrbValue *args)
 {
     if (argCount < 2)
         return krb_null();
-    double a = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double b = (args[1].type == VAL_INT) ? (double)args[1].as.integer : args[1].as.number;
     if (args[0].type == VAL_INT && args[1].type == VAL_INT)
-    {
         return krb_int(args[0].as.integer < args[1].as.integer ? args[0].as.integer : args[1].as.integer);
-    }
+    double a = as_num(args[0]), b = as_num(args[1]);
     return krb_float(a < b ? a : b);
 }
 
@@ -100,11 +104,8 @@ static KrbValue math_max(int argCount, KrbValue *args)
     if (argCount < 2)
         return krb_null();
     if (args[0].type == VAL_INT && args[1].type == VAL_INT)
-    {
         return krb_int(args[0].as.integer > args[1].as.integer ? args[0].as.integer : args[1].as.integer);
-    }
-    double a = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double b = (args[1].type == VAL_INT) ? (double)args[1].as.integer : args[1].as.number;
+    double a = as_num(args[0]), b = as_num(args[1]);
     return krb_float(a > b ? a : b);
 }
 
@@ -114,133 +115,77 @@ static KrbValue math_clamp(int argCount, KrbValue *args)
         return krb_null();
     if (args[0].type == VAL_INT && args[1].type == VAL_INT && args[2].type == VAL_INT)
     {
-        int64_t v = args[0].as.integer;
-        int64_t mn = args[1].as.integer;
-        int64_t mx = args[2].as.integer;
-        if (v < mn)
-            return krb_int(mn);
-        if (v > mx)
-            return krb_int(mx);
-        return krb_int(v);
+        int64_t v = args[0].as.integer, mn = args[1].as.integer, mx = args[2].as.integer;
+        return krb_int(v < mn ? mn : (v > mx ? mx : v));
     }
-    double v = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double mn = (args[1].type == VAL_INT) ? (double)args[1].as.integer : args[1].as.number;
-    double mx = (args[2].type == VAL_INT) ? (double)args[2].as.integer : args[2].as.number;
-    if (v < mn)
-        return krb_float(mn);
-    if (v > mx)
-        return krb_float(mx);
-    return krb_float(v);
+    double v = as_num(args[0]), mn = as_num(args[1]), mx = as_num(args[2]);
+    return krb_float(v < mn ? mn : (v > mx ? mx : v));
 }
 
 static KrbValue math_floor(int argCount, KrbValue *args)
 {
-    if (argCount < 1)
-        return krb_int(0);
-    double v = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    return krb_int((int64_t)floor(v));
+    return (argCount < 1) ? krb_int(0) : krb_int((int64_t)floor(as_num(args[0])));
 }
 
 static KrbValue math_ceil(int argCount, KrbValue *args)
 {
-    if (argCount < 1)
-        return krb_int(0);
-    double v = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    return krb_int((int64_t)ceil(v));
+    return (argCount < 1) ? krb_int(0) : krb_int((int64_t)ceil(as_num(args[0])));
 }
 
 static KrbValue math_round(int argCount, KrbValue *args)
 {
-    if (argCount < 1)
-        return krb_int(0);
-    double v = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    return krb_int((int64_t)round(v));
+    return (argCount < 1) ? krb_int(0) : krb_int((int64_t)round(as_num(args[0])));
 }
 
 static KrbValue math_sqrt(int argCount, KrbValue *args)
 {
-    if (argCount < 1)
-        return krb_float(0.0);
-    double v = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double res = sqrt(v);
-    if (res == (int64_t)res)
-        return krb_int((int64_t)res);
-    return krb_float(res);
+    return (argCount < 1) ? krb_float(0.0) : num_val(sqrt(as_num(args[0])));
 }
 
 static KrbValue math_pow(int argCount, KrbValue *args)
 {
-    if (argCount < 2)
-        return krb_null();
-    double b = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double e = (args[1].type == VAL_INT) ? (double)args[1].as.integer : args[1].as.number;
-    double res = pow(b, e);
-    if (res == (int64_t)res)
-        return krb_int((int64_t)res);
-    return krb_float(res);
+    return (argCount < 2) ? krb_null() : num_val(pow(as_num(args[0]), as_num(args[1])));
 }
 
 static KrbValue math_sign(int argCount, KrbValue *args)
 {
     if (argCount < 1)
         return krb_int(0);
-    double v = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    if (v > 0)
-        return krb_int(1);
-    if (v < 0)
-        return krb_int(-1);
-    return krb_int(0);
+    double v = as_num(args[0]);
+    return krb_int(v > 0 ? 1 : (v < 0 ? -1 : 0));
 }
 
 static KrbValue math_lerp(int argCount, KrbValue *args)
 {
     if (argCount < 3)
         return krb_null();
-    double a = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double b = (args[1].type == VAL_INT) ? (double)args[1].as.integer : args[1].as.number;
-    double t = (args[2].type == VAL_INT) ? (double)args[2].as.integer : args[2].as.number;
-    double res = a + (b - a) * t;
-    if (res == (int64_t)res)
-        return krb_int((int64_t)res);
-    return krb_float(res);
+    double a = as_num(args[0]), b = as_num(args[1]), t = as_num(args[2]);
+    return num_val(a + (b - a) * t);
 }
 
 static KrbValue math_dist(int argCount, KrbValue *args)
 {
     if (argCount < 4)
         return krb_float(0.0);
-    double x1 = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double y1 = (args[1].type == VAL_INT) ? (double)args[1].as.integer : args[1].as.number;
-    double x2 = (args[2].type == VAL_INT) ? (double)args[2].as.integer : args[2].as.number;
-    double y2 = (args[3].type == VAL_INT) ? (double)args[3].as.integer : args[3].as.number;
-    double res = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-    if (res == (int64_t)res)
-        return krb_int((int64_t)res);
-    return krb_float(res);
+    double dx = as_num(args[2]) - as_num(args[0]);
+    double dy = as_num(args[3]) - as_num(args[1]);
+    return num_val(sqrt(dx * dx + dy * dy));
 }
 
 static KrbValue math_sin(int argCount, KrbValue *args)
 {
     if (argCount < 1)
         return krb_float(0.0);
-    double v = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double res = sin(v);
-    if (fabs(res) < 1e-12)
-        return krb_int(0);
-    return krb_float(res);
+    double res = sin(as_num(args[0]));
+    return (fabs(res) < 1e-12) ? krb_int(0) : krb_float(res);
 }
 
 static KrbValue math_cos(int argCount, KrbValue *args)
 {
     if (argCount < 1)
         return krb_float(1.0);
-    double v = (args[0].type == VAL_INT) ? (double)args[0].as.integer : args[0].as.number;
-    double res = cos(v);
-    if (fabs(res - 1.0) < 1e-12)
-        return krb_int(1);
-    if (fabs(res) < 1e-12)
-        return krb_int(0);
-    return krb_float(res);
+    double res = cos(as_num(args[0]));
+    return (fabs(res - 1.0) < 1e-12) ? krb_int(1) : ((fabs(res) < 1e-12) ? krb_int(0) : krb_float(res));
 }
 
 static KrbValue str_upper(int argCount, KrbValue *args)
@@ -1260,26 +1205,15 @@ static KrbValue native_copy(int argCount, KrbValue *args)
 {
     if (argCount >= 1)
     {
-        if (args[0].type == VAL_STRING)
-        {
-            printf("%s", args[0].as.string);
-        }
-        else
-        {
-            krb_print_value(args[0]);
-        }
+        krb_print_value(args[0]);
         fflush(stdout);
     }
     char line[1024];
     if (fgets(line, sizeof(line), stdin) == NULL)
-    {
         return krb_string(_strdup(""));
-    }
     size_t len = strlen(line);
     while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r'))
-    {
         line[--len] = '\0';
-    }
     return krb_string(_strdup(line));
 }
 
@@ -1287,25 +1221,15 @@ static KrbValue native_copy_key(int argCount, KrbValue *args)
 {
     if (argCount >= 1)
     {
-        if (args[0].type == VAL_STRING)
-        {
-            printf("%s", args[0].as.string);
-        }
-        else
-        {
-            krb_print_value(args[0]);
-        }
+        krb_print_value(args[0]);
         fflush(stdout);
     }
 #ifdef _WIN32
-    int ch = _getch();
-    char str[2] = {(char)ch, '\0'};
-    return krb_string(_strdup(str));
+    char str[2] = {(char)_getch(), '\0'};
 #else
-    char ch = (char)getchar();
-    char str[2] = {ch, '\0'};
-    return krb_string(_strdup(str));
+    char str[2] = {(char)getchar(), '\0'};
 #endif
+    return krb_string(_strdup(str));
 }
 
 void krb_init_stdlib(void)

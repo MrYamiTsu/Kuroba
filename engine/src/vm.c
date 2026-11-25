@@ -22,6 +22,48 @@ static void reset_stack(void)
     vm.frameCount = 0;
 }
 
+static int current_line(void)
+{
+    if (vm.frameCount <= 0)
+        return 1;
+    CallFrame *f = &vm.frames[vm.frameCount - 1];
+    return f->closure->function->chunk.lines[f->ip - f->closure->function->chunk.code - 1];
+}
+
+static KrbValue make_error_table(const char *errorName, const char *message, int line)
+{
+    ObjTable *errTable = krb_new_obj_table();
+    krb_table_set(&errTable->fields, "eName", 5, krb_string(_strdup(errorName)), false);
+    krb_table_set(&errTable->fields, "eContext", 8, krb_string(_strdup(message)), false);
+    krb_table_set(&errTable->fields, "eTime", 5, krb_bool(false), false);
+    krb_table_set(&errTable->fields, "eLine", 5, krb_int(line), false);
+    krb_table_set(&errTable->fields, "eCol", 4, krb_int(1), false);
+    return krb_obj_val((Obj *)errTable);
+}
+
+static bool unwind_try_handler(KrbValue errVal)
+{
+    if (vm.try_count <= 0)
+        return false;
+    KrbTryHandler h = vm.try_stack[--vm.try_count];
+    while (vm.frameCount - 1 > h.frame_index)
+        vm.frameCount--;
+    vm.stackTop = vm.stack + h.stack_count;
+    CallFrame *frame = &vm.frames[vm.frameCount - 1];
+    if (h.catch_ip != NULL)
+    {
+        krb_push(errVal);
+        frame->ip = h.catch_ip;
+        return true;
+    }
+    if (h.finally_ip != NULL)
+    {
+        frame->ip = h.finally_ip;
+        return true;
+    }
+    return false;
+}
+
 static bool trigger_runtime_error(const char *errorName, const char *format, ...)
 {
     char message[1024];
@@ -30,43 +72,9 @@ static bool trigger_runtime_error(const char *errorName, const char *format, ...
     vsnprintf(message, sizeof(message), format, args);
     va_end(args);
 
-    int line = 1;
-    if (vm.frameCount > 0)
-    {
-        CallFrame *frame = &vm.frames[vm.frameCount - 1];
-        size_t instruction = frame->ip - frame->closure->function->chunk.code - 1;
-        line = frame->closure->function->chunk.lines[instruction];
-    }
-
-    if (vm.try_count > 0)
-    {
-        KrbTryHandler h = vm.try_stack[--vm.try_count];
-        while (vm.frameCount - 1 > h.frame_index)
-        {
-            vm.frameCount--;
-        }
-        vm.stackTop = vm.stack + h.stack_count;
-        CallFrame *frame = &vm.frames[vm.frameCount - 1];
-
-        ObjTable *errTable = krb_new_obj_table();
-        krb_table_set(&errTable->fields, "eName", 5, krb_string(_strdup(errorName)), false);
-        krb_table_set(&errTable->fields, "eContext", 8, krb_string(_strdup(message)), false);
-        krb_table_set(&errTable->fields, "eTime", 5, krb_bool(false), false);
-        krb_table_set(&errTable->fields, "eLine", 5, krb_int(line), false);
-        krb_table_set(&errTable->fields, "eCol", 4, krb_int(1), false);
-
-        if (h.catch_ip != NULL)
-        {
-            krb_push(krb_obj_val((Obj *)errTable));
-            frame->ip = h.catch_ip;
-            return true;
-        }
-        else if (h.finally_ip != NULL)
-        {
-            frame->ip = h.finally_ip;
-            return true;
-        }
-    }
+    int line = current_line();
+    if (unwind_try_handler(make_error_table(errorName, message, line)))
+        return true;
 
     fprintf(stderr, "\x1b[31m[%s: Line %d, Col 1] %s\x1b[0m\n", errorName, line, message);
     reset_stack();
@@ -277,44 +285,17 @@ static bool is_falsey(KrbValue value)
 
 static bool values_equal(KrbValue a, KrbValue b)
 {
-    if (a.type != b.type)
-    {
-        if (a.type == VAL_INT && b.type == VAL_BOOL)
-        {
-            return (a.as.integer == 1 && b.as.boolean) || (a.as.integer == 0 && !b.as.boolean);
-        }
-        if (a.type == VAL_BOOL && b.type == VAL_INT)
-        {
-            return (b.as.integer == 1 && a.as.boolean) || (b.as.integer == 0 && !a.as.boolean);
-        }
-        if (a.type == VAL_INT && b.type == VAL_FLOAT)
-        {
-            return (double)a.as.integer == b.as.number;
-        }
-        if (a.type == VAL_FLOAT && b.type == VAL_INT)
-        {
-            return a.as.number == (double)b.as.integer;
-        }
-        return false;
-    }
-
-    switch (a.type)
-    {
-    case VAL_NULL:
-        return true;
-    case VAL_BOOL:
-        return a.as.boolean == b.as.boolean;
-    case VAL_INT:
-        return a.as.integer == b.as.integer;
-    case VAL_FLOAT:
-        return a.as.number == b.as.number;
-    case VAL_STRING:
-        return strcmp(a.as.string, b.as.string) == 0;
-    case VAL_OBJ:
-        return a.as.obj == b.as.obj;
-    default:
-        return false;
-    }
+    if (a.type == b.type)
+        return krb_values_equal(a, b);
+    if (a.type == VAL_INT && b.type == VAL_BOOL)
+        return (a.as.integer == 1 && b.as.boolean) || (a.as.integer == 0 && !b.as.boolean);
+    if (a.type == VAL_BOOL && b.type == VAL_INT)
+        return (b.as.integer == 1 && a.as.boolean) || (b.as.integer == 0 && !a.as.boolean);
+    if (a.type == VAL_INT && b.type == VAL_FLOAT)
+        return (double)a.as.integer == b.as.number;
+    if (a.type == VAL_FLOAT && b.type == VAL_INT)
+        return a.as.number == (double)b.as.integer;
+    return false;
 }
 
 static bool eval_is_check(KrbValue val, const char *spec)
@@ -389,10 +370,10 @@ static bool eval_is_check(KrbValue val, const char *spec)
 static InterpretResult run(int minFrameCount);
 static bool call(ObjClosure *closure, int argCount);
 
-static bool find_instance_method(ObjInstance *instance, const char *name, KrbValue *outMethod)
+static bool find_class_method(ObjClass *klass, const char *name, KrbValue *outMethod)
 {
     int len = (int)strlen(name);
-    for (ObjClass *curr = instance->klass; curr != NULL; curr = curr->superClass)
+    for (ObjClass *curr = klass; curr != NULL; curr = curr->superClass)
     {
         if (krb_table_get(&curr->methods, name, len, outMethod))
             return true;
@@ -400,34 +381,35 @@ static bool find_instance_method(ObjInstance *instance, const char *name, KrbVal
     return false;
 }
 
-static int invoke_instance_method(ObjInstance *instance, const char *name, int argCount, CallFrame **frameOut)
+static bool call_fn_val(KrbValue fnVal, int argCount)
+{
+    if (IS_CLOSURE(fnVal))
+        return call(AS_CLOSURE(fnVal), argCount);
+    if (IS_FUNCTION(fnVal))
+        return call(krb_new_closure(AS_FUNCTION(fnVal)), argCount);
+    return false;
+}
+
+static int invoke_class_method(ObjClass *klass, const char *name, int argCount, CallFrame **frameOut)
 {
     KrbValue methodVal;
-    if (!find_instance_method(instance, name, &methodVal))
+    if (!find_class_method(klass, name, &methodVal))
         return 0;
-
-    ObjClosure *closure = IS_CLOSURE(methodVal)
-                              ? AS_CLOSURE(methodVal)
-                              : (IS_FUNCTION(methodVal) ? krb_new_closure(AS_FUNCTION(methodVal)) : NULL);
-    if (closure == NULL)
-        return 0;
-
-    if (!call(closure, argCount))
+    if (!call_fn_val(methodVal, argCount))
         return -1;
     *frameOut = &vm.frames[vm.frameCount - 1];
     return 1;
 }
 
+static int invoke_instance_method(ObjInstance *instance, const char *name, int argCount, CallFrame **frameOut)
+{
+    return invoke_class_method(instance->klass, name, argCount, frameOut);
+}
+
 static int eval_instance_to_string(ObjInstance *inst, KrbValue *outVal)
 {
     KrbValue methodVal;
-    if (!find_instance_method(inst, "toString", &methodVal))
-        return 0;
-
-    ObjClosure *closure = IS_CLOSURE(methodVal)
-                              ? AS_CLOSURE(methodVal)
-                              : (IS_FUNCTION(methodVal) ? krb_new_closure(AS_FUNCTION(methodVal)) : NULL);
-    if (closure == NULL)
+    if (!find_class_method(inst->klass, "toString", &methodVal))
         return 0;
 
     int baseFrames = vm.frameCount;
@@ -435,7 +417,7 @@ static int eval_instance_to_string(ObjInstance *inst, KrbValue *outVal)
     int savedTryCount = vm.try_count;
 
     krb_push(krb_obj_val((Obj *)inst));
-    if (!call(closure, 0))
+    if (!call_fn_val(methodVal, 0))
         return -1;
     if (vm.frameCount <= baseFrames)
         return 2;
@@ -703,10 +685,7 @@ static bool call_value(KrbValue callee, int argCount)
             KrbValue initializer;
             if (krb_table_get(&klass->methods, "init", 4, &initializer))
             {
-                if (IS_CLOSURE(initializer))
-                    return call(AS_CLOSURE(initializer), argCount);
-                else if (IS_FUNCTION(initializer))
-                    return call(krb_new_closure(AS_FUNCTION(initializer)), argCount);
+                return call_fn_val(initializer, argCount);
             }
             else if (argCount != 0)
             {
@@ -980,41 +959,12 @@ static InterpretResult run(int minFrameCount)
             break;
         }
         case OP_GREATER:
-        {
-            if (IS_INSTANCE(krb_peek(1)))
-            {
-                int inv = invoke_instance_method(AS_INSTANCE(krb_peek(1)), "__op_gt", 1, &frame);
-                if (inv < 0)
-                    return INTERPRET_RUNTIME_ERROR;
-                if (inv > 0)
-                    break;
-            }
-            KrbValue b = krb_pop();
-            KrbValue a = krb_pop();
-            if (a.type == VAL_INT && b.type == VAL_INT)
-            {
-                krb_push(krb_bool(a.as.integer > b.as.integer));
-            }
-            else if ((a.type == VAL_INT || a.type == VAL_FLOAT) &&
-                     (b.type == VAL_INT || b.type == VAL_FLOAT))
-            {
-                double x = (a.type == VAL_INT) ? (double)a.as.integer : a.as.number;
-                double y = (b.type == VAL_INT) ? (double)b.as.integer : b.as.number;
-                krb_push(krb_bool(x > y));
-            }
-            else
-            {
-                if (!trigger_runtime_error("TypeError", "Les operandes de '>' doivent etre des nombres."))
-                    return INTERPRET_RUNTIME_ERROR;
-                frame = &vm.frames[vm.frameCount - 1];
-            }
-            break;
-        }
         case OP_LESS:
         {
+            bool isGt = (instruction == OP_GREATER);
             if (IS_INSTANCE(krb_peek(1)))
             {
-                int inv = invoke_instance_method(AS_INSTANCE(krb_peek(1)), "__op_lt", 1, &frame);
+                int inv = invoke_instance_method(AS_INSTANCE(krb_peek(1)), isGt ? "__op_gt" : "__op_lt", 1, &frame);
                 if (inv < 0)
                     return INTERPRET_RUNTIME_ERROR;
                 if (inv > 0)
@@ -1024,18 +974,18 @@ static InterpretResult run(int minFrameCount)
             KrbValue a = krb_pop();
             if (a.type == VAL_INT && b.type == VAL_INT)
             {
-                krb_push(krb_bool(a.as.integer < b.as.integer));
+                krb_push(krb_bool(isGt ? (a.as.integer > b.as.integer) : (a.as.integer < b.as.integer)));
             }
             else if ((a.type == VAL_INT || a.type == VAL_FLOAT) &&
                      (b.type == VAL_INT || b.type == VAL_FLOAT))
             {
                 double x = (a.type == VAL_INT) ? (double)a.as.integer : a.as.number;
                 double y = (b.type == VAL_INT) ? (double)b.as.integer : b.as.number;
-                krb_push(krb_bool(x < y));
+                krb_push(krb_bool(isGt ? (x > y) : (x < y)));
             }
             else
             {
-                if (!trigger_runtime_error("TypeError", "Les operandes de '<' doivent etre des nombres."))
+                if (!trigger_runtime_error("TypeError", isGt ? "Les operandes de '>' doivent etre des nombres." : "Les operandes de '<' doivent etre des nombres."))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
             }
@@ -1220,31 +1170,12 @@ static InterpretResult run(int minFrameCount)
 
                 char getterName[128];
                 snprintf(getterName, sizeof(getterName), "get_%s", propName.as.string);
-                ObjClass *curr = instance->klass;
                 KrbValue getterVal;
-                bool hasGetter = false;
-                while (curr != NULL)
-                {
-                    if (krb_table_get(&curr->methods, getterName, (int)strlen(getterName), &getterVal))
-                    {
-                        hasGetter = true;
-                        break;
-                    }
-                    curr = curr->superClass;
-                }
-                if (hasGetter)
+                if (find_class_method(instance->klass, getterName, &getterVal))
                 {
                     krb_push(target);
-                    if (IS_CLOSURE(getterVal))
-                    {
-                        if (!call(AS_CLOSURE(getterVal), 0))
-                            return INTERPRET_RUNTIME_ERROR;
-                    }
-                    else if (IS_FUNCTION(getterVal))
-                    {
-                        if (!call(krb_new_closure(AS_FUNCTION(getterVal)), 0))
-                            return INTERPRET_RUNTIME_ERROR;
-                    }
+                    if (!call_fn_val(getterVal, 0))
+                        return INTERPRET_RUNTIME_ERROR;
                     frame = &vm.frames[vm.frameCount - 1];
                     break;
                 }
@@ -1306,32 +1237,13 @@ static InterpretResult run(int minFrameCount)
                 ObjInstance *instance = AS_INSTANCE(target);
                 char setterName[128];
                 snprintf(setterName, sizeof(setterName), "set_%s", propName.as.string);
-                ObjClass *curr = instance->klass;
                 KrbValue setterVal;
-                bool hasSetter = false;
-                while (curr != NULL)
-                {
-                    if (krb_table_get(&curr->methods, setterName, (int)strlen(setterName), &setterVal))
-                    {
-                        hasSetter = true;
-                        break;
-                    }
-                    curr = curr->superClass;
-                }
-                if (hasSetter)
+                if (find_class_method(instance->klass, setterName, &setterVal))
                 {
                     krb_push(target);
                     krb_push(val);
-                    if (IS_CLOSURE(setterVal))
-                    {
-                        if (!call(AS_CLOSURE(setterVal), 1))
-                            return INTERPRET_RUNTIME_ERROR;
-                    }
-                    else if (IS_FUNCTION(setterVal))
-                    {
-                        if (!call(krb_new_closure(AS_FUNCTION(setterVal)), 1))
-                            return INTERPRET_RUNTIME_ERROR;
-                    }
+                    if (!call_fn_val(setterVal, 1))
+                        return INTERPRET_RUNTIME_ERROR;
                     frame = &vm.frames[vm.frameCount - 1];
                     break;
                 }
@@ -1485,18 +1397,10 @@ static InterpretResult run(int minFrameCount)
                         krb_push(res);
                         break;
                     }
-                    else if (IS_CLOSURE(methodVal))
+                    else if (IS_CLOSURE(methodVal) || IS_FUNCTION(methodVal))
                     {
                         *(vm.stackTop - argCount - 1) = methodVal;
-                        if (!call(AS_CLOSURE(methodVal), argCount))
-                            return INTERPRET_RUNTIME_ERROR;
-                        frame = &vm.frames[vm.frameCount - 1];
-                        break;
-                    }
-                    else if (IS_FUNCTION(methodVal))
-                    {
-                        *(vm.stackTop - argCount - 1) = methodVal;
-                        if (!call(krb_new_closure(AS_FUNCTION(methodVal)), argCount))
+                        if (!call_fn_val(methodVal, argCount))
                             return INTERPRET_RUNTIME_ERROR;
                         frame = &vm.frames[vm.frameCount - 1];
                         break;
@@ -1510,23 +1414,15 @@ static InterpretResult run(int minFrameCount)
                 }
             }
 
-            if (receiver.type == VAL_OBJ && receiver.as.obj->type == OBJ_CLASS)
+            if (IS_CLASS(receiver))
             {
-                ObjClass *klass = (ObjClass *)receiver.as.obj;
+                ObjClass *klass = AS_CLASS(receiver);
                 KrbValue methodVal;
                 if (krb_table_get(&klass->methods, name.as.string, (int)strlen(name.as.string), &methodVal))
                 {
                     *(vm.stackTop - argCount - 1) = methodVal;
-                    if (IS_CLOSURE(methodVal))
-                    {
-                        if (!call(AS_CLOSURE(methodVal), argCount))
-                            return INTERPRET_RUNTIME_ERROR;
-                    }
-                    else if (IS_FUNCTION(methodVal))
-                    {
-                        if (!call(krb_new_closure(AS_FUNCTION(methodVal)), argCount))
-                            return INTERPRET_RUNTIME_ERROR;
-                    }
+                    if (!call_fn_val(methodVal, argCount))
+                        return INTERPRET_RUNTIME_ERROR;
                     frame = &vm.frames[vm.frameCount - 1];
                     break;
                 }
@@ -1534,52 +1430,16 @@ static InterpretResult run(int minFrameCount)
 
             if (IS_INSTANCE(receiver))
             {
-                ObjInstance *instance = AS_INSTANCE(receiver);
-                ObjClass *curr = instance->klass;
-                KrbValue methodVal;
-                bool found = false;
-                while (curr != NULL)
-                {
-                    if (krb_table_get(&curr->methods, name.as.string, (int)strlen(name.as.string), &methodVal))
-                    {
-                        found = true;
-                        break;
-                    }
-                    curr = curr->superClass;
-                }
-                if (!found)
-                {
-                    if (!trigger_runtime_error("RuntimeError", "Methode non definie '%s'.", name.as.string))
-                        return INTERPRET_RUNTIME_ERROR;
-                    frame = &vm.frames[vm.frameCount - 1];
+                int inv = invoke_instance_method(AS_INSTANCE(receiver), name.as.string, argCount, &frame);
+                if (inv < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (inv > 0)
                     break;
-                }
-
-                if (IS_CLOSURE(methodVal))
-                {
-                    if (!call(AS_CLOSURE(methodVal), argCount))
-                        return INTERPRET_RUNTIME_ERROR;
-                }
-                else if (IS_FUNCTION(methodVal))
-                {
-                    if (!call(krb_new_closure(AS_FUNCTION(methodVal)), argCount))
-                        return INTERPRET_RUNTIME_ERROR;
-                }
-                frame = &vm.frames[vm.frameCount - 1];
-                break;
             }
 
             if (!trigger_runtime_error("RuntimeError", "Methode non definie '%s'.", name.as.string))
                 return INTERPRET_RUNTIME_ERROR;
             frame = &vm.frames[vm.frameCount - 1];
-            break;
-        }
-        case OP_SWAP:
-        {
-            KrbValue b = krb_pop();
-            KrbValue a = krb_pop();
-            krb_push(b);
-            krb_push(a);
             break;
         }
         case OP_DUP:
@@ -1616,48 +1476,18 @@ static InterpretResult run(int minFrameCount)
         case OP_THROW:
         {
             KrbValue val = krb_pop();
-            int line = 1;
-            if (vm.frameCount > 0)
+            int line = current_line();
+            if (!IS_TABLE(val))
             {
-                size_t instruction = frame->ip - CURRENT_CHUNK.code - 1;
-                line = CURRENT_CHUNK.lines[instruction];
-            }
-
-            if (val.type != VAL_OBJ || val.as.obj->type != OBJ_TABLE)
-            {
-                ObjTable *errTable = krb_new_obj_table();
-                krb_table_set(&errTable->fields, "eName", 5, krb_string(_strdup("Exception")), false);
                 const char *s = (val.type == VAL_STRING) ? val.as.string : "<exception>";
-                krb_table_set(&errTable->fields, "eContext", 8, krb_string(_strdup(s)), false);
-                krb_table_set(&errTable->fields, "eTime", 5, krb_bool(false), false);
-                krb_table_set(&errTable->fields, "eLine", 5, krb_int(line), false);
-                krb_table_set(&errTable->fields, "eCol", 4, krb_int(1), false);
-                val = krb_obj_val((Obj *)errTable);
+                val = make_error_table("Exception", s, line);
             }
-
-            if (vm.try_count > 0)
+            if (unwind_try_handler(val))
             {
-                KrbTryHandler h = vm.try_stack[--vm.try_count];
-                while (vm.frameCount - 1 > h.frame_index)
-                {
-                    vm.frameCount--;
-                }
-                vm.stackTop = vm.stack + h.stack_count;
                 frame = &vm.frames[vm.frameCount - 1];
-                if (h.catch_ip != NULL)
-                {
-                    krb_push(val);
-                    frame->ip = h.catch_ip;
-                    break;
-                }
-                else if (h.finally_ip != NULL)
-                {
-                    frame->ip = h.finally_ip;
-                    break;
-                }
+                break;
             }
-
-            ObjTable *tbl = (ObjTable *)val.as.obj;
+            ObjTable *tbl = AS_TABLE(val);
             KrbValue eCtx;
             const char *s = krb_table_get(&tbl->fields, "eContext", 8, &eCtx) && eCtx.type == VAL_STRING ? eCtx.as.string : "<exception>";
             fprintf(stderr, "\x1b[38;2;255;85;0m[Exception: Line %d, Col 1] %s\x1b[0m\n", line, s);
@@ -1768,23 +1598,7 @@ static InterpretResult run(int minFrameCount)
                 }
                 else if (strcmp(targetType, "String") == 0)
                 {
-                    if (top.type == VAL_INT)
-                    {
-                        char buf[64];
-                        snprintf(buf, sizeof(buf), "%lld", (long long)top.as.integer);
-                        *(vm.stackTop - 1) = krb_string(_strdup(buf));
-                    }
-                    else if (top.type == VAL_FLOAT)
-                    {
-                        char buf[64];
-                        snprintf(buf, sizeof(buf), "%g", top.as.number);
-                        *(vm.stackTop - 1) = krb_string(_strdup(buf));
-                    }
-                    else if (top.type == VAL_BOOL)
-                    {
-                        *(vm.stackTop - 1) = krb_string(_strdup(top.as.boolean ? "TRUE" : "FALSE"));
-                    }
-                    else if (IS_INSTANCE(top))
+                    if (IS_INSTANCE(top))
                     {
                         KrbValue instVal = krb_pop();
                         KrbValue strVal;
@@ -1799,14 +1613,15 @@ static InterpretResult run(int minFrameCount)
                         if (st == 1 && strVal.type == VAL_STRING)
                         {
                             krb_push(strVal);
+                            break;
                         }
-                        else
-                        {
-                            char buf[128];
-                            snprintf(buf, sizeof(buf), "<instance of %s>",
-                                     AS_INSTANCE(instVal)->klass->name ? AS_INSTANCE(instVal)->klass->name : "Object");
-                            krb_push(krb_string(_strdup(buf)));
-                        }
+                        char buf[128];
+                        krb_push(krb_string(_strdup(format_concat_side(instVal, buf, sizeof(buf)))));
+                    }
+                    else if (top.type == VAL_INT || top.type == VAL_FLOAT || top.type == VAL_BOOL)
+                    {
+                        char buf[128];
+                        *(vm.stackTop - 1) = krb_string(_strdup(format_concat_side(top, buf, sizeof(buf))));
                     }
                 }
                 else if (strcmp(targetType, "Bool") == 0)
@@ -1900,88 +1715,28 @@ static InterpretResult run(int minFrameCount)
                 }
             }
             if (curr == NULL)
-            {
                 curr = instance->klass->superClass;
-            }
-            KrbValue methodVal;
-            bool found = false;
-            while (curr != NULL)
-            {
-                if (krb_table_get(&curr->methods, name.as.string, (int)strlen(name.as.string), &methodVal))
-                {
-                    found = true;
-                    break;
-                }
-                curr = curr->superClass;
-            }
-            if (!found)
+            int inv = invoke_class_method(curr, name.as.string, argCount, &frame);
+            if (inv < 0)
+                return INTERPRET_RUNTIME_ERROR;
+            if (inv == 0)
             {
                 if (!trigger_runtime_error("RuntimeError", "Methode parente non definie '%s'.", name.as.string))
                     return INTERPRET_RUNTIME_ERROR;
                 frame = &vm.frames[vm.frameCount - 1];
-                break;
             }
-            if (IS_CLOSURE(methodVal))
-            {
-                if (!call(AS_CLOSURE(methodVal), argCount))
-                    return INTERPRET_RUNTIME_ERROR;
-            }
-            else if (IS_FUNCTION(methodVal))
-            {
-                if (!call(krb_new_closure(AS_FUNCTION(methodVal)), argCount))
-                    return INTERPRET_RUNTIME_ERROR;
-            }
-            frame = &vm.frames[vm.frameCount - 1];
             break;
         }
         case OP_ITER_KEY:
-        {
-            int64_t idx = krb_pop().as.integer;
-            KrbValue coll = krb_pop();
-            if (IS_LIST(coll))
-            {
-                krb_push(krb_int(idx));
-            }
-            else if (IS_TABLE(coll))
-            {
-                ObjTable *table = AS_TABLE(coll);
-                int currentIdx = 0;
-                KrbValue result = krb_null();
-                for (int i = 0; i < table->fields.capacity; i++)
-                {
-                    if (table->fields.entries[i].key != NULL)
-                    {
-                        if (currentIdx == idx)
-                        {
-                            result = krb_string(_strdup(table->fields.entries[i].key));
-                            break;
-                        }
-                        currentIdx++;
-                    }
-                }
-                krb_push(result);
-            }
-            else
-            {
-                krb_push(krb_null());
-            }
-            break;
-        }
         case OP_ITER_VAL:
         {
+            bool wantKey = (instruction == OP_ITER_KEY);
             int64_t idx = krb_pop().as.integer;
             KrbValue coll = krb_pop();
             if (IS_LIST(coll))
             {
                 ObjList *list = AS_LIST(coll);
-                if (idx >= 0 && idx < list->elements.count)
-                {
-                    krb_push(list->elements.values[idx]);
-                }
-                else
-                {
-                    krb_push(krb_null());
-                }
+                krb_push(wantKey ? krb_int(idx) : ((idx >= 0 && idx < list->elements.count) ? list->elements.values[idx] : krb_null()));
             }
             else if (IS_TABLE(coll))
             {
@@ -1994,7 +1749,7 @@ static InterpretResult run(int minFrameCount)
                     {
                         if (currentIdx == idx)
                         {
-                            result = table->fields.entries[i].value;
+                            result = wantKey ? krb_string(_strdup(table->fields.entries[i].key)) : table->fields.entries[i].value;
                             break;
                         }
                         currentIdx++;
@@ -2024,19 +1779,8 @@ static InterpretResult run(int minFrameCount)
             if (IS_CLASS(klassVal))
             {
                 ObjClass *klass = AS_CLASS(klassVal);
-                ObjClass *c = klass;
                 KrbValue oldMethod;
-                bool found = false;
-                while (c != NULL)
-                {
-                    if (krb_table_get(&c->methods, name.as.string, (int)strlen(name.as.string), &oldMethod))
-                    {
-                        found = true;
-                        break;
-                    }
-                    c = c->superClass;
-                }
-                if (found)
+                if (find_class_method(klass, name.as.string, &oldMethod))
                 {
                     char origName[128];
                     snprintf(origName, sizeof(origName), "__orig_%s", name.as.string);
@@ -2093,12 +1837,6 @@ static InterpretResult run(int minFrameCount)
             return INTERPRET_RUNTIME_ERROR;
         }
     }
-}
-
-InterpretResult krb_interpret(Chunk *chunk)
-{
-    (void)chunk;
-    return INTERPRET_OK;
 }
 
 InterpretResult krb_interpret_source(const char *source)
