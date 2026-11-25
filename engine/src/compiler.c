@@ -2057,17 +2057,16 @@ static void function_body(FunctionType type)
     emit_closure(&compiler);
 }
 
-static void function_declaration(int kind)
+static void function_declaration(void)
 {
     consume(TOKEN_IDENTIFIER, "Expected function name after 'function'.");
     Token nameToken = parser.previous;
-    uint16_t global = 0;
     if (current->scopeDepth == 0)
     {
-        global = identifier_constant(&nameToken);
+        uint16_t global = identifier_constant(&nameToken);
         set_global_var_type(&nameToken, "Function");
         function_body(TYPE_FUNCTION);
-        define_variable(global, kind);
+        define_variable(global, VAR_MUTABLE);
         return;
     }
 
@@ -2089,7 +2088,7 @@ static void function_declaration(int kind)
         if (current->locals[existing].isConst)
         {
             emit_byte(OP_POP);
-            emit_runtime_type_error("Cannot overwrite a constant function.");
+            emit_runtime_type_error("Cannot overwrite a constant variable.");
             return;
         }
         if (current->locals[existing].isSealed)
@@ -2097,21 +2096,15 @@ static void function_declaration(int kind)
             current->locals[existing].isUnlocked = false;
             emit_op_16(OP_CONSUME_UNLOCK, identifier_constant(&nameToken));
         }
-        if (kind == VAR_CONST)
-            current->locals[existing].isConst = true;
-        else if (kind == VAR_SEALED)
-            current->locals[existing].isSealed = true;
         emit_bytes(OP_SET_LOCAL, (uint8_t)existing);
         emit_byte(OP_POP);
         return;
     }
 
-    declare_variable(kind);
+    declare_variable(VAR_MUTABLE);
     snprintf(current->locals[current->localCount - 1].typeName, 32, "Function");
-    if (kind == VAR_SEALED)
-        emit_op_16(OP_LOCK_VAR, identifier_constant(&nameToken));
     function_body(TYPE_FUNCTION);
-    define_variable(0, kind);
+    define_variable(0, VAR_MUTABLE);
 }
 
 static void return_statement(void)
@@ -2229,7 +2222,7 @@ static void class_declaration(void)
         else if (match(TOKEN_ISEALED))
             memberKind = VAR_SEALED;
 
-        if (memberKind != -1 && !check(TOKEN_FUNCTION))
+        if (memberKind != -1)
         {
             bool isNonNull = false;
             char typeName[32] = "";
@@ -2251,6 +2244,14 @@ static void class_declaration(void)
             {
                 emit_op_16(OP_SET_PROPERTY, fieldConst);
                 emit_byte(OP_POP);
+                if (memberKind == VAR_CONST || memberKind == VAR_SEALED)
+                {
+                    char qual[128];
+                    snprintf(qual, sizeof(qual), "%.*s.%.*s", className.length, className.start, fieldName.length, fieldName.start);
+                    uint16_t qualConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(qual)));
+                    emit_constant(krb_null());
+                    emit_op_16(memberKind == VAR_CONST ? OP_DEFINE_CONST : OP_DEFINE_SEALED, qualConst);
+                }
                 named_variable(className, false);
             }
             else
@@ -2261,8 +2262,6 @@ static void class_declaration(void)
         }
         else if (match(TOKEN_FUNCTION))
         {
-            if (memberKind == -1)
-                memberKind = VAR_MUTABLE;
             consume(TOKEN_IDENTIFIER, "Expected method name.");
             Token methTok = parser.previous;
             uint16_t constant = identifier_constant(&methTok);
@@ -2278,14 +2277,6 @@ static void class_declaration(void)
             }
             function_body(type);
             emit_op_16(OP_METHOD, constant);
-            if (memberKind == VAR_CONST || memberKind == VAR_SEALED)
-            {
-                char qual[128];
-                snprintf(qual, sizeof(qual), "%.*s.%.*s", className.length, className.start, methTok.length, methTok.start);
-                uint16_t qualConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(qual)));
-                emit_constant(krb_null());
-                emit_op_16(memberKind == VAR_CONST ? OP_DEFINE_CONST : OP_DEFINE_SEALED, qualConst);
-            }
         }
         else if (match(TOKEN_OPERATOR))
         {
@@ -3166,28 +3157,19 @@ static void declaration(void)
 {
     if (match(TOKEN_IVAR))
     {
-        if (match(TOKEN_FUNCTION))
-            function_declaration(VAR_MUTABLE);
-        else
-            var_declaration(VAR_MUTABLE);
+        var_declaration(VAR_MUTABLE);
     }
     else if (match(TOKEN_ICONST))
     {
-        if (match(TOKEN_FUNCTION))
-            function_declaration(VAR_CONST);
-        else
-            var_declaration(VAR_CONST);
+        var_declaration(VAR_CONST);
     }
     else if (match(TOKEN_ISEALED))
     {
-        if (match(TOKEN_FUNCTION))
-            function_declaration(VAR_SEALED);
-        else
-            var_declaration(VAR_SEALED);
+        var_declaration(VAR_SEALED);
     }
     else if (match(TOKEN_FUNCTION))
     {
-        function_declaration(VAR_MUTABLE);
+        function_declaration();
     }
     else if (match(TOKEN_CLASS))
     {

@@ -251,8 +251,8 @@ ivar save = Json.read("save.json");</code></pre>
           </tr>
           <tr data-category="oop">
             <td><strong>Functions, Closures &amp; Hooks</strong></td>
-            <td><code>iconst function f(ivar x)</code> / <code>function ~(ivar x)</code><br/><code>hook Class.method(ivar x) then return orig(x); end</code></td>
-            <td>First-class &amp; lockable functions, anonymous lambdas (<code>~</code>), null-function checks (<code>is NULL</code>), and runtime hooks via <code>orig(...)</code>.</td>
+            <td><code>function f(ivar x)</code> / <code>isealed~Function cb</code><br/><code>hook Class.method(ivar x) then return orig(x); end</code></td>
+            <td>Named functions, lockable tilde lambdas (<code>iconst</code> / <code>isealed</code>), null-function checks (<code>is NULL</code>), and runtime hooks via <code>orig(...)</code>.</td>
           </tr>
           <tr data-category="collections">
             <td><strong>Typed Collections</strong></td>

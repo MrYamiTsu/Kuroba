@@ -844,20 +844,20 @@ pasteLn(noop is Function);   ~~ TRUE
 pasteLn(noop is NULL);       ~~ TRUE (0 parameters &amp; returns NULL)
 pasteLn(noop == NULL);       ~~ TRUE</code></pre>
 
-        <h3>Constant &amp; Sealed Functions (<code>iconst function</code> / <code>isealed function</code>)</h3>
-        <p>Functions (and class methods) can be locked against overwriting, reassignment, and <code>hook</code> interception using <code>iconst</code> or <code>isealed</code>:</p>
+        <h3>Constant &amp; Sealed Lambda Functions (<code>iconst~Function</code> / <code>isealed~Function</code>)</h3>
+        <p>While named declarations always use <code>function name(...) then ... end</code>, lambda functions assigned to <code>iconst</code> or <code>isealed</code> variables are locked against reassignment, overwriting, and <code>hook</code> interception:</p>
         <ul>
-          <li><strong><code>iconst function f(...)</code>:</strong> Permanently immutable (<code>f is lock == TRUE</code>). Overwriting, reassigning, <code>kill</code>, and <code>hook f(...)</code> raise a <code>[TypeError]</code>.</li>
-          <li><strong><code>isealed function f(...)</code>:</strong> Protected by default (<code>f is lock == TRUE</code>). Calling <code>unlock f;</code> permits exactly <strong>one</strong> rewrite or <strong>one</strong> <code>hook f(...)</code> before automatically re-sealing.</li>
+          <li><strong><code>iconst~Function f = function ~(...)</code>:</strong> Permanently immutable (<code>f is lock == TRUE</code>). Reassigning, overwriting, <code>kill</code>, and <code>hook f(...)</code> raise a <code>[TypeError]</code>.</li>
+          <li><strong><code>isealed~Function f = function ~(...)</code>:</strong> Protected by default (<code>f is lock == TRUE</code>). Calling <code>unlock f;</code> permits exactly <strong>one</strong> reassignment or <strong>one</strong> <code>hook f(...)</code> before automatically re-sealing.</li>
         </ul>
-        <pre><code class="language-kuroba">iconst function coreHash(ivar x) then
+        <pre><code class="language-kuroba">iconst~Function coreHash = function ~(ivar x) then
     return x * 31;
-end
+end;
 ~~ hook coreHash(ivar x) ... ~~ [TypeError] Cannot modify or hook constant 'coreHash'.
 
-isealed function calcTax(ivar price) then
+isealed~Function calcTax = function ~(ivar price) then
     return price * 2;
-end
+end;
 
 unlock calcTax; ~~ Authorize one modification or hook
 hook calcTax(ivar price) then
@@ -1024,7 +1024,6 @@ pasteLn(hero is Table);  ~~ TRUE</code></pre>
         <ul>
           <li><strong><code>this</code>:</strong> Always refers to the target class instance being invoked (e.g. <code>this.name</code>, <code>this.hp</code>).</li>
           <li><strong><code>orig(...)</code>:</strong> Exclusively invokes the original, non-intercepted method implementation on that instance.</li>
-          <li><strong>Constant &amp; Sealed Method Guards:</strong> Methods declared as <code>iconst function</code> cannot be hooked; methods declared as <code>isealed function</code> require <code>unlock ClassName.method;</code> before hooking (and automatically re-seal right after).</li>
         </ul>
 
         <pre><code class="language-kuroba">class Fighter then
