@@ -2035,18 +2035,20 @@ static void class_declaration(void)
 
         if (match(TOKEN_IVAR) || match(TOKEN_ICONST))
         {
+            bool isNonNull = false;
+            char typeName[32] = "";
+            bool hasType = parse_type_annotation(&isNonNull, typeName, sizeof(typeName));
+            bool isQueueType = (hasType && !isNonNull && strcmp(typeName, "Queue") == 0);
+
             consume(TOKEN_IDENTIFIER, "Nom de champ attendu.");
             Token fieldName = parser.previous;
             uint16_t fieldConst = identifier_constant(&fieldName);
 
             if (match(TOKEN_EQUAL))
-            {
                 expression();
-            }
             else
-            {
                 emit_constant(krb_null());
-            }
+            emit_type_check_and_coerce(isQueueType, typeName, isNonNull);
             consume(TOKEN_SEMICOLON, "Attendu ';' apres la declaration de champ.");
 
             if (isShared)
