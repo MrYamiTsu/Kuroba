@@ -52,12 +52,12 @@
         </div>
 
         <button id="btn-docs-mobile-menu" class="docs-mobile-menu-btn" type="button" aria-expanded="false">
-          <span id="docs-mobile-menu-label">Browse Chapters (15)</span>
+          <span id="docs-mobile-menu-label">Browse Chapters (16)</span>
           <span class="docs-mobile-chevron">▾</span>
         </button>
       </div>
 
-      <!-- Scope 1: Language Guide Curriculum (15 Chapters) -->
+      <!-- Scope 1: Language Guide Curriculum (16 Chapters) -->
       <div class="docs-sidebar-nav-scope" id="scope-nav-guide">
         <div class="docs-group" data-group="setup">
           <div class="docs-group-label"><span>Architecture &amp; Setup</span><span class="docs-group-toggle">▾</span></div>
@@ -138,7 +138,7 @@
            ==================================================================== -->
       <section id="quickstart">
         <h1>Quickstart &amp; Installation</h1>
-        <p>Kuroba is fully self-contained with <strong>zero external dependencies</strong>. The high-performance standalone <strong>Native C Engine</strong> executes scripts natively or in the interactive REPL shell on Windows, Linux, and macOS, alongside the in-browser Web VM.</p>
+        <p>Kuroba is fully self-contained with <strong>zero external dependencies</strong>. The standalone <strong>Native C99 Bytecode Engine</strong> executes scripts natively or in the interactive REPL shell on Windows, Linux, and macOS, while the exact same C engine compiled to <strong>WebAssembly (WASM)</strong> powers the in-browser Playground.</p>
         
         <h3>Local Installation via Git</h3>
         <pre><code class="language-bash">git clone https://github.com/MrYamiTsu/Kuroba.git
@@ -219,22 +219,26 @@ ivar~Int x, y = "10", 20;  ~~ x = 10, y = 20 (both cast to Int)</code></pre>
 iconst PORT = 8080;
 PORT = 3000; ~~ [TypeError] Cannot reassign constant 'PORT'.</code></pre>
 
-        <h3>Sealed Variables (<code>isealed</code>) &amp; Unlock / Lock Mechanics</h3>
-        <p>A sealed variable sits between a mutable variable (<code>ivar</code>) and an immutable constant (<code>iconst</code>). It is locked by default: direct reassignment is rejected with a runtime <code>[TypeError]</code> unless explicitly unlocked beforehand:</p>
+        <h3>Sealed Variables (<code>isealed</code>), <code>unlock / lock</code> &amp; State Inspection</h3>
+        <p>A sealed variable sits between a mutable variable (<code>ivar</code>) and an immutable constant (<code>iconst</code>). It is locked by default: direct reassignment is rejected with a runtime <code>[TypeError]</code> unless explicitly unlocked beforehand, and automatically re-seals right after one mutation:</p>
         <pre><code class="language-kuroba">isealed secret = 100;
-~~ secret = 200;       ~~ [TypeError] Cannot reassign sealed variable 'secret' without unlocking it first.
+~~ secret = 200;            ~~ [TypeError] Cannot modify or hook sealed target 'secret'. Use unlock first.
 
-~~ 1. Temporarily unlock to mutate:
+~~ 1. Inspect lock state at runtime with 'is lock' / 'is unlock':
+pasteLn(secret is lock);    ~~ TRUE  (locked by default)
+pasteLn(secret is unlock);  ~~ FALSE
+
+~~ 2. Temporarily unlock to mutate once:
 unlock secret;
-secret = 200;          ~~ Mutation succeeds!
-~~ Once modified, the variable automatically re-seals (auto-reseal)!
+pasteLn(secret is unlock);  ~~ TRUE
+secret = 200;               ~~ Mutation succeeds and immediately auto-reseals!
+pasteLn(secret is lock);    ~~ TRUE
 
-~~ secret = 300;       ~~ [TypeError] Automatically locked again!
-
-~~ 2. Manual lock without mutation:
+~~ 3. Manual re-lock without mutation:
 unlock secret;
-lock secret;           ~~ Manually locks back before any modification
-~~ secret = 400;       ~~ [TypeError] Locked!</code></pre>
+lock secret;                ~~ Re-locks immediately
+
+~~ Note: 'ivar' always evaluates TRUE on 'is unlock', and 'iconst' always evaluates TRUE on 'is lock'.</code></pre>
 
         <h3>Variable Destruction (<code>kill</code>)</h3>
         <p>The <code>kill</code> statement explicitly purges a variable from memory and active scope. Constants cannot be killed. If an inner shadowed variable is killed, the outer variable becomes visible again:</p>
@@ -325,38 +329,46 @@ pasteLn(buffer);         ~~ [ReferenceError] Variable 'buffer' is not defined.</
           </tbody>
         </table>
 
-        <h3>Explicit Type Coercion (<code>~Type</code>)</h3>
-        <p>Appending <code>~Type</code> to <code>ivar</code> converts the right-hand value immediately:</p>
+        <h3>Explicit Type Coercion &amp; Enforcement (<code>~Type</code>)</h3>
+        <p>Appending <code>~Type</code> to <code>ivar</code>, <code>iconst</code>, or <code>isealed</code> converts/validates the initial value and enforces that type across future reassignments (unless explicitly retyped with <code>[NewType]var = ...</code>):</p>
         <pre><code class="language-kuroba">ivar~Int counter = "42";   ~~ Coerced to Int 42
 ivar~String port = 8080;   ~~ Coerced to String "8080"
 ivar~Bool active = 1;      ~~ Coerced to TRUE (0 becomes FALSE)
-ivar~Float ratio = "3.14"; ~~ Coerced to Float 3.14</code></pre>
+ivar~Float ratio = "3.14"; ~~ Coerced to Float 3.14
+
+~~ Enforcing callable Function references:
+ivar~Function cb = function ~(ivar x) then return x * 2; end;
+~~ cb = 123;               ~~ [TypeError] Expected a Function value.</code></pre>
 
         <h3>Strict Non-Nullable Contract (<code>~(Type)</code>)</h3>
-        <p>Guarantees that a variable or field can <strong>never</strong> receive <code>NULL</code>, raising an immediate <code>[TypeError]</code> upon violation:</p>
+        <p>Guarantees that a variable, parameter, or field can <strong>never</strong> receive <code>NULL</code>, raising an immediate <code>[TypeError]</code> upon violation:</p>
         <pre><code class="language-kuroba">ivar~(String) user = "Admin";
 user = NULL; ~~ [TypeError] Cannot assign NULL to non-nullable variable 'user'.</code></pre>
 
         <h3>Prefix Type Casting &amp; Dynamic Retyping (<code>[Type]</code>)</h3>
-        <p>Values, expressions, and properties can be explicitly cast using the prefix bracket syntax <code>[Type]operand</code> (or <code>[(Type)]operand</code> for non-nullable contracts):</p>
+        <p>Values, expressions, class instances (invoking <code>toString()</code> when cast to <code>[String]</code>), and properties can be explicitly cast using <code>[Type]operand</code> (or <code>[(Type)]operand</code> for non-nullable contracts):</p>
         <pre><code class="language-kuroba">ivar b = "20";
 ivar c = "30";
 ivar sum = [Int]b + [Int]c;          ~~ Explicit cast in expression (50)
 ivar hp = [Float]player.health / 2;  ~~ Cast on object/table properties
 ivar tag = [String](10 + 5);         ~~ Cast on grouped expression ("15")</code></pre>
-        <p>An existing variable can also change type dynamically during assignment using <code>[Type]var = val;</code>:</p>
+        <p>An existing variable can also change its enforced type dynamically during assignment using <code>[Type]var = val;</code>:</p>
         <pre><code class="language-kuroba">ivar score = 100;              ~~ Inferred as Int
 [String]score = "Top Score";   ~~ Retyped to String in-place
 [Float]score = 99.5;           ~~ Retyped to Float in-place
 [(Int)]score = 250;            ~~ Retyped with strict non-nullable contract</code></pre>
 
-        <h3>Runtime Type Checking (<code>is</code>)</h3>
-        <p>The <code>is</code> operator evaluates to a strict boolean verifying whether a value matches a native type (<code>Int</code>, <code>Float</code>, <code>String</code>, <code>Bool</code>, <code>List</code>, <code>Stack</code>, <code>Queue</code>, <code>Table</code>, <code>Function</code>), a strict literal (<code>NULL</code>, <code>TRUE</code>, <code>FALSE</code>), or a typed generic collection (<code>List&lt;Int&gt;</code>, <code>List&lt;(Int)&gt;</code>, <code>Stack&lt;String&gt;</code>). Unknown types raise an immediate <code>[TypeError]</code>:</p>
+        <h3>Runtime Type &amp; State Inspection (<code>is</code>)</h3>
+        <p>The <code>is</code> operator evaluates to a strict boolean verifying whether a value matches a native type (<code>Int</code>, <code>Float</code>, <code>String</code>, <code>Bool</code>, <code>List</code>, <code>Stack</code>, <code>Queue</code>, <code>Table</code>, <code>Function</code>), a class or interface in its inheritance chain, an <code>enum</code>, <code>NULL</code>, or variable lock state (<code>is lock</code> / <code>is unlock</code>):</p>
         <pre><code class="language-kuroba">ivar items = [10, 20, 30];
 pasteLn(items is List);      ~~ TRUE
 pasteLn(items is List&lt;Int&gt;); ~~ TRUE
-pasteLn(1 is TRUE);          ~~ FALSE (strict boolean identity)
-pasteLn(!(5 is String));     ~~ TRUE</code></pre>
+pasteLn(!(5 is String));     ~~ TRUE
+
+ivar~Function noop = function ~() then end;
+pasteLn(noop is Function);   ~~ TRUE
+pasteLn(noop is NULL);       ~~ TRUE (0-arg function with no value return)
+pasteLn(noop == NULL);       ~~ TRUE</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -773,20 +785,20 @@ pasteLn(clients.pop());    ~~ "Alice" (removes and returns front)
 pasteLn(clients.count());  ~~ 2</code></pre>
 
         <h3>4. Tables (<code>Table</code>)</h3>
-        <p>Key-value associative maps accessed exclusively through dot notation (<code>table.field</code>). Reading an undefined field returns <code>NULL</code>:</p>
+        <p>Key-value associative maps accessed via dot notation (<code>table.field</code>) or string-key subscripting (<code>table["field"]</code>). Reading an undefined key safely returns <code>NULL</code>:</p>
         <pre><code class="language-kuroba">ivar~Table hero = {
     name: "Kuroba",
     hp: 100,
-    port~Int: "8080",          ~~ Field-level type coercion
-    token~(String): "xyz123"   ~~ Field-level strict non-nullability
+    role: "Shinobi"
 };
 
 hero.hp -= 15;                 ~~ In-place update
-hero.level = 5;                ~~ Dynamically creates field 'level'
+hero["level"] = 5;             ~~ Dynamic key creation via bracket or dot syntax
+pasteLn(hero.count());         ~~ 4
 pasteLn(hero.missingProp);     ~~ NULL (safe access)</code></pre>
 
         <h3>5. Nested Member &amp; Index Mutations</h3>
-        <p>Lists and Tables can be arbitrarily nested and mutated in place across mixed <code>[index]</code> and <code>.property</code> chains, including compound operators, increment/decrement, field retyping (<code>~Type</code>), and root <code>iconst</code> protection:</p>
+        <p>Lists and Tables can be arbitrarily nested and mutated in place across mixed <code>[index]</code> and <code>.property</code> chains, including compound operators and increment/decrement:</p>
         <pre><code class="language-kuroba">ivar grid = [[".", "."], [".", "."]];
 grid[1][0] = "#";              ~~ Matrix 2D cell assignment
 
@@ -804,8 +816,8 @@ player.bag[0] = "Bow";         ~~ Mutate List inside Table</code></pre>
       <section id="functions">
         <h2>Functions &amp; Native Hooks</h2>
         
-        <h3>Named Functions, Signatures &amp; Default Parameters</h3>
-        <p>Named functions declare parameters prefixed by <code>ivar</code> with optional type coercion (<code>ivar~Int x</code>), non-nullability constraints (<code>ivar~(String) name</code>), and default values (<code>= expr</code>) evaluated cleanly per call when omitted:</p>
+        <h3>Named Functions, Typed Signatures &amp; Default Parameters</h3>
+        <p>Named functions declare parameters with optional type coercion/enforcement (<code>ivar~Int x</code>, <code>ivar~Function cb</code>), non-nullability contracts (<code>ivar~(String) name</code>), and default values (<code>= literal</code>):</p>
         <pre><code class="language-kuroba">function calculateDamage(ivar base, ivar~Int multiplier = 1) then
     return base * multiplier;
 end
@@ -813,27 +825,55 @@ end
 pasteLn(calculateDamage(25));    ~~ 25 (uses default multiplier = 1)
 pasteLn(calculateDamage(25, 2)); ~~ 50</code></pre>
 
-        <h3>Anonymous Lambdas (<code>function ~</code>) &amp; Closures</h3>
+        <h3>Anonymous Lambdas (<code>function ~</code>), <code>Function</code> Typing &amp; Null Functions</h3>
+        <p>Functions are first-class values that can be constrained with <code>ivar~Function</code>. Any <strong>0-argument</strong> function that returns nothing, uses a bare <code>return;</code>, or returns <code>NULL</code> is treated as a <strong>null function</strong> (evaluating to <code>TRUE</code> on both <code>fn is NULL</code> and <code>fn == NULL</code> while remaining <code>fn is Function</code>):</p>
         <pre><code class="language-kuroba">function createMultiplier(ivar factor) then
     return function ~(ivar n) then
         return n * factor;
     end;
 end
 
-ivar triple = createMultiplier(3);
-pasteLn(triple(10)); ~~ 30</code></pre>
+ivar~Function triple = createMultiplier(3);
+pasteLn(triple(10));         ~~ 30
+pasteLn(triple is Function); ~~ TRUE
+
+ivar~Function noop = function ~() then end;
+pasteLn(noop is Function);   ~~ TRUE
+pasteLn(noop is NULL);       ~~ TRUE (0 parameters &amp; no value return)
+pasteLn(noop == NULL);       ~~ TRUE</code></pre>
+
+        <h3>Constant &amp; Sealed Functions (<code>iconst function</code> / <code>isealed function</code>)</h3>
+        <p>Functions (and class methods) can be locked against overwriting, reassignment, and <code>hook</code> interception using <code>iconst</code> or <code>isealed</code>:</p>
+        <ul>
+          <li><strong><code>iconst function f(...)</code>:</strong> Permanently immutable (<code>f is lock == TRUE</code>). Overwriting, reassigning, <code>kill</code>, and <code>hook f(...)</code> raise a <code>[TypeError]</code>.</li>
+          <li><strong><code>isealed function f(...)</code>:</strong> Protected by default (<code>f is lock == TRUE</code>). Calling <code>unlock f;</code> permits exactly <strong>one</strong> rewrite or <strong>one</strong> <code>hook f(...)</code> before automatically re-sealing.</li>
+        </ul>
+        <pre><code class="language-kuroba">iconst function coreHash(ivar x) then
+    return x * 31;
+end
+~~ hook coreHash(ivar x) ... ~~ [TypeError] Cannot modify or hook constant 'coreHash'.
+
+isealed function calcTax(ivar price) then
+    return price * 2;
+end
+
+unlock calcTax; ~~ Authorize one modification or hook
+hook calcTax(ivar price) then
+    return orig(price) + 5;
+end
+pasteLn(calcTax(10));      ~~ 25
+pasteLn(calcTax is lock);  ~~ TRUE (automatically re-sealed!)</code></pre>
 
         <h3>Native Function Interception (Hooks)</h3>
-        <p>The <code>hook</code> statement intercepts existing function calls (or Table methods) to inject telemetry, caching, or data validation without altering the caller interface. Inside the hook body, <strong><code>orig(...)</code></strong> invokes the original function:</p>
+        <p>The <code>hook</code> statement intercepts existing functions or class methods to inject telemetry, caching, or validation without altering caller code. Inside the hook body, <strong><code>orig(...)</code></strong> invokes the previous implementation:</p>
         <pre><code class="language-kuroba">function processPayment(ivar amount, ivar fee) then
     return amount + fee;
 end
 
-~~ Interception hook
 hook processPayment(ivar amount, ivar fee) then
     pasteLn(~"[AUDIT] Processing payment: {amount}$ (Fee: {fee}$)");
     ivar total = orig(amount, fee);
-    pasteLn(~"[AUDIT] Validation approved: Total = {total}$");
+    pasteLn(~"[AUDIT] Approved: Total = {total}$");
     return total;
 end
 
@@ -847,8 +887,8 @@ ivar invoice = processPayment(250, 15);</code></pre>
         <h2>Classes &amp; Object-Oriented Programming</h2>
         <p>Kuroba provides declarative, ergonomic Object-Oriented Programming (OOP) structured cleanly over its underlying <code>Table</code> collection model. Classes support C#-style constructors, auto-bound instance methods via <code>this</code>, field declarations with visibility access modifiers (<code>public</code>, <code>private</code>), automatic parameterless default constructors, and runtime type checking using <code>is</code>.</p>
 
-        <h3>1. Class Declaration &amp; Fields</h3>
-        <p>A class is declared with <code>class Name then ... end</code>. Inside the class body, you can declare instance fields using <code>ivar</code> or <code>iconst</code>, optionally prefixed with an access modifier:</p>
+        <h3>1. Class Declaration &amp; Typed Fields</h3>
+        <p>A class is declared with <code>class Name then ... end</code>. Inside the class body, declare instance or <code>shared</code> fields using <code>ivar</code>, <code>iconst</code>, or <code>isealed</code> with optional type coercion/non-nullability (e.g. <code>ivar~Int hp = 100;</code>, <code>shared ivar~Int count = 0;</code>, <code>ivar~(String) tag = "ok";</code>) and an access modifier:</p>
         <ul>
           <li><strong><code>public</code> (Default):</strong> Accessible and mutable from both inside and outside the instance, fully inherited across subclasses. If no access modifier is specified, fields and methods are automatically public.</li>
           <li><strong><code>protected</code>:</strong> Hidden from external consumers, but fully inherited and directly accessible within subclasses (via <code>this.member</code>).</li>
@@ -982,7 +1022,7 @@ pasteLn(hero is Table);  ~~ TRUE</code></pre>
         <ul>
           <li><strong><code>this</code>:</strong> Always refers to the target class instance being invoked (e.g. <code>this.name</code>, <code>this.hp</code>).</li>
           <li><strong><code>orig(...)</code>:</strong> Exclusively invokes the original, non-intercepted method implementation on that instance.</li>
-          <li><strong>Encapsulation Guard (Unhookable Privates):</strong> Methods declared as <code>private</code> are strictly protected against external interception; attempting to hook a private method raises a <code>[TypeError]</code>.</li>
+          <li><strong>Constant &amp; Sealed Method Guards:</strong> Methods declared as <code>iconst function</code> cannot be hooked; methods declared as <code>isealed function</code> require <code>unlock ClassName.method;</code> before hooking (and automatically re-seal right after).</li>
         </ul>
 
         <pre><code class="language-kuroba">class Fighter then
@@ -1054,31 +1094,23 @@ ivar p1 = Player("Kenji");
 ivar p2 = Player("Aoi");
 pasteLn(Player.getCount());     ~~ 2</code></pre>
 
-        <h3>6. Custom Property Accessors (<code>get</code> / <code>set</code>)</h3>
-        <p>Kuroba supports custom property interceptors on class variables. Instead of manual getter and setter methods, you can define declarative <code>get</code> and <code>set</code> blocks that seamlessly intercept member read and write operations:</p>
-        <ul>
-          <li><strong>The <code>value</code> Binding:</strong> Inside both <code>get</code> and <code>set</code>, the special <code>value</code> variable gives direct access to the underlying raw field stored in memory, avoiding infinite recursive loops.</li>
-          <li><strong>Permissive Layering:</strong> If only a <code>get</code> is defined, reading is intercepted while writing updates the underlying variable directly. If only a <code>set</code> is defined, writing is validated while reading retrieves the raw value.</li>
-          <li><strong>Constant Immutability:</strong> Constants (<code>iconst</code>) can have a <code>get</code> accessor, but defining a <code>set</code> on an <code>iconst</code> raises an intentional <code>[SyntaxError]</code>.</li>
-        </ul>
-
+        <h3>9. Custom Property Accessors (<code>get</code> / <code>set</code>)</h3>
+        <p>Kuroba supports custom property interceptors on class members using declarative <code>get</code> and <code>set</code> blocks:</p>
         <pre><code class="language-kuroba">class Character then
-    ivar hp = 100;
+    private ivar _hp = 100;
     iconst maxHp = 100;
 
-    ~~ Getter interceptor on maxHp
-    get maxHp then
-        return value;
+    get hp then
+        return this._hp;
     end
 
-    ~~ Setter interceptor with automatic clamping
-    set hp(newVal) then
+    set hp(ivar~Int newVal) then
         if (newVal &lt; 0) then
-            value = 0;
+            this._hp = 0;
         elif (newVal &gt; this.maxHp) then
-            value = this.maxHp;
+            this._hp = this.maxHp;
         else
-            value = newVal;
+            this._hp = newVal;
         end
     end
 
@@ -1092,6 +1124,85 @@ pasteLn(hero.hp); ~~ 100 (clamped by setter)
 
 hero.hp -= 200;
 pasteLn(hero.hp); ~~ 0 (clamped to zero)</code></pre>
+
+        <h3>10. Textual Representation Protocol (<code>toString()</code>)</h3>
+        <p>Defining a zero-argument <code>toString()</code> method on a class customizes how its instances are displayed and converted to text across the entire runtime (inherited automatically by subclasses):</p>
+        <ul>
+          <li>Automatically invoked by <code>paste(obj)</code> and <code>pasteLn(obj)</code>.</li>
+          <li>Automatically invoked inside tilde string interpolation <code>~"... {obj} ..."</code> and string concatenation (<code>"Label: " + obj</code> or <code>obj + "!"</code>).</li>
+          <li>Automatically invoked by explicit string casts <code>[String]obj</code> and typed declarations <code>ivar~String s = obj;</code>.</li>
+          <li>Falls back to <code>&lt;instance of ClassName&gt;</code> when <code>toString()</code> is not defined.</li>
+        </ul>
+        <pre><code class="language-kuroba">class Item then
+    ivar name = "Potion";
+    ivar~Int qty = 1;
+
+    function Item(ivar n, ivar~Int q) then
+        this.name = n;
+        this.qty = q;
+    end
+
+    function toString() then
+        return ~"{this.name} x{this.qty}";
+    end
+end
+
+ivar potion = Item("Elixir", 3);
+pasteLn(potion);               ~~ Elixir x3
+pasteLn(~"Bag: [{potion}]");   ~~ Bag: [Elixir x3]
+pasteLn([String]potion);       ~~ Elixir x3</code></pre>
+
+        <h3>11. Operator Overloading (<code>operator</code>)</h3>
+        <p>Classes can overload arithmetic, unary, and comparison operators using <code>operator &lt;op&gt;(...) then ... end</code> — ideal for 2D/3D vectors, matrices, currencies, and game math:</p>
+        <ul>
+          <li><strong>Binary Arithmetic (1 parameter):</strong> <code>operator +</code>, <code>operator -</code>, <code>operator *</code>, <code>operator /</code>, <code>operator %</code> — automatically unlocks compound assignments (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code>)!</li>
+          <li><strong>Unary Negation (0 parameters):</strong> <code>operator -()</code> — invoked on <code>-obj</code> (can coexist alongside binary <code>operator -(ivar other)</code> in the same class).</li>
+          <li><strong>Comparisons (1 parameter):</strong> <code>operator ==</code> (automatically unlocks <code>!=</code> and <code>given / case</code> matching, while preserving safe <code>obj == NULL</code> &rarr; <code>FALSE</code>), <code>operator &lt;</code> (unlocks <code>&gt;=</code>), and <code>operator &gt;</code> (unlocks <code>&lt;=</code>).</li>
+        </ul>
+        <pre><code class="language-kuroba">class Vec2 then
+    ivar x = 0;
+    ivar y = 0;
+
+    function Vec2(ivar x, ivar y) then
+        this.x = x;
+        this.y = y;
+    end
+
+    function toString() then
+        return ~"({this.x}, {this.y})";
+    end
+
+    operator +(ivar other) then
+        return Vec2(this.x + other.x, this.y + other.y);
+    end
+
+    operator -(ivar other) then
+        return Vec2(this.x - other.x, this.y - other.y);
+    end
+
+    operator -() then
+        return Vec2(-this.x, -this.y);
+    end
+
+    operator *(ivar factor) then
+        if (factor is Vec2) then
+            return Vec2(this.x * factor.x, this.y * factor.y);
+        end
+        return Vec2(this.x * factor, this.y * factor);
+    end
+
+    operator ==(ivar other) then
+        if (!(other is Vec2)) then return FALSE; end
+        return this.x == other.x &amp;&amp; this.y == other.y;
+    end
+end
+
+ivar a = Vec2(3, 4);
+ivar b = Vec2(1, 2);
+a += b * 2;
+pasteLn(a);            ~~ (5, 8)
+pasteLn(-b);           ~~ (-1, -2)
+pasteLn(a == Vec2(5, 8)); ~~ TRUE</code></pre>
       </section>
 
       <!-- ====================================================================
@@ -1145,7 +1256,7 @@ pasteLn(w is IMammal);       ~~ TRUE (inherited interface)</code></pre>
            ==================================================================== -->
       <section id="enums">
         <h2>Native Enumerations (<code>enum</code>)</h2>
-        <p>Kuroba provides native, immutable enumerations for declaring fixed sets of named constants. Members default to their own string identifier for readable diagnostics and logging, or can be assigned custom explicit values (integers, strings):</p>
+        <p>Kuroba provides native, immutable enumerations for declaring fixed sets of 0-indexed integer constants with runtime membership verification via <code>is</code>:</p>
 
         <pre><code class="language-kuroba">enum State then
     IDLE,
@@ -1153,26 +1264,16 @@ pasteLn(w is IMammal);       ~~ TRUE (inherited interface)</code></pre>
     PAUSED
 end
 
-pasteLn(State.IDLE);    ~~ "IDLE"
-pasteLn(State.RUNNING); ~~ "RUNNING"
-
-~~ Custom explicit values
-enum HttpStatus then
-    OK = 200,
-    NOT_FOUND = 404,
-    SERVER_ERROR = 500
-end
-
-pasteLn(HttpStatus.OK); ~~ 200
+pasteLn(State.IDLE);    ~~ 0
+pasteLn(State.RUNNING); ~~ 1
+pasteLn(State.PAUSED);  ~~ 2
 
 ~~ Runtime verification with 'is'
 ivar cur = State.IDLE;
 if (cur is State) then
     pasteLn("Valid state!");
-end
-
-~~ Immutability guarantee
-~~ State.IDLE = "NEW"; ~~ [TypeError] Cannot reassign member of immutable enum 'State'.</code></pre>
+end</code></pre>
+      </section>
       </section>
 
       <!-- ====================================================================
@@ -1187,7 +1288,7 @@ end
           <li><strong><code>Main</code> Namespace:</strong> Single entry point for applications. Strictly indivisible (cannot have <code>~Module</code>) and cannot be imported by other files.</li>
           <li><strong>Direct Namespaces:</strong> Declare a self-contained namespace using <code>namespace Utils then ... end</code> and access its exports directly via <code>Utils.helper()</code>.</li>
           <li><strong>Modular Slices:</strong> Split larger packages across multiple files or subfolders with <code>namespace Game ~Combat then ... end</code>, merging into <code>Game.Combat</code>.</li>
-          <li><strong>Built-in Standard Libraries:</strong> Kuroba ships with two built-in packages: <code>Std</code> (Core modules: <code>Math</code>, <code>Time</code>, <code>String</code>, <code>IO</code>) and <code>StdE</code> (Standard Extended modules: <code>Random</code>, <code>Json</code>).</li>
+          <li><strong>Built-in Standard Libraries:</strong> Kuroba ships with two built-in native C packages: <code>Std</code> (Core modules: <code>Math</code>, <code>Time</code>, <code>String</code>, <code>IO</code>) and <code>StdE</code> (Standard Extended modules: <code>Random</code>, <code>Json</code>, <code>Path</code>, <code>Term</code>, <code>Process</code>).</li>
           <li><strong>Namespace Class Modules:</strong> Declare a class directly as a module of a namespace using <code>namespace Entities ~class Player [from SuperClass] then ... end</code>. When imported, the class is accessible as <code>Entities.Player()</code> or directly as <code>Player()</code> with <code>alias ~</code>.</li>
           <li><strong>Qualified Paths &amp; Typing:</strong> Qualified dotted paths can be used in inheritance (<code>class Warrior from Entities.Player</code>), instance checks (<code>w is Entities.Player</code>), and type annotations (<code>ivar ~Entities.Player p = ...</code>).</li>
           <li><strong>Symbol Discovery &amp; Circular Guard:</strong> Kuroba indexes files by declared symbols (ignoring <code>node_modules</code>, <code>.git</code>, and the entry script) and raises an <code>[ImportError]</code> on circular dependencies.</li>
@@ -1421,7 +1522,7 @@ pasteLn(Math.degToRad(180));    ~~ 3.141592653589793</code></pre>
             <span class="doc-module-import">import Std ~(Time) alias ~;</span>
           </div>
           <h2 style="margin: 0.25rem 0 0.5rem; border: none; padding: 0;">Std.Time (Timers &amp; Chronometry)</h2>
-          <p class="doc-module-desc">Synchronous timing and sleep operations with <strong>0% CPU burn</strong> (powered by <code>Atomics.wait</code>) and stateful benchmarking stopwatches.</p>
+          <p class="doc-module-desc">Synchronous timing and sleep operations with <strong>0% CPU burn</strong> (powered by native OS sleep primitives) and stateful benchmarking stopwatches.</p>
         </div>
 
         <pre><code class="language-kuroba">import Std ~(Time) alias ~;
@@ -2178,34 +2279,32 @@ pasteLn("User: " + envTable.USERNAME);
         <p>Kuroba provides exact line, column, and contextual diagnostics for rapid debugging:</p>
 
         <h3>1. SyntaxError</h3>
-        <p>Grammar violations during tokenization or compilation:</p>
-        <pre><code class="language-output">[SyntaxError: Line 2, Col 1] Missing semicolon ';' at the end of statement.
-[SyntaxError: Line 4, Col 12] Unclosed parenthesis. Missing closing ')' to match '(' at Line 4, Col 6.
-[SyntaxError: Line 10, Col 5] Return statements are only allowed inside functions.</code></pre>
+        <p>Grammar violations during tokenization or bytecode compilation:</p>
+        <pre><code class="language-output">[SyntaxError: Line 2, Col 1] at end of file : Expected ';' after expression.
+[SyntaxError: Line 4, Col 12] at '}' : Expected ')' after expression.
+[SyntaxError: Line 10, Col 5] at 'return' : Cannot use 'return' at top-level script scope.</code></pre>
 
         <h3>2. TypeError</h3>
-        <p>Violations of runtime type compatibility or non-nullability contracts:</p>
-        <pre><code class="language-output">[TypeError] Cannot assign type 'String' to variable 'count' of type 'Int'.
-[TypeError] Cannot reassign constant 'PORT'.
-[TypeError] Cannot assign NULL to non-nullable variable 'user' of type '(String)'.
-[TypeError] Cannot kill constant variable 'PI'.
-[TypeError] Cannot hook non-function target 'score'.</code></pre>
+        <p>Violations of runtime type contracts, non-nullability, encapsulation, or constant/sealed locks:</p>
+        <pre><code class="language-output">[TypeError: Line 3, Col 1] Expected a Function value.
+[TypeError: Line 5, Col 1] Cannot modify or hook constant 'PORT'.
+[TypeError: Line 7, Col 1] Cannot modify or hook sealed target 'secret'. Use unlock first.
+[TypeError: Line 9, Col 1] Cannot assign NULL to non-nullable variable 'user'.
+[TypeError: Line 12, Col 1] External access to private field '_energy' rejected.</code></pre>
 
         <h3>3. ReferenceError</h3>
-        <p>Referencing undeclared identifiers or out-of-scope hook contexts:</p>
-        <pre><code class="language-output">[ReferenceError] Variable 'unknown' is not defined.
-[ReferenceError] Cannot call 'this()' outside of a hook interception.
-[ReferenceError] Cannot kill undefined variable 'temp'.</code></pre>
+        <p>Referencing undeclared variables in global or local scopes:</p>
+        <pre><code class="language-output">[ReferenceError: Line 4, Col 1] Undefined variable 'unknown'.</code></pre>
 
         <h3>4. MathError</h3>
         <p>Undefined mathematical calculations:</p>
-        <pre><code class="language-output">[MathError] Division by zero is undefined.
-[MathError] Modulo by zero is undefined.</code></pre>
+        <pre><code class="language-output">[MathError: Line 2, Col 1] Division by zero is undefined.
+[MathError: Line 3, Col 1] Division or modulo by zero is undefined.</code></pre>
 
         <h3>5. IndexError</h3>
-        <p>Accessing out-of-bounds indices or non-integer collection lookups:</p>
-        <pre><code class="language-output">[IndexError] Index 5 out of bounds for list of length 2.
-[IndexError] List index must be an integer, got 'abc'.</code></pre>
+        <p>Accessing out-of-bounds indices or invalid collection subscripts:</p>
+        <pre><code class="language-output">[IndexError: Line 4, Col 1] List index out of bounds [5].
+[IndexError: Line 6, Col 1] Cannot pop from an empty collection.</code></pre>
 
         <h3>6. IOError</h3>
         <p>Filesystem access or permission failures in <code>Std.IO</code>:</p>
@@ -2237,7 +2336,7 @@ pasteLn("User: " + envTable.USERNAME);
             <span class="version-badge">v1.1.0</span>
           </div>
           <p class="footer-tagline">
-            A lightweight, zero-dependency interpreted language featuring a high-performance Native C Engine and in-browser Web VM.
+            A lightweight, zero-dependency interpreted language featuring a high-performance Native C99 Bytecode Engine and WebAssembly Runtime.
           </p>
         </div>
 
@@ -2274,7 +2373,7 @@ pasteLn("User: " + envTable.USERNAME);
 
       <div class="footer-bottom">
         <span>Kuroba (KRB) • Created by MrYamiTsu • MIT Licensed</span>
-        <span class="footer-bottom-meta">Native C Engine &amp; Web VM • Zero External Dependencies</span>
+        <span class="footer-bottom-meta">Native C99 Engine &amp; WebAssembly Runtime • Zero External Dependencies</span>
       </div>
     </div>
   </footer>
@@ -2365,7 +2464,7 @@ pasteLn("User: " + envTable.USERNAME);
           const pills = [
             { track: 'setup', label: 'Setup & CLI (3)' },
             { track: 'core', label: 'Language Core (7)' },
-            { track: 'oop', label: 'OOP & Modularity (4)' },
+            { track: 'oop', label: 'OOP & Modularity (5)' },
             { track: 'errors', label: 'Diagnostics (1)' }
           ];
           pills.forEach((p, idx) => {
@@ -2603,7 +2702,7 @@ pasteLn("User: " + envTable.USERNAME);
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'import', 'alias', 'namespace',
-        'class', 'interface', 'as', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared', 'get', 'set',
+        'class', 'interface', 'enum', 'operator', 'as', 'public', 'protected', 'private', 'isolated', 'exclusive', 'from', 'base', 'orig', 'shared', 'get', 'set',
         'is', 'TRUE', 'FALSE', 'NULL', 'unlock', 'lock', 'kill'
       ]);
 

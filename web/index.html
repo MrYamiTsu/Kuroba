@@ -43,7 +43,7 @@
 
         <h1 class="hero-title">Write scripts, tools, and games with zero dependencies.</h1>
         <p class="hero-lead">
-          Kuroba is an interpreted language powered by a high-performance <strong>Native C Engine</strong> on desktop/CLI and an in-browser Web VM. It combines readable <code>then ... end</code> blocks, object-oriented classes with C#-style constructors, optional type enforcement, atomic swaps, and native function hooks.
+          Kuroba is an interpreted language powered by a high-performance <strong>Native C99 Bytecode Engine</strong> on desktop/CLI and an in-browser <strong>WebAssembly Runtime</strong>. It combines readable <code>then ... end</code> blocks, object-oriented classes with operator overloading, optional type enforcement, atomic swaps, and native function hooks.
         </p>
 
         <div class="hero-actions">
@@ -113,8 +113,8 @@
     <div class="pillars-grid">
       <div class="pillar-card">
         <span class="pillar-tag">ARCHITECTURE</span>
-        <h3>Native C &amp; Web VM</h3>
-        <p>A self-contained native C engine (<code>engine/kuroba.exe</code>) for raw speed on desktop/CLI, alongside an in-browser Web VM. Zero <code>node_modules</code> and zero setup.</p>
+        <h3>Native C99 &amp; WebAssembly</h3>
+        <p>A self-contained native C bytecode engine (<code>engine/kuroba.exe</code>) for raw speed on desktop/CLI, compiled directly to WebAssembly in the browser. Zero <code>node_modules</code>.</p>
         <pre><code>~~ Run directly with native C binary
 ./kuroba main.krb</code></pre>
       </div>
@@ -122,7 +122,7 @@
       <div class="pillar-card">
         <span class="pillar-tag">TYPE SAFETY</span>
         <h3>Gradual &amp; Strict Types</h3>
-        <p>Type inference for rapid prototyping (<code>ivar</code>), or enforce automatic coercion (<code>ivar~Int</code>) and strict non-nullable contracts (<code>ivar~(String)</code>) to prevent bugs.</p>
+        <p>Type inference for rapid prototyping (<code>ivar</code>), automatic coercion (<code>ivar~Int</code>), first-class function contracts (<code>ivar~Function</code>), and strict non-nullability (<code>ivar~(String)</code>).</p>
         <pre><code>ivar~Int count = "42";      ~~ Coerced
 ivar~(String) user = "Yami"; ~~ Non-null</code></pre>
       </div>
@@ -138,23 +138,21 @@ list[i] &lt;-&gt; list[j]; ~~ In-place</code></pre>
 
       <div class="pillar-card">
         <span class="pillar-tag">OBJECT-ORIENTED</span>
-        <h3>Classes &amp; Accessors</h3>
-        <p>C#-style constructors without <code>new</code>, property interceptors (<code>get</code> / <code>set</code>) with direct <code>value</code> binding, and strict visibility (<code>protected</code>, <code>isolated</code>, <code>exclusive</code>).</p>
-        <pre><code>class Player then
-  get hp then return value; end
-  set hp(v) then
-    value = Math.max(0, v);
-  end
+        <h3>Classes &amp; Operators</h3>
+        <p>C#-style constructors without <code>new</code>, <code>toString()</code>, operator overloading (<code>operator +</code>), property accessors (<code>get</code> / <code>set</code>), and 5 visibility levels.</p>
+        <pre><code>class Vec2 then
+  public ivar~Float x = 0;
+  operator +(ivar o) then return Vec2(this.x + o.x); end
 end</code></pre>
       </div>
 
       <div class="pillar-card">
         <span class="pillar-tag">METAPROGRAMMING</span>
         <h3>Non-Invasive Hooks</h3>
-        <p>Intercept any existing function or class method at runtime with <code>hook</code> and delegate through <code>this(...)</code> or <code>orig(...)</code>. Built for logging, profiling, and game mods.</p>
+        <p>Intercept any unlocked function or class method at runtime with <code>hook</code> and delegate through <code>orig(...)</code>, or guard critical APIs with <code>iconst</code> / <code>isealed</code>.</p>
         <pre><code>hook compute(ivar x) then
   pasteLn(~"Hooked: {x}");
-  return this(x);
+  return orig(x);
 end</code></pre>
       </div>
 
@@ -183,7 +181,7 @@ ivar roll = Random.int(1, 20);</code></pre>
       <div class="pillar-card">
         <span class="pillar-tag">PERSISTENCE &amp; I/O</span>
         <h3>Synchronous I/O &amp; JSON</h3>
-        <p>Read terminal prompts (<code>copy</code>, <code>copyKey</code>), sleep with 0% CPU burn (<code>Atomics.wait</code>), and read/write files or JSON structures with zero async callback overhead.</p>
+        <p>Read terminal prompts (<code>copy</code>, <code>copyKey</code>), sleep with 0% CPU burn, and read/write files or JSON structures with zero async callback overhead.</p>
         <pre><code>import StdE ~(Json) alias ~;
 Json.write("save.json", data);
 ivar save = Json.read("save.json");</code></pre>
@@ -218,13 +216,13 @@ ivar save = Json.read("save.json");</code></pre>
         <tbody>
           <tr data-category="basics">
             <td><strong>Variables, Const &amp; Sealed</strong></td>
-            <td><code>ivar x = 10;</code> / <code>iconst MAX = 100;</code><br/><code>isealed s = 1;</code> / <code>unlock s;</code></td>
-            <td>Inferred mutable variables, immutable constants, and sealed variables requiring explicit <code>unlock</code>. Identifiers support emojis (<code>ivar 🚀 = 50;</code>).</td>
+            <td><code>ivar x = 10;</code> / <code>iconst MAX = 100;</code><br/><code>isealed s = 1;</code> / <code>s is lock</code></td>
+            <td>Inferred mutable variables, immutable constants, and sealed entities requiring explicit <code>unlock</code> (inspectable via <code>is lock</code> / <code>is unlock</code>).</td>
           </tr>
           <tr data-category="basics">
             <td><strong>Types, Cast &amp; Nullability</strong></td>
-            <td><code>ivar~Int count = "42";</code><br/><code>[String]count = 100;</code> / <code>[Int]val</code></td>
-            <td>Contract typing at declaration (<code>~Type</code>), non-nullability (<code>~(Type)</code>), and prefix type casting (<code>[Type]var</code>).</td>
+            <td><code>ivar~Int count = "42";</code> / <code>ivar~Function cb;</code><br/><code>[String]count = 100;</code> / <code>[Int]val</code></td>
+            <td>Contract typing at declaration (<code>~Type</code>), non-nullability (<code>~(Type)</code>), <code>Function</code> typing, and prefix type casting (<code>[Type]var</code>).</td>
           </tr>
           <tr data-category="basics">
             <td><strong>Atomic Swap</strong></td>
@@ -247,14 +245,14 @@ ivar save = Json.read("save.json");</code></pre>
             <td>Structured exception safety trapping runtime errors as metadata tables (<code>eName</code>, <code>eContext</code>).</td>
           </tr>
           <tr data-category="oop">
-            <td><strong>Classes, OOP &amp; Accessors</strong></td>
-            <td><code>class Player from Entity then ... end</code><br/><code>get hp then ... end</code> / <code>set hp(v) ... end</code></td>
-            <td>C#-style constructors, inheritance (<code>from</code> / <code>base</code>), property accessors, and encapsulation (<code>public</code>, <code>private</code>, <code>protected</code>).</td>
+            <td><strong>Classes, OOP &amp; Operators</strong></td>
+            <td><code>class Player from Entity then ... end</code><br/><code>operator +(o)</code> / <code>function toString()</code></td>
+            <td>C#-style constructors, inheritance (<code>from</code> / <code>base</code>), <code>toString()</code>, operator overloading, accessors, and 5 visibility modifiers.</td>
           </tr>
           <tr data-category="oop">
             <td><strong>Functions, Closures &amp; Hooks</strong></td>
-            <td><code>function f(ivar x)</code> / <code>function ~(ivar x)</code><br/><code>hook Class.method(x) then return orig(x); end</code></td>
-            <td>First-class functions, anonymous lambdas (<code>~</code>), lexical closures, and non-invasive runtime method hooks.</td>
+            <td><code>iconst function f(ivar x)</code> / <code>function ~(ivar x)</code><br/><code>hook Class.method(ivar x) then return orig(x); end</code></td>
+            <td>First-class &amp; lockable functions, anonymous lambdas (<code>~</code>), null-function checks (<code>is NULL</code>), and runtime hooks via <code>orig(...)</code>.</td>
           </tr>
           <tr data-category="collections">
             <td><strong>Typed Collections</strong></td>
@@ -445,7 +443,7 @@ function greet(ivar name) then
 end
 
 hook greet(ivar name) then
-    return this(name) + "!";
+    return orig(name) + "!";
 end
 
 pasteLn(greet("Kuroba"));`,
@@ -467,7 +465,7 @@ end`,
         'if', 'elif', 'else', 'then', 'end', 'given', 'case', 'break', 'skip',
         'for', 'in', 'while', 'do', 'try', 'catch', 'finally', 'throw',
         'function', 'return', 'hook', 'this', 'orig', 'import', 'alias', 'namespace',
-        'class', 'interface', 'as', 'public', 'private', 'protected', 'isolated', 'exclusive',
+        'class', 'interface', 'operator', 'as', 'public', 'private', 'protected', 'isolated', 'exclusive',
         'get', 'set', 'enum', 'is', 'TRUE', 'FALSE', 'NULL', 'unlock', 'lock', 'kill'
       ]);
 

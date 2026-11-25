@@ -9,7 +9,7 @@
 <br/>
 <br/>
 
-_Blending ideas from multiple modern languages into a clean AST interpreter with hybrid typing, native swap, and expressive control flow._
+_Blending ideas from multiple modern languages into a clean C99 bytecode VM &amp; WebAssembly runtime with hybrid typing, native swap, and expressive OOP._
 
 <br/>
 
@@ -91,14 +91,14 @@ Update a variable's type dynamically with `[Type]var = val;` or cast expressions
 
 ### Declarative Classes &amp; OOP
 
-Clean abstraction over `Table` with C#-style constructors, auto-bound `this`, and strict encapsulation (`public`, `private`).
+Clean abstraction over `Table` with C#-style constructors, `toString()`, operator overloading (`operator +`), and strict encapsulation (`public`, `private`, `protected`, `isolated`, `exclusive`).
 
 </td>
 <td width="50%">
 
-### Runtime Type Inspection (`is`)
+### Runtime Type &amp; State Inspection (`is`)
 
-Polymorphic type validation (`val is Type`, `val is NULL`, `hero is Player`, `hero is Table`) with zero external boilerplate.
+Polymorphic type and lock validation (`val is Type`, `fn is Function`, `fn is NULL`, `seal is lock`, `hero is Player`) with zero boilerplate.
 
 </td>
 </tr>
@@ -224,7 +224,7 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Comments**                    | `~~ comment`<br/>`~~{{ block }}`                                                          | Double-tilde feather comments (`~~`) and multi-line block comments (`~~{{ ... }}`) instead of `//` or `/* */`.                                                     |
 | **Native Swap**                 | `a <-> b;`                                                                                | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring.                                          |
 | **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                                         | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration. Variable names also support emojis (`ivar 🚀 = 1;`). |
-| **Sealed Variables**            | `isealed key = 1;`<br/>`unlock key;`<br/>`lock key;`                                      | Variable protected against mutation until unlocked via `unlock`; automatically re-seals upon reassignment, or can be re-locked manually with `lock`.               |
+| **Sealed Entities**             | `isealed key = 1;`<br/>`unlock key;`<br/>`key is lock`                                    | Variables, functions, and methods protected against mutation/hooking until unlocked via `unlock`; auto-reseals after one change, inspectable via `is lock` / `is unlock`. |
 | **Dynamic Retyping & Cast**     | `[String]score = "A";`<br/>`[Int]b + [Int]c`                                              | Dynamic type transtyping without redeclaration (`[Type]var = val;`) and prefix expression casting (`[Type]operand`).                                               |
 | **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                                        | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                                                           |
 | **Nested Mutations**            | `grid[y][x] = "#";`<br/>`enemies[i].hp -= 10;`<br/>`player.bag[0] = "Bow";`               | Arbitrary mixed `[...]` and `.prop` assignment chains with compound operators, retyping, and `iconst` root protection.                                             |
@@ -235,8 +235,8 @@ Kuroba combines concepts from multiple language paradigms while introducing its 
 | **Pattern Match Fallback**      | `case ~ then`                                                                             | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                                                                    |
 | **Exception Handling**          | `throw <expr>;`<br/>`try ... catch (ivar e) ... finally ... end`                          | Uncaught throws exit with vermilion diagnostic `#FF5500`. Try/catch safely traps user throws and native runtime errors.                                            |
 | **Explicit Destruction**        | `kill variable;`                                                                          | Explicit variable destruction from active scope with strict declaration checks and constant protection.                                                            |
-| **Classes & Inheritance**       | `class Hero from Entity`<br/>`base(n, h);`<br/>`base.method();`                           | Ergonomic class model over Table with C#-style constructors, auto-bound `this`, encapsulation, and `from` / `base` inheritance.                                    |
-| **Functions & Closures**        | `function f(ivar x)`<br/>`function ~(ivar x)`                                             | First-class functions, signature tilde lambdas, lexical closures, and value returns via `return`.                                                                  |
+| **Classes & OOP**               | `class Hero from Entity`<br/>`operator +(other)`<br/>`function toString()`                | Ergonomic classes with C#-style constructors, encapsulation, `from` / `base` inheritance, `toString()` protocol, and operator overloading.                          |
+| **Functions & Closures**        | `ivar~Function cb`<br/>`iconst function f(x)`<br/>`function ~(ivar x)`                    | First-class typed functions (`~Function`), `iconst` / `isealed` lockable functions, tilde lambdas, lexical closures, and null-function checks (`is NULL`).          |
 | **Native Interception (Hooks)** | `hook f(x) then ... end`<br/>`hook Class.m(x) then ... end`                               | Transparent native monkey-patching with original function delegation via `orig(...)`. `this` strictly refers to the class instance.                                |
 | **Interactive Key Capture**     | `copyKey()`                                                                               | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.                                                     |
 | **Native CLI Arguments**        | `args`                                                                                    | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                                                          |
@@ -291,14 +291,16 @@ Kuroba/
 │   ├── std/              # io.krb, math.krb, string.krb, time.krb
 │   └── stde/             # json.krb, path.krb, process.krb, random.krb, term.krb
 ├── web/              # Official Website, Web Docs & Interactive IDE
-│   ├── index.html        # Language showcase & architectural principles
-│   ├── docs.html         # Complete technical documentation & specification
-│   ├── playground.html   # Fullscreen IDE & live virtual terminal
-│   ├── css/style.css     # Official stylesheet (strict 5-color palette)
-│   ├── js/kuroba-web.js  # Zero-dependency in-browser Web VM
-│   └── js/playground.js  # Interactive IDE controller & samples
-├── tools/            # Maintenance & SSOT version sync scripts
-│   └── sync-version.js   # Single Source of Truth version synchronizer
+│   ├── index.html          # Language showcase & architectural principles
+│   ├── docs.html           # Complete technical documentation & specification
+│   ├── playground.html     # Fullscreen IDE & live virtual terminal
+│   ├── kuroba_wasm.c       # Native C-to-WebAssembly runtime bridge
+│   ├── css/style.css       # Official stylesheet (strict 5-color palette)
+│   ├── js/kuroba-engine.js # Emscripten WebAssembly loader & virtual FS
+│   └── js/playground.js    # Interactive IDE controller & samples
+├── tools/            # Build & SSOT version sync scripts
+│   ├── build-wasm.js       # Emscripten C-to-WASM build script
+│   └── sync-version.js     # Single Source of Truth version synchronizer
 ├── main.krb          # TDD test suite & language validation runner
 ├── config.json       # Engine configuration & version metadata
 ├── package.json      # Project manifest & npm scripts
@@ -457,6 +459,7 @@ Kuroba/
 - [x] OOP Refinements & Language Ergonomics:
   - [x] Textual representation & string inspection protocol (`toString()` auto-invoked by `paste` and `~` string interpolation)
   - [x] Basic operator overloading for vectors, games, and math (`operator +`, `operator -`, `operator *`, etc.)
+  - [x] First-class `Function` type enforcement (`ivar~Function`, `is Function`) and null-function semantics
 - [ ] Integrated Unit Testing System:
   - [ ] Built-in test runner CLI (`krb test` with automated test file discovery `*.test.krb`)
   - [ ] Native test block & assertions (`test "feature" then ... end`, `assert(cond)`, `assertEqual(a, b)`)
