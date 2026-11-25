@@ -379,7 +379,17 @@ static TokenType identifier_type(void)
     case 'n':
         return check_keyword(1, 8, "amespace", TOKEN_NAMESPACE);
     case 'o':
-        return check_keyword(1, 3, "rig", TOKEN_ORIG);
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'p':
+                return check_keyword(2, 6, "erator", TOKEN_OPERATOR);
+            case 'r':
+                return check_keyword(2, 2, "ig", TOKEN_ORIG);
+            }
+        }
+        break;
     case 'p':
         if (scanner.current - scanner.start > 1)
         {

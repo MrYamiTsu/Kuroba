@@ -454,9 +454,9 @@ Kuroba/
 
 ### Phase 10: Advanced OOP & Language Extensions `(v1.1.1)`
 
-- [ ] OOP Refinements & Language Ergonomics:
-  - [ ] Textual representation & string inspection protocol (`toString()` auto-invoked by `paste` and `~` string interpolation)
-  - [ ] Basic operator overloading for vectors, games, and math (`operator +`, `operator -`, `operator *`, etc.)
+- [x] OOP Refinements & Language Ergonomics:
+  - [x] Textual representation & string inspection protocol (`toString()` auto-invoked by `paste` and `~` string interpolation)
+  - [x] Basic operator overloading for vectors, games, and math (`operator +`, `operator -`, `operator *`, etc.)
 - [ ] Integrated Unit Testing System:
   - [ ] Built-in test runner CLI (`krb test` with automated test file discovery `*.test.krb`)
   - [ ] Native test block & assertions (`test "feature" then ... end`, `assert(cond)`, `assertEqual(a, b)`)

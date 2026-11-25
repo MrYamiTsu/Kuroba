@@ -1152,6 +1152,7 @@ ParseRule rules[] = {
     [TOKEN_FUNCTION] = {lambda_expression, NULL, PREC_NONE},
     [TOKEN_RETURN] = {NULL, NULL, PREC_NONE},
     [TOKEN_HOOK] = {NULL, NULL, PREC_NONE},
+    [TOKEN_OPERATOR] = {NULL, NULL, PREC_NONE},
     [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},
     [TOKEN_INTERFACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_AS] = {NULL, NULL, PREC_NONE},
@@ -2166,6 +2167,60 @@ static void class_declaration(void)
             }
             function_body(type);
             emit_op_16(OP_METHOD, constant);
+        }
+        else if (match(TOKEN_OPERATOR))
+        {
+            const char *opMethodName = NULL;
+            int expectedArity = 1;
+            if (match(TOKEN_PLUS))
+                opMethodName = "__op_add";
+            else if (match(TOKEN_MINUS))
+            {
+                if (check(TOKEN_LEFT_PAREN) && krb_peek_token().type == TOKEN_RIGHT_PAREN)
+                {
+                    opMethodName = "__op_neg";
+                    expectedArity = 0;
+                }
+                else
+                {
+                    opMethodName = "__op_sub";
+                }
+            }
+            else if (match(TOKEN_STAR))
+                opMethodName = "__op_mul";
+            else if (match(TOKEN_SLASH))
+                opMethodName = "__op_div";
+            else if (match(TOKEN_PERCENT))
+                opMethodName = "__op_mod";
+            else if (match(TOKEN_EQUAL_EQUAL))
+                opMethodName = "__op_eq";
+            else if (match(TOKEN_LESS))
+                opMethodName = "__op_lt";
+            else if (match(TOKEN_GREATER))
+                opMethodName = "__op_gt";
+            else
+                error_at_current("Overloadable operator expected (+, -, *, /, %, ==, <, >).");
+
+            if (opMethodName != NULL)
+            {
+                uint16_t opConst = (uint16_t)krb_add_constant(current_chunk(), krb_string(_strdup(opMethodName)));
+                function_body(TYPE_METHOD);
+                Chunk *ch = current_chunk();
+                for (int ci = ch->constants.count - 1; ci >= 0; ci--)
+                {
+                    if (IS_FUNCTION(ch->constants.values[ci]))
+                    {
+                        if (AS_FUNCTION(ch->constants.values[ci])->arity != expectedArity)
+                        {
+                            error(expectedArity == 0
+                                      ? "Unary operator '-' takes 0 parameters."
+                                      : "Binary operator must take exactly 1 parameter.");
+                        }
+                        break;
+                    }
+                }
+                emit_op_16(OP_METHOD, opConst);
+            }
         }
         else if (match(TOKEN_GET))
         {

@@ -386,128 +386,190 @@ static bool eval_is_check(KrbValue val, const char *spec)
     return false;
 }
 
-static bool binary_op(char op)
-{
-    KrbValue b = krb_pop();
-    KrbValue a = krb_pop();
+static InterpretResult run(int minFrameCount);
+static bool call(ObjClosure *closure, int argCount);
 
-    if (op == '+' && (a.type == VAL_STRING || b.type == VAL_STRING))
+static bool find_instance_method(ObjInstance *instance, const char *name, KrbValue *outMethod)
+{
+    int len = (int)strlen(name);
+    for (ObjClass *curr = instance->klass; curr != NULL; curr = curr->superClass)
     {
+        if (krb_table_get(&curr->methods, name, len, outMethod))
+            return true;
+    }
+    return false;
+}
+
+static int invoke_instance_method(ObjInstance *instance, const char *name, int argCount, CallFrame **frameOut)
+{
+    KrbValue methodVal;
+    if (!find_instance_method(instance, name, &methodVal))
+        return 0;
+
+    ObjClosure *closure = IS_CLOSURE(methodVal)
+                              ? AS_CLOSURE(methodVal)
+                              : (IS_FUNCTION(methodVal) ? krb_new_closure(AS_FUNCTION(methodVal)) : NULL);
+    if (closure == NULL)
+        return 0;
+
+    if (!call(closure, argCount))
+        return -1;
+    *frameOut = &vm.frames[vm.frameCount - 1];
+    return 1;
+}
+
+static int eval_instance_to_string(ObjInstance *inst, KrbValue *outVal)
+{
+    KrbValue methodVal;
+    if (!find_instance_method(inst, "toString", &methodVal))
+        return 0;
+
+    ObjClosure *closure = IS_CLOSURE(methodVal)
+                              ? AS_CLOSURE(methodVal)
+                              : (IS_FUNCTION(methodVal) ? krb_new_closure(AS_FUNCTION(methodVal)) : NULL);
+    if (closure == NULL)
+        return 0;
+
+    int baseFrames = vm.frameCount;
+    uint8_t *savedIp = (baseFrames > 0) ? vm.frames[baseFrames - 1].ip : NULL;
+    int savedTryCount = vm.try_count;
+
+    krb_push(krb_obj_val((Obj *)inst));
+    if (!call(closure, 0))
+        return -1;
+    if (vm.frameCount <= baseFrames)
+        return 2;
+
+    if (run(baseFrames) != INTERPRET_OK)
+        return -1;
+    if (baseFrames > 0 && (vm.try_count < savedTryCount || vm.frames[baseFrames - 1].ip != savedIp))
+        return 2;
+
+    *outVal = krb_pop();
+    return 1;
+}
+
+static const char *format_concat_side(KrbValue v, char *buf, size_t bufSize)
+{
+    if (v.type == VAL_STRING)
+        return v.as.string;
+    if (v.type == VAL_INT)
+    {
+        snprintf(buf, bufSize, "%lld", (long long)v.as.integer);
+        return buf;
+    }
+    if (v.type == VAL_FLOAT)
+    {
+        snprintf(buf, bufSize, "%g", v.as.number);
+        return buf;
+    }
+    if (v.type == VAL_BOOL)
+        return v.as.boolean ? "TRUE" : "FALSE";
+    if (v.type == VAL_NULL)
+        return "NULL";
+    if (IS_LIST(v))
+    {
+        buf[0] = '\0';
+        strcat(buf, "[");
+        ObjList *l = AS_LIST(v);
+        for (int i = 0; i < l->elements.count && i < 8; i++)
+        {
+            if (i > 0)
+                strcat(buf, ", ");
+            char tmp[32];
+            if (l->elements.values[i].type == VAL_INT)
+                snprintf(tmp, sizeof(tmp), "%lld", (long long)l->elements.values[i].as.integer);
+            else if (l->elements.values[i].type == VAL_STRING)
+                snprintf(tmp, sizeof(tmp), "%s", l->elements.values[i].as.string);
+            else
+                snprintf(tmp, sizeof(tmp), "...");
+            strcat(buf, tmp);
+        }
+        strcat(buf, "]");
+        return buf;
+    }
+    if (IS_INSTANCE(v))
+    {
+        snprintf(buf, bufSize, "<instance of %s>",
+                 AS_INSTANCE(v)->klass->name ? AS_INSTANCE(v)->klass->name : "Object");
+        return buf;
+    }
+    return "<object>";
+}
+
+static bool binary_op(char op, CallFrame **frameOut)
+{
+    if (op == '+' && (krb_peek(1).type == VAL_STRING || krb_peek(0).type == VAL_STRING))
+    {
+        KrbValue b = krb_pop();
+        KrbValue a = krb_pop();
+
+        if (IS_INSTANCE(a))
+        {
+            KrbValue sVal;
+            int st = eval_instance_to_string(AS_INSTANCE(a), &sVal);
+            if (st < 0)
+                return false;
+            if (st == 2)
+            {
+                *frameOut = &vm.frames[vm.frameCount - 1];
+                return true;
+            }
+            if (st == 1)
+                a = sVal;
+        }
+        if (IS_INSTANCE(b))
+        {
+            KrbValue sVal;
+            int st = eval_instance_to_string(AS_INSTANCE(b), &sVal);
+            if (st < 0)
+                return false;
+            if (st == 2)
+            {
+                *frameOut = &vm.frames[vm.frameCount - 1];
+                return true;
+            }
+            if (st == 1)
+                b = sVal;
+        }
+
         char bufA[128];
         char bufB[128];
-        const char *strA = NULL;
-        const char *strB = NULL;
+        const char *strA = format_concat_side(a, bufA, sizeof(bufA));
+        const char *strB = format_concat_side(b, bufB, sizeof(bufB));
+        size_t lenA = strlen(strA);
+        size_t lenB = strlen(strB);
+        char *combined = (char *)malloc(lenA + lenB + 1);
+        memcpy(combined, strA, lenA);
+        memcpy(combined + lenA, strB, lenB);
+        combined[lenA + lenB] = '\0';
+        krb_push(krb_string(combined));
+        return true;
+    }
 
-        if (a.type == VAL_STRING)
-            strA = a.as.string;
-        else if (a.type == VAL_INT)
+    if (IS_INSTANCE(krb_peek(1)))
+    {
+        const char *opMethod = NULL;
+        switch (op)
         {
-            snprintf(bufA, sizeof(bufA), "%lld", (long long)a.as.integer);
-            strA = bufA;
+        case '+': opMethod = "__op_add"; break;
+        case '-': opMethod = "__op_sub"; break;
+        case '*': opMethod = "__op_mul"; break;
+        case '/': opMethod = "__op_div"; break;
+        case '%': opMethod = "__op_mod"; break;
         }
-        else if (a.type == VAL_FLOAT)
+        if (opMethod != NULL)
         {
-            snprintf(bufA, sizeof(bufA), "%g", a.as.number);
-            strA = bufA;
-        }
-        else if (a.type == VAL_BOOL)
-        {
-            strA = a.as.boolean ? "TRUE" : "FALSE";
-        }
-        else if (a.type == VAL_NULL)
-        {
-            strA = "NULL";
-        }
-        else if (a.type == VAL_OBJ)
-        {
-            if (IS_LIST(a))
-            {
-                bufA[0] = '\0';
-                strcat(bufA, "[");
-                ObjList *l = AS_LIST(a);
-                for (int i = 0; i < l->elements.count && i < 8; i++)
-                {
-                    if (i > 0)
-                        strcat(bufA, ", ");
-                    char tmp[32];
-                    if (l->elements.values[i].type == VAL_INT)
-                        snprintf(tmp, sizeof(tmp), "%lld", (long long)l->elements.values[i].as.integer);
-                    else if (l->elements.values[i].type == VAL_STRING)
-                        snprintf(tmp, sizeof(tmp), "%s", l->elements.values[i].as.string);
-                    else
-                        snprintf(tmp, sizeof(tmp), "...");
-                    strcat(bufA, tmp);
-                }
-                strcat(bufA, "]");
-                strA = bufA;
-            }
-            else
-            {
-                strA = "<object>";
-            }
-        }
-
-        if (b.type == VAL_STRING)
-            strB = b.as.string;
-        else if (b.type == VAL_INT)
-        {
-            snprintf(bufB, sizeof(bufB), "%lld", (long long)b.as.integer);
-            strB = bufB;
-        }
-        else if (b.type == VAL_FLOAT)
-        {
-            snprintf(bufB, sizeof(bufB), "%g", b.as.number);
-            strB = bufB;
-        }
-        else if (b.type == VAL_BOOL)
-        {
-            strB = b.as.boolean ? "TRUE" : "FALSE";
-        }
-        else if (b.type == VAL_NULL)
-        {
-            strB = "NULL";
-        }
-        else if (b.type == VAL_OBJ)
-        {
-            if (IS_LIST(b))
-            {
-                bufB[0] = '\0';
-                strcat(bufB, "[");
-                ObjList *l = AS_LIST(b);
-                for (int i = 0; i < l->elements.count && i < 8; i++)
-                {
-                    if (i > 0)
-                        strcat(bufB, ", ");
-                    char tmp[32];
-                    if (l->elements.values[i].type == VAL_INT)
-                        snprintf(tmp, sizeof(tmp), "%lld", (long long)l->elements.values[i].as.integer);
-                    else if (l->elements.values[i].type == VAL_STRING)
-                        snprintf(tmp, sizeof(tmp), "%s", l->elements.values[i].as.string);
-                    else
-                        snprintf(tmp, sizeof(tmp), "...");
-                    strcat(bufB, tmp);
-                }
-                strcat(bufB, "]");
-                strB = bufB;
-            }
-            else
-            {
-                strB = "<object>";
-            }
-        }
-
-        if (strA && strB)
-        {
-            size_t lenA = strlen(strA);
-            size_t lenB = strlen(strB);
-            char *combined = (char *)malloc(lenA + lenB + 1);
-            memcpy(combined, strA, lenA);
-            memcpy(combined + lenA, strB, lenB);
-            combined[lenA + lenB] = '\0';
-            krb_push(krb_string(combined));
-            return true;
+            int inv = invoke_instance_method(AS_INSTANCE(krb_peek(1)), opMethod, 1, frameOut);
+            if (inv < 0)
+                return false;
+            if (inv > 0)
+                return true;
         }
     }
+
+    KrbValue b = krb_pop();
+    KrbValue a = krb_pop();
 
     if (a.type == VAL_INT && b.type == VAL_INT)
     {
@@ -575,8 +637,10 @@ static bool binary_op(char op)
         return true;
     }
 
-    runtime_error("Les operandes doivent etre des nombres (Int ou Float).");
-    return false;
+    if (!trigger_runtime_error("TypeError", "Les operandes doivent etre des nombres (Int ou Float)."))
+        return false;
+    *frameOut = &vm.frames[vm.frameCount - 1];
+    return true;
 }
 
 static bool call(ObjClosure *closure, int argCount)
@@ -697,12 +761,15 @@ static int check_field_visibility(ObjInstance *instance, const char *propName, C
     return 1;
 }
 
-static InterpretResult run(void)
+static InterpretResult run(int minFrameCount)
 {
     CallFrame *frame = &vm.frames[vm.frameCount - 1];
 
     for (;;)
     {
+        if (minFrameCount > 0 && vm.frameCount <= minFrameCount)
+            return INTERPRET_OK;
+
         if (trace_execution)
         {
             printf("          ");
@@ -735,15 +802,27 @@ static InterpretResult run(void)
             break;
         }
         case OP_PASTE:
-        {
-            KrbValue val = krb_pop();
-            krb_print_value(val);
-            break;
-        }
         case OP_PASTELN:
         {
             KrbValue val = krb_pop();
-            krb_println_value(val);
+            if (IS_INSTANCE(val))
+            {
+                KrbValue strVal;
+                int st = eval_instance_to_string(AS_INSTANCE(val), &strVal);
+                if (st < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (st == 2)
+                {
+                    frame = &vm.frames[vm.frameCount - 1];
+                    break;
+                }
+                if (st == 1)
+                    val = strVal;
+            }
+            if (instruction == OP_PASTELN)
+                krb_println_value(val);
+            else
+                krb_print_value(val);
             break;
         }
         case OP_PASTELN_EMPTY:
@@ -834,32 +913,35 @@ static InterpretResult run(void)
             break;
         }
         case OP_ADD:
-            if (!binary_op('+'))
+            if (!binary_op('+', &frame))
                 return INTERPRET_RUNTIME_ERROR;
-            frame = &vm.frames[vm.frameCount - 1];
             break;
         case OP_SUBTRACT:
-            if (!binary_op('-'))
+            if (!binary_op('-', &frame))
                 return INTERPRET_RUNTIME_ERROR;
-            frame = &vm.frames[vm.frameCount - 1];
             break;
         case OP_MULTIPLY:
-            if (!binary_op('*'))
+            if (!binary_op('*', &frame))
                 return INTERPRET_RUNTIME_ERROR;
-            frame = &vm.frames[vm.frameCount - 1];
             break;
         case OP_DIVIDE:
-            if (!binary_op('/'))
+            if (!binary_op('/', &frame))
                 return INTERPRET_RUNTIME_ERROR;
-            frame = &vm.frames[vm.frameCount - 1];
             break;
         case OP_MODULO:
-            if (!binary_op('%'))
+            if (!binary_op('%', &frame))
                 return INTERPRET_RUNTIME_ERROR;
-            frame = &vm.frames[vm.frameCount - 1];
             break;
         case OP_NEGATE:
         {
+            if (IS_INSTANCE(krb_peek(0)))
+            {
+                int inv = invoke_instance_method(AS_INSTANCE(krb_peek(0)), "__op_neg", 0, &frame);
+                if (inv < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (inv > 0)
+                    break;
+            }
             KrbValue val = krb_pop();
             if (val.type == VAL_INT)
             {
@@ -871,8 +953,9 @@ static InterpretResult run(void)
             }
             else
             {
-                runtime_error("L'operande de negation unaire doit etre un nombre.");
-                return INTERPRET_RUNTIME_ERROR;
+                if (!trigger_runtime_error("TypeError", "L'operande de negation unaire doit etre un nombre."))
+                    return INTERPRET_RUNTIME_ERROR;
+                frame = &vm.frames[vm.frameCount - 1];
             }
             break;
         }
@@ -883,6 +966,14 @@ static InterpretResult run(void)
         }
         case OP_EQUAL:
         {
+            if (IS_INSTANCE(krb_peek(1)) && krb_peek(0).type != VAL_NULL)
+            {
+                int inv = invoke_instance_method(AS_INSTANCE(krb_peek(1)), "__op_eq", 1, &frame);
+                if (inv < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (inv > 0)
+                    break;
+            }
             KrbValue b = krb_pop();
             KrbValue a = krb_pop();
             krb_push(krb_bool(values_equal(a, b)));
@@ -890,6 +981,14 @@ static InterpretResult run(void)
         }
         case OP_GREATER:
         {
+            if (IS_INSTANCE(krb_peek(1)))
+            {
+                int inv = invoke_instance_method(AS_INSTANCE(krb_peek(1)), "__op_gt", 1, &frame);
+                if (inv < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (inv > 0)
+                    break;
+            }
             KrbValue b = krb_pop();
             KrbValue a = krb_pop();
             if (a.type == VAL_INT && b.type == VAL_INT)
@@ -905,13 +1004,22 @@ static InterpretResult run(void)
             }
             else
             {
-                runtime_error("Les operandes de '>' doivent etre des nombres.");
-                return INTERPRET_RUNTIME_ERROR;
+                if (!trigger_runtime_error("TypeError", "Les operandes de '>' doivent etre des nombres."))
+                    return INTERPRET_RUNTIME_ERROR;
+                frame = &vm.frames[vm.frameCount - 1];
             }
             break;
         }
         case OP_LESS:
         {
+            if (IS_INSTANCE(krb_peek(1)))
+            {
+                int inv = invoke_instance_method(AS_INSTANCE(krb_peek(1)), "__op_lt", 1, &frame);
+                if (inv < 0)
+                    return INTERPRET_RUNTIME_ERROR;
+                if (inv > 0)
+                    break;
+            }
             KrbValue b = krb_pop();
             KrbValue a = krb_pop();
             if (a.type == VAL_INT && b.type == VAL_INT)
@@ -927,8 +1035,9 @@ static InterpretResult run(void)
             }
             else
             {
-                runtime_error("Les operandes de '<' doivent etre des nombres.");
-                return INTERPRET_RUNTIME_ERROR;
+                if (!trigger_runtime_error("TypeError", "Les operandes de '<' doivent etre des nombres."))
+                    return INTERPRET_RUNTIME_ERROR;
+                frame = &vm.frames[vm.frameCount - 1];
             }
             break;
         }
@@ -1675,6 +1784,30 @@ static InterpretResult run(void)
                     {
                         *(vm.stackTop - 1) = krb_string(_strdup(top.as.boolean ? "TRUE" : "FALSE"));
                     }
+                    else if (IS_INSTANCE(top))
+                    {
+                        KrbValue instVal = krb_pop();
+                        KrbValue strVal;
+                        int st = eval_instance_to_string(AS_INSTANCE(instVal), &strVal);
+                        if (st < 0)
+                            return INTERPRET_RUNTIME_ERROR;
+                        if (st == 2)
+                        {
+                            frame = &vm.frames[vm.frameCount - 1];
+                            break;
+                        }
+                        if (st == 1 && strVal.type == VAL_STRING)
+                        {
+                            krb_push(strVal);
+                        }
+                        else
+                        {
+                            char buf[128];
+                            snprintf(buf, sizeof(buf), "<instance of %s>",
+                                     AS_INSTANCE(instVal)->klass->name ? AS_INSTANCE(instVal)->klass->name : "Object");
+                            krb_push(krb_string(_strdup(buf)));
+                        }
+                    }
                 }
                 else if (strcmp(targetType, "Bool") == 0)
                 {
@@ -1948,6 +2081,10 @@ static InterpretResult run(void)
 
             vm.stackTop = frame->slots;
             krb_push(result);
+            if (minFrameCount > 0 && vm.frameCount <= minFrameCount)
+            {
+                return INTERPRET_OK;
+            }
             frame = &vm.frames[vm.frameCount - 1];
             break;
         }
@@ -1976,6 +2113,6 @@ InterpretResult krb_interpret_source(const char *source)
     krb_push(krb_obj_val((Obj *)closure));
     call(closure, 0);
 
-    InterpretResult result = run();
+    InterpretResult result = run(0);
     return result;
 }
