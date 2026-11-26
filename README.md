@@ -22,6 +22,7 @@ _Blending ideas from multiple modern languages into a clean C99 bytecode VM &amp
 <br/>
 
 [**Official Website**](https://mryamitsu.github.io/Kuroba/) •
+[**Interactive Learning Manual**](https://mryamitsu.github.io/Kuroba/learn.html) •
 [**Live Playground**](https://mryamitsu.github.io/Kuroba/playground.html) •
 [**Technical Documentation**](https://mryamitsu.github.io/Kuroba/docs.html) •
 [**Quickstart**](#quickstart) •
@@ -219,29 +220,29 @@ Kuroba features a built-in, zero-dependency interactive REPL shell for instant e
 
 Kuroba combines concepts from multiple language paradigms while introducing its own signature syntax and ergonomics:
 
-| Concept                         | Kuroba Syntax                                                                             | How it Differs from JS / Python / C                                                                                                                                |
-| :------------------------------ | :---------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Comments**                    | `~~ comment`<br/>`~~{{ block }}`                                                          | Double-tilde feather comments (`~~`) and multi-line block comments (`~~{{ ... }}`) instead of `//` or `/* */`.                                                     |
-| **Native Swap**                 | `a <-> b;`                                                                                | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring.                                          |
-| **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                                         | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration. Variable names also support emojis (`ivar 🚀 = 1;`). |
+| Concept                         | Kuroba Syntax                                                                             | How it Differs from JS / Python / C                                                                                                                                       |
+| :------------------------------ | :---------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Comments**                    | `~~ comment`<br/>`~~{{ block }}`                                                          | Double-tilde feather comments (`~~`) and multi-line block comments (`~~{{ ... }}`) instead of `//` or `/* */`.                                                            |
+| **Native Swap**                 | `a <-> b;`                                                                                | Atomic in-place variable swap with strict runtime type & nullability validation. No temp variable or tuple destructuring.                                                 |
+| **Coercion & Nullability**      | `ivar~Int n = "42";`<br/>`ivar~(String) u = "A";`                                         | Type coercion prefix `~Type` and strict non-nullability contracts `~(Type)` directly at variable declaration. Variable names also support emojis (`ivar 🚀 = 1;`).        |
 | **Sealed Entities**             | `isealed key = 1;`<br/>`unlock key;`<br/>`key is lock`                                    | Variables, functions, and methods protected against mutation/hooking until unlocked via `unlock`; auto-reseals after one change, inspectable via `is lock` / `is unlock`. |
-| **Dynamic Retyping & Cast**     | `[String]score = "A";`<br/>`[Int]b + [Int]c`                                              | Dynamic type transtyping without redeclaration (`[Type]var = val;`) and prefix expression casting (`[Type]operand`).                                               |
-| **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                                        | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                                                           |
-| **Nested Mutations**            | `grid[y][x] = "#";`<br/>`enemies[i].hp -= 10;`<br/>`player.bag[0] = "Bow";`               | Arbitrary mixed `[...]` and `.prop` assignment chains with compound operators, retyping, and `iconst` root protection.                                             |
-| **Recursive Project Imports**   | `namespace Utils`<br/>`namespace Game ~Combat`<br/>`import Game;`                         | Symbol-based recursive `.krb` discovery across project subfolders (CLI & Web) with circular import detection.                                                      |
-| **Collection Iteration**        | `for (ivar item in list)`<br/>`for (ivar i, item in list)`<br/>`for (ivar k, v in table)` | Unified indexed and key-value iteration across `List`, `Stack`, `Queue`, and `Table`.                                                                              |
-| **Skip Statement**              | `skip;`                                                                                   | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                                                                |
-| **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                                          | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                                                                      |
-| **Pattern Match Fallback**      | `case ~ then`                                                                             | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                                                                    |
-| **Exception Handling**          | `throw <expr>;`<br/>`try ... catch (ivar e) ... finally ... end`                          | Uncaught throws exit with vermilion diagnostic `#FF5500`. Try/catch safely traps user throws and native runtime errors.                                            |
-| **Explicit Destruction**        | `kill variable;`                                                                          | Explicit variable destruction from active scope with strict declaration checks and constant protection.                                                            |
-| **Classes & OOP**               | `class Hero from Entity`<br/>`operator +(other)`<br/>`function toString()`                | Ergonomic classes with C#-style constructors, encapsulation, `from` / `base` inheritance, `toString()` protocol, and operator overloading.                          |
-| **Functions & Closures**        | `ivar~Function cb`<br/>`isealed f = function ~(x)`<br/>`function f(ivar x)`               | First-class typed functions (`~Function`), `iconst` / `isealed` lockable lambdas, lexical closures, and null-function checks (`is NULL`).           |
-| **Native Interception (Hooks)** | `hook f(x) then ... end`<br/>`hook Class.m(x) then ... end`                               | Transparent native monkey-patching with original function delegation via `orig(...)`. `this` strictly refers to the class instance.                                |
-| **Interactive Key Capture**     | `copyKey()`                                                                               | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.                                                     |
-| **Native CLI Arguments**        | `args`                                                                                    | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                                                          |
+| **Dynamic Retyping & Cast**     | `[String]score = "A";`<br/>`[Int]b + [Int]c`                                              | Dynamic type transtyping without redeclaration (`[Type]var = val;`) and prefix expression casting (`[Type]operand`).                                                      |
+| **Generic Lists & Nullability** | `ivar~List<(String)> l;`<br/>`ivar~(List<Int>) n;`                                        | Dynamic arrays with generic element types and precise nullability matrix on both the list and its items.                                                                  |
+| **Nested Mutations**            | `grid[y][x] = "#";`<br/>`enemies[i].hp -= 10;`<br/>`player.bag[0] = "Bow";`               | Arbitrary mixed `[...]` and `.prop` assignment chains with compound operators, retyping, and `iconst` root protection.                                                    |
+| **Recursive Project Imports**   | `namespace Utils`<br/>`namespace Game ~Combat`<br/>`import Game;`                         | Symbol-based recursive `.krb` discovery across project subfolders (CLI & Web) with circular import detection.                                                             |
+| **Collection Iteration**        | `for (ivar item in list)`<br/>`for (ivar i, item in list)`<br/>`for (ivar k, v in table)` | Unified indexed and key-value iteration across `List`, `Stack`, `Queue`, and `Table`.                                                                                     |
+| **Skip Statement**              | `skip;`                                                                                   | Replaces the traditional `continue;` inside loops for cleaner, more intentional iteration skipping.                                                                       |
+| **Inline Guards**               | `exit(cond);`<br/>`clear(cond);`                                                          | Evaluates a guard condition directly in the statement call without wrapping in an `if` block.                                                                             |
+| **Pattern Match Fallback**      | `case ~ then`                                                                             | Fallback default branch in `given / case ... then` blocks using the signature tilde symbol `~`.                                                                           |
+| **Exception Handling**          | `throw <expr>;`<br/>`try ... catch (ivar e) ... finally ... end`                          | Uncaught throws exit with vermilion diagnostic `#FF5500`. Try/catch safely traps user throws and native runtime errors.                                                   |
+| **Explicit Destruction**        | `kill variable;`                                                                          | Explicit variable destruction from active scope with strict declaration checks and constant protection.                                                                   |
+| **Classes & OOP**               | `class Hero from Entity`<br/>`operator +(other)`<br/>`function toString()`                | Ergonomic classes with C#-style constructors, encapsulation, `from` / `base` inheritance, `toString()` protocol, and operator overloading.                                |
+| **Functions & Closures**        | `ivar~Function cb`<br/>`isealed f = function ~(x)`<br/>`function f(ivar x)`               | First-class typed functions (`~Function`), `iconst` / `isealed` lockable lambdas, lexical closures, and null-function checks (`is NULL`).                                 |
+| **Native Interception (Hooks)** | `hook f(x) then ... end`<br/>`hook Class.m(x) then ... end`                               | Transparent native monkey-patching with original function delegation via `orig(...)`. `this` strictly refers to the class instance.                                       |
+| **Interactive Key Capture**     | `copyKey()`                                                                               | Synchronous, zero-dependency single-character keyboard capture in terminal raw mode without waiting for Enter.                                                            |
+| **Native CLI Arguments**        | `args`                                                                                    | Pre-populated, immutable `List<String>` of command-line arguments with full `.count()` and `[i]` support.                                                                 |
 
-> Looking for the complete language specification and cheatsheet? **[Browse the Official Web Documentation](https://mryamitsu.github.io/Kuroba/docs.html)** or test snippets directly in the **[Interactive Live Playground](https://mryamitsu.github.io/Kuroba/playground.html)**.
+> Looking to master Kuroba step by step? Try the **[50-Lesson Interactive Learning Manual](https://mryamitsu.github.io/Kuroba/learn.html)**, **[Browse the Official Web Documentation](https://mryamitsu.github.io/Kuroba/docs.html)**, or test snippets in the **[Interactive Live Playground](https://mryamitsu.github.io/Kuroba/playground.html)**.
 
 ---
 
@@ -290,13 +291,17 @@ Kuroba/
 ├── lib/              # Core Standard Library (.krb)
 │   ├── std/              # io.krb, math.krb, string.krb, time.krb
 │   └── stde/             # json.krb, path.krb, process.krb, random.krb, term.krb
-├── web/              # Official Website, Web Docs & Interactive IDE
+├── web/              # Official Website, Web Docs, Learning Manual & Interactive IDE
 │   ├── index.html          # Language showcase & architectural principles
 │   ├── docs.html           # Complete technical documentation & specification
+│   ├── learn.html          # 50-lesson interactive Learning Manual with WASM grading
 │   ├── playground.html     # Fullscreen IDE & live virtual terminal
 │   ├── kuroba_wasm.c       # Native C-to-WebAssembly runtime bridge
 │   ├── css/style.css       # Official stylesheet (strict 5-color palette)
 │   ├── js/kuroba-engine.js # Emscripten WebAssembly loader & virtual FS
+│   ├── js/learn.js         # Learning Manual controller & automated grading harness
+│   ├── js/lessons-part1.js # Interactive lessons 1–26 (Chapters 1–4)
+│   ├── js/lessons-part2.js # Interactive lessons 27–50 (Chapters 5–8)
 │   └── js/playground.js    # Interactive IDE controller & samples
 ├── tools/            # Build & SSOT version sync scripts
 │   ├── build-wasm.js       # Emscripten C-to-WASM build script
@@ -464,9 +469,9 @@ Kuroba/
   - [ ] Built-in test runner CLI (`krb test` with automated test file discovery `*.test.krb`)
   - [ ] Native test block & assertions (`test "feature" then ... end`, `assert(cond)`, `assertEqual(a, b)`)
   - [ ] Clean formatted terminal report (passed, failed, duration, error diffs and stack traces)
-- [ ] Interactive Learning Manual (_"Tour of Kuroba"_ / _"The Raven's Manual"_):
-  - [ ] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
-  - [ ] In-browser code challenges with instant automated grading test suites
+- [x] Interactive Learning Manual:
+  - [x] Progressive step-by-step interactive lessons from basic syntax to OOP and packages
+  - [x] In-browser code challenges with instant automated grading test suites
 
 ### Phase 11: Native Asynchronism, Full-Stack Web & Universal Tooling `(v1.1.2)`
 

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Learning Manual — Kuroba</title>
+  <link rel="icon" type="image/png" href="assets/kuroba.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="ide-body learn-body">
+
+  <!-- ========================================================================
+       Header / Navigation Bar
+       ======================================================================== -->
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <img src="assets/kuroba.png" alt="Kuroba Logo" class="logo">
+      <span class="brand-name">Kuroba</span>
+      <span class="version-badge">v1.1.0</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="docs.html" class="nav-link">Documentation</a>
+      <a href="learn.html" class="nav-link active">Learn</a>
+      <a href="playground.html" class="nav-link">Playground ▶</a>
+    </nav>
+  </header>
+
+  <!-- ========================================================================
+       Curriculum Top Subbar & Drawer
+       ======================================================================== -->
+  <div class="learn-topbar">
+    <div class="learn-topbar-left">
+      <button class="learn-curriculum-btn" id="btn-curriculum-toggle" aria-expanded="false">
+        <span class="learn-curriculum-icon">☰</span>
+        <span id="learn-topbar-title">01 / 50 • Hello, Kuroba!</span>
+        <span class="learn-chevron">▾</span>
+      </button>
+    </div>
+
+    <div class="learn-topbar-center">
+      <div class="learn-progress-wrap" title="Completed lessons stored locally in your browser">
+        <span class="learn-progress-text" id="learn-progress-text">0 / 50 Completed (0%)</span>
+        <div class="learn-progress-bar">
+          <div class="learn-progress-fill" id="learn-progress-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="learn-topbar-right">
+      <button class="ide-btn" id="btn-prev-lesson" title="Previous Lesson (Alt + Left)">← Prev</button>
+      <button class="ide-btn" id="btn-next-lesson" title="Next Lesson (Alt + Right)">Next →</button>
+    </div>
+  </div>
+
+  <!-- Slide-Down Curriculum Drawer (8 Chapters, 50 Lessons) -->
+  <div class="learn-drawer-backdrop" id="learn-drawer-backdrop" style="display: none;">
+    <div class="learn-drawer" role="dialog" aria-label="Course Curriculum">
+      <div class="learn-drawer-header">
+        <div>
+          <div class="section-label" style="margin-bottom: 0.2rem;">THE RAVEN'S MANUAL</div>
+          <h3 class="learn-drawer-heading">Tour of Kuroba — 50 Interactive Lessons</h3>
+        </div>
+        <div class="learn-drawer-actions">
+          <input type="search" id="learn-search-input" class="learn-search-input" placeholder="Filter lessons (e.g. isealed, operator, json)..." autocomplete="off">
+          <button class="ide-btn" id="btn-reset-progress" title="Clear all lesson checkmarks">Reset Progress</button>
+          <button class="ide-btn" id="btn-close-drawer">Close ✕</button>
+        </div>
+      </div>
+      <div class="learn-drawer-grid" id="learn-drawer-grid"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Split-Screen Workspace (Left: Lesson & Checklist | Right: Editor & Console)
+       ======================================================================== -->
+  <main class="learn-workspace">
+
+    <!-- Left Column: Lesson Guide, Objectives Checklist & Hints -->
+    <section class="learn-pane-guide" id="learn-pane-guide">
+      <div class="learn-guide-scroll" id="learn-guide-scroll">
+        <div class="learn-meta-row">
+          <span class="learn-chapter-badge" id="learn-chapter-badge">Chapter 1</span>
+          <span class="learn-boss-badge" id="learn-boss-badge" style="display: none;">★ Boss Challenge</span>
+          <span class="learn-status-pill" id="learn-status-pill">Pending</span>
+        </div>
+
+        <h1 class="learn-lesson-title" id="learn-lesson-title">Loading lesson...</h1>
+        <p class="learn-lesson-summary" id="learn-lesson-summary"></p>
+
+        <div class="learn-lesson-body" id="learn-lesson-body"></div>
+
+        <!-- Automated Grading Objectives Card -->
+        <div class="learn-objectives-card">
+          <div class="learn-objectives-header">
+            <span class="learn-objectives-title">Challenge Objectives</span>
+            <span class="learn-objectives-score" id="learn-objectives-score">0 / 0 Passed</span>
+          </div>
+          <ul class="learn-objectives-list" id="learn-objectives-list"></ul>
+        </div>
+
+        <!-- Success Banner (Revealed when all checks pass) -->
+        <div class="learn-success-banner" id="learn-success-banner" style="display: none;">
+          <div>
+            <strong id="learn-success-heading">Lesson Completed!</strong>
+            <p id="learn-success-sub">All runtime state and console checks passed.</p>
+          </div>
+          <button class="ide-btn ide-btn-run" id="btn-banner-next">Next Lesson →</button>
+        </div>
+
+        <!-- Hint & Reference Solution Controls -->
+        <div class="learn-help-bar">
+          <button class="ide-btn" id="btn-toggle-hint">Show Hint</button>
+          <button class="ide-btn" id="btn-show-solution">Reveal Solution</button>
+        </div>
+        <div class="learn-hint-box" id="learn-hint-box" style="display: none;"></div>
+      </div>
+    </section>
+
+    <!-- Right Column: Code Editor (Top) + Virtual Terminal (Bottom) -->
+    <section class="learn-pane-ide">
+      <div class="ide-panel ide-panel-editor learn-editor-panel">
+        <div class="ide-toolbar">
+          <div class="ide-toolbar-left" id="learn-file-tabs">
+            <span class="ide-toolbar-title">main.krb</span>
+          </div>
+          <div class="ide-toolbar-right">
+            <button class="ide-btn" id="btn-reset-code" title="Restore starter code for this lesson">Reset Code</button>
+            <button class="ide-btn" id="btn-run-only" title="Run code without grading (Shift + Enter)">Run ▶</button>
+            <button class="ide-btn ide-btn-run" id="btn-verify" title="Run & grade objectives (Ctrl + Enter)">Verify ✓</button>
+          </div>
+        </div>
+
+        <div class="ide-editor-container">
+          <div class="ide-line-numbers" id="learn-gutter"></div>
+          <textarea class="ide-textarea" id="learn-editor" spellcheck="false" placeholder="Write your Kuroba solution here..."></textarea>
+        </div>
+
+        <div class="ide-statusbar">
+          <span class="ide-status-item" id="learn-engine-status">
+            <span class="status-indicator">●</span> Initializing WASM...
+          </span>
+          <span class="ide-status-item" id="learn-cursor">Ln 1, Col 1</span>
+          <span class="ide-status-item ide-shortcuts-hint">[Ctrl+Enter] Verify &nbsp;•&nbsp; [Ctrl+/] Comment &nbsp;•&nbsp; [Alt+←/→] Navigate</span>
+        </div>
+      </div>
+
+      <div class="ide-panel ide-panel-terminal learn-terminal-panel">
+        <div class="ide-toolbar">
+          <div class="ide-toolbar-left">
+            <span class="ide-toolbar-title">Console &amp; Grading Output</span>
+            <span id="learn-timing-badge" class="ide-timing-badge" style="display: none;">• 0.0 ms</span>
+          </div>
+          <div class="ide-toolbar-right">
+            <button class="ide-btn" id="btn-clear-console">Clear</button>
+          </div>
+        </div>
+        <div class="ide-terminal-area" id="learn-terminal">
+          <div class="term-line sys">Kuroba Interactive Manual • Loading Native C99 WebAssembly VM...</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Kuroba Native C WebAssembly Bridge -->
+  <script>
+    (function() {
+      var outBytes = [];
+      var errBytes = [];
+      var utf8Decoder = new TextDecoder('utf-8');
+
+      function flushBuffer(buf, isErr, hasNewline) {
+        if (buf.length === 0 && !hasNewline) return;
+        var text = utf8Decoder.decode(new Uint8Array(buf));
+        buf.length = 0;
+        if (isErr) {
+          if (window.__kuroba_error) window.__kuroba_error(text);
+          else console.error(text);
+        } else {
+          if (window.__kuroba_print) window.__kuroba_print(text, hasNewline);
+          else console.log(text);
+        }
+      }
+
+      window.Module = {
+        preRun: [function() {
+          Module.FS.init(
+            null,
+            function(ch) {
+              if (ch === null) return;
+              if (ch === 10) flushBuffer(outBytes, false, true);
+              else if (ch !== 13) outBytes.push(ch & 0xff);
+            },
+            function(ch) {
+              if (ch === null) return;
+              if (ch === 10) flushBuffer(errBytes, true, true);
+              else if (ch !== 13) errBytes.push(ch & 0xff);
+            }
+          );
+        }],
+        onRuntimeInitialized: function() {
+          Module._krb_wasm_init();
+          window.Kuroba = {
+            version: '1.1.1 (Native C WASM)',
+            isReady: true,
+            run: function(code, options) {
+              var onPrint = (options && options.onPrint) || function() {};
+              var onError = (options && options.onError) || function(err) { onPrint(err, true); };
+              outBytes.length = 0;
+              errBytes.length = 0;
+              window.__kuroba_print = onPrint;
+              window.__kuroba_error = onError;
+
+              if (options && options.files && Module.FS) {
+                for (var f in options.files) {
+                  try {
+                    Module.FS.writeFile(f, options.files[f]);
+                  } catch (e) {}
+                }
+              }
+
+              try {
+                return Module.ccall('krb_wasm_run', 'number', ['string'], [code]);
+              } finally {
+                if (outBytes.length > 0) flushBuffer(outBytes, false, false);
+                if (errBytes.length > 0) flushBuffer(errBytes, true, false);
+                window.__kuroba_print = null;
+                window.__kuroba_error = null;
+              }
+            },
+            reset: function() {
+              outBytes.length = 0;
+              errBytes.length = 0;
+              if (Module._krb_wasm_reset) Module._krb_wasm_reset();
+            }
+          };
+          if (typeof window.__onKurobaLearnReady === 'function') {
+            window.__onKurobaLearnReady();
+          }
+        }
+      };
+    })();
+  </script>
+  <script src="js/kuroba-engine.js"></script>
+  <script src="js/lessons-part1.js"></script>
+  <script src="js/lessons-part2.js"></script>
+  <script src="js/learn.js"></script>
+</body>
+</html>
